@@ -243,11 +243,15 @@ const ServiceOrder = () => {
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleSave} disabled={saved}>
             <CheckCircle2 className="w-3.5 h-3.5" /> {saved ? "Salvo" : "Salvar"}
           </Button>
+          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handlePreviewPdf}>
+            <Eye className="w-3.5 h-3.5" /> Preview
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handlePrint}>
             <Printer className="w-3.5 h-3.5" /> Imprimir
           </Button>
           <Button size="sm" className="gap-2 text-xs" onClick={handleDownloadPdf}>
             <Download className="w-3.5 h-3.5" /> Baixar PDF
+          </Button>
           </Button>
         </div>
       </div>
