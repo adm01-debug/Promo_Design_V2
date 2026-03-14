@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
-  ChevronRight, FolderOpen, Palette, Wand2, BookOpen
+  ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -32,6 +32,17 @@ const modules = [
       { label: "Histórico", path: "/magicup/history", icon: History },
     ],
   },
+  {
+    id: "video",
+    label: "Video Studio",
+    icon: Video,
+    path: "/video",
+    description: "Vídeos Publicitários",
+    children: [
+      { label: "Novo Vídeo", path: "/video/new", icon: Film },
+      { label: "Histórico", path: "/video/history", icon: History },
+    ],
+  },
 ];
 
 const AppSidebar = () => {
@@ -39,6 +50,7 @@ const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {
     if (location.pathname.startsWith("/magicup")) return "magicup";
+    if (location.pathname.startsWith("/video")) return "video";
     return "mockup";
   });
 

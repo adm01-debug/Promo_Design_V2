@@ -18,6 +18,8 @@ const MockupHistory = lazyWithRetry(() => import("./pages/MockupHistory"));
 const MagicUpGenerate = lazyWithRetry(() => import("./pages/MagicUpGenerate"));
 const MagicUpPrompts = lazyWithRetry(() => import("./pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./pages/MagicUpHistory"));
+const VideoNew = lazyWithRetry(() => import("./pages/VideoNew"));
+const VideoHistory = lazyWithRetry(() => import("./pages/VideoHistory"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -43,6 +45,9 @@ const App = () => (
                   <Route path="/magicup/generate" element={<MagicUpGenerate />} />
                   <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
                   <Route path="/magicup/history" element={<MagicUpHistory />} />
+                  <Route path="/video" element={<Navigate to="/video/new" replace />} />
+                  <Route path="/video/new" element={<VideoNew />} />
+                  <Route path="/video/history" element={<VideoHistory />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
