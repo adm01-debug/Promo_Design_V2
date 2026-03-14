@@ -2,14 +2,16 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wand2, Sparkles, Send, Image, Heart,
-  Download, Copy, ChevronDown, Loader2,
-  Search, Package, ChevronLeft, X
+  Copy, ChevronDown, Loader2,
+  Search, Package, ChevronLeft, X, Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/lib/mockup-types";
 import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
+import PromptGenerator from "@/components/PromptGenerator";
+import DownloadMenu from "@/components/DownloadMenu";
 
 /** Build a context-aware prompt from product data + user intent */
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
