@@ -86,7 +86,7 @@ const AppSidebar = () => {
                 exit={{ opacity: 0, width: 0 }}
                 className="font-display font-bold text-lg text-foreground tracking-tight whitespace-nowrap"
               >
-                Promo <span className="text-gradient-primary">Design Studio</span>
+                Promo <span className="text-gradient-primary">Design</span>
               </motion.span>
             )}
           </AnimatePresence>
