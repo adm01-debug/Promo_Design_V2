@@ -133,7 +133,42 @@ const VideoNew = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Moodboard Banner */}
+        {moodboard && (
+          <div className="shrink-0 mx-4 mt-3 mb-1 flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5">
+            <Palette className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex-1 flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-mono text-muted-foreground uppercase">Moodboard:</span>
+              {moodboard.tone && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                  {TONE_LABELS[moodboard.tone]}
+                </span>
+              )}
+              {moodboard.palette && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary-foreground font-medium">
+                  {PALETTE_LABELS[moodboard.palette]}
+                </span>
+              )}
+              {moodboard.scenes.length > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-foreground font-medium">
+                  {moodboard.scenes.length} cenário{moodboard.scenes.length > 1 ? "s" : ""}
+                </span>
+              )}
+              {moodboard.keywords.length > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  + {moodboard.keywords.length} keywords
+                </span>
+              )}
+            </div>
+            <Link to="/video/moodboard" className="text-[10px] text-primary hover:underline shrink-0">Editar</Link>
+            <button onClick={clearMoodboard} className="text-muted-foreground hover:text-destructive shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 flex overflow-hidden">
         <AnimatePresence mode="wait">
           {/* STEP 1: Product Selection */}
           {step === "product" && (
