@@ -91,6 +91,11 @@ const VideoCinema = () => {
   const [vignette, setVignette] = useState(selectedPreset.filters.vignette);
   const [letterbox, setLetterbox] = useState(true);
   const [grain, setGrain] = useState(true);
+  const [selectedProductIdx, setSelectedProductIdx] = useState(0);
+
+  const { data: productsData } = useProducts({ page: 0, pageSize: 8, onlyWithImages: true });
+  const products = productsData?.products || [];
+  const selectedProduct = products[selectedProductIdx] || null;
 
   const applyPreset = (preset: GradingPreset) => {
     setSelectedPreset(preset);
