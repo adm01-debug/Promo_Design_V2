@@ -836,6 +836,24 @@ const MockupNew = () => {
                 </div>
 
                 <div className="p-4 mt-auto space-y-2">
+                  <Button
+                    variant="secondary"
+                    className="w-full gap-2 text-xs"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        product: selectedProduct.name,
+                        sku: selectedProduct.sku,
+                        image: selectedProductImage || "",
+                        area: selectedArea.location_name,
+                        aw: String(selectedArea.max_width),
+                        ah: String(selectedArea.max_height),
+                        technique: selectedProduct.engraving_type || "",
+                      });
+                      navigate(`/mockup/editor?${params.toString()}`);
+                    }}
+                  >
+                    <Layers className="w-3.5 h-3.5" /> Editor Multivistas
+                  </Button>
                   <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}>
                     <FileText className="w-3.5 h-3.5" /> Layout Aprovação (PDF)
                   </Button>
