@@ -352,6 +352,21 @@ const ServiceOrder = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {editId && (
+            <StatusSelect value={currentStatus} onValueChange={(v) => { setCurrentStatus(v as OsStatus); setSaved(false); }}>
+              <StatusSelectTrigger className="w-[140px] h-9 text-xs">
+                <StatusSelectValue />
+              </StatusSelectTrigger>
+              <StatusSelectContent>
+                {(Object.entries(STATUS_CONFIG) as [OsStatus, { label: string }][]).map(([key, cfg]) => (
+                  <StatusSelectItem key={key} value={key}>{cfg.label}</StatusSelectItem>
+                ))}
+              </StatusSelectContent>
+            </StatusSelect>
+          )}
+          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleSave} disabled={saved}>
+            <CheckCircle2 className="w-3.5 h-3.5" /> {saved ? "Salvo" : "Salvar"}
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handlePrint}>
             <Printer className="w-3.5 h-3.5" /> Imprimir
           </Button>
