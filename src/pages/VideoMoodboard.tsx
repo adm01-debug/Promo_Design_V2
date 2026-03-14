@@ -49,6 +49,20 @@ const VideoMoodboard = () => {
   const [customColors, setCustomColors] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
+  const [referenceImages, setReferenceImages] = useState<string[]>([]);
+
+  const handleRefImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).slice(0, 6 - referenceImages.length).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setReferenceImages(prev => [...prev, dataUrl].slice(0, 6));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleApply = () => {
     if (!selectedTone || !selectedMood) return;
