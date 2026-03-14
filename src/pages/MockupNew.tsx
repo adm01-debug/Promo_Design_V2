@@ -130,28 +130,48 @@ const MockupNew = () => {
       if (e.key === "r" && !ctrl) setShowRulers(prev => !prev);
       if (e.key === "+" || e.key === "=") setZoom(prev => Math.min(400, prev + 25));
       if (e.key === "-") setZoom(prev => Math.max(25, prev - 25));
-      if (e.key === "Delete" || e.key === "Backspace") { setLogoPreview(null); setLogoFile(null); }
+      if (e.key === "Delete" || e.key === "Backspace") { setLogoPreview(null); setLogoFile(null); setWarpedLogoUrl(null); clearWarpCache(); }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [step, undo, redo]);
 
+  // ──────────────── Mesh Warp Cache Reset ────────────────
+  useEffect(() => {
+    clearWarpCache();
+    setWarpedLogoUrl(null);
+  }, [logoPreview]);
+
   // ──────────────── Mesh Warp Effect ────────────────
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") {
       setWarpedLogoUrl(null);
+      setIsWarping(false);
       return;
     }
+
+    let cancelled = false;
     setIsWarping(true);
-    clearWarpCache();
     const logoDisplayW = areaW * placement.scale;
     const logoDisplayH = areaH * placement.scale;
     const warpW = Math.max(64, Math.round(logoDisplayW * 2));
     const warpH = Math.max(64, Math.round(logoDisplayH * 2));
 
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, placement.rotation, placement.flipH, placement.flipV)
-      .then(url => { setWarpedLogoUrl(url); setIsWarping(false); })
-      .catch(() => { setWarpedLogoUrl(null); setIsWarping(false); });
+      .then((url) => {
+        if (cancelled) return;
+        setWarpedLogoUrl(url);
+        setIsWarping(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWarpedLogoUrl(null);
+        setIsWarping(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [logoPreview, surfaceType, placement.rotation, placement.flipH, placement.flipV, areaW, areaH, placement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
@@ -171,6 +191,8 @@ const MockupNew = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
+      clearWarpCache();
+      setWarpedLogoUrl(null);
       setLogoPreview(dataUrl);
       // Auto-detect surface type from template
       if (selectedTemplate) {

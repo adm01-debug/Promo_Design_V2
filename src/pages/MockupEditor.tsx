@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
-import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp";
+import { getWarpedPreview, clearWarpCache } from "@/lib/mesh-warp";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
 // ──────────── View definitions ────────────
@@ -96,18 +96,33 @@ const MockupEditor = () => {
     }));
   };
 
+  // ──────────────── Mesh Warp Cache Reset ────────────────
+  useEffect(() => {
+    clearWarpCache();
+    setWarpedLogoUrl(null);
+  }, [logoPreview]);
+
   // ──────────────── Mesh Warp Effect ────────────────
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") {
       setWarpedLogoUrl(null);
       return;
     }
-    clearWarpCache();
+
+    let cancelled = false;
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
-      .then(url => setWarpedLogoUrl(url))
-      .catch(() => setWarpedLogoUrl(null));
+      .then((url) => {
+        if (!cancelled) setWarpedLogoUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setWarpedLogoUrl(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
@@ -125,6 +140,8 @@ const MockupEditor = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
+      clearWarpCache();
+      setWarpedLogoUrl(null);
       setLogoPreview(dataUrl);
       const img = new window.Image();
       img.onload = () => {
@@ -564,7 +581,7 @@ const MockupEditor = () => {
                   {showLogo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   {showLogo ? "Ocultar" : "Mostrar"}
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); }}>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); setWarpedLogoUrl(null); clearWarpCache(); }}>
                   <Trash2 className="w-3 h-3" />
                 </Button>
               </div>
