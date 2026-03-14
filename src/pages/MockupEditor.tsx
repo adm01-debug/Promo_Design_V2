@@ -581,7 +581,7 @@ const MockupEditor = () => {
                   {showLogo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   {showLogo ? "Ocultar" : "Mostrar"}
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); }}>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); setWarpedLogoUrl(null); clearWarpCache(); }}>
                   <Trash2 className="w-3 h-3" />
                 </Button>
               </div>
