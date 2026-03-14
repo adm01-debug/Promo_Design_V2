@@ -65,7 +65,7 @@ const TECHNIQUE_COLORS: Record<string, [number, number, number]> = {
 function sim(v: boolean) { return v ? "SIM" : "NÃO"; }
 function val(v: string) { return v || "–"; }
 
-export function generateServiceOrderPdf(form: PdfFormData): jsPDF {
+export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string): jsPDF {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
@@ -78,10 +78,20 @@ export function generateServiceOrderPdf(form: PdfFormData): jsPDF {
   // ── Header verde com identificação ──
   doc.setFillColor(...GREEN);
   doc.rect(0, 0, pw, 14, "F");
-  doc.setTextColor(...WHITE);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.text("PROMO BRINDES", m, 9);
+
+  // Logo da Promo Brindes
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, "PNG", m, 1, 28, 12);
+    } catch { /* fallback to text */ }
+  }
+  // Fallback text if no logo
+  if (!logoDataUrl) {
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text("PROMO BRINDES", m, 9);
+  }
 
   // Identificação Caixa
   doc.setFontSize(12);
