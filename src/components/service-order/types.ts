@@ -1,6 +1,7 @@
 export interface ServiceOrderData {
   osNumber: string;
   date: string;
+  deliveryDate: string;
   clientName: string;
   clientCompany: string;
   clientPhone: string;
@@ -19,21 +20,36 @@ export interface ServiceOrderData {
   artFile: string;
   artFileDataUrl: string;
   quantity: string;
-  deliveryDate: string;
   observations: string;
   mockupImageUrl: string;
+  // Novos campos baseados no template real
+  identificacaoCaixa: string;
+  materialEvento: boolean;
+  aprovarPrimeiraPeca: boolean;
+  qtdCompra: string;
+  qtdLiberada: string;
+  fazParteKit: boolean;
+  gravacaoDetalhe: string; // ex: "Gravação Laser Escuro"
 }
 
 export const TECHNIQUES = [
-  "Serigrafia",
+  "Laser Fiber",
+  "Laser UV",
+  "Laser Co2",
+  "Serigrafia Têxtil",
+  "Serigrafia Vinílica Plana",
+  "Serigrafia Vinílica Rotativa",
   "Tampografia",
-  "Gravação a Laser",
-  "Impressão UV",
-  "Sublimação",
-  "Transfer",
+  "(DTF) Transfer Digital Têxtil",
+  "(DTF) Transfer Digital UV",
+  "Sublimação - Caneca",
+  "Sublimação Têxtil",
+  "Hot Stamping (Baixo Relevo)",
+  "Digital UV",
+  "Adesivo Resinado",
   "Bordado",
-  "Hot Stamping",
-  "Impressão Digital",
+  "Decalque",
+  "Filme de Recorte",
 ];
 
 export const generateOsNumber = () => {

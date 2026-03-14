@@ -5,13 +5,14 @@ import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-serv
 import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectItem as StatusSelectItem, SelectTrigger as StatusSelectTrigger, SelectValue as StatusSelectValue } from "@/components/ui/select";
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
-  Hash, User, MessageSquare, Image as ImageIcon, Copy, CheckCircle2,
+  Hash, User, MessageSquare, Image as ImageIcon, Copy, CheckCircle2, Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import SectionTitle from "@/components/service-order/SectionTitle";
 import ArtUploadField from "@/components/service-order/ArtUploadField";
@@ -54,6 +55,13 @@ const ServiceOrder = () => {
         deliveryDate: existingOrder.deliveryDate,
         observations: existingOrder.observations,
         mockupImageUrl: existingOrder.mockupImageUrl,
+        identificacaoCaixa: existingOrder.identificacaoCaixa || "",
+        materialEvento: existingOrder.materialEvento || false,
+        aprovarPrimeiraPeca: existingOrder.aprovarPrimeiraPeca || false,
+        qtdCompra: existingOrder.qtdCompra || "",
+        qtdLiberada: existingOrder.qtdLiberada || "",
+        fazParteKit: existingOrder.fazParteKit || false,
+        gravacaoDetalhe: existingOrder.gravacaoDetalhe || "",
       };
     }
     return {
@@ -80,12 +88,19 @@ const ServiceOrder = () => {
       deliveryDate: "",
       observations: "",
       mockupImageUrl: searchParams.get("mockup") || "",
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
     };
   });
 
   const [currentStatus, setCurrentStatus] = useState<OsStatus>(existingOrder?.status || "aberta");
 
-  const update = (field: keyof ServiceOrderData, value: string) => {
+  const update = (field: keyof ServiceOrderData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
     setSaved(false);
@@ -231,12 +246,16 @@ const ServiceOrder = () => {
                 <Input value={form.osNumber} readOnly className="font-mono bg-muted/50" />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Data de Emissão</Label>
+                <Label className="text-xs text-muted-foreground">Data de Solicitação</Label>
                 <Input type="date" value={form.date} onChange={(e) => update("date", e.target.value)} />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Data de Entrega</Label>
                 <Input type="date" value={form.deliveryDate} onChange={(e) => update("deliveryDate", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Identificação Caixa</Label>
+                <Input placeholder="___/___" value={form.identificacaoCaixa} onChange={(e) => update("identificacaoCaixa", e.target.value)} />
               </div>
             </div>
           </section>
@@ -292,8 +311,8 @@ const ServiceOrder = () => {
                 <Input placeholder="Plástico, Metal, Tecido..." value={form.productMaterial} onChange={(e) => update("productMaterial", e.target.value)} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Cores do Produto</Label>
-                <Input placeholder="Preto, Branco, Azul..." value={form.productColors} onChange={(e) => update("productColors", e.target.value)} />
+                <Label className="text-xs text-muted-foreground">Cor do Produto</Label>
+                <Input placeholder="Branco, Preto, Azul..." value={form.productColors} onChange={(e) => update("productColors", e.target.value)} />
               </div>
             </div>
           </section>
@@ -317,20 +336,24 @@ const ServiceOrder = () => {
                 {fieldError("technique")}
               </div>
               <div>
+                <Label className="text-xs text-muted-foreground">Detalhe da Gravação</Label>
+                <Input placeholder="Gravação Laser Escuro, Serigrafia 2 cores..." value={form.gravacaoDetalhe} onChange={(e) => update("gravacaoDetalhe", e.target.value)} />
+              </div>
+              <div>
                 <Label className="text-xs text-muted-foreground">Área de Gravação</Label>
                 <Input placeholder="Lado A, Frente, Tampa..." value={form.areaName} onChange={(e) => update("areaName", e.target.value)} />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Largura Máx. (cm)</Label>
+                <Label className="text-xs text-muted-foreground">Formato da Área</Label>
+                <Input placeholder="Retangular, Circular..." value={form.areaShape} onChange={(e) => update("areaShape", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Largura (cm)</Label>
                 <Input type="number" step="0.1" value={form.areaWidth} onChange={(e) => update("areaWidth", e.target.value)} className="font-mono" />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Altura Máx. (cm)</Label>
+                <Label className="text-xs text-muted-foreground">Altura (cm)</Label>
                 <Input type="number" step="0.1" value={form.areaHeight} onChange={(e) => update("areaHeight", e.target.value)} className="font-mono" />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Formato da Área</Label>
-                <Input placeholder="Retangular, Circular..." value={form.areaShape} onChange={(e) => update("areaShape", e.target.value)} />
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Cores da Arte (Pantone)</Label>
@@ -349,7 +372,7 @@ const ServiceOrder = () => {
             </div>
           </section>
 
-          {/* Production */}
+          {/* Production + Controls */}
           <section className="bg-card rounded-xl border border-border p-6">
             <SectionTitle icon={Hash} title="Produção" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -364,6 +387,30 @@ const ServiceOrder = () => {
                   className={`font-mono ${errors.quantity ? "border-destructive" : ""}`}
                 />
                 {fieldError("quantity")}
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Qtd. Compra</Label>
+                <Input type="number" min="1" placeholder="Igual à quantidade" value={form.qtdCompra} onChange={(e) => update("qtdCompra", e.target.value)} className="font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Qtd. Liberada para Personalização</Label>
+                <Input type="number" min="1" placeholder="Igual à quantidade" value={form.qtdLiberada} onChange={(e) => update("qtdLiberada", e.target.value)} className="font-mono" />
+              </div>
+            </div>
+
+            {/* Switches */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-4 border-t border-border">
+              <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-lg px-4 py-3">
+                <Label className="text-xs text-muted-foreground">Material de Evento?</Label>
+                <Switch checked={form.materialEvento} onCheckedChange={(v) => update("materialEvento", v)} />
+              </div>
+              <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-lg px-4 py-3">
+                <Label className="text-xs text-muted-foreground">Aprovar 1ª Peça?</Label>
+                <Switch checked={form.aprovarPrimeiraPeca} onCheckedChange={(v) => update("aprovarPrimeiraPeca", v)} />
+              </div>
+              <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-lg px-4 py-3">
+                <Label className="text-xs text-muted-foreground">Faz Parte de Kit?</Label>
+                <Switch checked={form.fazParteKit} onCheckedChange={(v) => update("fazParteKit", v)} />
               </div>
             </div>
           </section>

@@ -28,6 +28,14 @@ export interface StoredServiceOrder {
   quantity: string;
   observations: string;
   mockupImageUrl: string;
+  // Novos campos
+  identificacaoCaixa: string;
+  materialEvento: boolean;
+  aprovarPrimeiraPeca: boolean;
+  qtdCompra: string;
+  qtdLiberada: string;
+  fazParteKit: boolean;
+  gravacaoDetalhe: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,7 +45,19 @@ const STORAGE_KEY = "promo-design-service-orders";
 function loadOrders(): StoredServiceOrder[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    // Migrar ordens antigas que não possuem os novos campos
+    return parsed.map((o: any) => ({
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
+      ...o,
+    }));
   } catch {
     return [];
   }
@@ -48,14 +68,13 @@ function saveOrders(orders: StoredServiceOrder[]) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
   } catch {
     try {
-      // Fallback: salva sem preview base64 para evitar estouro de quota do localStorage
       const compactOrders = orders.map(({ artFileDataUrl, ...order }) => ({
         ...order,
         artFileDataUrl: "",
       }));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(compactOrders));
     } catch {
-      // Sem espaço no localStorage: ignora para evitar quebra da tela
+      // Sem espaço no localStorage
     }
   }
 }
@@ -63,7 +82,6 @@ function saveOrders(orders: StoredServiceOrder[]) {
 export function useServiceOrders() {
   const [orders, setOrders] = useState<StoredServiceOrder[]>(loadOrders);
 
-  // Sync state to localStorage
   useEffect(() => {
     saveOrders(orders);
   }, [orders]);
