@@ -338,16 +338,15 @@ const VideoMoodboard = () => {
 
           {/* Action */}
           <div className="flex items-center justify-center pb-8">
-            <Link to="/video/new">
               <Button
                 size="lg"
-                className="gap-2 bg-gradient-primary text-primary-foreground px-8"
+                className="gap-2 px-8"
                 disabled={!isComplete}
+                onClick={handleApply}
               >
                 <Sparkles className="w-4 h-4" />
                 Aplicar Moodboard e Criar Vídeo
               </Button>
-            </Link>
           </div>
         </div>
       </div>
