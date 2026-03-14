@@ -64,7 +64,7 @@ const Dashboard = () => {
         className="mb-8"
       >
         <h1 className="text-2xl font-display font-bold text-foreground">
-          Bem-vindo ao <span className="text-gradient-primary">MockStudio</span>
+          Bem-vindo ao <span className="text-gradient-primary">Promo Design Studio</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Sistema de Criação para o Time de Artes</p>
       </motion.div>
