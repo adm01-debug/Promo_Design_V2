@@ -31,6 +31,8 @@ const ServiceOrder = () => {
   const existingOrder = editId ? getOrder(editId) : null;
   const [saved, setSaved] = useState(!!existingOrder);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const logoRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
