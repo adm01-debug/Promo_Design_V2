@@ -65,6 +65,7 @@ const App = () => (
                   <Route path="/video/cinema" element={<VideoCinema />} />
                   <Route path="/video/characters" element={<CharacterStudio />} />
                   <Route path="/video/history" element={<VideoHistory />} />
+                  <Route path="/settings" element={<Settings />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

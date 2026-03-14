@@ -45,6 +45,7 @@ export const generateOsNumber = () => {
 };
 
 export interface ValidationErrors {
+  [key: string]: string | undefined;
   productName?: string;
   clientName?: string;
   technique?: string;
