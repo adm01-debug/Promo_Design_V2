@@ -12,7 +12,7 @@ import { useProducts, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
 import VideoPreviewAnimation from "@/components/VideoPreviewAnimation";
 import { useMoodboardStore, TONE_LABELS, PALETTE_LABELS, TONE_TO_STYLE } from "@/hooks/use-moodboard-preferences";
-import type { MoodboardTone, VideoStyle as _VS } from "@/hooks/use-moodboard-preferences";
+import type { MoodboardTone } from "@/hooks/use-moodboard-preferences";
 
 type AspectRatio = "9:16" | "1:1" | "16:9" | "4:5";
 type VideoStyle = "premium" | "dinamico" | "minimalista" | "impactante" | "elegante" | "jovem";
