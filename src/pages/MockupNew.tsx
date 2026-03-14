@@ -875,6 +875,14 @@ const MockupNew = () => {
                         </button>
                       ))}
                     </div>
+                    {surfaceType !== "flat" && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${isWarping ? "bg-yellow-500 animate-pulse" : warpedLogoUrl ? "bg-green-500" : "bg-muted-foreground"}`} />
+                        <span className="text-[9px] font-mono text-muted-foreground">
+                          {isWarping ? "Aplicando mesh warp..." : warpedLogoUrl ? "Mesh warp ativo" : "Upload logo para ativar warp"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
