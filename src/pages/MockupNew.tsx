@@ -968,6 +968,26 @@ const MockupNew = () => {
 
                 <div className="p-4 mt-auto space-y-2">
                   <Button
+                    className="w-full gap-2 text-xs bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        product: selectedProduct.name,
+                        sku: selectedProduct.sku,
+                        material: selectedProduct.materials?.join(", ") || "",
+                        productColors: selectedProduct.colors?.join(", ") || "",
+                        technique: selectedProduct.engraving_type || "",
+                        area: selectedArea.location_name,
+                        aw: String(selectedArea.max_width),
+                        ah: String(selectedArea.max_height),
+                        shape: selectedArea.shape || "",
+                        artColors: logoColors.join(", "),
+                      });
+                      navigate(`/mockup/service-order?${params.toString()}`);
+                    }}
+                  >
+                    <FileText className="w-3.5 h-3.5" /> Gerar Ordem de Serviço
+                  </Button>
+                  <Button
                     variant="secondary"
                     className="w-full gap-2 text-xs"
                     onClick={() => {
