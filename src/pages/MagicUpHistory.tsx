@@ -391,7 +391,7 @@ const MagicUpHistory = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1 gap-1.5 text-xs text-destructive hover:bg-destructive/10"
-                    onClick={() => deleteItem(selectedItem.id)}
+                    onClick={() => handleDelete(selectedItem.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Excluir
                   </Button>
