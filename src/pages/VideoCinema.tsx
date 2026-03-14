@@ -4,10 +4,11 @@ import { motion } from "framer-motion";
 import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import {
   Film, Sun, Moon, Contrast, Droplets, Thermometer,
-  SlidersHorizontal, RotateCcw, Download, Sparkles, Eye
+  SlidersHorizontal, RotateCcw, Download, Sparkles, Eye, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useProducts, getProductImageUrl } from "@/hooks/use-products";
 
 type GradingPreset = {
   id: string;
