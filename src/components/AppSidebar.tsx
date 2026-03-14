@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
-  ChevronRight, FolderOpen, Palette, Wand2, BookOpen
+  ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
