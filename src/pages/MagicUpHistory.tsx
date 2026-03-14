@@ -278,7 +278,7 @@ const MagicUpHistory = () => {
                         variant="ghost"
                         size="sm"
                         className="text-white h-8 w-8 p-0 hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
