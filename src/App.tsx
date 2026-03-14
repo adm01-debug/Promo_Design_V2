@@ -30,6 +30,8 @@ const ServiceOrder = lazyWithRetry(() => import("./pages/ServiceOrder"));
 const ServiceOrderList = lazyWithRetry(() => import("./pages/ServiceOrderList"));
 const ServiceOrderDashboard = lazyWithRetry(() => import("./pages/ServiceOrderDashboard"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Templates = lazyWithRetry(() => import("./pages/Templates"));
+const Editor = lazyWithRetry(() => import("./pages/Editor"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -68,6 +70,8 @@ const App = () => (
                   <Route path="/video/characters" element={<CharacterStudio />} />
                   <Route path="/video/history" element={<VideoHistory />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/templates" element={<Templates />} />
+                  <Route path="/editor" element={<Editor />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
