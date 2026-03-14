@@ -6,14 +6,14 @@ import {
   Search, Loader2, Package, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, useCategories, getProductImageUrl } from "@/hooks/use-products";
+import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
 import { countUniqueColors } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
 const MockupNew = () => {
   const [search, setSearch] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+  
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
   const [selectedArea, setSelectedArea] = useState<DbPrintAreaTechnique | null>(null);
@@ -33,9 +33,9 @@ const MockupNew = () => {
 
   // Data from external Supabase
   const { data: productsData, isLoading: productsLoading } = useProducts({
-    search, categoryId: selectedCategoryId, page, pageSize: 24, onlyWithImages: false,
+    search, page, pageSize: 24, onlyWithImages: false,
   });
-  const { data: categories } = useCategories();
+  
   const { data: productImages } = useProductImages(selectedProduct?.id || null);
   const { data: printAreas } = usePrintAreaTechniques(selectedProduct?.id || null);
   const { data: variants } = useProductVariants(selectedProduct?.id || null);
@@ -109,8 +109,6 @@ const MockupNew = () => {
     pdf.save(`mockup-${selectedProduct.sku}-${Date.now()}.pdf`);
   };
 
-  // Top-level categories for filter
-  const topCategories = (categories || []).filter(c => c.level <= 2).slice(0, 12);
 
   return (
     <div className="h-screen flex flex-col">
@@ -164,27 +162,6 @@ const MockupNew = () => {
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                     />
                   </div>
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  <button
-                    onClick={() => { setSelectedCategoryId(undefined); setPage(0); }}
-                    className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
-                      !selectedCategoryId ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
-                    }`}
-                  >
-                    Todos ({totalProducts})
-                  </button>
-                  {topCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => { setSelectedCategoryId(cat.id); setPage(0); }}
-                      className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
-                        selectedCategoryId === cat.id ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
-                      }`}
-                    >
-                      {cat.name} ({cat.products_count})
-                    </button>
-                  ))}
                 </div>
               </div>
 
