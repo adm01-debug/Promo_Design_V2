@@ -65,11 +65,17 @@ const ASPECT_PREVIEW: Record<AspectRatio, string> = {
 };
 
 const VideoNew = () => {
+  const moodboard = useMoodboardStore((s) => s.preferences);
+  const clearMoodboard = useMoodboardStore((s) => s.clearPreferences);
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
-  const [videoStyle, setVideoStyle] = useState<VideoStyle>("premium");
+  const [videoStyle, setVideoStyle] = useState<VideoStyle>(() => {
+    if (moodboard?.tone) return (TONE_TO_STYLE[moodboard.tone] || "premium") as VideoStyle;
+    return "premium";
+  });
   const [selectedTemplate, setSelectedTemplate] = useState<string>("reveal");
   const [creationMode, setCreationMode] = useState<CreationMode>("template");
   const [aiPrompt, setAiPrompt] = useState("");
