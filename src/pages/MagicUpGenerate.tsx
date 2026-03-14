@@ -55,6 +55,7 @@ const MagicUpGenerate = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generations, setGenerations] = useState<{ id: string; prompt: string; imageUrl: string; favorite: boolean; productName?: string }[]>([]);
+  const { addGeneration: saveToHistory } = useMagicUpHistory();
   const [showPromptBank, setShowPromptBank] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
 
