@@ -5,6 +5,7 @@ import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
   ChevronRight, FolderOpen, Palette, Wand2, BookOpen
 } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 const modules = [
   {
