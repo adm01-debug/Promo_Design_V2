@@ -58,12 +58,8 @@ const MagicUpHistory = () => {
     });
   }, [items, search, filterFavorites, filterProduct, dateFrom, dateTo]);
 
-  const toggleFavorite = (id: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i)));
-  };
-
-  const deleteItem = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const handleDelete = (id: string) => {
+    deleteItem(id);
     if (selectedItem?.id === id) setSelectedItem(null);
   };
 
