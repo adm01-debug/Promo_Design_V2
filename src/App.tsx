@@ -45,6 +45,9 @@ const App = () => (
                   <Route path="/magicup/generate" element={<MagicUpGenerate />} />
                   <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
                   <Route path="/magicup/history" element={<MagicUpHistory />} />
+                  <Route path="/video" element={<Navigate to="/video/new" replace />} />
+                  <Route path="/video/new" element={<VideoNew />} />
+                  <Route path="/video/history" element={<VideoHistory />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
