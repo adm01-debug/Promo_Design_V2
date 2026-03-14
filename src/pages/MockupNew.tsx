@@ -163,27 +163,6 @@ const MockupNew = () => {
                     />
                   </div>
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  <button
-                    onClick={() => { setSelectedCategoryId(undefined); setPage(0); }}
-                    className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
-                      !selectedCategoryId ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
-                    }`}
-                  >
-                    Todos ({totalProducts})
-                  </button>
-                  {topCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => { setSelectedCategoryId(cat.id); setPage(0); }}
-                      className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
-                        selectedCategoryId === cat.id ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
-                      }`}
-                    >
-                      {cat.name} ({cat.products_count})
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Product grid */}
