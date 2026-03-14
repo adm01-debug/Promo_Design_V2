@@ -411,9 +411,7 @@ const MagicUpGenerate = () => {
                         <img src={gen.imageUrl} alt="" className="w-full h-full object-cover" />
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
-                          <Download className="w-4 h-4" />
-                        </Button>
+                        <DownloadMenu imageUrl={gen.imageUrl} fileName={`magicup-${gen.id}`} />
                         <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
                           <Copy className="w-4 h-4" />
                         </Button>
