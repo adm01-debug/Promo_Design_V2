@@ -92,38 +92,38 @@ export const SAMPLE_PRODUCTS: Product[] = [
   {
     id: "caneca-001",
     name: "Caneca Cerâmica 325ml",
-    imageUrl: "/placeholder.svg",
+    imageUrl: productCaneca,
     category: "Cerâmica",
     areas: [
-      { id: "a1", name: "Frente", x: 120, y: 80, width: 200, height: 160, widthCm: 8, heightCm: 6, techniques: ["laser", "serigrafia", "uv"] },
+      { id: "a1", name: "Frente", x: 100, y: 120, width: 200, height: 160, widthCm: 8, heightCm: 6, techniques: ["laser", "serigrafia", "uv"] },
     ],
   },
   {
     id: "camiseta-001",
     name: "Camiseta Algodão P/M/G",
-    imageUrl: "/placeholder.svg",
+    imageUrl: productCamiseta,
     category: "Vestuário",
     areas: [
-      { id: "a1", name: "Peito Esquerdo", x: 80, y: 100, width: 100, height: 100, widthCm: 8, heightCm: 8, techniques: ["serigrafia", "uv"] },
-      { id: "a2", name: "Costas Central", x: 140, y: 80, width: 180, height: 200, widthCm: 25, heightCm: 30, techniques: ["serigrafia", "uv"] },
+      { id: "a1", name: "Peito Esquerdo", x: 160, y: 140, width: 100, height: 100, widthCm: 8, heightCm: 8, techniques: ["serigrafia", "uv"] },
+      { id: "a2", name: "Costas Central", x: 150, y: 120, width: 200, height: 220, widthCm: 25, heightCm: 30, techniques: ["serigrafia", "uv"] },
     ],
   },
   {
     id: "squeeze-001",
     name: "Squeeze Inox 500ml",
-    imageUrl: "/placeholder.svg",
+    imageUrl: productSqueeze,
     category: "Drinkware",
     areas: [
-      { id: "a1", name: "Corpo Frontal", x: 100, y: 60, width: 150, height: 200, widthCm: 6, heightCm: 10, techniques: ["laser", "serigrafia"] },
+      { id: "a1", name: "Corpo Frontal", x: 170, y: 100, width: 120, height: 220, widthCm: 6, heightCm: 10, techniques: ["laser", "serigrafia"] },
     ],
   },
   {
     id: "caderno-001",
     name: "Caderno Capa Dura A5",
-    imageUrl: "/placeholder.svg",
+    imageUrl: productCaderno,
     category: "Papelaria",
     areas: [
-      { id: "a1", name: "Capa Frontal", x: 40, y: 40, width: 280, height: 380, widthCm: 14, heightCm: 20, techniques: ["laser", "serigrafia", "uv"] },
+      { id: "a1", name: "Capa Frontal", x: 80, y: 60, width: 280, height: 350, widthCm: 14, heightCm: 20, techniques: ["laser", "serigrafia", "uv"] },
     ],
   },
 ];
