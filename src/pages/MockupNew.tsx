@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, ZoomIn, ZoomOut, RotateCw, Download, Save,
   ChevronDown, Move, FileText, Palette, GripVertical,
   Search, Loader2, Package, ChevronLeft, Undo2, Redo2,
   Grid3X3, Ruler, AlignCenter, Lock, Unlock, Eye, EyeOff,
-  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize
+  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -33,6 +34,7 @@ type HistoryEntry = { placement: Placement; logoPreview: string | null };
 const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.8, rotation: 0, flipH: false, flipV: false };
 
 const MockupNew = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
@@ -834,6 +836,24 @@ const MockupNew = () => {
                 </div>
 
                 <div className="p-4 mt-auto space-y-2">
+                  <Button
+                    variant="secondary"
+                    className="w-full gap-2 text-xs"
+                    onClick={() => {
+                      const params = new URLSearchParams({
+                        product: selectedProduct.name,
+                        sku: selectedProduct.sku,
+                        image: selectedProductImage || "",
+                        area: selectedArea.location_name,
+                        aw: String(selectedArea.max_width),
+                        ah: String(selectedArea.max_height),
+                        technique: selectedProduct.engraving_type || "",
+                      });
+                      navigate(`/mockup/editor?${params.toString()}`);
+                    }}
+                  >
+                    <Layers className="w-3.5 h-3.5" /> Editor Multivistas
+                  </Button>
                   <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}>
                     <FileText className="w-3.5 h-3.5" /> Layout Aprovação (PDF)
                   </Button>

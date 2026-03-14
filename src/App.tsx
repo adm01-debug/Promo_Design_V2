@@ -15,6 +15,7 @@ const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const MockupNew = lazyWithRetry(() => import("./pages/MockupNew"));
 const MockupDrafts = lazyWithRetry(() => import("./pages/MockupDrafts"));
 const MockupHistory = lazyWithRetry(() => import("./pages/MockupHistory"));
+const MockupEditor = lazyWithRetry(() => import("./pages/MockupEditor"));
 const MagicUpGenerate = lazyWithRetry(() => import("./pages/MagicUpGenerate"));
 const MagicUpPrompts = lazyWithRetry(() => import("./pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./pages/MagicUpHistory"));
@@ -45,6 +46,7 @@ const App = () => (
                   <Route path="/mockup/new" element={<MockupNew />} />
                   <Route path="/mockup/drafts" element={<MockupDrafts />} />
                   <Route path="/mockup/history" element={<MockupHistory />} />
+                  <Route path="/mockup/editor" element={<MockupEditor />} />
                   <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
                   <Route path="/magicup/generate" element={<MagicUpGenerate />} />
                   <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
