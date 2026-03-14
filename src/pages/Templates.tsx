@@ -98,7 +98,6 @@ const Templates = () => {
             ))}
           </div>
         </motion.div>
-      </div>
     </div>
   );
 };

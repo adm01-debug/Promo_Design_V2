@@ -32,9 +32,7 @@ const Editor = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <TopNav />
-
-      <div className="flex-1 flex pt-14">
+      <div className="flex-1 flex">
         {/* Left Toolbar */}
         <motion.aside
           initial={{ x: -60, opacity: 0 }}

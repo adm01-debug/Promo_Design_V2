@@ -30,6 +30,8 @@ const ServiceOrder = lazyWithRetry(() => import("./pages/ServiceOrder"));
 const ServiceOrderList = lazyWithRetry(() => import("./pages/ServiceOrderList"));
 const ServiceOrderDashboard = lazyWithRetry(() => import("./pages/ServiceOrderDashboard"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Templates = lazyWithRetry(() => import("./pages/Templates"));
+const Editor = lazyWithRetry(() => import("./pages/Editor"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
