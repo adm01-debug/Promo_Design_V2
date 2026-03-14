@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMoodboardStore } from "@/hooks/use-moodboard-preferences";
 import {
   Palette, Sparkles, Sun, Moon, Zap, Heart, Eye, Target,
   ArrowRight, Plus, X, Check, Image as ImageIcon
