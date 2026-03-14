@@ -2,23 +2,21 @@ import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, ZoomIn, ZoomOut, RotateCw, Download, Save,
-  ChevronDown, Move, FileText, Palette, GripVertical
+  ChevronDown, Move, FileText, Palette, GripVertical,
+  Search, Loader2, Package, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SAMPLE_PRODUCTS, type Product, type Technique } from "@/lib/mockup-types";
+import { useProducts, useProductImages, usePrintAreaTechniques, useCategories, getProductImageUrl } from "@/hooks/use-products";
+import type { DbProduct, DbPrintAreaTechnique } from "@/lib/db-types";
 import { countUniqueColors } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
-const TECHNIQUES: { id: Technique; label: string; description: string; color: string }[] = [
-  { id: "laser", label: "Laser", description: "Gravação monocromática", color: "text-orange-400" },
-  { id: "serigrafia", label: "Serigrafia", description: "1-3 cores Pantone", color: "text-blue-400" },
-  { id: "uv", label: "Digital UV", description: "Policromia completa", color: "text-green-400" },
-];
-
 const MockupNew = () => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedAreaIdx, setSelectedAreaIdx] = useState(0);
-  const [technique, setTechnique] = useState<Technique>("uv");
+  const [search, setSearch] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+  const [page, setPage] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
+  const [selectedArea, setSelectedArea] = useState<DbPrintAreaTechnique | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoColors, setLogoColors] = useState<string[]>([]);
@@ -27,13 +25,27 @@ const MockupNew = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [step, setStep] = useState<"product" | "technique" | "canvas">("product");
+  const [step, setStep] = useState<"product" | "area" | "canvas">("product");
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
 
-  const currentArea = selectedProduct?.areas[selectedAreaIdx];
+  // Data from external Supabase
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    search, categoryId: selectedCategoryId, page, pageSize: 24, onlyWithImages: false,
+  });
+  const { data: categories } = useCategories();
+  const { data: productImages } = useProductImages(selectedProduct?.id || null);
+  const { data: printAreas } = usePrintAreaTechniques(selectedProduct?.id || null);
+
+  const products = productsData?.products || [];
+  const totalProducts = productsData?.total || 0;
+  const totalPages = Math.ceil(totalProducts / 24);
+
+  // Get best display image for selected product
+  const selectedProductImage = selectedProduct
+    ? (productImages?.find(i => i.is_primary)?.url_cdn || getProductImageUrl(selectedProduct))
+    : null;
 
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
@@ -54,7 +66,6 @@ const MockupNew = () => {
     if (file?.type.startsWith("image/")) handleLogoUpload(file);
   }, [handleLogoUpload]);
 
-  // Drag logo within area
   const handleLogoMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsDragging(true);
@@ -62,56 +73,33 @@ const MockupNew = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setPlacement((p) => ({ ...p, x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }));
-    }
+    if (isDragging) setPlacement((p) => ({ ...p, x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }));
     if (isResizing) {
       const rect = areaRef.current?.getBoundingClientRect();
       if (!rect) return;
       const relX = e.clientX - rect.left;
-      const newScale = Math.max(0.1, Math.min(2, relX / (rect.width * 0.5)));
-      setPlacement((p) => ({ ...p, scale: newScale }));
+      setPlacement((p) => ({ ...p, scale: Math.max(0.1, Math.min(2, relX / (rect.width * 0.5))) }));
     }
   };
 
   const handleMouseUp = () => { setIsDragging(false); setIsResizing(false); };
 
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsResizing(true);
-  };
-
   const handleExportPdf = () => {
-    if (!selectedProduct || !currentArea) return;
-    const canvas = canvasRef.current;
-    const dataUrl = canvas?.toDataURL("image/png") || "";
+    if (!selectedProduct || !selectedArea) return;
     const pdf = generateApprovalPdf({
       productName: selectedProduct.name,
-      technique: TECHNIQUES.find((t) => t.id === technique)?.label || technique,
-      dimensions: { width: currentArea.widthCm, height: currentArea.heightCm },
+      technique: selectedProduct.engraving_type || "N/A",
+      dimensions: { width: selectedArea.max_width, height: selectedArea.max_height },
       colors: logoColors.slice(0, 5),
-      area: currentArea.name,
+      area: selectedArea.location_name,
       date: new Date().toLocaleDateString("pt-BR"),
-      mockupImageDataUrl: dataUrl,
+      mockupImageDataUrl: "",
     });
-    pdf.save(`mockup-${selectedProduct.id}-${Date.now()}.pdf`);
+    pdf.save(`mockup-${selectedProduct.sku}-${Date.now()}.pdf`);
   };
 
-  const handleExportPng = () => {
-    // Compose canvas for export
-    if (!selectedProduct) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 1000;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const link = document.createElement("a");
-    link.download = `mockup-${selectedProduct.id}-${Date.now()}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  };
+  // Top-level categories for filter
+  const topCategories = (categories || []).filter(c => c.level <= 2).slice(0, 12);
 
   return (
     <div className="h-screen flex flex-col">
@@ -120,28 +108,27 @@ const MockupNew = () => {
         <div className="flex items-center gap-3">
           <h1 className="text-sm font-display font-semibold text-foreground">Novo Mockup</h1>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            {(["product", "technique", "canvas"] as const).map((s, i) => (
+            {(["product", "area", "canvas"] as const).map((s, i) => (
               <span key={s} className="flex items-center gap-1">
                 {i > 0 && <ChevronDown className="w-3 h-3 rotate-[-90deg]" />}
                 <button
                   onClick={() => {
                     if (s === "product") setStep(s);
-                    else if (selectedProduct) setStep(s);
+                    else if (s === "area" && selectedProduct) setStep(s);
+                    else if (s === "canvas" && selectedArea) setStep(s);
                   }}
                   className={`px-2.5 py-1 rounded-md transition-colors ${
                     step === s ? "bg-primary/20 text-primary font-medium" : "hover:text-foreground"
-                  } ${!selectedProduct && s !== "product" ? "opacity-40 cursor-not-allowed" : ""}`}
+                  }`}
                 >
-                  {i + 1}. {s === "product" ? "Produto" : s === "technique" ? "Técnica" : "Canvas"}
+                  {i + 1}. {s === "product" ? "Produto" : s === "area" ? "Área / Técnica" : "Canvas"}
                 </button>
               </span>
             ))}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-xs gap-1.5">
-            <Save className="w-3.5 h-3.5" /> Salvar
-          </Button>
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5"><Save className="w-3.5 h-3.5" /> Salvar</Button>
           <Button size="sm" className="text-xs gap-1.5 bg-gradient-primary text-primary-foreground" onClick={handleExportPdf}>
             <FileText className="w-3.5 h-3.5" /> PDF
           </Button>
@@ -150,98 +137,200 @@ const MockupNew = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <AnimatePresence mode="wait">
-          {/* Step 1: Product */}
+          {/* STEP 1: Product selection from DB */}
           {step === "product" && (
-            <motion.div key="product" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 p-6 overflow-auto">
-              <h2 className="text-lg font-display font-bold text-foreground mb-1">Selecione o Produto</h2>
-              <p className="text-sm text-muted-foreground mb-6">Escolha o produto base para o mockup</p>
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {SAMPLE_PRODUCTS.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => { setSelectedProduct(product); setSelectedAreaIdx(0); setStep("technique"); }}
-                    className={`group relative rounded-xl border-2 transition-all overflow-hidden text-left ${
-                      selectedProduct?.id === product.id ? "border-primary shadow-glow" : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="aspect-square bg-surface-2 flex items-center justify-center p-4">
-                      <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain" />
-                    </div>
-                    <div className="p-3 bg-card">
-                      <h3 className="text-sm font-semibold text-foreground">{product.name}</h3>
-                      <p className="text-xs text-muted-foreground">{product.category} · {product.areas.length} área(s)</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 2: Technique */}
-          {step === "technique" && selectedProduct && (
-            <motion.div key="technique" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 p-6 overflow-auto">
-              <h2 className="text-lg font-display font-bold text-foreground mb-1">Técnica de Personalização</h2>
-              <p className="text-sm text-muted-foreground mb-6">{selectedProduct.name}</p>
-
-              {selectedProduct.areas.length > 1 && (
-                <div className="mb-6">
-                  <label className="text-xs font-mono text-muted-foreground uppercase mb-2 block">Área de Personalização</label>
-                  <div className="flex gap-2">
-                    {selectedProduct.areas.map((area, i) => (
-                      <button
-                        key={area.id}
-                        onClick={() => setSelectedAreaIdx(i)}
-                        className={`px-4 py-2.5 rounded-lg text-sm transition-all ${
-                          selectedAreaIdx === i
-                            ? "bg-primary/20 text-primary border border-primary/40"
-                            : "bg-surface-2 text-muted-foreground border border-border hover:border-primary/30"
-                        }`}
-                      >
-                        {area.name}
-                        <span className="block text-[10px] opacity-60 mt-0.5">{area.widthCm}×{area.heightCm}cm</span>
-                      </button>
-                    ))}
+            <motion.div key="product" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col overflow-hidden">
+              {/* Search & filters */}
+              <div className="p-4 border-b border-border space-y-3 shrink-0">
+                <div className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Buscar produto por nome ou SKU... (6.100+ produtos)"
+                      value={search}
+                      onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                    />
                   </div>
                 </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                {TECHNIQUES.filter((t) => currentArea?.techniques.includes(t.id)).map((t) => (
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   <button
-                    key={t.id}
-                    onClick={() => setTechnique(t.id)}
-                    className={`p-5 rounded-xl border-2 text-left transition-all ${
-                      technique === t.id ? "border-primary bg-primary/10 shadow-glow" : "border-border hover:border-primary/40 bg-surface-2"
+                    onClick={() => { setSelectedCategoryId(undefined); setPage(0); }}
+                    className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
+                      !selectedCategoryId ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
                     }`}
                   >
-                    <Palette className={`w-6 h-6 mb-2 ${technique === t.id ? "text-primary" : "text-muted-foreground"}`} />
-                    <h3 className="text-sm font-semibold text-foreground">{t.label}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+                    Todos ({totalProducts})
                   </button>
-                ))}
+                  {topCategories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => { setSelectedCategoryId(cat.id); setPage(0); }}
+                      className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors shrink-0 ${
+                        selectedCategoryId === cat.id ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
+                      }`}
+                    >
+                      {cat.name} ({cat.products_count})
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <Button onClick={() => setStep("canvas")} className="bg-gradient-primary text-primary-foreground">
-                Continuar para Canvas →
-              </Button>
+              {/* Product grid */}
+              <div className="flex-1 overflow-auto p-4">
+                {productsLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    <span className="ml-2 text-sm text-muted-foreground">Carregando produtos...</span>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Package className="w-10 h-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                      {products.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setSelectedArea(null);
+                            setStep("area");
+                          }}
+                          className={`group rounded-lg border transition-all overflow-hidden text-left ${
+                            selectedProduct?.id === product.id ? "border-primary shadow-glow" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="aspect-square bg-surface-2 flex items-center justify-center p-2 relative">
+                            <img
+                              src={getProductImageUrl(product)}
+                              alt={product.name}
+                              className="w-full h-full object-contain"
+                              loading="lazy"
+                              onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                            />
+                            {product.allows_personalization && (
+                              <span className="absolute top-1 right-1 text-[8px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono">
+                                PERS
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-2 bg-card">
+                            <h3 className="text-xs font-semibold text-foreground truncate">{product.name}</h3>
+                            <p className="text-[10px] text-muted-foreground truncate">{product.sku}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border">
+                        <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="text-xs">
+                          <ChevronLeft className="w-3 h-3" /> Anterior
+                        </Button>
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {page + 1} / {totalPages}
+                        </span>
+                        <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="text-xs">
+                          Próximo <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </motion.div>
           )}
 
-          {/* Step 3: Canvas */}
-          {step === "canvas" && selectedProduct && (
+          {/* STEP 2: Area & technique selection */}
+          {step === "area" && selectedProduct && (
+            <motion.div key="area" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 p-6 overflow-auto">
+              <div className="flex items-center gap-4 mb-6">
+                {selectedProductImage && (
+                  <div className="w-24 h-24 rounded-lg bg-surface-2 border border-border flex items-center justify-center p-2 shrink-0">
+                    <img src={selectedProductImage} alt="" className="w-full h-full object-contain" />
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-lg font-display font-bold text-foreground">{selectedProduct.name}</h2>
+                  <p className="text-sm text-muted-foreground">{selectedProduct.sku} · {selectedProduct.brand || "Sem marca"}</p>
+                  {selectedProduct.engraving_type && (
+                    <p className="text-xs text-primary mt-1 font-mono">{selectedProduct.engraving_type}</p>
+                  )}
+                </div>
+              </div>
+
+              <h3 className="text-sm font-display font-semibold text-foreground mb-3">Áreas de Personalização</h3>
+
+              {!printAreas || printAreas.length === 0 ? (
+                <div className="p-4 rounded-xl bg-surface-2 border border-border text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Nenhuma área de personalização cadastrada para este produto.</p>
+                  <p className="text-xs text-muted-foreground">Você pode prosseguir com área manual.</p>
+                  <Button
+                    className="mt-3 bg-gradient-primary text-primary-foreground"
+                    onClick={() => {
+                      setSelectedArea({
+                        id: "manual",
+                        product_id: selectedProduct.id,
+                        tabela_preco_id: "",
+                        max_width: selectedProduct.width_cm || 10,
+                        max_height: selectedProduct.height_cm || 10,
+                        is_curved: false,
+                        shape: "rectangle",
+                        location_code: "FRONTAL",
+                        location_name: "Área Manual",
+                        location_order: 1,
+                        gravacao_largura_max: selectedProduct.width_cm || 10,
+                        gravacao_altura_max: selectedProduct.height_cm || 10,
+                        is_active: true,
+                      });
+                      setStep("canvas");
+                    }}
+                  >
+                    Usar Área Manual →
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {printAreas.map((area) => (
+                    <button
+                      key={area.id}
+                      onClick={() => { setSelectedArea(area); setStep("canvas"); }}
+                      className={`p-4 rounded-xl border-2 text-left transition-all ${
+                        selectedArea?.id === area.id ? "border-primary bg-primary/10 shadow-glow" : "border-border hover:border-primary/40 bg-surface-2"
+                      }`}
+                    >
+                      <Palette className={`w-5 h-5 mb-2 ${selectedArea?.id === area.id ? "text-primary" : "text-muted-foreground"}`} />
+                      <h4 className="text-sm font-semibold text-foreground">{area.location_name}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {area.max_width}×{area.max_height}cm · {area.shape}
+                        {area.is_curved && " · Curvo"}
+                      </p>
+                      <p className="text-[10px] font-mono text-muted-foreground mt-1">{area.location_code}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* STEP 3: Canvas */}
+          {step === "canvas" && selectedProduct && selectedArea && (
             <motion.div key="canvas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex">
-              {/* Canvas area */}
               <div className="flex-1 flex flex-col">
-                {/* Canvas toolbar */}
                 <div className="h-10 bg-surface-1 border-b border-border flex items-center justify-between px-3">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <button className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2"><Move className="w-4 h-4" /></button>
                     <button onClick={() => setPlacement((p) => ({ ...p, rotation: p.rotation + 15 }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2">
                       <RotateCw className="w-4 h-4" />
                     </button>
                     <div className="w-px h-5 bg-border mx-1" />
                     <span className="text-[10px] font-mono text-muted-foreground">
-                      {currentArea?.name} ({currentArea?.widthCm}×{currentArea?.heightCm}cm)
+                      {selectedArea.location_name} ({selectedArea.max_width}×{selectedArea.max_height}cm)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -251,7 +340,6 @@ const MockupNew = () => {
                   </div>
                 </div>
 
-                {/* Canvas */}
                 <div
                   className="flex-1 canvas-grid flex items-center justify-center overflow-auto"
                   onDrop={handleDrop}
@@ -261,73 +349,67 @@ const MockupNew = () => {
                   onMouseLeave={handleMouseUp}
                 >
                   <div
-                    className="relative bg-surface-2 rounded-xl border border-border shadow-elevated select-none"
+                    className="relative bg-white rounded-xl border border-border shadow-elevated select-none"
                     style={{ width: 500, height: 500, transform: `scale(${zoom / 100})` }}
                   >
-                    {/* Product image */}
-                    <img
-                      src={selectedProduct.imageUrl}
-                      alt={selectedProduct.name}
-                      className="w-full h-full object-contain pointer-events-none"
-                      draggable={false}
-                    />
-
-                    {/* Customization area overlay */}
-                    {currentArea && (
-                      <div
-                        ref={areaRef}
-                        className="absolute border-2 border-dashed border-primary/40 rounded bg-primary/5"
-                        style={{
-                          left: currentArea.x,
-                          top: currentArea.y,
-                          width: currentArea.width,
-                          height: currentArea.height,
-                        }}
-                      >
-                        {/* Area label */}
-                        <span className="absolute -top-5 left-0 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                          {currentArea.name}
-                        </span>
-
-                        {/* Logo */}
-                        {logoPreview && (
-                          <div
-                            className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`}
-                            style={{
-                              left: placement.x,
-                              top: placement.y,
-                              width: `${placement.scale * 100}%`,
-                              transform: `rotate(${placement.rotation}deg)`,
-                            }}
-                            onMouseDown={handleLogoMouseDown}
-                          >
-                            <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
-                            {/* Resize handle */}
-                            <div
-                              className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
-                              onMouseDown={handleResizeStart}
-                            >
-                              <GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" />
-                            </div>
-                            {/* Selection border */}
-                            <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" />
-                          </div>
-                        )}
-
-                        {/* Upload prompt in area */}
-                        {!logoPreview && (
-                          <div
-                            className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-colors rounded"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <Upload className="w-6 h-6 text-primary/60 mb-1" />
-                            <span className="text-[10px] text-primary/60 font-mono">Soltar logo aqui</span>
-                          </div>
-                        )}
-                      </div>
+                    {selectedProductImage && (
+                      <img
+                        src={selectedProductImage}
+                        alt={selectedProduct.name}
+                        className="w-full h-full object-contain pointer-events-none"
+                        draggable={false}
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                      />
                     )}
 
-                    <canvas ref={canvasRef} className="hidden" width={1200} height={1000} />
+                    {/* Customization area */}
+                    <div
+                      ref={areaRef}
+                      className="absolute border-2 border-dashed border-primary/40 rounded bg-primary/5"
+                      style={{
+                        left: "50%",
+                        top: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: Math.min(selectedArea.max_width * 20, 400),
+                        height: Math.min(selectedArea.max_height * 20, 400),
+                      }}
+                    >
+                      <span className="absolute -top-5 left-0 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        {selectedArea.location_name}
+                      </span>
+
+                      {logoPreview && (
+                        <div
+                          className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`}
+                          style={{
+                            left: placement.x,
+                            top: placement.y,
+                            width: `${placement.scale * 100}%`,
+                            transform: `rotate(${placement.rotation}deg)`,
+                          }}
+                          onMouseDown={handleLogoMouseDown}
+                        >
+                          <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
+                          <div
+                            className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
+                            onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                          >
+                            <GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" />
+                          </div>
+                          <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" />
+                        </div>
+                      )}
+
+                      {!logoPreview && (
+                        <div
+                          className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-colors rounded"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Upload className="w-6 h-6 text-primary/60 mb-1" />
+                          <span className="text-[10px] text-primary/60 font-mono">Soltar logo aqui</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -336,10 +418,11 @@ const MockupNew = () => {
               <div className="w-60 bg-surface-1 border-l border-border flex flex-col overflow-y-auto">
                 <div className="p-4 border-b border-border">
                   <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Produto</h3>
-                  <p className="text-sm font-semibold text-foreground">{selectedProduct.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {TECHNIQUES.find((t) => t.id === technique)?.label} · {currentArea?.name}
-                  </p>
+                  <p className="text-sm font-semibold text-foreground truncate">{selectedProduct.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{selectedProduct.sku}</p>
+                  {selectedProduct.engraving_type && (
+                    <p className="text-[10px] text-primary font-mono mt-1">{selectedProduct.engraving_type}</p>
+                  )}
                 </div>
 
                 <div className="p-4 border-b border-border">
@@ -389,29 +472,29 @@ const MockupNew = () => {
                   </div>
                 </div>
 
-                {/* Dimension info */}
-                {currentArea && (
-                  <div className="p-4 border-b border-border">
-                    <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Dimensões Reais</h3>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-surface-2 rounded-md p-2">
-                        <span className="text-muted-foreground block text-[10px]">Largura</span>
-                        <span className="text-foreground font-mono">{currentArea.widthCm}cm</span>
-                      </div>
-                      <div className="bg-surface-2 rounded-md p-2">
-                        <span className="text-muted-foreground block text-[10px]">Altura</span>
-                        <span className="text-foreground font-mono">{currentArea.heightCm}cm</span>
-                      </div>
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Área de Gravação</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-surface-2 rounded-md p-2">
+                      <span className="text-muted-foreground block text-[10px]">Largura</span>
+                      <span className="text-foreground font-mono">{selectedArea.max_width}cm</span>
+                    </div>
+                    <div className="bg-surface-2 rounded-md p-2">
+                      <span className="text-muted-foreground block text-[10px]">Altura</span>
+                      <span className="text-foreground font-mono">{selectedArea.max_height}cm</span>
                     </div>
                   </div>
-                )}
+                  <div className="mt-2 bg-surface-2 rounded-md p-2 text-xs">
+                    <span className="text-muted-foreground block text-[10px]">Formato</span>
+                    <span className="text-foreground font-mono">{selectedArea.shape} {selectedArea.is_curved ? "(curvo)" : ""}</span>
+                  </div>
+                </div>
 
-                {/* Export */}
                 <div className="p-4 mt-auto space-y-2">
                   <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground text-xs" onClick={handleExportPdf}>
                     <FileText className="w-3.5 h-3.5" /> Layout de Aprovação (PDF)
                   </Button>
-                  <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng}>
+                  <Button variant="outline" className="w-full gap-2 text-xs">
                     <Download className="w-3.5 h-3.5" /> Baixar PNG
                   </Button>
                 </div>
