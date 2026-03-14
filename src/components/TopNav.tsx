@@ -19,7 +19,7 @@ const TopNav = () => {
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
             <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-display font-bold text-lg text-foreground tracking-tight">
+          <span className="font-display font-bold text-2xl text-foreground tracking-tight">
             Promo <span className="text-gradient-primary">Design</span>
           </span>
         </Link>

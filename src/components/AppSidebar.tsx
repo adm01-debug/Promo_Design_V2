@@ -84,7 +84,7 @@ const AppSidebar = () => {
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
-                className="font-display font-bold text-lg text-foreground tracking-tight whitespace-nowrap"
+                className="font-display font-bold text-2xl text-foreground tracking-tight whitespace-nowrap"
               >
                 Promo <span className="text-gradient-primary">Design</span>
               </motion.span>
