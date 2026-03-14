@@ -121,6 +121,7 @@ const ServiceOrder = () => {
       artColors: searchParams.get("artColors") || "",
       artDpi: "300",
       artFile: searchParams.get("artFile") || "",
+      artFileDataUrl: "",
       quantity: "",
       deliveryDate: "",
       observations: "",
