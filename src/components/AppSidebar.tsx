@@ -44,6 +44,7 @@ const modules = [
       { label: "Cinema Mode", path: "/video/cinema", icon: Eye },
       { label: "Moodboard", path: "/video/moodboard", icon: Palette },
       { label: "Photodump", path: "/video/photodump", icon: Camera },
+      { label: "Character Studio", path: "/video/characters", icon: User },
       { label: "Inspiração", path: "/video/gallery", icon: Eye },
       { label: "Histórico", path: "/video/history", icon: History },
     ],

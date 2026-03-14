@@ -58,6 +58,7 @@ const App = () => (
                   <Route path="/video/photodump" element={<VideoPhotodump />} />
                   <Route path="/video/gallery" element={<VideoGallery />} />
                   <Route path="/video/cinema" element={<VideoCinema />} />
+                  <Route path="/video/characters" element={<CharacterStudio />} />
                   <Route path="/video/history" element={<VideoHistory />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
