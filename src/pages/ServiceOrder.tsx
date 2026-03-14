@@ -175,7 +175,7 @@ const ServiceOrder = () => {
       toast.error("Preencha os campos obrigatórios antes de imprimir");
       return;
     }
-    const doc = generateServiceOrderPdf(form);
+    const doc = generateServiceOrderPdf(form, logoRef.current);
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     const w = window.open(url);
