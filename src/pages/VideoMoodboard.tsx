@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMoodboardStore } from "@/hooks/use-moodboard-preferences";
 import {
   Palette, Sparkles, Sun, Moon, Zap, Heart, Eye, Target,
   ArrowRight, Plus, X, Check, Image as ImageIcon
@@ -40,12 +41,26 @@ const REFERENCE_SCENES = [
 ];
 
 const VideoMoodboard = () => {
+  const navigate = useNavigate();
+  const setPreferences = useMoodboardStore((s) => s.setPreferences);
   const [selectedTone, setSelectedTone] = useState<Tone | null>(null);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [selectedScenes, setSelectedScenes] = useState<string[]>([]);
   const [customColors, setCustomColors] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
+
+  const handleApply = () => {
+    if (!selectedTone || !selectedMood) return;
+    setPreferences({
+      tone: selectedTone,
+      palette: selectedMood,
+      scenes: selectedScenes,
+      customColors,
+      keywords,
+    });
+    navigate("/video/new");
+  };
 
   const toggleScene = (id: string) => {
     setSelectedScenes((prev) =>
@@ -79,11 +94,9 @@ const VideoMoodboard = () => {
             Inspirado no Higgsfield
           </span>
         </div>
-        <Link to="/video/new">
-          <Button size="sm" className="text-xs gap-1.5 bg-gradient-primary text-primary-foreground" disabled={!isComplete}>
+        <Button size="sm" className="text-xs gap-1.5" disabled={!isComplete} onClick={handleApply}>
             Aplicar ao Vídeo <ArrowRight className="w-3.5 h-3.5" />
           </Button>
-        </Link>
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -325,16 +338,15 @@ const VideoMoodboard = () => {
 
           {/* Action */}
           <div className="flex items-center justify-center pb-8">
-            <Link to="/video/new">
               <Button
                 size="lg"
-                className="gap-2 bg-gradient-primary text-primary-foreground px-8"
+                className="gap-2 px-8"
                 disabled={!isComplete}
+                onClick={handleApply}
               >
                 <Sparkles className="w-4 h-4" />
                 Aplicar Moodboard e Criar Vídeo
               </Button>
-            </Link>
           </div>
         </div>
       </div>
