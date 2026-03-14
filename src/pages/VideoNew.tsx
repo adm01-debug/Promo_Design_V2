@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
+import VideoPreviewAnimation from "@/components/VideoPreviewAnimation";
 
 type AspectRatio = "9:16" | "1:1" | "16:9" | "4:5";
 type VideoStyle = "premium" | "dinamico" | "minimalista" | "impactante" | "elegante" | "jovem";
@@ -34,11 +35,16 @@ const TEMPLATES = [
   { id: "reveal", name: "Product Reveal", desc: "Zoom in com brilho", duration: "5s", style: "premium" },
   { id: "showcase", name: "Showcase 360°", desc: "Rotação suave do produto", duration: "10s", style: "elegante" },
   { id: "promo", name: "Flash Promo", desc: "Cortes rápidos com preço", duration: "5s", style: "dinamico" },
-  { id: "lifestyle", name: "Lifestyle Scene", desc: "Produto em contexto de uso", duration: "10s", style: "premium" },
-  { id: "unboxing", name: "Unboxing Effect", desc: "Efeito de abertura de caixa", duration: "5s", style: "impactante" },
-  { id: "minimal", name: "Clean Minimal", desc: "Fundo limpo, fade elegante", duration: "5s", style: "minimalista" },
+  { id: "lifestyle", name: "Lifestyle Scene", desc: "Parallax suave contextual", duration: "10s", style: "premium" },
+  { id: "unboxing", name: "Unboxing Effect", desc: "Abertura de caixa animada", duration: "5s", style: "impactante" },
+  { id: "minimal", name: "Clean Minimal", desc: "Fade elegante e limpo", duration: "5s", style: "minimalista" },
   { id: "social", name: "Social Burst", desc: "Emojis e efeitos sociais", duration: "5s", style: "jovem" },
   { id: "story", name: "Story Carousel", desc: "Slides animados verticais", duration: "10s", style: "dinamico" },
+  { id: "zoompulse", name: "Zoom Pulse", desc: "Pulsação com zoom contínuo", duration: "5s", style: "impactante" },
+  { id: "splitreveal", name: "Split Reveal", desc: "Divisão da tela e revelação", duration: "5s", style: "premium" },
+  { id: "glitch", name: "Glitch Effect", desc: "Distorção digital estilizada", duration: "5s", style: "jovem" },
+  { id: "floating", name: "Floating Particles", desc: "Partículas flutuantes", duration: "10s", style: "elegante" },
+  { id: "cinematic", name: "Cinematic Bars", desc: "Barras cinema + zoom lento", duration: "10s", style: "premium" },
 ];
 
 const ASPECT_PREVIEW: Record<AspectRatio, string> = {
@@ -343,17 +349,15 @@ const VideoNew = () => {
               {/* Right: Live Preview */}
               <div className="flex-1 flex items-center justify-center bg-surface-1 p-8">
                 <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[340px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex flex-col items-center justify-center`}>
-                  {/* Product Image */}
-                  <div className="absolute inset-0 flex items-center justify-center p-6">
-                    <img
-                      src={getProductImageUrl(selectedProduct)}
-                      alt={selectedProduct.name}
-                      className="max-w-[60%] max-h-[50%] object-contain drop-shadow-2xl"
-                    />
-                  </div>
+                  {/* Animated Preview */}
+                  <VideoPreviewAnimation
+                    templateId={creationMode === "template" ? selectedTemplate : "minimal"}
+                    productImage={getProductImageUrl(selectedProduct)}
+                    productName={selectedProduct.name}
+                  />
 
                   {/* Overlay info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card via-card/80 to-transparent">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card via-card/80 to-transparent z-30">
                     <p className="text-xs font-display font-bold text-foreground truncate">{selectedProduct.name}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] font-mono text-primary">{aspectRatio}</span>
@@ -364,15 +368,8 @@ const VideoNew = () => {
                     </div>
                   </div>
 
-                  {/* Play overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-14 h-14 rounded-full glass border border-border/50 flex items-center justify-center opacity-60">
-                      <Play className="w-6 h-6 text-foreground ml-0.5" />
-                    </div>
-                  </div>
-
                   {/* Format indicator corners */}
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-30">
                     <span className="text-[8px] font-mono text-muted-foreground bg-surface-1/80 px-1.5 py-0.5 rounded">
                       {creationMode === "template" ? selectedTemplateMeta?.name : "IA Gen"}
                     </span>
@@ -389,17 +386,12 @@ const VideoNew = () => {
           {step === "preview" && selectedProduct && (
             <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-8">
               <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[400px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex items-center justify-center mb-6`}>
-                <img
-                  src={getProductImageUrl(selectedProduct)}
-                  alt={selectedProduct.name}
-                  className="max-w-[55%] max-h-[45%] object-contain drop-shadow-2xl"
+                <VideoPreviewAnimation
+                  templateId={creationMode === "template" ? selectedTemplate : "minimal"}
+                  productImage={getProductImageUrl(selectedProduct)}
+                  productName={selectedProduct.name}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center animate-pulse">
-                    <Play className="w-7 h-7 text-primary ml-0.5" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent z-30">
                   <p className="text-sm font-display font-bold text-foreground">{selectedProduct.name}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">
                     {aspectRatio} · {duration}s · {videoStyle} · {creationMode === "template" ? selectedTemplateMeta?.name : "IA"}
