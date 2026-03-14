@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
-import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp";
+import { getWarpedPreview, clearWarpCache } from "@/lib/mesh-warp";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
 // ──────────── View definitions ────────────
