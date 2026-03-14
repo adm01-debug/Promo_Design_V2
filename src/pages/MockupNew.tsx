@@ -109,8 +109,6 @@ const MockupNew = () => {
     pdf.save(`mockup-${selectedProduct.sku}-${Date.now()}.pdf`);
   };
 
-  // Top-level categories for filter
-  const topCategories = (categories || []).filter(c => c.level <= 2).slice(0, 12);
 
   return (
     <div className="h-screen flex flex-col">
