@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import TopNav from "@/components/TopNav";
+
 import {
   MousePointer2, Type, Square, Circle, Image, Download,
   ZoomIn, ZoomOut, Undo, Redo, Layers, Move,
