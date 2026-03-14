@@ -32,6 +32,17 @@ const modules = [
       { label: "Histórico", path: "/magicup/history", icon: History },
     ],
   },
+  {
+    id: "video",
+    label: "Video Studio",
+    icon: Video,
+    path: "/video",
+    description: "Vídeos Publicitários",
+    children: [
+      { label: "Novo Vídeo", path: "/video/new", icon: Film },
+      { label: "Histórico", path: "/video/history", icon: History },
+    ],
+  },
 ];
 
 const AppSidebar = () => {
