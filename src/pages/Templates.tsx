@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import TopNav from "@/components/TopNav";
+
 import { Search, Filter } from "lucide-react";
 import mockupPhone from "@/assets/mockup-phone.jpg";
 import mockupLaptop from "@/assets/mockup-laptop.jpg";
