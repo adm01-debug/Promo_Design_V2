@@ -19,6 +19,8 @@ import ArtUploadField from "@/components/service-order/ArtUploadField";
 import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrderPdf";
 import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
 import { getLogoDataUrl } from "@/lib/logo-loader";
+import PdfPreviewDialog from "@/components/service-order/PdfPreviewDialog";
+import { Eye } from "lucide-react";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
