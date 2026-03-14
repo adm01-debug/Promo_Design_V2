@@ -2,16 +2,37 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Layers, Image, Sparkles, History, Settings, ChevronLeft,
-  ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film,
-  Camera, Eye, User, ClipboardList, BarChart3
+  Layers,
+  Image,
+  Sparkles,
+  History,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  FolderOpen,
+  Palette,
+  Wand2,
+  BookOpen,
+  Video,
+  Film,
+  Camera,
+  Eye,
+  User,
+  ClipboardList,
+  BarChart3,
+  Bell,
+  Keyboard,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const modules = [
   {
@@ -58,6 +79,12 @@ const modules = [
   },
 ];
 
+const notifications = [
+  "Novo projeto disponível no Mockup Studio",
+  "Seu último PDF foi gerado com sucesso",
+  "Dica: use ⌘K para navegação rápida",
+];
+
 const AppSidebar = () => {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -71,11 +98,11 @@ const AppSidebar = () => {
     setExpandedModule(expandedModule === id ? null : id);
   };
 
-  const ModuleButton = ({ mod }: { mod: typeof modules[0] }) => {
+  const ModuleButton = ({ mod }: { mod: (typeof modules)[0] }) => {
     const isActive = location.pathname.startsWith(mod.path);
     const btn = (
       <button
-        onClick={() => collapsed ? undefined : toggleModule(mod.id)}
+        onClick={() => (collapsed ? undefined : toggleModule(mod.id))}
         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${
           isActive
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -111,13 +138,16 @@ const AppSidebar = () => {
     return btn;
   };
 
+  const openShortcuts = () => {
+    window.dispatchEvent(new Event("promo-open-shortcuts"));
+  };
+
   return (
     <motion.aside
       animate={{ width: collapsed ? 64 : 240 }}
       transition={{ duration: 0.2 }}
       className="h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40"
     >
-      {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-sidebar-border">
         <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
@@ -138,7 +168,6 @@ const AppSidebar = () => {
         </Link>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
         {modules.map((mod) => {
           const isExpanded = expandedModule === mod.id && !collapsed;
@@ -183,9 +212,7 @@ const AppSidebar = () => {
         })}
       </nav>
 
-      {/* User + Bottom */}
       <div className="border-t border-sidebar-border p-2 space-y-1">
-        {/* User indicator */}
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -206,13 +233,43 @@ const AppSidebar = () => {
           <ThemeToggle />
         </div>
 
-        {/* ⌘K hint */}
         {!collapsed && (
           <div className="flex items-center justify-center gap-1 py-1">
-            <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">⌘K</kbd>
+            <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">
+              ⌘K
+            </kbd>
             <span className="text-[9px] text-sidebar-foreground/40">Busca rápida</span>
           </div>
         )}
+
+        <div className="grid grid-cols-2 gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors relative">
+                <Bell className="w-4 h-4" />
+                {!collapsed && <span className="text-xs">Alertas</span>}
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notifications.map((item) => (
+                <DropdownMenuItem key={item} className="text-xs text-muted-foreground py-2 cursor-default">
+                  {item}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <button
+            onClick={openShortcuts}
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <Keyboard className="w-4 h-4" />
+            {!collapsed && <span className="text-xs">Atalhos</span>}
+          </button>
+        </div>
 
         <Link
           to="/settings"
@@ -221,6 +278,7 @@ const AppSidebar = () => {
           <Settings className="w-5 h-5 shrink-0" />
           {!collapsed && <span className="text-sm">Configurações</span>}
         </Link>
+
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
