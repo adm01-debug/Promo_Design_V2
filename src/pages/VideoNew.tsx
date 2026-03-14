@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
+import VideoPreviewAnimation from "@/components/VideoPreviewAnimation";
 
 type AspectRatio = "9:16" | "1:1" | "16:9" | "4:5";
 type VideoStyle = "premium" | "dinamico" | "minimalista" | "impactante" | "elegante" | "jovem";
