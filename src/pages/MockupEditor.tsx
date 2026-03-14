@@ -609,6 +609,40 @@ const MockupEditor = () => {
               </div>
             </div>
           </div>
+          {/* Auto-Fit & Surface */}
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Auto-Fit</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] gap-1"
+                disabled={!logoPreview}
+                onClick={() => logoPreview && autoFitLogo(logoPreview)}
+              >
+                <Maximize className="w-3 h-3" /> Encaixar
+              </Button>
+            </div>
+            <div>
+              <label className="text-[10px] font-mono text-muted-foreground mb-1.5 block">Superfície</label>
+              <div className="grid grid-cols-2 gap-1">
+                {PERSPECTIVE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => setSurfaceType(preset.id)}
+                    title={preset.description}
+                    className={`px-2 py-1.5 rounded text-[10px] transition-all ${
+                      surfaceType === preset.id
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "bg-muted text-muted-foreground border border-border hover:border-primary/30"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
           <div className="p-4 border-b border-border">
             <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Posição — {currentView.label}
