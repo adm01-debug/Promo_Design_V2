@@ -22,10 +22,7 @@ const templates = [
 
 const Templates = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <TopNav />
-
-      <div className="max-w-6xl mx-auto px-6 pt-24 pb-20">
+    <div className="p-4 sm:p-6 max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
