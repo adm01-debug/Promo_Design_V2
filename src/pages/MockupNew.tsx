@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
-import { countUniqueColors, composeMockup, loadImageWithFallback } from "@/lib/canvas-utils";
+import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 
@@ -56,6 +56,7 @@ const MockupNew = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
 
   // Undo/Redo
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
@@ -88,6 +89,10 @@ const MockupNew = () => {
     : null;
 
   const colorVariants = (variants || []).filter(v => v.color_hex);
+
+  // Area dimensions (used by auto-fit and canvas)
+  const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
+  const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
 
   // ──────────────── History helpers ────────────────
   const pushHistory = useCallback((p: Placement, logo: string | null) => {
@@ -128,19 +133,43 @@ const MockupNew = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [step, undo, redo]);
 
+  const autoFitLogo = useCallback((dataUrl: string) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const fit = calculateAutoFit(img, areaW, areaH);
+      const newPlacement = { ...placement, x: fit.x, y: fit.y, scale: fit.scale };
+      setPlacement(newPlacement);
+      pushHistory(newPlacement, dataUrl);
+      toast.success("Logo ajustado automaticamente à área");
+    };
+    img.src = dataUrl;
+  }, [areaW, areaH, placement, pushHistory]);
+
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
       setLogoPreview(dataUrl);
-      pushHistory(placement, dataUrl);
+      // Auto-detect surface type from template
+      if (selectedTemplate) {
+        const tpl = MOCKUP_TEMPLATES.find(t => t.id === selectedTemplate);
+        if (tpl) setSurfaceType(detectSurfaceType(tpl.category, tpl.id));
+      }
+      // Auto-fit
       const img = new window.Image();
-      img.onload = () => setLogoColors(countUniqueColors(img));
+      img.onload = () => {
+        setLogoColors(countUniqueColors(img));
+        const fit = calculateAutoFit(img, areaW, areaH);
+        const newPlacement = { ...placement, x: fit.x, y: fit.y, scale: fit.scale };
+        setPlacement(newPlacement);
+        pushHistory(newPlacement, dataUrl);
+        toast.success("Logo auto-encaixado na área de gravação");
+      };
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, [placement, pushHistory]);
+  }, [placement, pushHistory, areaW, areaH, selectedTemplate]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -260,8 +289,6 @@ const MockupNew = () => {
 
   // Canvas size
   const CANVAS_SIZE = 500;
-  const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
-  const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
 
   return (
     <div className="h-screen flex flex-col">
@@ -678,11 +705,19 @@ const MockupNew = () => {
                             left: placement.x,
                             top: placement.y,
                             width: `${placement.scale * 100}%`,
-                            transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
+                            ...(surfaceType !== "flat" ? PERSPECTIVE_PRESETS.find(p => p.id === surfaceType)?.css : {}),
                           }}
                           onMouseDown={handleLogoMouseDown}
                         >
-                          <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
+                          <img
+                            src={logoPreview}
+                            alt="Logo"
+                            className="w-full h-full object-contain pointer-events-none"
+                            draggable={false}
+                            style={{
+                              transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
+                            }}
+                          />
                           <div
                             className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
                             onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
@@ -775,6 +810,41 @@ const MockupNew = () => {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Auto-Fit & Surface */}
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Auto-Fit</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1"
+                      disabled={!logoPreview}
+                      onClick={() => logoPreview && autoFitLogo(logoPreview)}
+                    >
+                      <Maximize className="w-3 h-3" /> Encaixar
+                    </Button>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-muted-foreground mb-1.5 block">Superfície</label>
+                    <div className="grid grid-cols-2 gap-1">
+                      {PERSPECTIVE_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => setSurfaceType(preset.id)}
+                          title={preset.description}
+                          className={`px-2 py-1.5 rounded text-[10px] transition-all ${
+                            surfaceType === preset.id
+                              ? "bg-primary/20 text-primary border border-primary/40"
+                              : "bg-muted text-muted-foreground border border-border hover:border-primary/30"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="p-4 border-b border-border">

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { loadImageWithFallback, countUniqueColors } from "@/lib/canvas-utils";
+import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
 // ──────────── View definitions ────────────
@@ -65,6 +65,7 @@ const MockupEditor = () => {
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
   const [showTexture, setShowTexture] = useState(true);
   const [logoOpacity, setLogoOpacity] = useState(100);
+  const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
@@ -82,12 +83,26 @@ const MockupEditor = () => {
   const currentPlacement = placements[activeView] || INITIAL_PLACEMENT;
   const currentView = VIEWS.find(v => v.id === activeView)!;
 
+  const CANVAS_SIZE = 460;
+  const viewAreaW = (currentView.areaPercent.w / 100) * CANVAS_SIZE;
+  const viewAreaH = (currentView.areaPercent.h / 100) * CANVAS_SIZE;
+
   const updatePlacement = (update: Partial<Placement>) => {
     setPlacements(prev => ({
       ...prev,
       [activeView]: { ...prev[activeView], ...update },
     }));
   };
+
+  const autoFitLogo = useCallback((dataUrl: string) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const fit = calculateAutoFit(img, viewAreaW, viewAreaH);
+      updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale });
+      toast.success("Logo auto-encaixado");
+    };
+    img.src = dataUrl;
+  }, [viewAreaW, viewAreaH]);
 
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
@@ -96,11 +111,16 @@ const MockupEditor = () => {
       const dataUrl = e.target?.result as string;
       setLogoPreview(dataUrl);
       const img = new window.Image();
-      img.onload = () => setLogoColors(countUniqueColors(img));
+      img.onload = () => {
+        setLogoColors(countUniqueColors(img));
+        const fit = calculateAutoFit(img, viewAreaW, viewAreaH);
+        updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale });
+        toast.success("Logo auto-encaixado na área de gravação");
+      };
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [viewAreaW, viewAreaH]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -221,9 +241,6 @@ const MockupEditor = () => {
     toast.success("PDF de aprovação gerado");
   };
 
-  const CANVAS_SIZE = 460;
-  const viewAreaW = (currentView.areaPercent.w / 100) * CANVAS_SIZE;
-  const viewAreaH = (currentView.areaPercent.h / 100) * CANVAS_SIZE;
 
   return (
     <div className="h-screen flex flex-col">
@@ -395,12 +412,16 @@ const MockupEditor = () => {
                       left: currentPlacement.x,
                       top: currentPlacement.y,
                       width: `${currentPlacement.scale * 100}%`,
-                      transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
+                      ...(surfaceType !== "flat" ? PERSPECTIVE_PRESETS.find(p => p.id === surfaceType)?.css : {}),
                     }}
                     onMouseDown={handleLogoMouseDown}
                   >
                     <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false}
-                      style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100 }}
+                      style={{
+                        mixBlendMode: blendMode,
+                        opacity: logoOpacity / 100,
+                        transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
+                      }}
                     />
                     <div
                       className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
@@ -585,6 +606,40 @@ const MockupEditor = () => {
                 >
                   {showTexture ? "On" : "Off"}
                 </button>
+              </div>
+            </div>
+          </div>
+          {/* Auto-Fit & Surface */}
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Auto-Fit</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] gap-1"
+                disabled={!logoPreview}
+                onClick={() => logoPreview && autoFitLogo(logoPreview)}
+              >
+                <Maximize className="w-3 h-3" /> Encaixar
+              </Button>
+            </div>
+            <div>
+              <label className="text-[10px] font-mono text-muted-foreground mb-1.5 block">Superfície</label>
+              <div className="grid grid-cols-2 gap-1">
+                {PERSPECTIVE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => setSurfaceType(preset.id)}
+                    title={preset.description}
+                    className={`px-2 py-1.5 rounded text-[10px] transition-all ${
+                      surfaceType === preset.id
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "bg-muted text-muted-foreground border border-border hover:border-primary/30"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
