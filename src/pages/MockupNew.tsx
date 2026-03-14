@@ -17,6 +17,7 @@ const MockupNew = () => {
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
   const [selectedArea, setSelectedArea] = useState<DbPrintAreaTechnique | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<DbProductVariant | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoColors, setLogoColors] = useState<string[]>([]);
