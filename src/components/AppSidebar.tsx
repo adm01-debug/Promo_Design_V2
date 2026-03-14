@@ -41,6 +41,9 @@ const modules = [
     description: "Vídeos Publicitários",
     children: [
       { label: "Novo Vídeo", path: "/video/new", icon: Film },
+      { label: "Moodboard", path: "/video/moodboard", icon: Palette },
+      { label: "Photodump", path: "/video/photodump", icon: Camera },
+      { label: "Inspiração", path: "/video/gallery", icon: Eye },
       { label: "Histórico", path: "/video/history", icon: History },
     ],
   },
