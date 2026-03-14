@@ -129,19 +129,43 @@ const MockupNew = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [step, undo, redo]);
 
+  const autoFitLogo = useCallback((dataUrl: string) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const fit = calculateAutoFit(img, areaW, areaH);
+      const newPlacement = { ...placement, x: fit.x, y: fit.y, scale: fit.scale };
+      setPlacement(newPlacement);
+      pushHistory(newPlacement, dataUrl);
+      toast.success("Logo ajustado automaticamente à área");
+    };
+    img.src = dataUrl;
+  }, [areaW, areaH, placement, pushHistory]);
+
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
       setLogoPreview(dataUrl);
-      pushHistory(placement, dataUrl);
+      // Auto-detect surface type from template
+      if (selectedTemplate) {
+        const tpl = MOCKUP_TEMPLATES.find(t => t.id === selectedTemplate);
+        if (tpl) setSurfaceType(detectSurfaceType(tpl.category, tpl.id));
+      }
+      // Auto-fit
       const img = new window.Image();
-      img.onload = () => setLogoColors(countUniqueColors(img));
+      img.onload = () => {
+        setLogoColors(countUniqueColors(img));
+        const fit = calculateAutoFit(img, areaW, areaH);
+        const newPlacement = { ...placement, x: fit.x, y: fit.y, scale: fit.scale };
+        setPlacement(newPlacement);
+        pushHistory(newPlacement, dataUrl);
+        toast.success("Logo auto-encaixado na área de gravação");
+      };
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, [placement, pushHistory]);
+  }, [placement, pushHistory, areaW, areaH, selectedTemplate]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
