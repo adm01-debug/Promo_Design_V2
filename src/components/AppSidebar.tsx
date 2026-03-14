@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
   ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film,
-  Camera, Eye, User
+  Camera, Eye, User, ClipboardList
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
