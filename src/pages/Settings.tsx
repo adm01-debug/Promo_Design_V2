@@ -8,7 +8,7 @@ const Settings = () => {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4">
         <h1 className="text-lg font-display font-bold text-foreground">Configurações</h1>
-        <p className="text-xs text-muted-foreground">Preferências do Promo Design Studio</p>
+        <p className="text-xs text-muted-foreground">Preferências do Promo Design</p>
       </div>
 
       <div className="max-w-2xl mx-auto p-6 space-y-6">
@@ -32,7 +32,7 @@ const Settings = () => {
             <h3 className="text-sm font-semibold text-foreground">Sobre</h3>
           </div>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong className="text-foreground">Promo Design Studio</strong> — Plataforma de criação de mockups e ordens de serviço para produtos promocionais.</p>
+            <p><strong className="text-foreground">Promo Design</strong> — Plataforma de criação de mockups e ordens de serviço para produtos promocionais.</p>
             <p className="text-xs">Versão 1.0.0</p>
           </div>
         </section>

@@ -20,7 +20,7 @@ const TopNav = () => {
             <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="font-display font-bold text-lg text-foreground tracking-tight">
-            Promo <span className="text-gradient-primary">Design Studio</span>
+            Promo <span className="text-gradient-primary">Design</span>
           </span>
         </Link>
 
