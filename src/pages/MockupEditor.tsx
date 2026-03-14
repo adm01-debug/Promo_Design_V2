@@ -62,6 +62,9 @@ const MockupEditor = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
+  const [blendMode, setBlendMode] = useState<BlendMode>("normal");
+  const [showTexture, setShowTexture] = useState(true);
+  const [logoOpacity, setLogoOpacity] = useState(100);
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
