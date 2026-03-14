@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import "@/lib/db-explorer"; // TEMP: auto-explore database on load
 import { Link } from "react-router-dom";
 import { Image, Sparkles, ArrowRight, Clock, TrendingUp } from "lucide-react";
 
