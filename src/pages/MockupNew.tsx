@@ -58,6 +58,8 @@ const MockupNew = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
+  const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
+  const [isWarping, setIsWarping] = useState(false);
 
   // Undo/Redo
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
