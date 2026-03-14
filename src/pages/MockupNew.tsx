@@ -35,7 +35,7 @@ const MockupNew = () => {
   const { data: productsData, isLoading: productsLoading } = useProducts({
     search, page, pageSize: 24, onlyWithImages: false,
   });
-  const { data: categories } = useCategories();
+  
   const { data: productImages } = useProductImages(selectedProduct?.id || null);
   const { data: printAreas } = usePrintAreaTechniques(selectedProduct?.id || null);
   const { data: variants } = useProductVariants(selectedProduct?.id || null);
