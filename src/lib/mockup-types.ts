@@ -1,3 +1,8 @@
+import productCaneca from "@/assets/product-caneca.png";
+import productCamiseta from "@/assets/product-camiseta.png";
+import productSqueeze from "@/assets/product-squeeze.png";
+import productCaderno from "@/assets/product-caderno.png";
+
 export type Technique = "laser" | "serigrafia" | "uv";
 
 export interface Product {
