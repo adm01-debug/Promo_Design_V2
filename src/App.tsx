@@ -15,6 +15,7 @@ const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const MockupNew = lazyWithRetry(() => import("./pages/MockupNew"));
 const MockupDrafts = lazyWithRetry(() => import("./pages/MockupDrafts"));
 const MockupHistory = lazyWithRetry(() => import("./pages/MockupHistory"));
+const MockupEditor = lazyWithRetry(() => import("./pages/MockupEditor"));
 const MagicUpGenerate = lazyWithRetry(() => import("./pages/MagicUpGenerate"));
 const MagicUpPrompts = lazyWithRetry(() => import("./pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./pages/MagicUpHistory"));
