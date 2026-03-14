@@ -45,6 +45,13 @@ const TEMPLATES = [
   { id: "glitch", name: "Glitch Effect", desc: "Distorção digital estilizada", duration: "5s", style: "jovem" },
   { id: "floating", name: "Floating Particles", desc: "Partículas flutuantes", duration: "10s", style: "elegante" },
   { id: "cinematic", name: "Cinematic Bars", desc: "Barras cinema + zoom lento", duration: "10s", style: "premium" },
+  { id: "neonglow", name: "Neon Glow", desc: "Contorno neon pulsante", duration: "5s", style: "jovem" },
+  { id: "bouncedrop", name: "Bounce Drop", desc: "Queda com efeito mola", duration: "5s", style: "dinamico" },
+  { id: "morphshapes", name: "Morph Shapes", desc: "Formas geométricas rotativas", duration: "10s", style: "elegante" },
+  { id: "spotlight", name: "Spotlight", desc: "Foco de luz em movimento", duration: "10s", style: "premium" },
+  { id: "typewriter", name: "Typewriter", desc: "Texto animado letra a letra", duration: "5s", style: "impactante" },
+  { id: "colorsweep", name: "Color Sweep", desc: "Onda de cor passando", duration: "5s", style: "minimalista" },
+  { id: "matrixrain", name: "Matrix Rain", desc: "Chuva de código digital", duration: "10s", style: "jovem" },
 ];
 
 const ASPECT_PREVIEW: Record<AspectRatio, string> = {
