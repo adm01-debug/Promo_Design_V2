@@ -4,10 +4,11 @@ import { motion } from "framer-motion";
 import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import {
   Film, Sun, Moon, Contrast, Droplets, Thermometer,
-  SlidersHorizontal, RotateCcw, Download, Sparkles, Eye
+  SlidersHorizontal, RotateCcw, Download, Sparkles, Eye, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useProducts, getProductImageUrl } from "@/hooks/use-products";
 
 type GradingPreset = {
   id: string;
@@ -90,6 +91,11 @@ const VideoCinema = () => {
   const [vignette, setVignette] = useState(selectedPreset.filters.vignette);
   const [letterbox, setLetterbox] = useState(true);
   const [grain, setGrain] = useState(true);
+  const [selectedProductIdx, setSelectedProductIdx] = useState(0);
+
+  const { data: productsData } = useProducts({ page: 0, pageSize: 8, onlyWithImages: true });
+  const products = productsData?.products || [];
+  const selectedProduct = products[selectedProductIdx] || null;
 
   const applyPreset = (preset: GradingPreset) => {
     setSelectedPreset(preset);
@@ -160,29 +166,48 @@ const VideoCinema = () => {
           <div className="relative w-full max-w-4xl aspect-video mx-auto">
             <div className="absolute inset-0 rounded-sm overflow-hidden" style={filterStyle}>
               <div
-                className="w-full h-full"
+                className="w-full h-full relative"
                 style={{
                   background: `linear-gradient(135deg, ${selectedPreset.colors[2]} 0%, ${selectedPreset.colors[0]} 40%, ${selectedPreset.colors[1]} 70%, ${selectedPreset.colors[2]} 100%)`,
                 }}
               >
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center z-10">
-                    <motion.div
-                      key={selectedPreset.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
+                {/* Product image overlay */}
+                {selectedProduct && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <motion.img
+                      key={`${selectedProduct.id}-${selectedPreset.id}`}
+                      src={getProductImageUrl(selectedProduct)}
+                      alt={selectedProduct.name}
+                      className="max-w-[60%] max-h-[70%] object-contain drop-shadow-2xl"
+                      initial={{ opacity: 0, scale: 0.85 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <Film className="w-16 h-16 text-white/40 mx-auto mb-4" />
-                      <h2 className="text-2xl font-bold text-white/90 mb-1">
-                        {selectedPreset.label}
-                      </h2>
-                      <p className="text-sm text-white/50 font-mono">
-                        Preview cinematográfico
-                      </p>
-                    </motion.div>
+                      transition={{ duration: 0.6 }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                    />
                   </div>
-                </div>
+                )}
+
+                {/* Fallback when no product */}
+                {!selectedProduct && (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center z-10">
+                      <motion.div
+                        key={selectedPreset.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <Film className="w-16 h-16 text-white/40 mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-white/90 mb-1">
+                          {selectedPreset.label}
+                        </h2>
+                        <p className="text-sm text-white/50 font-mono">
+                          Preview cinematográfico
+                        </p>
+                      </motion.div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -207,10 +232,37 @@ const VideoCinema = () => {
               <span className="text-[10px] font-mono text-white/50 bg-black/50 px-2 py-1 rounded">
                 LOG → {selectedPreset.label}
               </span>
+              {selectedProduct && (
+                <span className="text-[10px] font-mono text-white/70 bg-black/50 px-2 py-1 rounded">
+                  {selectedProduct.name}
+                </span>
+              )}
             </div>
           </div>
-        </div>
 
+          {/* Product strip */}
+          {products.length > 0 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-2 rounded-xl">
+              <Package className="w-3 h-3 text-white/50 shrink-0" />
+              {products.slice(0, 6).map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProductIdx(i)}
+                  className={`w-10 h-10 rounded-lg border-2 overflow-hidden transition-all ${
+                    selectedProductIdx === i ? "border-primary scale-110" : "border-white/20 hover:border-white/50"
+                  }`}
+                >
+                  <img
+                    src={getProductImageUrl(p)}
+                    alt={p.name}
+                    className="w-full h-full object-contain bg-white/10 p-0.5"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Right Panel */}
         <div className="w-[340px] border-l border-border overflow-y-auto shrink-0 bg-card">
           <div className="p-4 space-y-6">
