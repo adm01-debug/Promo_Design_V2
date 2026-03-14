@@ -160,6 +160,19 @@ const ServiceOrder = () => {
     setSaved(true);
   };
 
+  const handlePreviewPdf = () => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Preencha os campos obrigatórios antes de visualizar o PDF");
+      return;
+    }
+    const doc = generateServiceOrderPdf(form, logoRef.current);
+    const blob = doc.output("blob");
+    setPreviewBlob(blob);
+    setPreviewOpen(true);
+  };
+
   const handleDownloadPdf = () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
