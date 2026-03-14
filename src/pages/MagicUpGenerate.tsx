@@ -217,7 +217,7 @@ const MagicUpGenerate = () => {
 
           {/* Smart prompt preview */}
           {selectedProduct && smartPrompt && (
-            <div className="p-3 flex-1 overflow-auto">
+            <div className="p-3 border-b border-border">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Prompt Inteligente</h3>
                 <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={applySmartPrompt}>
@@ -229,6 +229,18 @@ const MagicUpGenerate = () => {
               </p>
             </div>
           )}
+
+          {/* Advanced Prompt Generator (4 axes) */}
+          <div className="p-3 flex-1 overflow-auto">
+            <div className="flex items-center gap-1.5 mb-3">
+              <Target className="w-3.5 h-3.5 text-primary" />
+              <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Gerador de Campanha</h3>
+            </div>
+            <PromptGenerator
+              onGenerate={(p) => setPrompt(p)}
+              productName={selectedProduct?.name}
+            />
+          </div>
 
           {/* Product info */}
           {selectedProduct && (
