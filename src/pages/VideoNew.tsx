@@ -171,6 +171,32 @@ const VideoNew = () => {
           </div>
         )}
 
+        {/* Cinema Mode Banner */}
+        {cinema && (
+          <div className="shrink-0 mx-4 mt-2 mb-1 flex items-center gap-3 p-3 rounded-xl border border-secondary/30 bg-secondary/5">
+            <Film className="w-4 h-4 text-secondary shrink-0" />
+            <div className="flex-1 flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-mono text-muted-foreground uppercase">Cinema:</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary-foreground font-medium">
+                {cinema.presetLabel}
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-foreground font-medium">
+                {cinema.lightingLabel}
+              </span>
+              {cinema.letterbox && (
+                <span className="text-[10px] text-muted-foreground">Letterbox</span>
+              )}
+              {cinema.grain && (
+                <span className="text-[10px] text-muted-foreground">Grain</span>
+              )}
+            </div>
+            <Link to="/video/cinema" className="text-[10px] text-secondary hover:underline shrink-0">Editar</Link>
+            <button onClick={clearCinema} className="text-muted-foreground hover:text-destructive shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="flex-1 flex overflow-hidden">
         <AnimatePresence mode="wait">
           {/* STEP 1: Product Selection */}
