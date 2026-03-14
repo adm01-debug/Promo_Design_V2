@@ -140,6 +140,8 @@ const MockupEditor = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
+      clearWarpCache();
+      setWarpedLogoUrl(null);
       setLogoPreview(dataUrl);
       const img = new window.Image();
       img.onload = () => {
