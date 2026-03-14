@@ -38,6 +38,7 @@ const MockupNew = () => {
   const { data: categories } = useCategories();
   const { data: productImages } = useProductImages(selectedProduct?.id || null);
   const { data: printAreas } = usePrintAreaTechniques(selectedProduct?.id || null);
+  const { data: variants } = useProductVariants(selectedProduct?.id || null);
 
   const products = productsData?.products || [];
   const totalProducts = productsData?.total || 0;
