@@ -6,8 +6,8 @@ import {
   Search, Loader2, Package, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts, useProductImages, usePrintAreaTechniques, useCategories, getProductImageUrl } from "@/hooks/use-products";
-import type { DbProduct, DbPrintAreaTechnique } from "@/lib/db-types";
+import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, useCategories, getProductImageUrl } from "@/hooks/use-products";
+import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
 import { countUniqueColors } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
@@ -17,6 +17,7 @@ const MockupNew = () => {
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
   const [selectedArea, setSelectedArea] = useState<DbPrintAreaTechnique | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<DbProductVariant | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoColors, setLogoColors] = useState<string[]>([]);
@@ -37,15 +38,25 @@ const MockupNew = () => {
   const { data: categories } = useCategories();
   const { data: productImages } = useProductImages(selectedProduct?.id || null);
   const { data: printAreas } = usePrintAreaTechniques(selectedProduct?.id || null);
+  const { data: variants } = useProductVariants(selectedProduct?.id || null);
 
   const products = productsData?.products || [];
   const totalProducts = productsData?.total || 0;
   const totalPages = Math.ceil(totalProducts / 24);
 
-  // Get best display image for selected product
+  // Get best display image — variant thumbnail > color-matched image > primary > fallback
   const selectedProductImage = selectedProduct
-    ? (productImages?.find(i => i.is_primary)?.url_cdn || getProductImageUrl(selectedProduct))
+    ? (
+        selectedVariant?.selected_thumbnail ||
+        productImages?.find(i => selectedVariant?.id && i.variant_id === selectedVariant.id)?.url_cdn ||
+        productImages?.find(i => selectedVariant?.color_name && i.applies_to_color && i.color_id === selectedVariant.id)?.url_cdn ||
+        productImages?.find(i => i.is_primary)?.url_cdn ||
+        getProductImageUrl(selectedProduct)
+      )
     : null;
+
+  // Color variants with hex colors
+  const colorVariants = (variants || []).filter(v => v.color_hex);
 
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
@@ -198,6 +209,7 @@ const MockupNew = () => {
                           onClick={() => {
                             setSelectedProduct(product);
                             setSelectedArea(null);
+                            setSelectedVariant(null);
                             setStep("area");
                           }}
                           className={`group rounded-lg border transition-all overflow-hidden text-left ${
@@ -263,6 +275,47 @@ const MockupNew = () => {
                   )}
                 </div>
               </div>
+
+              {/* Color variants */}
+              {colorVariants.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-display font-semibold text-foreground mb-3">Cores Disponíveis</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {colorVariants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        onClick={() => setSelectedVariant(selectedVariant?.id === variant.id ? null : variant)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left ${
+                          selectedVariant?.id === variant.id
+                            ? "border-primary bg-primary/10 shadow-glow"
+                            : "border-border hover:border-primary/40 bg-surface-2"
+                        }`}
+                        title={variant.color_name || variant.name}
+                      >
+                        <div
+                          className="w-5 h-5 rounded-full border border-border shrink-0"
+                          style={{ backgroundColor: variant.color_hex || "#ccc" }}
+                        />
+                        <span className="text-xs text-foreground">{variant.color_name || variant.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Also show product.colors if no variants */}
+              {colorVariants.length === 0 && selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-display font-semibold text-foreground mb-3">Cores</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProduct.colors.map((color, i) => (
+                      <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs text-foreground">
+                        {color}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <h3 className="text-sm font-display font-semibold text-foreground mb-3">Áreas de Personalização</h3>
 
@@ -422,6 +475,28 @@ const MockupNew = () => {
                   <p className="text-xs text-muted-foreground mt-0.5">{selectedProduct.sku}</p>
                   {selectedProduct.engraving_type && (
                     <p className="text-[10px] text-primary font-mono mt-1">{selectedProduct.engraving_type}</p>
+                  )}
+                  {/* Variant color swatches in canvas panel */}
+                  {colorVariants.length > 0 && (
+                    <div className="mt-3">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase">Cor</label>
+                      <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                        {colorVariants.map((v) => (
+                          <button
+                            key={v.id}
+                            onClick={() => setSelectedVariant(selectedVariant?.id === v.id ? null : v)}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              selectedVariant?.id === v.id ? "border-primary scale-110 shadow-glow" : "border-border hover:border-primary/40"
+                            }`}
+                            style={{ backgroundColor: v.color_hex || "#ccc" }}
+                            title={v.color_name || v.name}
+                          />
+                        ))}
+                      </div>
+                      {selectedVariant && (
+                        <p className="text-[10px] text-foreground mt-1">{selectedVariant.color_name || selectedVariant.name}</p>
+                      )}
+                    </div>
                   )}
                 </div>
 
