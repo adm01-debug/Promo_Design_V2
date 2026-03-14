@@ -163,7 +163,7 @@ const ServiceOrder = () => {
       toast.error("Preencha os campos obrigatórios antes de gerar o PDF");
       return;
     }
-    const doc = generateServiceOrderPdf(form);
+    const doc = generateServiceOrderPdf(form, logoRef.current);
     doc.save(`${form.osNumber}.pdf`);
     toast.success("PDF da Ordem de Serviço gerado!");
   };
