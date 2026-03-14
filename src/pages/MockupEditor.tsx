@@ -67,6 +67,7 @@ const MockupEditor = () => {
   const [showTexture, setShowTexture] = useState(true);
   const [logoOpacity, setLogoOpacity] = useState(100);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
+  const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
