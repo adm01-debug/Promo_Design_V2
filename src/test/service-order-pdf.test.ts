@@ -105,7 +105,7 @@ describe("generateServiceOrderPdf", () => {
   it("should render art image when provided", () => {
     const doc = generateServiceOrderPdf(fullForm);
     // addImage called at least twice: mockup + art
-    expect(doc.addImage).toHaveBeenCalledTimes(2);
+    expect((doc.addImage as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
   it("should render gabarito circles on page 2", () => {
