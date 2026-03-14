@@ -139,6 +139,125 @@ export async function convertToPng(file: File): Promise<Blob> {
   });
 }
 
+/** Perspective presets for different product surface types */
+export type SurfaceType = "flat" | "curved" | "cylindrical" | "spherical" | "angled";
+
+export interface PerspectivePreset {
+  id: SurfaceType;
+  label: string;
+  description: string;
+  css: React.CSSProperties;
+}
+
+export const PERSPECTIVE_PRESETS: PerspectivePreset[] = [
+  {
+    id: "flat",
+    label: "Plano",
+    description: "Superfícies planas como camisetas, cadernos, sacolas",
+    css: {},
+  },
+  {
+    id: "curved",
+    label: "Curvo",
+    description: "Superfícies levemente curvadas como bonés, sapatos",
+    css: {
+      perspective: "600px",
+      perspectiveOrigin: "center",
+      transform: "rotateY(8deg) rotateX(-2deg)",
+    },
+  },
+  {
+    id: "cylindrical",
+    label: "Cilíndrico",
+    description: "Superfícies cilíndricas como canecas, squeezes, garrafas",
+    css: {
+      perspective: "400px",
+      perspectiveOrigin: "center",
+      transform: "rotateY(15deg) scaleX(0.92)",
+      borderRadius: "8%",
+      overflow: "hidden" as const,
+    },
+  },
+  {
+    id: "spherical",
+    label: "Esférico",
+    description: "Superfícies esféricas como bolas, globos",
+    css: {
+      perspective: "300px",
+      perspectiveOrigin: "center",
+      transform: "rotateY(10deg) rotateX(5deg) scaleX(0.88) scaleY(0.95)",
+      borderRadius: "50%",
+      overflow: "hidden" as const,
+    },
+  },
+  {
+    id: "angled",
+    label: "Angular",
+    description: "Superfícies em ângulo como pen drives, caixas",
+    css: {
+      perspective: "500px",
+      perspectiveOrigin: "left center",
+      transform: "rotateY(-12deg) skewY(2deg)",
+    },
+  },
+];
+
+/** Detect the best surface type for a product category */
+export function detectSurfaceType(category: string, templateId?: string): SurfaceType {
+  const lower = (category || "").toLowerCase();
+  const tplLower = (templateId || "").toLowerCase();
+
+  if (lower.includes("drinkware") || lower.includes("caneca") || tplLower.includes("caneca") || tplLower.includes("squeeze")) {
+    return "cylindrical";
+  }
+  if (lower.includes("vestuário") || lower.includes("embalagem") || lower.includes("papelaria") || tplLower.includes("camiseta") || tplLower.includes("caderno") || tplLower.includes("sacola")) {
+    return "flat";
+  }
+  if (tplLower.includes("bone") || tplLower.includes("boné")) {
+    return "curved";
+  }
+  if (tplLower.includes("pen") || lower.includes("tech")) {
+    return "angled";
+  }
+  return "flat";
+}
+
+/** Calculate auto-fit placement to center and scale a logo within an area */
+export function calculateAutoFit(
+  logoImg: HTMLImageElement,
+  areaWidth: number,
+  areaHeight: number,
+  padding: number = 0.1 // 10% padding
+): { x: number; y: number; scale: number } {
+  const logoAspect = logoImg.width / logoImg.height;
+  const areaAspect = areaWidth / areaHeight;
+
+  // Determine scale to fit logo within area with padding
+  const usableW = areaWidth * (1 - padding * 2);
+  const usableH = areaHeight * (1 - padding * 2);
+
+  let fitScale: number;
+  if (logoAspect > areaAspect) {
+    // Logo is wider proportionally — fit to width
+    fitScale = usableW / areaWidth;
+  } else {
+    // Logo is taller proportionally — fit to height
+    fitScale = (usableH / areaHeight) * (areaAspect / logoAspect);
+    fitScale = Math.min(fitScale, usableW / areaWidth);
+  }
+
+  // Clamp scale
+  fitScale = Math.max(0.1, Math.min(1.5, fitScale));
+
+  // Center position: the logo element uses width as scale%, so we need to center based on that
+  const logoDisplayW = areaWidth * fitScale;
+  const logoDisplayH = logoDisplayW / logoAspect;
+  const x = (areaWidth - logoDisplayW) / 2;
+  const y = (areaHeight - logoDisplayH) / 2;
+
+  return { x, y, scale: fitScale };
+}
+
 /** Compose logo onto product image at given position */
 export function composeMockup(
   productImg: HTMLImageElement,
