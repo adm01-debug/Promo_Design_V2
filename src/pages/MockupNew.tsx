@@ -285,8 +285,6 @@ const MockupNew = () => {
 
   // Canvas size
   const CANVAS_SIZE = 500;
-  const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
-  const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
 
   return (
     <div className="h-screen flex flex-col">
