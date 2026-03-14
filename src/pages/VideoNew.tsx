@@ -473,6 +473,7 @@ const VideoNew = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </div>
     </div>
   );
