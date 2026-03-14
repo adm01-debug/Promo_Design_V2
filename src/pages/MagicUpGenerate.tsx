@@ -88,21 +88,36 @@ const MagicUpGenerate = () => {
     return buildSmartPrompt(selectedProduct, selectedStyle, "");
   }, [selectedProduct, selectedStyle]);
 
+  const VARIATION_STYLES = ["premium", "lifestyle", "flatlay", "minimal"];
+  const VARIATION_LABELS = ["Premium", "Lifestyle", "Flat Lay", "Minimalista"];
+
   const handleGenerate = async () => {
     const finalPrompt = prompt.trim() || smartPrompt;
     if (!finalPrompt) return;
     setIsGenerating(true);
-    // Simulate generation - will use edge function when Cloud is enabled
+
+    // Simulate generating 4 variations with different styles
     setTimeout(() => {
-      const entry = {
-        id: Date.now().toString(),
-        prompt: finalPrompt,
+      const batchId = Date.now().toString();
+      const variations = VARIATION_STYLES.map((style, i) => ({
+        id: `${batchId}-${i}`,
         imageUrl: "/placeholder.svg",
         favorite: false,
+        selected: i === 0,
+        style: VARIATION_LABELS[i],
+      }));
+
+      const batch = {
+        id: batchId,
+        prompt: finalPrompt,
         productName: selectedProduct?.name,
+        variations,
+        createdAt: new Date().toISOString(),
       };
-      setGenerations((prev) => [entry, ...prev]);
-      // Persist to shared history
+
+      setGenerationBatches((prev) => [batch, ...prev]);
+
+      // Persist first variation to shared history
       saveToHistory({
         prompt: finalPrompt,
         imageUrl: "/placeholder.svg",
@@ -114,9 +129,23 @@ const MagicUpGenerate = () => {
     }, 2000);
   };
 
-  const toggleFavorite = (id: string) => {
-    setGenerations((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, favorite: !g.favorite } : g))
+  const toggleFavorite = (batchId: string, varId: string) => {
+    setGenerationBatches((prev) =>
+      prev.map((b) =>
+        b.id === batchId
+          ? { ...b, variations: b.variations.map((v) => v.id === varId ? { ...v, favorite: !v.favorite } : v) }
+          : b
+      )
+    );
+  };
+
+  const selectVariation = (batchId: string, varId: string) => {
+    setGenerationBatches((prev) =>
+      prev.map((b) =>
+        b.id === batchId
+          ? { ...b, variations: b.variations.map((v) => ({ ...v, selected: v.id === varId })) }
+          : b
+      )
     );
   };
 
