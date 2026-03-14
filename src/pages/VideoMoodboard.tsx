@@ -49,6 +49,20 @@ const VideoMoodboard = () => {
   const [customColors, setCustomColors] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
+  const [referenceImages, setReferenceImages] = useState<string[]>([]);
+
+  const handleRefImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    Array.from(files).slice(0, 6 - referenceImages.length).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setReferenceImages(prev => [...prev, dataUrl].slice(0, 6));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleApply = () => {
     if (!selectedTone || !selectedMood) return;
@@ -252,6 +266,34 @@ const VideoMoodboard = () => {
                 </span>
               ))}
             </div>
+          </motion.section>
+
+          {/* Reference Images (Higgsfield-inspired) */}
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+            <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
+              Imagens de Referência (até 6)
+            </h3>
+            <div className="grid grid-cols-6 gap-2">
+              {referenceImages.map((img, i) => (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
+                  <img src={img} alt={`Ref ${i+1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => setReferenceImages(prev => prev.filter((_, idx) => idx !== i))}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {referenceImages.length < 6 && (
+                <label className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary/40 flex flex-col items-center justify-center cursor-pointer transition-colors">
+                  <ImageIcon className="w-5 h-5 text-muted-foreground mb-1" />
+                  <span className="text-[8px] text-muted-foreground">Upload</span>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleRefImageUpload} />
+                </label>
+              )}
+            </div>
+            <p className="text-[9px] text-muted-foreground mt-1.5">Suba imagens que representem a estética desejada — elas guiarão o estilo de geração</p>
           </motion.section>
 
           {/* Preview Moodboard */}

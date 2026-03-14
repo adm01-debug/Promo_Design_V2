@@ -25,6 +25,7 @@ const VideoMoodboard = lazyWithRetry(() => import("./pages/VideoMoodboard"));
 const VideoPhotodump = lazyWithRetry(() => import("./pages/VideoPhotodump"));
 const VideoGallery = lazyWithRetry(() => import("./pages/VideoGallery"));
 const VideoCinema = lazyWithRetry(() => import("./pages/VideoCinema"));
+const CharacterStudio = lazyWithRetry(() => import("./pages/CharacterStudio"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
                   <Route path="/video/photodump" element={<VideoPhotodump />} />
                   <Route path="/video/gallery" element={<VideoGallery />} />
                   <Route path="/video/cinema" element={<VideoCinema />} />
+                  <Route path="/video/characters" element={<CharacterStudio />} />
                   <Route path="/video/history" element={<VideoHistory />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />

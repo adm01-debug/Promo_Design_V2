@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
   ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film,
-  Camera, Eye
+  Camera, Eye, User
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -44,6 +44,7 @@ const modules = [
       { label: "Cinema Mode", path: "/video/cinema", icon: Eye },
       { label: "Moodboard", path: "/video/moodboard", icon: Palette },
       { label: "Photodump", path: "/video/photodump", icon: Camera },
+      { label: "Character Studio", path: "/video/characters", icon: User },
       { label: "Inspiração", path: "/video/gallery", icon: Eye },
       { label: "Histórico", path: "/video/history", icon: History },
     ],

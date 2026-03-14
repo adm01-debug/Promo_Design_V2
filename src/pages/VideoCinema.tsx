@@ -61,6 +61,34 @@ const GRADING_PRESETS: GradingPreset[] = [
     colors: ["#FF006E", "#8338EC", "#0A0A1A"],
     filters: { temperature: 45, contrast: 75, saturation: 80, brightness: 38, vignette: 60 },
   },
+  {
+    id: "kodak-portra",
+    label: "Kodak Portra 400",
+    desc: "Tons de pele suaves, granulação fina, favorito para retratos",
+    colors: ["#E8C8A0", "#D4A574", "#6B8E7B"],
+    filters: { temperature: 62, contrast: 48, saturation: 45, brightness: 55, vignette: 20 },
+  },
+  {
+    id: "fuji-velvia",
+    label: "Fuji Velvia 50",
+    desc: "Cores ultra-saturadas, contraste alto, ideal para paisagens",
+    colors: ["#2E86AB", "#A23B72", "#F18F01"],
+    filters: { temperature: 52, contrast: 78, saturation: 85, brightness: 48, vignette: 30 },
+  },
+  {
+    id: "kodak-ektar",
+    label: "Kodak Ektar 100",
+    desc: "Grão ultrafino, cores vívidas, azuis profundos",
+    colors: ["#1B4965", "#BEE9E8", "#CAD2C5"],
+    filters: { temperature: 48, contrast: 68, saturation: 72, brightness: 50, vignette: 15 },
+  },
+  {
+    id: "cinestill-800t",
+    label: "CineStill 800T",
+    desc: "Halação vermelha nas luzes, estética noturna cinematográfica",
+    colors: ["#FF4444", "#1A1A2E", "#E0C3FC"],
+    filters: { temperature: 38, contrast: 72, saturation: 60, brightness: 40, vignette: 50 },
+  },
 ];
 
 type LightingSetup = {

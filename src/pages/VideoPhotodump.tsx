@@ -21,6 +21,15 @@ const SCENARIOS = [
   { id: "wood", label: "Madeira", emoji: "🪵", desc: "Mesa ou fundo de madeira rústica" },
   { id: "gradient", label: "Gradiente", emoji: "🌈", desc: "Fundo gradiente colorido" },
   { id: "christmas", label: "Natal", emoji: "🎄", desc: "Decoração e luzes natalinas" },
+  // ── Novos cenários inspirados no Higgsfield ──
+  { id: "desert-dusk", label: "Deserto ao Entardecer", emoji: "🏜️", desc: "Areia dourada, céu alaranjado" },
+  { id: "rain-city", label: "Chuva Urbana", emoji: "🌧️", desc: "Reflexos na chuva, luzes de rua" },
+  { id: "museum", label: "Galeria de Arte", emoji: "🖼️", desc: "Paredes brancas, iluminação de museu" },
+  { id: "gym", label: "Academia", emoji: "🏋️", desc: "Ambiente fitness, energia" },
+  { id: "airport", label: "Aeroporto", emoji: "✈️", desc: "Terminal moderno, viagem" },
+  { id: "subway", label: "Metrô", emoji: "🚇", desc: "Plataforma urbana, gritty" },
+  { id: "rooftop", label: "Rooftop", emoji: "🌆", desc: "Terraço com vista da cidade" },
+  { id: "garden-party", label: "Garden Party", emoji: "🎉", desc: "Festa ao ar livre, festivo" },
 ];
 
 const VideoPhotodump = () => {
