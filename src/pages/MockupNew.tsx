@@ -276,6 +276,47 @@ const MockupNew = () => {
                 </div>
               </div>
 
+              {/* Color variants */}
+              {colorVariants.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-display font-semibold text-foreground mb-3">Cores Disponíveis</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {colorVariants.map((variant) => (
+                      <button
+                        key={variant.id}
+                        onClick={() => setSelectedVariant(selectedVariant?.id === variant.id ? null : variant)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left ${
+                          selectedVariant?.id === variant.id
+                            ? "border-primary bg-primary/10 shadow-glow"
+                            : "border-border hover:border-primary/40 bg-surface-2"
+                        }`}
+                        title={variant.color_name || variant.name}
+                      >
+                        <div
+                          className="w-5 h-5 rounded-full border border-border shrink-0"
+                          style={{ backgroundColor: variant.color_hex || "#ccc" }}
+                        />
+                        <span className="text-xs text-foreground">{variant.color_name || variant.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Also show product.colors if no variants */}
+              {colorVariants.length === 0 && selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-display font-semibold text-foreground mb-3">Cores</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProduct.colors.map((color, i) => (
+                      <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs text-foreground">
+                        {color}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <h3 className="text-sm font-display font-semibold text-foreground mb-3">Áreas de Personalização</h3>
 
               {!printAreas || printAreas.length === 0 ? (
