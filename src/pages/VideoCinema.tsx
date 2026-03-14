@@ -166,29 +166,48 @@ const VideoCinema = () => {
           <div className="relative w-full max-w-4xl aspect-video mx-auto">
             <div className="absolute inset-0 rounded-sm overflow-hidden" style={filterStyle}>
               <div
-                className="w-full h-full"
+                className="w-full h-full relative"
                 style={{
                   background: `linear-gradient(135deg, ${selectedPreset.colors[2]} 0%, ${selectedPreset.colors[0]} 40%, ${selectedPreset.colors[1]} 70%, ${selectedPreset.colors[2]} 100%)`,
                 }}
               >
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center z-10">
-                    <motion.div
-                      key={selectedPreset.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
+                {/* Product image overlay */}
+                {selectedProduct && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <motion.img
+                      key={`${selectedProduct.id}-${selectedPreset.id}`}
+                      src={getProductImageUrl(selectedProduct)}
+                      alt={selectedProduct.name}
+                      className="max-w-[60%] max-h-[70%] object-contain drop-shadow-2xl"
+                      initial={{ opacity: 0, scale: 0.85 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <Film className="w-16 h-16 text-white/40 mx-auto mb-4" />
-                      <h2 className="text-2xl font-bold text-white/90 mb-1">
-                        {selectedPreset.label}
-                      </h2>
-                      <p className="text-sm text-white/50 font-mono">
-                        Preview cinematográfico
-                      </p>
-                    </motion.div>
+                      transition={{ duration: 0.6 }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                    />
                   </div>
-                </div>
+                )}
+
+                {/* Fallback when no product */}
+                {!selectedProduct && (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center z-10">
+                      <motion.div
+                        key={selectedPreset.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <Film className="w-16 h-16 text-white/40 mx-auto mb-4" />
+                        <h2 className="text-2xl font-bold text-white/90 mb-1">
+                          {selectedPreset.label}
+                        </h2>
+                        <p className="text-sm text-white/50 font-mono">
+                          Preview cinematográfico
+                        </p>
+                      </motion.div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
