@@ -65,6 +65,7 @@ const MockupEditor = () => {
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
   const [showTexture, setShowTexture] = useState(true);
   const [logoOpacity, setLogoOpacity] = useState(100);
+  const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
