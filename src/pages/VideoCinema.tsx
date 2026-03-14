@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import {
   Film, Sun, Moon, Contrast, Droplets, Thermometer,
   SlidersHorizontal, RotateCcw, Download, Sparkles, Eye
