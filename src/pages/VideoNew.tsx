@@ -1,15 +1,18 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   Video, Search, Loader2, Package, Sparkles, Play, Clock,
   Monitor, Smartphone, Square, RectangleHorizontal,
   Palette, Megaphone, ShoppingBag, PartyPopper, Zap, Heart,
-  ChevronLeft, ChevronRight, Film, Type, Image as ImageIcon, Music
+  ChevronLeft, ChevronRight, Film, Type, Image as ImageIcon, Music, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
 import VideoPreviewAnimation from "@/components/VideoPreviewAnimation";
+import { useMoodboardStore, TONE_LABELS, PALETTE_LABELS, TONE_TO_STYLE } from "@/hooks/use-moodboard-preferences";
+import type { MoodboardTone, VideoStyle as _VS } from "@/hooks/use-moodboard-preferences";
 
 type AspectRatio = "9:16" | "1:1" | "16:9" | "4:5";
 type VideoStyle = "premium" | "dinamico" | "minimalista" | "impactante" | "elegante" | "jovem";
