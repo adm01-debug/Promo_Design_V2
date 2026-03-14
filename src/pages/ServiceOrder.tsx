@@ -29,6 +29,11 @@ const ServiceOrder = () => {
   const existingOrder = editId ? getOrder(editId) : null;
   const [saved, setSaved] = useState(!!existingOrder);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const logoRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    getLogoDataUrl().then((url) => { logoRef.current = url; }).catch(() => {});
+  }, []);
 
   const [form, setForm] = useState<ServiceOrderData>(() => {
     if (existingOrder) {
