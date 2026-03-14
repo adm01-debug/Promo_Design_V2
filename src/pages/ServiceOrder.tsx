@@ -6,7 +6,7 @@ import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectIte
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
   Ruler, Hash, User, Building2, Phone, Mail, Calendar, MessageSquare,
-  Image as ImageIcon, Copy, CheckCircle2
+  Image as ImageIcon, Copy, CheckCircle2, Upload, X, FileImage
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
