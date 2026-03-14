@@ -44,10 +44,19 @@ const MockupNew = () => {
   const totalProducts = productsData?.total || 0;
   const totalPages = Math.ceil(totalProducts / 24);
 
-  // Get best display image for selected product
+  // Get best display image — variant thumbnail > color-matched image > primary > fallback
   const selectedProductImage = selectedProduct
-    ? (productImages?.find(i => i.is_primary)?.url_cdn || getProductImageUrl(selectedProduct))
+    ? (
+        selectedVariant?.selected_thumbnail ||
+        productImages?.find(i => selectedVariant?.id && i.variant_id === selectedVariant.id)?.url_cdn ||
+        productImages?.find(i => selectedVariant?.color_name && i.applies_to_color && i.color_id === selectedVariant.id)?.url_cdn ||
+        productImages?.find(i => i.is_primary)?.url_cdn ||
+        getProductImageUrl(selectedProduct)
+      )
     : null;
+
+  // Color variants with hex colors
+  const colorVariants = (variants || []).filter(v => v.color_hex);
 
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
