@@ -29,8 +29,18 @@ const VIEWS: ViewDef[] = [
   { id: "side-right", label: "Lateral Dir.", icon: "▶", areaPercent: { x: 35, y: 30, w: 30, h: 40 } },
 ];
 
+type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, flipH: false, flipV: false };
+
+const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
+  { id: "normal", label: "Normal", desc: "Sem efeito" },
+  { id: "multiply", label: "Multiply", desc: "Escurece, ideal para tecidos" },
+  { id: "screen", label: "Screen", desc: "Clareia, ideal para fundos escuros" },
+  { id: "overlay", label: "Overlay", desc: "Contraste, realça texturas" },
+  { id: "darken", label: "Darken", desc: "Mantém tons escuros" },
+  { id: "color-burn", label: "Color Burn", desc: "Saturação intensa" },
+];
 
 const MockupEditor = () => {
   const [searchParams] = useSearchParams();
