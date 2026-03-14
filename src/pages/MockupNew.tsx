@@ -13,7 +13,7 @@ import { generateApprovalPdf } from "@/lib/pdf-export";
 
 const MockupNew = () => {
   const [search, setSearch] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+  
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
   const [selectedArea, setSelectedArea] = useState<DbPrintAreaTechnique | null>(null);
