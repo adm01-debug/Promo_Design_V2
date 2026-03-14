@@ -35,11 +35,16 @@ const TEMPLATES = [
   { id: "reveal", name: "Product Reveal", desc: "Zoom in com brilho", duration: "5s", style: "premium" },
   { id: "showcase", name: "Showcase 360°", desc: "Rotação suave do produto", duration: "10s", style: "elegante" },
   { id: "promo", name: "Flash Promo", desc: "Cortes rápidos com preço", duration: "5s", style: "dinamico" },
-  { id: "lifestyle", name: "Lifestyle Scene", desc: "Produto em contexto de uso", duration: "10s", style: "premium" },
-  { id: "unboxing", name: "Unboxing Effect", desc: "Efeito de abertura de caixa", duration: "5s", style: "impactante" },
-  { id: "minimal", name: "Clean Minimal", desc: "Fundo limpo, fade elegante", duration: "5s", style: "minimalista" },
+  { id: "lifestyle", name: "Lifestyle Scene", desc: "Parallax suave contextual", duration: "10s", style: "premium" },
+  { id: "unboxing", name: "Unboxing Effect", desc: "Abertura de caixa animada", duration: "5s", style: "impactante" },
+  { id: "minimal", name: "Clean Minimal", desc: "Fade elegante e limpo", duration: "5s", style: "minimalista" },
   { id: "social", name: "Social Burst", desc: "Emojis e efeitos sociais", duration: "5s", style: "jovem" },
   { id: "story", name: "Story Carousel", desc: "Slides animados verticais", duration: "10s", style: "dinamico" },
+  { id: "zoompulse", name: "Zoom Pulse", desc: "Pulsação com zoom contínuo", duration: "5s", style: "impactante" },
+  { id: "splitreveal", name: "Split Reveal", desc: "Divisão da tela e revelação", duration: "5s", style: "premium" },
+  { id: "glitch", name: "Glitch Effect", desc: "Distorção digital estilizada", duration: "5s", style: "jovem" },
+  { id: "floating", name: "Floating Particles", desc: "Partículas flutuantes", duration: "10s", style: "elegante" },
+  { id: "cinematic", name: "Cinematic Bars", desc: "Barras cinema + zoom lento", duration: "10s", style: "premium" },
 ];
 
 const ASPECT_PREVIEW: Record<AspectRatio, string> = {
