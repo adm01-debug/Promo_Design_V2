@@ -6,7 +6,7 @@ import {
   Search, Loader2, Package, ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, useCategories, getProductImageUrl } from "@/hooks/use-products";
+import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
 import { countUniqueColors } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
