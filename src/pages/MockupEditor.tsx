@@ -428,15 +428,20 @@ const MockupEditor = () => {
                       left: currentPlacement.x,
                       top: currentPlacement.y,
                       width: `${currentPlacement.scale * 100}%`,
-                      ...(surfaceType !== "flat" ? PERSPECTIVE_PRESETS.find(p => p.id === surfaceType)?.css : {}),
                     }}
                     onMouseDown={handleLogoMouseDown}
                   >
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false}
+                    <img
+                      src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview}
+                      alt="Logo"
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
                       style={{
                         mixBlendMode: blendMode,
                         opacity: logoOpacity / 100,
-                        transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
+                        ...(surfaceType === "flat" ? {
+                          transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
+                        } : {}),
                       }}
                     />
                     <div
