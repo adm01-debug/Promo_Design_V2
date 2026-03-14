@@ -68,34 +68,85 @@ const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const { addOrder, getOrder, updateOrder, orders } = useServiceOrders();
+  const editId = searchParams.get("edit");
+  const existingOrder = editId ? getOrder(editId) : null;
+  const [saved, setSaved] = useState(!!existingOrder);
 
-  const [form, setForm] = useState<ServiceOrderData>(() => ({
-    osNumber: generateOsNumber(),
-    date: new Date().toISOString().slice(0, 10),
-    clientName: "",
-    clientCompany: "",
-    clientPhone: "",
-    clientEmail: "",
-    productName: searchParams.get("product") || "",
-    productSku: searchParams.get("sku") || "",
-    productMaterial: searchParams.get("material") || "",
-    productColors: searchParams.get("productColors") || "",
-    technique: searchParams.get("technique") || "",
-    areaName: searchParams.get("area") || "",
-    areaWidth: searchParams.get("aw") || "",
-    areaHeight: searchParams.get("ah") || "",
-    areaShape: searchParams.get("shape") || "",
-    artColors: searchParams.get("artColors") || "",
-    artDpi: "300",
-    artFile: searchParams.get("artFile") || "",
-    quantity: "",
-    deliveryDate: "",
-    observations: "",
-    mockupImageUrl: searchParams.get("mockup") || "",
-  }));
+  const [form, setForm] = useState<ServiceOrderData>(() => {
+    if (existingOrder) {
+      return {
+        osNumber: existingOrder.osNumber,
+        date: existingOrder.date,
+        clientName: existingOrder.clientName,
+        clientCompany: existingOrder.clientCompany,
+        clientPhone: existingOrder.clientPhone,
+        clientEmail: existingOrder.clientEmail,
+        productName: existingOrder.productName,
+        productSku: existingOrder.productSku,
+        productMaterial: existingOrder.productMaterial,
+        productColors: existingOrder.productColors,
+        technique: existingOrder.technique,
+        areaName: existingOrder.areaName,
+        areaWidth: existingOrder.areaWidth,
+        areaHeight: existingOrder.areaHeight,
+        areaShape: existingOrder.areaShape,
+        artColors: existingOrder.artColors,
+        artDpi: existingOrder.artDpi,
+        artFile: existingOrder.artFile,
+        quantity: existingOrder.quantity,
+        deliveryDate: existingOrder.deliveryDate,
+        observations: existingOrder.observations,
+        mockupImageUrl: existingOrder.mockupImageUrl,
+      };
+    }
+    return {
+      osNumber: generateOsNumber(),
+      date: new Date().toISOString().slice(0, 10),
+      clientName: "",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: searchParams.get("product") || "",
+      productSku: searchParams.get("sku") || "",
+      productMaterial: searchParams.get("material") || "",
+      productColors: searchParams.get("productColors") || "",
+      technique: searchParams.get("technique") || "",
+      areaName: searchParams.get("area") || "",
+      areaWidth: searchParams.get("aw") || "",
+      areaHeight: searchParams.get("ah") || "",
+      areaShape: searchParams.get("shape") || "",
+      artColors: searchParams.get("artColors") || "",
+      artDpi: "300",
+      artFile: searchParams.get("artFile") || "",
+      quantity: "",
+      deliveryDate: "",
+      observations: "",
+      mockupImageUrl: searchParams.get("mockup") || "",
+    };
+  });
+
+  const [currentStatus, setCurrentStatus] = useState<OsStatus>(existingOrder?.status || "aberta");
 
   const update = (field: keyof ServiceOrderData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setSaved(false);
+  };
+
+  const handleSave = () => {
+    if (!form.productName) {
+      toast.error("Informe ao menos o nome do produto");
+      return;
+    }
+    if (editId && existingOrder) {
+      updateOrder(editId, { ...form, status: currentStatus });
+      toast.success("Ordem de Serviço atualizada!");
+    } else {
+      const newOrder = addOrder(form);
+      navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true });
+      toast.success("Ordem de Serviço salva!");
+    }
+    setSaved(true);
   };
 
   // ──────────── PDF Generation ────────────
