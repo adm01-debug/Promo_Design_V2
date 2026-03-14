@@ -68,6 +68,8 @@ const App = () => (
                   <Route path="/video/characters" element={<CharacterStudio />} />
                   <Route path="/video/history" element={<VideoHistory />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/templates" element={<Templates />} />
+                  <Route path="/editor" element={<Editor />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
