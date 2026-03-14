@@ -96,18 +96,33 @@ const MockupEditor = () => {
     }));
   };
 
+  // ──────────────── Mesh Warp Cache Reset ────────────────
+  useEffect(() => {
+    clearWarpCache();
+    setWarpedLogoUrl(null);
+  }, [logoPreview]);
+
   // ──────────────── Mesh Warp Effect ────────────────
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") {
       setWarpedLogoUrl(null);
       return;
     }
-    clearWarpCache();
+
+    let cancelled = false;
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
-      .then(url => setWarpedLogoUrl(url))
-      .catch(() => setWarpedLogoUrl(null));
+      .then((url) => {
+        if (!cancelled) setWarpedLogoUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setWarpedLogoUrl(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
