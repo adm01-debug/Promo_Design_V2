@@ -136,22 +136,42 @@ const MockupNew = () => {
     return () => window.removeEventListener("keydown", handleKey);
   }, [step, undo, redo]);
 
+  // ──────────────── Mesh Warp Cache Reset ────────────────
+  useEffect(() => {
+    clearWarpCache();
+    setWarpedLogoUrl(null);
+  }, [logoPreview]);
+
   // ──────────────── Mesh Warp Effect ────────────────
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") {
       setWarpedLogoUrl(null);
+      setIsWarping(false);
       return;
     }
+
+    let cancelled = false;
     setIsWarping(true);
-    clearWarpCache();
     const logoDisplayW = areaW * placement.scale;
     const logoDisplayH = areaH * placement.scale;
     const warpW = Math.max(64, Math.round(logoDisplayW * 2));
     const warpH = Math.max(64, Math.round(logoDisplayH * 2));
 
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, placement.rotation, placement.flipH, placement.flipV)
-      .then(url => { setWarpedLogoUrl(url); setIsWarping(false); })
-      .catch(() => { setWarpedLogoUrl(null); setIsWarping(false); });
+      .then((url) => {
+        if (cancelled) return;
+        setWarpedLogoUrl(url);
+        setIsWarping(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWarpedLogoUrl(null);
+        setIsWarping(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [logoPreview, surfaceType, placement.rotation, placement.flipH, placement.flipV, areaW, areaH, placement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
