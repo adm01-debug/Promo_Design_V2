@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
+import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
 // ──────────── View definitions ────────────
@@ -66,6 +67,7 @@ const MockupEditor = () => {
   const [showTexture, setShowTexture] = useState(true);
   const [logoOpacity, setLogoOpacity] = useState(100);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
+  const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
@@ -93,6 +95,20 @@ const MockupEditor = () => {
       [activeView]: { ...prev[activeView], ...update },
     }));
   };
+
+  // ──────────────── Mesh Warp Effect ────────────────
+  useEffect(() => {
+    if (!logoPreview || surfaceType === "flat") {
+      setWarpedLogoUrl(null);
+      return;
+    }
+    clearWarpCache();
+    const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
+    const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
+    getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
+      .then(url => setWarpedLogoUrl(url))
+      .catch(() => setWarpedLogoUrl(null));
+  }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
     const img = new window.Image();
@@ -412,15 +428,20 @@ const MockupEditor = () => {
                       left: currentPlacement.x,
                       top: currentPlacement.y,
                       width: `${currentPlacement.scale * 100}%`,
-                      ...(surfaceType !== "flat" ? PERSPECTIVE_PRESETS.find(p => p.id === surfaceType)?.css : {}),
                     }}
                     onMouseDown={handleLogoMouseDown}
                   >
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false}
+                    <img
+                      src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview}
+                      alt="Logo"
+                      className="w-full h-full object-contain pointer-events-none"
+                      draggable={false}
                       style={{
                         mixBlendMode: blendMode,
                         opacity: logoOpacity / 100,
-                        transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
+                        ...(surfaceType === "flat" ? {
+                          transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
+                        } : {}),
                       }}
                     />
                     <div

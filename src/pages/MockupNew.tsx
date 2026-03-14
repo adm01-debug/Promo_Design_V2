@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
 import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
+import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 
@@ -57,6 +58,8 @@ const MockupNew = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
+  const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
+  const [isWarping, setIsWarping] = useState(false);
 
   // Undo/Redo
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
@@ -132,6 +135,24 @@ const MockupNew = () => {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [step, undo, redo]);
+
+  // ──────────────── Mesh Warp Effect ────────────────
+  useEffect(() => {
+    if (!logoPreview || surfaceType === "flat") {
+      setWarpedLogoUrl(null);
+      return;
+    }
+    setIsWarping(true);
+    clearWarpCache();
+    const logoDisplayW = areaW * placement.scale;
+    const logoDisplayH = areaH * placement.scale;
+    const warpW = Math.max(64, Math.round(logoDisplayW * 2));
+    const warpH = Math.max(64, Math.round(logoDisplayH * 2));
+
+    getWarpedPreview(logoPreview, warpW, warpH, surfaceType, placement.rotation, placement.flipH, placement.flipV)
+      .then(url => { setWarpedLogoUrl(url); setIsWarping(false); })
+      .catch(() => { setWarpedLogoUrl(null); setIsWarping(false); });
+  }, [logoPreview, surfaceType, placement.rotation, placement.flipH, placement.flipV, areaW, areaH, placement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
     const img = new window.Image();
@@ -232,18 +253,29 @@ const MockupNew = () => {
 
       if (logoPreview) {
         const logoImg = await loadImageWithFallback(logoPreview);
-        const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
-        const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
-        const logoScale = (areaW * placement.scale * scale) / 500;
+        const exportAreaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
+        const exportAreaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
+        const logoScale = (exportAreaW * placement.scale * scale) / 500;
+        const logoW = Math.round(logoImg.width * logoScale);
+        const logoH = Math.round(logoImg.height * logoScale);
+
+        // Apply mesh warp for non-flat surfaces
+        let drawSource: HTMLImageElement | HTMLCanvasElement = logoImg;
+        if (surfaceType !== "flat") {
+          drawSource = applyMeshWarp(logoImg, logoW, logoH, surfaceType);
+        }
+
         ctx.save();
         ctx.translate(
-          dx + (250 - areaW / 2 + placement.x) * scale * (500 / 500),
-          dy + (250 - areaH / 2 + placement.y) * scale * (500 / 500)
+          dx + (250 - exportAreaW / 2 + placement.x) * scale * (500 / 500),
+          dy + (250 - exportAreaH / 2 + placement.y) * scale * (500 / 500)
         );
-        ctx.rotate((placement.rotation * Math.PI) / 180);
-        if (placement.flipH) ctx.scale(-1, 1);
-        if (placement.flipV) ctx.scale(1, -1);
-        ctx.drawImage(logoImg, 0, 0, logoImg.width * logoScale, logoImg.height * logoScale);
+        if (surfaceType === "flat") {
+          ctx.rotate((placement.rotation * Math.PI) / 180);
+          if (placement.flipH) ctx.scale(-1, 1);
+          if (placement.flipV) ctx.scale(1, -1);
+        }
+        ctx.drawImage(drawSource, 0, 0, logoW, logoH);
         ctx.restore();
       }
 
@@ -700,23 +732,22 @@ const MockupNew = () => {
 
                       {logoPreview && showLogo && (
                         <div
-                          className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`}
+                          className={`absolute cursor-move ${isDragging ? "opacity-80" : ""} ${isWarping ? "animate-pulse" : ""}`}
                           style={{
                             left: placement.x,
                             top: placement.y,
                             width: `${placement.scale * 100}%`,
-                            ...(surfaceType !== "flat" ? PERSPECTIVE_PRESETS.find(p => p.id === surfaceType)?.css : {}),
                           }}
                           onMouseDown={handleLogoMouseDown}
                         >
                           <img
-                            src={logoPreview}
+                            src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview}
                             alt="Logo"
                             className="w-full h-full object-contain pointer-events-none"
                             draggable={false}
-                            style={{
+                            style={surfaceType === "flat" ? {
                               transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
-                            }}
+                            } : undefined}
                           />
                           <div
                             className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
@@ -794,7 +825,7 @@ const MockupNew = () => {
                         {showLogo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                         {showLogo ? "Ocultar" : "Mostrar"}
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); }}>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); setWarpedLogoUrl(null); clearWarpCache(); }}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
@@ -844,6 +875,14 @@ const MockupNew = () => {
                         </button>
                       ))}
                     </div>
+                    {surfaceType !== "flat" && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 rounded-full ${isWarping ? "bg-yellow-500 animate-pulse" : warpedLogoUrl ? "bg-green-500" : "bg-muted-foreground"}`} />
+                        <span className="text-[9px] font-mono text-muted-foreground">
+                          {isWarping ? "Aplicando mesh warp..." : warpedLogoUrl ? "Mesh warp ativo" : "Upload logo para ativar warp"}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
