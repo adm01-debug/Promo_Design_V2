@@ -531,7 +531,10 @@ const ServiceOrder = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pb-10">
-            <Button size="lg" className="flex-1 gap-2" onClick={handleDownloadPdf}>
+            <Button size="lg" className="flex-1 gap-2" onClick={handleSave} disabled={saved}>
+              <CheckCircle2 className="w-4 h-4" /> {saved ? "OS Salva ✓" : "Salvar Ordem de Serviço"}
+            </Button>
+            <Button size="lg" variant="secondary" className="flex-1 gap-2" onClick={handleDownloadPdf}>
               <Download className="w-4 h-4" /> Baixar PDF da OS
             </Button>
             <Button size="lg" variant="outline" className="flex-1 gap-2" onClick={handlePrint}>
