@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
@@ -18,6 +18,7 @@ import SectionTitle from "@/components/service-order/SectionTitle";
 import ArtUploadField from "@/components/service-order/ArtUploadField";
 import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrderPdf";
 import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
+import { getLogoDataUrl } from "@/lib/logo-loader";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
@@ -28,6 +29,11 @@ const ServiceOrder = () => {
   const existingOrder = editId ? getOrder(editId) : null;
   const [saved, setSaved] = useState(!!existingOrder);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const logoRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    getLogoDataUrl().then((url) => { logoRef.current = url; }).catch(() => {});
+  }, []);
 
   const [form, setForm] = useState<ServiceOrderData>(() => {
     if (existingOrder) {
@@ -157,7 +163,7 @@ const ServiceOrder = () => {
       toast.error("Preencha os campos obrigatórios antes de gerar o PDF");
       return;
     }
-    const doc = generateServiceOrderPdf(form);
+    const doc = generateServiceOrderPdf(form, logoRef.current);
     doc.save(`${form.osNumber}.pdf`);
     toast.success("PDF da Ordem de Serviço gerado!");
   };
@@ -169,7 +175,7 @@ const ServiceOrder = () => {
       toast.error("Preencha os campos obrigatórios antes de imprimir");
       return;
     }
-    const doc = generateServiceOrderPdf(form);
+    const doc = generateServiceOrderPdf(form, logoRef.current);
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
     const w = window.open(url);
