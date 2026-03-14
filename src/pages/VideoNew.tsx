@@ -1,0 +1,438 @@
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Video, Search, Loader2, Package, Sparkles, Play, Clock,
+  Monitor, Smartphone, Square, RectangleHorizontal,
+  Palette, Megaphone, ShoppingBag, PartyPopper, Zap, Heart,
+  ChevronLeft, ChevronRight, Film, Type, Image as ImageIcon, Music
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useProducts, getProductImageUrl } from "@/hooks/use-products";
+import type { DbProduct } from "@/lib/db-types";
+
+type AspectRatio = "9:16" | "1:1" | "16:9" | "4:5";
+type VideoStyle = "premium" | "dinamico" | "minimalista" | "impactante" | "elegante" | "jovem";
+type CreationMode = "template" | "ai";
+
+const ASPECT_RATIOS: { value: AspectRatio; label: string; icon: React.ElementType; desc: string }[] = [
+  { value: "9:16", label: "Reels", icon: Smartphone, desc: "Stories & Reels" },
+  { value: "4:5", label: "Feed", icon: RectangleHorizontal, desc: "Instagram Feed" },
+  { value: "1:1", label: "Quadrado", icon: Square, desc: "Post Feed" },
+  { value: "16:9", label: "Wide", icon: Monitor, desc: "YouTube & Web" },
+];
+
+const VIDEO_STYLES: { value: VideoStyle; label: string; icon: React.ElementType; color: string }[] = [
+  { value: "premium", label: "Premium", icon: Sparkles, color: "text-primary" },
+  { value: "dinamico", label: "Dinâmico", icon: Zap, color: "text-accent" },
+  { value: "minimalista", label: "Minimalista", icon: Square, color: "text-muted-foreground" },
+  { value: "impactante", label: "Impactante", icon: Megaphone, color: "text-destructive" },
+  { value: "elegante", label: "Elegante", icon: Heart, color: "text-secondary" },
+  { value: "jovem", label: "Jovem", icon: PartyPopper, color: "text-primary" },
+];
+
+const TEMPLATES = [
+  { id: "reveal", name: "Product Reveal", desc: "Zoom in com brilho", duration: "5s", style: "premium" },
+  { id: "showcase", name: "Showcase 360°", desc: "Rotação suave do produto", duration: "10s", style: "elegante" },
+  { id: "promo", name: "Flash Promo", desc: "Cortes rápidos com preço", duration: "5s", style: "dinamico" },
+  { id: "lifestyle", name: "Lifestyle Scene", desc: "Produto em contexto de uso", duration: "10s", style: "premium" },
+  { id: "unboxing", name: "Unboxing Effect", desc: "Efeito de abertura de caixa", duration: "5s", style: "impactante" },
+  { id: "minimal", name: "Clean Minimal", desc: "Fundo limpo, fade elegante", duration: "5s", style: "minimalista" },
+  { id: "social", name: "Social Burst", desc: "Emojis e efeitos sociais", duration: "5s", style: "jovem" },
+  { id: "story", name: "Story Carousel", desc: "Slides animados verticais", duration: "10s", style: "dinamico" },
+];
+
+const ASPECT_PREVIEW: Record<AspectRatio, string> = {
+  "9:16": "aspect-[9/16] max-h-[480px]",
+  "4:5": "aspect-[4/5] max-h-[480px]",
+  "1:1": "aspect-square max-h-[400px]",
+  "16:9": "aspect-video max-h-[340px]",
+};
+
+const VideoNew = () => {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
+  const [videoStyle, setVideoStyle] = useState<VideoStyle>("premium");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("reveal");
+  const [creationMode, setCreationMode] = useState<CreationMode>("template");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [duration, setDuration] = useState<5 | 10>(5);
+  const [step, setStep] = useState<"product" | "config" | "preview">("product");
+
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    search, page, pageSize: 20, onlyWithImages: true,
+  });
+  const products = productsData?.products || [];
+  const totalProducts = productsData?.total || 0;
+  const totalPages = Math.ceil(totalProducts / 20);
+
+  const filteredTemplates = useMemo(() =>
+    TEMPLATES.filter(t =>
+      creationMode === "template" ? true : true
+    ), [creationMode]);
+
+  const selectedTemplateMeta = TEMPLATES.find(t => t.id === selectedTemplate);
+
+  return (
+    <div className="h-screen flex flex-col">
+      {/* Top Bar */}
+      <div className="h-12 bg-surface-1 border-b border-border flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <Video className="w-4 h-4 text-primary" />
+          <h1 className="text-sm font-display font-semibold text-foreground">Video Studio</h1>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            {(["product", "config", "preview"] as const).map((s, i) => (
+              <span key={s} className="flex items-center gap-1">
+                {i > 0 && <ChevronRight className="w-3 h-3" />}
+                <button
+                  onClick={() => {
+                    if (s === "product") setStep(s);
+                    else if (s === "config" && selectedProduct) setStep(s);
+                    else if (s === "preview" && selectedProduct) setStep(s);
+                  }}
+                  className={`px-2.5 py-1 rounded-md transition-colors ${
+                    step === s ? "bg-primary/20 text-primary font-medium" : "hover:text-foreground"
+                  }`}
+                >
+                  {i + 1}. {s === "product" ? "Produto" : s === "config" ? "Configurar" : "Preview"}
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase px-2 py-0.5 rounded bg-surface-2 border border-border">
+            {aspectRatio}
+          </span>
+          <Button size="sm" className="text-xs gap-1.5 bg-gradient-primary text-primary-foreground" disabled>
+            <Play className="w-3.5 h-3.5" /> Gerar Vídeo
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        <AnimatePresence mode="wait">
+          {/* STEP 1: Product Selection */}
+          {step === "product" && (
+            <motion.div key="product" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-border shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produto por nome ou SKU..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto p-4">
+                {productsLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    <span className="ml-2 text-sm text-muted-foreground">Carregando produtos...</span>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Package className="w-10 h-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                      {products.map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setStep("config");
+                          }}
+                          className="group rounded-lg border border-border hover:border-primary/40 transition-all overflow-hidden text-left"
+                        >
+                          <div className="aspect-square bg-surface-2 flex items-center justify-center p-2">
+                            <img
+                              src={getProductImageUrl(product)}
+                              alt={product.name}
+                              className="w-full h-full object-contain"
+                              loading="lazy"
+                              onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                            />
+                          </div>
+                          <div className="p-2 bg-card">
+                            <h3 className="text-xs font-semibold text-foreground truncate">{product.name}</h3>
+                            <p className="text-[10px] text-muted-foreground truncate">{product.sku}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border">
+                        <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="text-xs">
+                          <ChevronLeft className="w-3 h-3" /> Anterior
+                        </Button>
+                        <span className="text-xs text-muted-foreground font-mono">{page + 1} / {totalPages}</span>
+                        <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="text-xs">
+                          Próximo <ChevronRight className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2: Configuration */}
+          {step === "config" && selectedProduct && (
+            <motion.div key="config" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex overflow-hidden">
+              {/* Left: Config Panel */}
+              <div className="w-[380px] border-r border-border overflow-y-auto p-4 space-y-6 shrink-0">
+                {/* Selected Product */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-2 border border-border">
+                  <div className="w-14 h-14 rounded-lg bg-surface-1 border border-border flex items-center justify-center p-1 shrink-0">
+                    <img src={getProductImageUrl(selectedProduct)} alt="" className="w-full h-full object-contain" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-display font-semibold text-foreground truncate">{selectedProduct.name}</h3>
+                    <p className="text-[10px] text-muted-foreground">{selectedProduct.sku}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs shrink-0" onClick={() => setStep("product")}>
+                    Trocar
+                  </Button>
+                </div>
+
+                {/* Creation Mode */}
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Modo de Criação</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCreationMode("template")}
+                      className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                        creationMode === "template" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <Film className="w-5 h-5 text-primary" />
+                      <span className="text-xs font-medium text-foreground">Template</span>
+                      <span className="text-[10px] text-muted-foreground">Modelos prontos</span>
+                    </button>
+                    <button
+                      onClick={() => setCreationMode("ai")}
+                      className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                        creationMode === "ai" ? "border-secondary bg-secondary/10" : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <Sparkles className="w-5 h-5 text-secondary" />
+                      <span className="text-xs font-medium text-foreground">IA</span>
+                      <span className="text-[10px] text-muted-foreground">Prompt livre</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Aspect Ratio */}
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Formato</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {ASPECT_RATIOS.map((ar) => (
+                      <button
+                        key={ar.value}
+                        onClick={() => setAspectRatio(ar.value)}
+                        className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border-2 transition-all ${
+                          aspectRatio === ar.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <ar.icon className={`w-4 h-4 ${aspectRatio === ar.value ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className="text-[10px] font-semibold text-foreground">{ar.label}</span>
+                        <span className="text-[8px] text-muted-foreground">{ar.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Duração</p>
+                  <div className="flex gap-2">
+                    {([5, 10] as const).map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => setDuration(d)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border-2 transition-all ${
+                          duration === d ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <Clock className={`w-3.5 h-3.5 ${duration === d ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className="text-xs font-medium text-foreground">{d}s</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Style */}
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Estilo Visual</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {VIDEO_STYLES.map((vs) => (
+                      <button
+                        key={vs.value}
+                        onClick={() => setVideoStyle(vs.value)}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all ${
+                          videoStyle === vs.value ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                        }`}
+                      >
+                        <vs.icon className={`w-4 h-4 ${vs.color}`} />
+                        <span className="text-[10px] font-medium text-foreground">{vs.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Template or AI Prompt */}
+                {creationMode === "template" ? (
+                  <div>
+                    <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Template</p>
+                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                      {filteredTemplates.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setSelectedTemplate(t.id)}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left ${
+                            selectedTemplate === t.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center shrink-0">
+                            <Film className={`w-5 h-5 ${selectedTemplate === t.id ? "text-primary" : "text-muted-foreground"}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-semibold text-foreground">{t.name}</h4>
+                            <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+                          </div>
+                          <span className="text-[10px] font-mono text-muted-foreground shrink-0">{t.duration}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Prompt IA</p>
+                    <textarea
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="Descreva o vídeo que deseja criar... Ex: Vídeo promocional mostrando a caneca girando 360° com efeito de brilho dourado sobre fundo escuro"
+                      className="w-full h-28 p-3 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-primary"
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      A IA gerará um vídeo de {duration}s no formato {aspectRatio} com estilo {videoStyle}
+                    </p>
+                  </div>
+                )}
+
+                {/* Generate Button */}
+                <Button
+                  className="w-full gap-2 bg-gradient-primary text-primary-foreground h-11"
+                  onClick={() => setStep("preview")}
+                >
+                  <Play className="w-4 h-4" />
+                  Pré-visualizar
+                </Button>
+              </div>
+
+              {/* Right: Live Preview */}
+              <div className="flex-1 flex items-center justify-center bg-surface-1 p-8">
+                <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[340px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex flex-col items-center justify-center`}>
+                  {/* Product Image */}
+                  <div className="absolute inset-0 flex items-center justify-center p-6">
+                    <img
+                      src={getProductImageUrl(selectedProduct)}
+                      alt={selectedProduct.name}
+                      className="max-w-[60%] max-h-[50%] object-contain drop-shadow-2xl"
+                    />
+                  </div>
+
+                  {/* Overlay info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card via-card/80 to-transparent">
+                    <p className="text-xs font-display font-bold text-foreground truncate">{selectedProduct.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-mono text-primary">{aspectRatio}</span>
+                      <span className="text-[10px] text-muted-foreground">·</span>
+                      <span className="text-[10px] text-muted-foreground">{duration}s</span>
+                      <span className="text-[10px] text-muted-foreground">·</span>
+                      <span className="text-[10px] text-muted-foreground capitalize">{videoStyle}</span>
+                    </div>
+                  </div>
+
+                  {/* Play overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full glass border border-border/50 flex items-center justify-center opacity-60">
+                      <Play className="w-6 h-6 text-foreground ml-0.5" />
+                    </div>
+                  </div>
+
+                  {/* Format indicator corners */}
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                    <span className="text-[8px] font-mono text-muted-foreground bg-surface-1/80 px-1.5 py-0.5 rounded">
+                      {creationMode === "template" ? selectedTemplateMeta?.name : "IA Gen"}
+                    </span>
+                    <span className="text-[8px] font-mono text-primary bg-surface-1/80 px-1.5 py-0.5 rounded">
+                      PREVIEW
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 3: Preview / Generation */}
+          {step === "preview" && selectedProduct && (
+            <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[400px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex items-center justify-center mb-6`}>
+                <img
+                  src={getProductImageUrl(selectedProduct)}
+                  alt={selectedProduct.name}
+                  className="max-w-[55%] max-h-[45%] object-contain drop-shadow-2xl"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center animate-pulse">
+                    <Play className="w-7 h-7 text-primary ml-0.5" />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent">
+                  <p className="text-sm font-display font-bold text-foreground">{selectedProduct.name}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {aspectRatio} · {duration}s · {videoStyle} · {creationMode === "template" ? selectedTemplateMeta?.name : "IA"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center space-y-3 max-w-md">
+                <h2 className="text-lg font-display font-bold text-foreground">Pronto para gerar</h2>
+                <p className="text-sm text-muted-foreground">
+                  {creationMode === "template"
+                    ? `O template "${selectedTemplateMeta?.name}" será aplicado ao produto com estilo ${videoStyle}.`
+                    : `A IA irá gerar um vídeo baseado no seu prompt com estilo ${videoStyle}.`}
+                </p>
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <Button variant="outline" onClick={() => setStep("config")} className="gap-1.5">
+                    <ChevronLeft className="w-3.5 h-3.5" /> Ajustar
+                  </Button>
+                  <Button className="gap-2 bg-gradient-accent text-accent-foreground px-6" disabled>
+                    <Sparkles className="w-4 h-4" /> Gerar Vídeo
+                    <span className="text-[10px] opacity-70 ml-1">(requer Cloud)</span>
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground pt-2">
+                  Ative o Lovable Cloud para habilitar a geração de vídeos com IA
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default VideoNew;
