@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import {
   Film, Sun, Moon, Contrast, Droplets, Thermometer,
   SlidersHorizontal, RotateCcw, Download, Sparkles, Eye
@@ -77,6 +79,8 @@ const LIGHTING_SETUPS: LightingSetup[] = [
 ];
 
 const VideoCinema = () => {
+  const navigate = useNavigate();
+  const setCinemaPrefs = useCinemaStore((s) => s.setPreferences);
   const [selectedPreset, setSelectedPreset] = useState<GradingPreset>(GRADING_PRESETS[0]);
   const [lighting, setLighting] = useState("three-point");
   const [temperature, setTemperature] = useState(selectedPreset.filters.temperature);
@@ -122,8 +126,23 @@ const VideoCinema = () => {
           <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={resetAll}>
             <RotateCcw className="w-3 h-3" /> Reset
           </Button>
-          <Button size="sm" className="text-xs gap-1.5">
-            <Download className="w-3.5 h-3.5" /> Exportar Preset
+          <Button variant="outline" size="sm" className="text-xs gap-1.5">
+            <Download className="w-3.5 h-3.5" /> Exportar
+          </Button>
+          <Button size="sm" className="text-xs gap-1.5" onClick={() => {
+            const lightingSetup = LIGHTING_SETUPS.find(l => l.id === lighting);
+            setCinemaPrefs({
+              presetId: selectedPreset.id,
+              presetLabel: selectedPreset.label,
+              lighting,
+              lightingLabel: lightingSetup?.label || lighting,
+              letterbox,
+              grain,
+              filters: { temperature, contrast, saturation, brightness, vignette },
+            });
+            navigate("/video/new");
+          }}>
+            <Sparkles className="w-3.5 h-3.5" /> Aplicar ao Vídeo
           </Button>
         </div>
       </div>
