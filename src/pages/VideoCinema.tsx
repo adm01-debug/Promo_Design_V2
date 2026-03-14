@@ -232,10 +232,37 @@ const VideoCinema = () => {
               <span className="text-[10px] font-mono text-white/50 bg-black/50 px-2 py-1 rounded">
                 LOG → {selectedPreset.label}
               </span>
+              {selectedProduct && (
+                <span className="text-[10px] font-mono text-white/70 bg-black/50 px-2 py-1 rounded">
+                  {selectedProduct.name}
+                </span>
+              )}
             </div>
           </div>
-        </div>
 
+          {/* Product strip */}
+          {products.length > 0 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-2 rounded-xl">
+              <Package className="w-3 h-3 text-white/50 shrink-0" />
+              {products.slice(0, 6).map((p, i) => (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedProductIdx(i)}
+                  className={`w-10 h-10 rounded-lg border-2 overflow-hidden transition-all ${
+                    selectedProductIdx === i ? "border-primary scale-110" : "border-white/20 hover:border-white/50"
+                  }`}
+                >
+                  <img
+                    src={getProductImageUrl(p)}
+                    alt={p.name}
+                    className="w-full h-full object-contain bg-white/10 p-0.5"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Right Panel */}
         <div className="w-[340px] border-l border-border overflow-y-auto shrink-0 bg-card">
           <div className="p-4 space-y-6">
