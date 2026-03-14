@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  TrendingUp, Clock, Heart, Eye, Play, Filter,
-  Sparkles, Film, Camera, Palette
+  TrendingUp, Clock, Heart, Eye, Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
