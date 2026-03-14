@@ -1,19 +1,39 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, ZoomIn, ZoomOut, RotateCw, Download, Save,
   ChevronDown, Move, FileText, Palette, GripVertical,
-  Search, Loader2, Package, ChevronLeft
+  Search, Loader2, Package, ChevronLeft, Undo2, Redo2,
+  Grid3X3, Ruler, AlignCenter, Lock, Unlock, Eye, EyeOff,
+  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
-import { countUniqueColors } from "@/lib/canvas-utils";
+import { countUniqueColors, composeMockup, loadImageWithFallback } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
+import { toast } from "sonner";
+
+// ──────────────── Templates ────────────────
+const MOCKUP_TEMPLATES = [
+  { id: "camiseta-frente", name: "Camiseta - Frente", category: "Vestuário", area: { x: 35, y: 20, w: 30, h: 35 }, aspectHint: "portrait" },
+  { id: "camiseta-costas", name: "Camiseta - Costas", category: "Vestuário", area: { x: 30, y: 15, w: 40, h: 40 }, aspectHint: "portrait" },
+  { id: "caneca-lateral", name: "Caneca - Lateral", category: "Drinkware", area: { x: 20, y: 25, w: 60, h: 50 }, aspectHint: "landscape" },
+  { id: "caderno-capa", name: "Caderno - Capa", category: "Papelaria", area: { x: 15, y: 10, w: 70, h: 80 }, aspectHint: "portrait" },
+  { id: "sacola-frente", name: "Sacola - Frente", category: "Embalagem", area: { x: 25, y: 20, w: 50, h: 40 }, aspectHint: "portrait" },
+  { id: "squeeze-corpo", name: "Squeeze - Corpo", category: "Drinkware", area: { x: 25, y: 20, w: 50, h: 60 }, aspectHint: "portrait" },
+  { id: "bone-frente", name: "Boné - Frente", category: "Vestuário", area: { x: 30, y: 30, w: 40, h: 25 }, aspectHint: "landscape" },
+  { id: "pen-drive", name: "Pen Drive", category: "Tech", area: { x: 20, y: 35, w: 60, h: 30 }, aspectHint: "landscape" },
+];
+
+type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
+type HistoryEntry = { placement: Placement; logoPreview: string | null };
+
+const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.8, rotation: 0, flipH: false, flipV: false };
 
 const MockupNew = () => {
   const [search, setSearch] = useState("");
-  
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
   const [selectedArea, setSelectedArea] = useState<DbPrintAreaTechnique | null>(null);
@@ -22,20 +42,31 @@ const MockupNew = () => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoColors, setLogoColors] = useState<string[]>([]);
   const [zoom, setZoom] = useState(100);
-  const [placement, setPlacement] = useState({ x: 10, y: 10, scale: 0.8, rotation: 0 });
+  const [placement, setPlacement] = useState<Placement>(INITIAL_PLACEMENT);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [step, setStep] = useState<"product" | "area" | "canvas">("product");
+  const [showGrid, setShowGrid] = useState(true);
+  const [showRulers, setShowRulers] = useState(true);
+  const [showGuides, setShowGuides] = useState(true);
+  const [lockAspect, setLockAspect] = useState(false);
+  const [showLogo, setShowLogo] = useState(true);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Undo/Redo
+  const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
+  const [historyIdx, setHistoryIdx] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   // Data from external Supabase
   const { data: productsData, isLoading: productsLoading } = useProducts({
     search, page, pageSize: 24, onlyWithImages: false,
   });
-  
   const { data: productImages } = useProductImages(selectedProduct?.id || null);
   const { data: printAreas } = usePrintAreaTechniques(selectedProduct?.id || null);
   const { data: variants } = useProductVariants(selectedProduct?.id || null);
@@ -44,7 +75,6 @@ const MockupNew = () => {
   const totalProducts = productsData?.total || 0;
   const totalPages = Math.ceil(totalProducts / 24);
 
-  // Get best display image — variant thumbnail > color-matched image > primary > fallback
   const selectedProductImage = selectedProduct
     ? (
         selectedVariant?.selected_thumbnail ||
@@ -55,8 +85,46 @@ const MockupNew = () => {
       )
     : null;
 
-  // Color variants with hex colors
   const colorVariants = (variants || []).filter(v => v.color_hex);
+
+  // ──────────────── History helpers ────────────────
+  const pushHistory = useCallback((p: Placement, logo: string | null) => {
+    setHistory(prev => [...prev.slice(0, historyIdx + 1), { placement: p, logoPreview: logo }]);
+    setHistoryIdx(prev => prev + 1);
+  }, [historyIdx]);
+
+  const undo = useCallback(() => {
+    if (historyIdx <= 0) return;
+    const entry = history[historyIdx - 1];
+    setPlacement(entry.placement);
+    setLogoPreview(entry.logoPreview);
+    setHistoryIdx(prev => prev - 1);
+  }, [history, historyIdx]);
+
+  const redo = useCallback(() => {
+    if (historyIdx >= history.length - 1) return;
+    const entry = history[historyIdx + 1];
+    setPlacement(entry.placement);
+    setLogoPreview(entry.logoPreview);
+    setHistoryIdx(prev => prev + 1);
+  }, [history, historyIdx]);
+
+  // ──────────────── Keyboard shortcuts ────────────────
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (step !== "canvas") return;
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      if (ctrl && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); redo(); }
+      if (e.key === "g" && !ctrl) setShowGrid(prev => !prev);
+      if (e.key === "r" && !ctrl) setShowRulers(prev => !prev);
+      if (e.key === "+" || e.key === "=") setZoom(prev => Math.min(400, prev + 25));
+      if (e.key === "-") setZoom(prev => Math.max(25, prev - 25));
+      if (e.key === "Delete" || e.key === "Backspace") { setLogoPreview(null); setLogoFile(null); }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [step, undo, redo]);
 
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
@@ -64,12 +132,13 @@ const MockupNew = () => {
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
       setLogoPreview(dataUrl);
+      pushHistory(placement, dataUrl);
       const img = new window.Image();
       img.onload = () => setLogoColors(countUniqueColors(img));
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [placement, pushHistory]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -84,7 +153,19 @@ const MockupNew = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) setPlacement((p) => ({ ...p, x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }));
+    if (isDragging) {
+      let newX = e.clientX - dragStart.x;
+      let newY = e.clientY - dragStart.y;
+      // Snap to center guides
+      if (showGuides && areaRef.current) {
+        const rect = areaRef.current.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        if (Math.abs(newX - centerX + 50) < 8) newX = centerX - 50;
+        if (Math.abs(newY - centerY + 50) < 8) newY = centerY - 50;
+      }
+      setPlacement((p) => ({ ...p, x: newX, y: newY }));
+    }
     if (isResizing) {
       const rect = areaRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -93,7 +174,64 @@ const MockupNew = () => {
     }
   };
 
-  const handleMouseUp = () => { setIsDragging(false); setIsResizing(false); };
+  const handleMouseUp = () => {
+    if (isDragging || isResizing) {
+      pushHistory(placement, logoPreview);
+    }
+    setIsDragging(false);
+    setIsResizing(false);
+  };
+
+  // ──────────────── Export ────────────────
+  const handleExportPng = useCallback(async () => {
+    if (!selectedProduct || !selectedProductImage) return;
+    setIsExporting(true);
+    try {
+      const productImg = await loadImageWithFallback(selectedProductImage);
+      const canvas = document.createElement("canvas");
+      canvas.width = 2400;
+      canvas.height = 2400;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 2400, 2400);
+      const scale = 2400 / Math.max(productImg.width, productImg.height);
+      const dx = (2400 - productImg.width * scale) / 2;
+      const dy = (2400 - productImg.height * scale) / 2;
+      ctx.drawImage(productImg, dx, dy, productImg.width * scale, productImg.height * scale);
+
+      if (logoPreview) {
+        const logoImg = await loadImageWithFallback(logoPreview);
+        const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
+        const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
+        const logoScale = (areaW * placement.scale * scale) / 500;
+        ctx.save();
+        ctx.translate(
+          dx + (250 - areaW / 2 + placement.x) * scale * (500 / 500),
+          dy + (250 - areaH / 2 + placement.y) * scale * (500 / 500)
+        );
+        ctx.rotate((placement.rotation * Math.PI) / 180);
+        if (placement.flipH) ctx.scale(-1, 1);
+        if (placement.flipV) ctx.scale(1, -1);
+        ctx.drawImage(logoImg, 0, 0, logoImg.width * logoScale, logoImg.height * logoScale);
+        ctx.restore();
+      }
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `mockup-${selectedProduct.sku}-HD.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("PNG exportado em alta resolução (2400px)");
+      }, "image/png");
+    } catch {
+      toast.error("Erro ao exportar PNG");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea]);
 
   const handleExportPdf = () => {
     if (!selectedProduct || !selectedArea) return;
@@ -107,15 +245,28 @@ const MockupNew = () => {
       mockupImageDataUrl: "",
     });
     pdf.save(`mockup-${selectedProduct.sku}-${Date.now()}.pdf`);
+    toast.success("PDF de aprovação gerado");
   };
 
+  const centerLogo = () => {
+    if (!areaRef.current) return;
+    const rect = areaRef.current.getBoundingClientRect();
+    const newPlacement = { ...placement, x: rect.width * 0.15, y: rect.height * 0.15 };
+    setPlacement(newPlacement);
+    pushHistory(newPlacement, logoPreview);
+  };
+
+  // Canvas size
+  const CANVAS_SIZE = 500;
+  const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
+  const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
 
   return (
     <div className="h-screen flex flex-col">
       {/* Top Bar */}
-      <div className="h-12 bg-surface-1 border-b border-border flex items-center justify-between px-4 shrink-0">
+      <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
-          <h1 className="text-sm font-display font-semibold text-foreground">Novo Mockup</h1>
+          <h1 className="text-sm font-semibold text-foreground">Mockup Studio</h1>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             {(["product", "area", "canvas"] as const).map((s, i) => (
               <span key={s} className="flex items-center gap-1">
@@ -130,42 +281,52 @@ const MockupNew = () => {
                     step === s ? "bg-primary/20 text-primary font-medium" : "hover:text-foreground"
                   }`}
                 >
-                  {i + 1}. {s === "product" ? "Produto" : s === "area" ? "Área / Técnica" : "Canvas"}
+                  {i + 1}. {s === "product" ? "Produto" : s === "area" ? "Área" : "Canvas"}
                 </button>
               </span>
             ))}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-xs gap-1.5"><Save className="w-3.5 h-3.5" /> Salvar</Button>
-          <Button size="sm" className="text-xs gap-1.5 bg-gradient-primary text-primary-foreground" onClick={handleExportPdf}>
+          {step === "canvas" && (
+            <>
+              <Button variant="ghost" size="sm" className="text-xs gap-1 h-8" onClick={undo} disabled={historyIdx <= 0}>
+                <Undo2 className="w-3 h-3" />
+              </Button>
+              <Button variant="ghost" size="sm" className="text-xs gap-1 h-8" onClick={redo} disabled={historyIdx >= history.length - 1}>
+                <Redo2 className="w-3 h-3" />
+              </Button>
+              <div className="w-px h-5 bg-border" />
+            </>
+          )}
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8"><Save className="w-3.5 h-3.5" /> Salvar</Button>
+          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={handleExportPdf}>
             <FileText className="w-3.5 h-3.5" /> PDF
+          </Button>
+          <Button size="sm" className="text-xs gap-1.5 h-8" onClick={handleExportPng} disabled={isExporting}>
+            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG HD
           </Button>
         </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
         <AnimatePresence mode="wait">
-          {/* STEP 1: Product selection from DB */}
+          {/* ═══════════ STEP 1: Product Selection ═══════════ */}
           {step === "product" && (
             <motion.div key="product" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col overflow-hidden">
-              {/* Search & filters */}
-              <div className="p-4 border-b border-border space-y-3 shrink-0">
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="Buscar produto por nome ou SKU... (6.100+ produtos)"
-                      value={search}
-                      onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
-                    />
-                  </div>
+              <div className="p-4 border-b border-border shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Buscar produto por nome ou SKU... (6.100+ produtos)"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                  />
                 </div>
               </div>
 
-              {/* Product grid */}
               <div className="flex-1 overflow-auto p-4">
                 {productsLoading ? (
                   <div className="flex items-center justify-center py-20">
@@ -179,7 +340,7 @@ const MockupNew = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
                       {products.map((product) => (
                         <button
                           key={product.id}
@@ -190,10 +351,10 @@ const MockupNew = () => {
                             setStep("area");
                           }}
                           className={`group rounded-lg border transition-all overflow-hidden text-left ${
-                            selectedProduct?.id === product.id ? "border-primary shadow-glow" : "border-border hover:border-primary/40"
+                            selectedProduct?.id === product.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40"
                           }`}
                         >
-                          <div className="aspect-square bg-surface-2 flex items-center justify-center p-2 relative">
+                          <div className="aspect-square bg-muted flex items-center justify-center p-2 relative">
                             <img
                               src={getProductImageUrl(product)}
                               alt={product.name}
@@ -215,15 +376,12 @@ const MockupNew = () => {
                       ))}
                     </div>
 
-                    {/* Pagination */}
                     {totalPages > 1 && (
                       <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border">
                         <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)} className="text-xs">
                           <ChevronLeft className="w-3 h-3" /> Anterior
                         </Button>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {page + 1} / {totalPages}
-                        </span>
+                        <span className="text-xs text-muted-foreground font-mono">{page + 1} / {totalPages}</span>
                         <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="text-xs">
                           Próximo <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
                         </Button>
@@ -235,20 +393,20 @@ const MockupNew = () => {
             </motion.div>
           )}
 
-          {/* STEP 2: Area & technique selection */}
+          {/* ═══════════ STEP 2: Area & Technique ═══════════ */}
           {step === "area" && selectedProduct && (
             <motion.div key="area" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 p-6 overflow-auto">
               <div className="flex items-center gap-4 mb-6">
                 {selectedProductImage && (
-                  <div className="w-24 h-24 rounded-lg bg-surface-2 border border-border flex items-center justify-center p-2 shrink-0">
+                  <div className="w-24 h-24 rounded-lg bg-muted border border-border flex items-center justify-center p-2 shrink-0">
                     <img src={selectedProductImage} alt="" className="w-full h-full object-contain" />
                   </div>
                 )}
                 <div>
-                  <h2 className="text-lg font-display font-bold text-foreground">{selectedProduct.name}</h2>
+                  <h2 className="text-lg font-bold text-foreground">{selectedProduct.name}</h2>
                   <p className="text-sm text-muted-foreground">{selectedProduct.sku} · {selectedProduct.brand || "Sem marca"}</p>
                   {selectedProduct.engraving_type && (
-                    <p className="text-xs text-primary mt-1 font-mono">{selectedProduct.engraving_type}</p>
+                    <span className="inline-block text-xs text-primary mt-1 font-mono bg-primary/10 px-2 py-0.5 rounded">{selectedProduct.engraving_type}</span>
                   )}
                 </div>
               </div>
@@ -256,7 +414,7 @@ const MockupNew = () => {
               {/* Color variants */}
               {colorVariants.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-display font-semibold text-foreground mb-3">Cores Disponíveis</h3>
+                  <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Cores Disponíveis</h3>
                   <div className="flex flex-wrap gap-2">
                     {colorVariants.map((variant) => (
                       <button
@@ -264,15 +422,11 @@ const MockupNew = () => {
                         onClick={() => setSelectedVariant(selectedVariant?.id === variant.id ? null : variant)}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-left ${
                           selectedVariant?.id === variant.id
-                            ? "border-primary bg-primary/10 shadow-glow"
-                            : "border-border hover:border-primary/40 bg-surface-2"
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/40 bg-card"
                         }`}
-                        title={variant.color_name || variant.name}
                       >
-                        <div
-                          className="w-5 h-5 rounded-full border border-border shrink-0"
-                          style={{ backgroundColor: variant.color_hex || "#ccc" }}
-                        />
+                        <div className="w-5 h-5 rounded-full border border-border shrink-0" style={{ backgroundColor: variant.color_hex || "#ccc" }} />
                         <span className="text-xs text-foreground">{variant.color_name || variant.name}</span>
                       </button>
                     ))}
@@ -280,28 +434,69 @@ const MockupNew = () => {
                 </div>
               )}
 
-              {/* Also show product.colors if no variants */}
               {colorVariants.length === 0 && selectedProduct.colors && selectedProduct.colors.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-display font-semibold text-foreground mb-3">Cores</h3>
+                  <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Cores</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedProduct.colors.map((color, i) => (
-                      <span key={i} className="px-3 py-1.5 rounded-lg bg-surface-2 border border-border text-xs text-foreground">
-                        {color}
-                      </span>
+                      <span key={i} className="px-3 py-1.5 rounded-lg bg-card border border-border text-xs text-foreground">{color}</span>
                     ))}
                   </div>
                 </div>
               )}
 
-              <h3 className="text-sm font-display font-semibold text-foreground mb-3">Áreas de Personalização</h3>
+              {/* Templates */}
+              <div className="mb-6">
+                <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Templates Rápidos</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {MOCKUP_TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setSelectedTemplate(t.id);
+                        setSelectedArea({
+                          id: `tpl-${t.id}`,
+                          product_id: selectedProduct.id,
+                          tabela_preco_id: "",
+                          max_width: t.area.w / 2,
+                          max_height: t.area.h / 2,
+                          is_curved: false,
+                          shape: "rectangle",
+                          location_code: t.id.toUpperCase(),
+                          location_name: t.name,
+                          location_order: 1,
+                          gravacao_largura_max: t.area.w / 2,
+                          gravacao_altura_max: t.area.h / 2,
+                          is_active: true,
+                        });
+                        setStep("canvas");
+                      }}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        selectedTemplate === t.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="w-full aspect-[4/3] bg-muted rounded-lg mb-2 flex items-center justify-center">
+                        <div
+                          className="border border-dashed border-primary/40 bg-primary/5 rounded"
+                          style={{
+                            width: `${t.area.w}%`,
+                            height: `${t.area.h}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-foreground block">{t.name}</span>
+                      <span className="text-[9px] text-muted-foreground">{t.category}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Áreas de Personalização do Produto</h3>
 
               {!printAreas || printAreas.length === 0 ? (
-                <div className="p-4 rounded-xl bg-surface-2 border border-border text-center">
-                  <p className="text-sm text-muted-foreground mb-2">Nenhuma área de personalização cadastrada para este produto.</p>
-                  <p className="text-xs text-muted-foreground">Você pode prosseguir com área manual.</p>
+                <div className="p-4 rounded-xl bg-card border border-border text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Nenhuma área cadastrada. Use um template acima ou crie área manual.</p>
                   <Button
-                    className="mt-3 bg-gradient-primary text-primary-foreground"
                     onClick={() => {
                       setSelectedArea({
                         id: "manual",
@@ -331,7 +526,7 @@ const MockupNew = () => {
                       key={area.id}
                       onClick={() => { setSelectedArea(area); setStep("canvas"); }}
                       className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        selectedArea?.id === area.id ? "border-primary bg-primary/10 shadow-glow" : "border-border hover:border-primary/40 bg-surface-2"
+                        selectedArea?.id === area.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/40 bg-card"
                       }`}
                     >
                       <Palette className={`w-5 h-5 mb-2 ${selectedArea?.id === area.id ? "text-primary" : "text-muted-foreground"}`} />
@@ -340,7 +535,6 @@ const MockupNew = () => {
                         {area.max_width}×{area.max_height}cm · {area.shape}
                         {area.is_curved && " · Curvo"}
                       </p>
-                      <p className="text-[10px] font-mono text-muted-foreground mt-1">{area.location_code}</p>
                     </button>
                   ))}
                 </div>
@@ -348,14 +542,33 @@ const MockupNew = () => {
             </motion.div>
           )}
 
-          {/* STEP 3: Canvas */}
+          {/* ═══════════ STEP 3: Canvas ═══════════ */}
           {step === "canvas" && selectedProduct && selectedArea && (
             <motion.div key="canvas" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex">
               <div className="flex-1 flex flex-col">
-                <div className="h-10 bg-surface-1 border-b border-border flex items-center justify-between px-3">
-                  <div className="flex items-center gap-2">
-                    <button className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2"><Move className="w-4 h-4" /></button>
-                    <button onClick={() => setPlacement((p) => ({ ...p, rotation: p.rotation + 15 }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2">
+                {/* Canvas toolbar */}
+                <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3">
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid (G)">
+                      <Grid3X3 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setShowRulers(!showRulers)} className={`p-1.5 rounded transition-colors ${showRulers ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Réguas (R)">
+                      <Ruler className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setShowGuides(!showGuides)} className={`p-1.5 rounded transition-colors ${showGuides ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Guias">
+                      <AlignCenter className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-5 bg-border mx-1" />
+                    <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar logo">
+                      <Maximize className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setPlacement(p => ({ ...p, flipH: !p.flipH }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip H">
+                      <FlipHorizontal className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setPlacement(p => ({ ...p, flipV: !p.flipV }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip V">
+                      <FlipVertical className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setPlacement(p => ({ ...p, rotation: p.rotation + 15 }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar">
                       <RotateCw className="w-4 h-4" />
                     </button>
                     <div className="w-px h-5 bg-border mx-1" />
@@ -364,23 +577,50 @@ const MockupNew = () => {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2"><ZoomOut className="w-4 h-4" /></button>
+                    <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><ZoomOut className="w-4 h-4" /></button>
                     <span className="text-xs font-mono text-muted-foreground w-12 text-center">{zoom}%</span>
-                    <button onClick={() => setZoom(Math.min(400, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2"><ZoomIn className="w-4 h-4" /></button>
+                    <button onClick={() => setZoom(Math.min(400, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><ZoomIn className="w-4 h-4" /></button>
                   </div>
                 </div>
 
+                {/* Canvas area */}
                 <div
-                  className="flex-1 canvas-grid flex items-center justify-center overflow-auto"
+                  ref={canvasContainerRef}
+                  className="flex-1 flex items-center justify-center overflow-auto relative"
+                  style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }}
                   onDrop={handleDrop}
                   onDragOver={(e) => e.preventDefault()}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
                 >
+                  {/* Rulers */}
+                  {showRulers && (
+                    <>
+                      {/* Top ruler */}
+                      <div className="absolute top-0 left-8 right-0 h-6 bg-card/90 border-b border-border z-20 flex items-end overflow-hidden">
+                        {Array.from({ length: Math.ceil(CANVAS_SIZE * (zoom / 100) / 20) + 1 }).map((_, i) => (
+                          <div key={i} className="flex flex-col items-center" style={{ position: "absolute", left: i * 20 }}>
+                            <span className="text-[7px] font-mono text-muted-foreground">{i}</span>
+                            <div className="w-px h-2 bg-border" />
+                          </div>
+                        ))}
+                      </div>
+                      {/* Left ruler */}
+                      <div className="absolute top-6 left-0 bottom-0 w-6 bg-card/90 border-r border-border z-20 flex flex-col items-end overflow-hidden">
+                        {Array.from({ length: Math.ceil(CANVAS_SIZE * (zoom / 100) / 20) + 1 }).map((_, i) => (
+                          <div key={i} className="flex items-center" style={{ position: "absolute", top: i * 20 }}>
+                            <span className="text-[7px] font-mono text-muted-foreground mr-1">{i}</span>
+                            <div className="h-px w-2 bg-border" />
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
                   <div
-                    className="relative bg-white rounded-xl border border-border shadow-elevated select-none"
-                    style={{ width: 500, height: 500, transform: `scale(${zoom / 100})` }}
+                    className="relative bg-white rounded-xl border border-border shadow-lg select-none"
+                    style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}
                   >
                     {selectedProductImage && (
                       <img
@@ -392,30 +632,51 @@ const MockupNew = () => {
                       />
                     )}
 
+                    {/* Grid overlay */}
+                    {showGrid && (
+                      <div className="absolute inset-0 pointer-events-none z-5" style={{
+                        backgroundImage: "linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px)",
+                        backgroundSize: "25px 25px",
+                      }} />
+                    )}
+
+                    {/* Center guides */}
+                    {showGuides && (
+                      <>
+                        <div className="absolute top-0 bottom-0 left-1/2 w-px bg-primary/20 pointer-events-none z-5" />
+                        <div className="absolute left-0 right-0 top-1/2 h-px bg-primary/20 pointer-events-none z-5" />
+                      </>
+                    )}
+
                     {/* Customization area */}
                     <div
                       ref={areaRef}
                       className="absolute border-2 border-dashed border-primary/40 rounded bg-primary/5"
                       style={{
-                        left: "50%",
-                        top: "50%",
+                        left: "50%", top: "50%",
                         transform: "translate(-50%, -50%)",
-                        width: Math.min(selectedArea.max_width * 20, 400),
-                        height: Math.min(selectedArea.max_height * 20, 400),
+                        width: areaW, height: areaH,
                       }}
                     >
                       <span className="absolute -top-5 left-0 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
                         {selectedArea.location_name}
                       </span>
+                      {/* Dimension labels */}
+                      <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-muted-foreground">
+                        {selectedArea.max_width}cm
+                      </span>
+                      <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-[8px] font-mono text-muted-foreground rotate-90">
+                        {selectedArea.max_height}cm
+                      </span>
 
-                      {logoPreview && (
+                      {logoPreview && showLogo && (
                         <div
                           className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`}
                           style={{
                             left: placement.x,
                             top: placement.y,
                             width: `${placement.scale * 100}%`,
-                            transform: `rotate(${placement.rotation}deg)`,
+                            transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
                           }}
                           onMouseDown={handleLogoMouseDown}
                         >
@@ -437,6 +698,7 @@ const MockupNew = () => {
                         >
                           <Upload className="w-6 h-6 text-primary/60 mb-1" />
                           <span className="text-[10px] text-primary/60 font-mono">Soltar logo aqui</span>
+                          <span className="text-[8px] text-muted-foreground mt-1">ou clique para upload</span>
                         </div>
                       )}
                     </div>
@@ -444,16 +706,22 @@ const MockupNew = () => {
                 </div>
               </div>
 
-              {/* Right panel */}
-              <div className="w-60 bg-surface-1 border-l border-border flex flex-col overflow-y-auto">
+              {/* ═══════════ Right Panel ═══════════ */}
+              <div className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto">
                 <div className="p-4 border-b border-border">
                   <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Produto</h3>
-                  <p className="text-sm font-semibold text-foreground truncate">{selectedProduct.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{selectedProduct.sku}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center p-1 shrink-0">
+                      {selectedProductImage && <img src={selectedProductImage} alt="" className="w-full h-full object-contain" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{selectedProduct.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{selectedProduct.sku}</p>
+                    </div>
+                  </div>
                   {selectedProduct.engraving_type && (
-                    <p className="text-[10px] text-primary font-mono mt-1">{selectedProduct.engraving_type}</p>
+                    <span className="inline-block text-[10px] text-primary font-mono mt-2 bg-primary/10 px-1.5 py-0.5 rounded">{selectedProduct.engraving_type}</span>
                   )}
-                  {/* Variant color swatches in canvas panel */}
                   {colorVariants.length > 0 && (
                     <div className="mt-3">
                       <label className="text-[10px] font-mono text-muted-foreground uppercase">Cor</label>
@@ -463,16 +731,13 @@ const MockupNew = () => {
                             key={v.id}
                             onClick={() => setSelectedVariant(selectedVariant?.id === v.id ? null : v)}
                             className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              selectedVariant?.id === v.id ? "border-primary scale-110 shadow-glow" : "border-border hover:border-primary/40"
+                              selectedVariant?.id === v.id ? "border-primary scale-110 ring-2 ring-primary/20" : "border-border hover:border-primary/40"
                             }`}
                             style={{ backgroundColor: v.color_hex || "#ccc" }}
                             title={v.color_name || v.name}
                           />
                         ))}
                       </div>
-                      {selectedVariant && (
-                        <p className="text-[10px] text-foreground mt-1">{selectedVariant.color_name || selectedVariant.name}</p>
-                      )}
                     </div>
                   )}
                 </div>
@@ -484,9 +749,19 @@ const MockupNew = () => {
                   />
                   <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => fileInputRef.current?.click()}>
                     <Upload className="w-3.5 h-3.5 mr-1.5" />
-                    {logoFile ? logoFile.name : "Upload Logo"}
+                    {logoFile ? logoFile.name.slice(0, 18) : "Upload Logo"}
                   </Button>
-
+                  {logoPreview && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => setShowLogo(!showLogo)}>
+                        {showLogo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                        {showLogo ? "Ocultar" : "Mostrar"}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={() => { setLogoPreview(null); setLogoFile(null); setLogoColors([]); }}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
                   {logoColors.length > 0 && (
                     <div className="mt-3">
                       <label className="text-[10px] font-mono text-muted-foreground uppercase">Cores Detectadas</label>
@@ -494,32 +769,36 @@ const MockupNew = () => {
                         {logoColors.slice(0, 6).map((color, i) => (
                           <div key={i} className="w-5 h-5 rounded border border-border" style={{ backgroundColor: color }} title={color} />
                         ))}
+                        <span className="text-[9px] text-muted-foreground self-center ml-1">{logoColors.length} cores</span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="p-4 border-b border-border">
-                  <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Posição</h3>
+                  <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Posição</h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[10px] font-mono text-muted-foreground flex justify-between">
-                        Escala <span>{Math.round(placement.scale * 100)}%</span>
-                      </label>
-                      <input type="range" min="0.1" max="2" step="0.05" value={placement.scale}
-                        onChange={(e) => setPlacement((p) => ({ ...p, scale: parseFloat(e.target.value) }))}
-                        className="w-full mt-1 accent-primary"
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] font-mono text-muted-foreground">Escala</label>
+                        <span className="text-[10px] font-mono text-primary">{Math.round(placement.scale * 100)}%</span>
+                      </div>
+                      <Slider
+                        value={[placement.scale * 100]}
+                        onValueChange={([v]) => setPlacement(p => ({ ...p, scale: v / 100 }))}
+                        min={10} max={200} step={5}
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-mono text-muted-foreground">Rotação</label>
-                      <div className="flex gap-2 mt-1">
-                        <input type="number" value={placement.rotation}
-                          onChange={(e) => setPlacement((p) => ({ ...p, rotation: parseInt(e.target.value) || 0 }))}
-                          className="flex-1 px-2 py-1 rounded-md bg-surface-2 border border-border text-xs font-mono text-foreground focus:outline-none focus:border-primary"
-                        />
-                        <span className="text-xs text-muted-foreground self-center">°</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] font-mono text-muted-foreground">Rotação</label>
+                        <span className="text-[10px] font-mono text-primary">{placement.rotation}°</span>
                       </div>
+                      <Slider
+                        value={[placement.rotation]}
+                        onValueChange={([v]) => setPlacement(p => ({ ...p, rotation: v }))}
+                        min={-180} max={180} step={5}
+                      />
                     </div>
                   </div>
                 </div>
@@ -527,27 +806,39 @@ const MockupNew = () => {
                 <div className="p-4 border-b border-border">
                   <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Área de Gravação</h3>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-surface-2 rounded-md p-2">
+                    <div className="bg-muted rounded-md p-2">
                       <span className="text-muted-foreground block text-[10px]">Largura</span>
                       <span className="text-foreground font-mono">{selectedArea.max_width}cm</span>
                     </div>
-                    <div className="bg-surface-2 rounded-md p-2">
+                    <div className="bg-muted rounded-md p-2">
                       <span className="text-muted-foreground block text-[10px]">Altura</span>
                       <span className="text-foreground font-mono">{selectedArea.max_height}cm</span>
                     </div>
                   </div>
-                  <div className="mt-2 bg-surface-2 rounded-md p-2 text-xs">
+                  <div className="mt-2 bg-muted rounded-md p-2 text-xs">
                     <span className="text-muted-foreground block text-[10px]">Formato</span>
                     <span className="text-foreground font-mono">{selectedArea.shape} {selectedArea.is_curved ? "(curvo)" : ""}</span>
                   </div>
                 </div>
 
+                {/* Shortcuts help */}
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Atalhos</h3>
+                  <div className="space-y-1 text-[9px] text-muted-foreground">
+                    <div className="flex justify-between"><span>Undo / Redo</span><span className="font-mono">⌘Z / ⌘Y</span></div>
+                    <div className="flex justify-between"><span>Grid</span><span className="font-mono">G</span></div>
+                    <div className="flex justify-between"><span>Réguas</span><span className="font-mono">R</span></div>
+                    <div className="flex justify-between"><span>Zoom</span><span className="font-mono">+ / -</span></div>
+                    <div className="flex justify-between"><span>Excluir logo</span><span className="font-mono">Del</span></div>
+                  </div>
+                </div>
+
                 <div className="p-4 mt-auto space-y-2">
-                  <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground text-xs" onClick={handleExportPdf}>
-                    <FileText className="w-3.5 h-3.5" /> Layout de Aprovação (PDF)
+                  <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}>
+                    <FileText className="w-3.5 h-3.5" /> Layout Aprovação (PDF)
                   </Button>
-                  <Button variant="outline" className="w-full gap-2 text-xs">
-                    <Download className="w-3.5 h-3.5" /> Baixar PNG
+                  <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
+                    {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG Alta Resolução
                   </Button>
                 </div>
               </div>
