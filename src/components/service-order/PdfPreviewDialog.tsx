@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Printer, Loader2 } from "lucide-react";
+import { Download, Printer, Loader2, X } from "lucide-react";
 
 interface PdfPreviewDialogProps {
   open: boolean;
@@ -15,18 +15,23 @@ const ZOOM_LEVELS = [50, 100, 150] as const;
 const PdfPreviewDialog = ({ open, onOpenChange, pdfBlob, fileName }: PdfPreviewDialogProps) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [zoom, setZoom] = useState<(typeof ZOOM_LEVELS)[number]>(100);
+  const [iframeLoading, setIframeLoading] = useState(true);
 
   useEffect(() => {
     if (pdfBlob) {
       const url = URL.createObjectURL(pdfBlob);
       setPdfUrl(url);
+      setIframeLoading(true);
       return () => URL.revokeObjectURL(url);
     }
     setPdfUrl(null);
   }, [pdfBlob]);
 
   useEffect(() => {
-    if (open) setZoom(100);
+    if (open) {
+      setZoom(100);
+      setIframeLoading(true);
+    }
   }, [open]);
 
   const handleDownload = useCallback(() => {
@@ -59,22 +64,32 @@ const PdfPreviewDialog = ({ open, onOpenChange, pdfBlob, fileName }: PdfPreviewD
                   size="sm"
                   variant={zoom === level ? "default" : "outline"}
                   className="h-7 px-2 text-xs"
-                  onClick={() => setZoom(level)}
+                  onClick={() => { setZoom(level); setIframeLoading(true); }}
                 >
                   {level}%
                 </Button>
               ))}
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-1">Pressione <kbd className="px-1 py-0.5 rounded bg-muted text-[10px] font-mono">ESC</kbd> para fechar</p>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 bg-muted/30">
+        <div className="flex-1 min-h-0 bg-muted/30 relative">
+          {iframeLoading && pdfUrl && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/60">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="text-xs text-muted-foreground">Carregando PDF…</span>
+              </div>
+            </div>
+          )}
           {pdfUrl ? (
             <iframe
               key={zoom}
               src={`${pdfUrl}#toolbar=0&navpanes=0&zoom=${zoom}`}
               className="w-full h-full border-0"
               title="PDF Preview"
+              onLoad={() => setIframeLoading(false)}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -84,6 +99,9 @@ const PdfPreviewDialog = ({ open, onOpenChange, pdfBlob, fileName }: PdfPreviewD
         </div>
 
         <DialogFooter className="px-6 py-3 border-t border-border shrink-0 flex-row gap-2 sm:gap-2">
+          <Button variant="ghost" size="sm" className="gap-2 mr-auto" onClick={() => onOpenChange(false)}>
+            <X className="w-3.5 h-3.5" /> Fechar
+          </Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
             <Printer className="w-3.5 h-3.5" /> Imprimir
           </Button>
