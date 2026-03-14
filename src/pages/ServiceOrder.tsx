@@ -18,6 +18,7 @@ import SectionTitle from "@/components/service-order/SectionTitle";
 import ArtUploadField from "@/components/service-order/ArtUploadField";
 import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrderPdf";
 import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
+import { getLogoDataUrl } from "@/lib/logo-loader";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
