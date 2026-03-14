@@ -276,6 +276,11 @@ const MagicUpGenerate = () => {
               onGenerate={(p) => setPrompt(p)}
               productName={selectedProduct?.name}
             />
+
+            {/* Inspiration Gallery */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <InspirationGallery onUsePrompt={(p) => setPrompt(p)} />
+            </div>
           </div>
 
           {/* Product info */}
