@@ -5,7 +5,7 @@ import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-serv
 import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectItem as StatusSelectItem, SelectTrigger as StatusSelectTrigger, SelectValue as StatusSelectValue } from "@/components/ui/select";
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
-  Hash, User, MessageSquare, Image as ImageIcon, Copy, CheckCircle2, Settings2,
+  Hash, User, MessageSquare, Image as ImageIcon, Copy, CheckCircle2, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,6 @@ import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrder
 import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
 import { getLogoDataUrl } from "@/lib/logo-loader";
 import PdfPreviewDialog from "@/components/service-order/PdfPreviewDialog";
-import { Eye } from "lucide-react";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
@@ -160,29 +159,30 @@ const ServiceOrder = () => {
     setSaved(true);
   };
 
-  const handlePreviewPdf = () => {
+  const getValidatedPdfBlob = (actionLabel: "visualizar" | "gerar") => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      toast.error("Preencha os campos obrigatórios antes de visualizar o PDF");
-      return;
+      toast.error(`Preencha os campos obrigatórios antes de ${actionLabel} o PDF`);
+      return null;
     }
+
     const doc = generateServiceOrderPdf(form, logoRef.current);
-    const blob = doc.output("blob");
+    return doc.output("blob");
+  };
+
+  const handlePreviewPdf = () => {
+    const blob = getValidatedPdfBlob("visualizar");
+    if (!blob) return;
     setPreviewBlob(blob);
     setPreviewOpen(true);
   };
 
   const handleDownloadPdf = () => {
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      toast.error("Preencha os campos obrigatórios antes de gerar o PDF");
-      return;
-    }
-    const doc = generateServiceOrderPdf(form, logoRef.current);
-    doc.save(`${form.osNumber}.pdf`);
-    toast.success("PDF da Ordem de Serviço gerado!");
+    const blob = getValidatedPdfBlob("gerar");
+    if (!blob) return;
+    setPreviewBlob(blob);
+    setPreviewOpen(true);
   };
 
   const handlePrint = () => {
@@ -250,7 +250,7 @@ const ServiceOrder = () => {
             <Printer className="w-3.5 h-3.5" /> Imprimir
           </Button>
           <Button size="sm" className="gap-2 text-xs" onClick={handleDownloadPdf}>
-            <Download className="w-3.5 h-3.5" /> Baixar PDF
+            <Download className="w-3.5 h-3.5" /> Preview + Baixar
           </Button>
         </div>
       </div>
@@ -471,7 +471,7 @@ const ServiceOrder = () => {
               <Eye className="w-4 h-4" /> Preview do PDF
             </Button>
             <Button size="lg" variant="outline" className="flex-1 gap-2" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4" /> Baixar PDF
+              <Download className="w-4 h-4" /> Preview + Baixar
             </Button>
           </div>
         </motion.div>
