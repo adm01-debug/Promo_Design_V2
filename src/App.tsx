@@ -28,6 +28,7 @@ const VideoCinema = lazyWithRetry(() => import("./pages/VideoCinema"));
 const CharacterStudio = lazyWithRetry(() => import("./pages/CharacterStudio"));
 const ServiceOrder = lazyWithRetry(() => import("./pages/ServiceOrder"));
 const ServiceOrderList = lazyWithRetry(() => import("./pages/ServiceOrderList"));
+const ServiceOrderDashboard = lazyWithRetry(() => import("./pages/ServiceOrderDashboard"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
@@ -53,6 +54,7 @@ const App = () => (
                   <Route path="/mockup/editor" element={<MockupEditor />} />
                   <Route path="/mockup/service-order" element={<ServiceOrder />} />
                   <Route path="/mockup/service-orders" element={<ServiceOrderList />} />
+                  <Route path="/mockup/service-dashboard" element={<ServiceOrderDashboard />} />
                   <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
                   <Route path="/magicup/generate" element={<MagicUpGenerate />} />
                   <Route path="/magicup/prompts" element={<MagicUpPrompts />} />

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
   ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film,
-  Camera, Eye, User, ClipboardList
+  Camera, Eye, User, ClipboardList, BarChart3
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -19,6 +19,7 @@ const modules = [
       { label: "Novo Mockup", path: "/mockup/new", icon: Palette },
       { label: "Rascunhos", path: "/mockup/drafts", icon: FolderOpen },
       { label: "Ordens de Serviço", path: "/mockup/service-orders", icon: ClipboardList },
+      { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3 },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
   },
