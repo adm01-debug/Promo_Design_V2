@@ -54,6 +54,7 @@ const App = () => (
                   <Route path="/mockup/editor" element={<MockupEditor />} />
                   <Route path="/mockup/service-order" element={<ServiceOrder />} />
                   <Route path="/mockup/service-orders" element={<ServiceOrderList />} />
+                  <Route path="/mockup/service-dashboard" element={<ServiceOrderDashboard />} />
                   <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
                   <Route path="/magicup/generate" element={<MagicUpGenerate />} />
                   <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
