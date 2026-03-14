@@ -50,6 +50,7 @@ const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {
     if (location.pathname.startsWith("/magicup")) return "magicup";
+    if (location.pathname.startsWith("/video")) return "video";
     return "mockup";
   });
 
