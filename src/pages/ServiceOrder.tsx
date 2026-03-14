@@ -252,7 +252,6 @@ const ServiceOrder = () => {
           <Button size="sm" className="gap-2 text-xs" onClick={handleDownloadPdf}>
             <Download className="w-3.5 h-3.5" /> Baixar PDF
           </Button>
-          </Button>
         </div>
       </div>
 
