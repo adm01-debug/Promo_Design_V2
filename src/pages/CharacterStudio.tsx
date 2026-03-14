@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Plus, Trash2, Copy, Sparkles,
-  Camera, Palette, Search, Heart
+  Camera, Palette, Download, Search, Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  TrendingUp, Clock, Heart, Eye, Play
+  TrendingUp, Clock, Heart, Eye, Play, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
