@@ -253,18 +253,29 @@ const MockupNew = () => {
 
       if (logoPreview) {
         const logoImg = await loadImageWithFallback(logoPreview);
-        const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
-        const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
-        const logoScale = (areaW * placement.scale * scale) / 500;
+        const exportAreaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
+        const exportAreaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
+        const logoScale = (exportAreaW * placement.scale * scale) / 500;
+        const logoW = Math.round(logoImg.width * logoScale);
+        const logoH = Math.round(logoImg.height * logoScale);
+
+        // Apply mesh warp for non-flat surfaces
+        let drawSource: HTMLImageElement | HTMLCanvasElement = logoImg;
+        if (surfaceType !== "flat") {
+          drawSource = applyMeshWarp(logoImg, logoW, logoH, surfaceType);
+        }
+
         ctx.save();
         ctx.translate(
-          dx + (250 - areaW / 2 + placement.x) * scale * (500 / 500),
-          dy + (250 - areaH / 2 + placement.y) * scale * (500 / 500)
+          dx + (250 - exportAreaW / 2 + placement.x) * scale * (500 / 500),
+          dy + (250 - exportAreaH / 2 + placement.y) * scale * (500 / 500)
         );
-        ctx.rotate((placement.rotation * Math.PI) / 180);
-        if (placement.flipH) ctx.scale(-1, 1);
-        if (placement.flipV) ctx.scale(1, -1);
-        ctx.drawImage(logoImg, 0, 0, logoImg.width * logoScale, logoImg.height * logoScale);
+        if (surfaceType === "flat") {
+          ctx.rotate((placement.rotation * Math.PI) / 180);
+          if (placement.flipH) ctx.scale(-1, 1);
+          if (placement.flipV) ctx.scale(1, -1);
+        }
+        ctx.drawImage(drawSource, 0, 0, logoW, logoH);
         ctx.restore();
       }
 
