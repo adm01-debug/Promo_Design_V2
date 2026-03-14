@@ -23,6 +23,7 @@ const VideoHistory = lazyWithRetry(() => import("./pages/VideoHistory"));
 const VideoMoodboard = lazyWithRetry(() => import("./pages/VideoMoodboard"));
 const VideoPhotodump = lazyWithRetry(() => import("./pages/VideoPhotodump"));
 const VideoGallery = lazyWithRetry(() => import("./pages/VideoGallery"));
+const VideoCinema = lazyWithRetry(() => import("./pages/VideoCinema"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
