@@ -544,7 +544,10 @@ const ServiceOrder = () => {
                   type="file"
                   accept="image/*,.ai,.pdf,.svg,.eps,.cdr"
                   className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleArtUpload(f); }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleArtUpload(f);
+                  }}
                 />
                 {form.artFileDataUrl ? (
                   <div className="relative rounded-lg border border-border bg-muted/30 p-3">

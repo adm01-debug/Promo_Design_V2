@@ -44,7 +44,16 @@ function loadOrders(): StoredServiceOrder[] {
 }
 
 function saveOrders(orders: StoredServiceOrder[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  } catch {
+    // Fallback: salva sem preview base64 para evitar estouro de quota do localStorage
+    const compactOrders = orders.map(({ artFileDataUrl, ...order }) => ({
+      ...order,
+      artFileDataUrl: "",
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(compactOrders));
+  }
 }
 
 export function useServiceOrders() {
