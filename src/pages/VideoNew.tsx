@@ -68,6 +68,8 @@ const ASPECT_PREVIEW: Record<AspectRatio, string> = {
 const VideoNew = () => {
   const moodboard = useMoodboardStore((s) => s.preferences);
   const clearMoodboard = useMoodboardStore((s) => s.clearPreferences);
+  const cinema = useCinemaStore((s) => s.preferences);
+  const clearCinema = useCinemaStore((s) => s.clearPreferences);
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
