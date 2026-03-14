@@ -349,17 +349,15 @@ const VideoNew = () => {
               {/* Right: Live Preview */}
               <div className="flex-1 flex items-center justify-center bg-surface-1 p-8">
                 <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[340px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex flex-col items-center justify-center`}>
-                  {/* Product Image */}
-                  <div className="absolute inset-0 flex items-center justify-center p-6">
-                    <img
-                      src={getProductImageUrl(selectedProduct)}
-                      alt={selectedProduct.name}
-                      className="max-w-[60%] max-h-[50%] object-contain drop-shadow-2xl"
-                    />
-                  </div>
+                  {/* Animated Preview */}
+                  <VideoPreviewAnimation
+                    templateId={creationMode === "template" ? selectedTemplate : "minimal"}
+                    productImage={getProductImageUrl(selectedProduct)}
+                    productName={selectedProduct.name}
+                  />
 
                   {/* Overlay info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card via-card/80 to-transparent">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card via-card/80 to-transparent z-30">
                     <p className="text-xs font-display font-bold text-foreground truncate">{selectedProduct.name}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] font-mono text-primary">{aspectRatio}</span>
@@ -370,15 +368,8 @@ const VideoNew = () => {
                     </div>
                   </div>
 
-                  {/* Play overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-14 h-14 rounded-full glass border border-border/50 flex items-center justify-center opacity-60">
-                      <Play className="w-6 h-6 text-foreground ml-0.5" />
-                    </div>
-                  </div>
-
                   {/* Format indicator corners */}
-                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-30">
                     <span className="text-[8px] font-mono text-muted-foreground bg-surface-1/80 px-1.5 py-0.5 rounded">
                       {creationMode === "template" ? selectedTemplateMeta?.name : "IA Gen"}
                     </span>
