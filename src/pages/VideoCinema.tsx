@@ -79,6 +79,8 @@ const LIGHTING_SETUPS: LightingSetup[] = [
 ];
 
 const VideoCinema = () => {
+  const navigate = useNavigate();
+  const setCinemaPrefs = useCinemaStore((s) => s.setPreferences);
   const [selectedPreset, setSelectedPreset] = useState<GradingPreset>(GRADING_PRESETS[0]);
   const [lighting, setLighting] = useState("three-point");
   const [temperature, setTemperature] = useState(selectedPreset.filters.temperature);
