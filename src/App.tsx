@@ -27,6 +27,7 @@ const VideoGallery = lazyWithRetry(() => import("./pages/VideoGallery"));
 const VideoCinema = lazyWithRetry(() => import("./pages/VideoCinema"));
 const CharacterStudio = lazyWithRetry(() => import("./pages/CharacterStudio"));
 const ServiceOrder = lazyWithRetry(() => import("./pages/ServiceOrder"));
+const ServiceOrderList = lazyWithRetry(() => import("./pages/ServiceOrderList"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
