@@ -18,6 +18,8 @@ const MockupHistory = lazyWithRetry(() => import("./pages/MockupHistory"));
 const MagicUpGenerate = lazyWithRetry(() => import("./pages/MagicUpGenerate"));
 const MagicUpPrompts = lazyWithRetry(() => import("./pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./pages/MagicUpHistory"));
+const VideoNew = lazyWithRetry(() => import("./pages/VideoNew"));
+const VideoHistory = lazyWithRetry(() => import("./pages/VideoHistory"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
