@@ -29,8 +29,18 @@ const VIEWS: ViewDef[] = [
   { id: "side-right", label: "Lateral Dir.", icon: "▶", areaPercent: { x: 35, y: 30, w: 30, h: 40 } },
 ];
 
+type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, flipH: false, flipV: false };
+
+const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
+  { id: "normal", label: "Normal", desc: "Sem efeito" },
+  { id: "multiply", label: "Multiply", desc: "Escurece, ideal para tecidos" },
+  { id: "screen", label: "Screen", desc: "Clareia, ideal para fundos escuros" },
+  { id: "overlay", label: "Overlay", desc: "Contraste, realça texturas" },
+  { id: "darken", label: "Darken", desc: "Mantém tons escuros" },
+  { id: "color-burn", label: "Color Burn", desc: "Saturação intensa" },
+];
 
 const MockupEditor = () => {
   const [searchParams] = useSearchParams();
@@ -52,6 +62,9 @@ const MockupEditor = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
+  const [blendMode, setBlendMode] = useState<BlendMode>("normal");
+  const [showTexture, setShowTexture] = useState(true);
+  const [logoOpacity, setLogoOpacity] = useState(100);
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
@@ -386,7 +399,9 @@ const MockupEditor = () => {
                     }}
                     onMouseDown={handleLogoMouseDown}
                   >
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
+                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false}
+                      style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100 }}
+                    />
                     <div
                       className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
                     >
@@ -524,7 +539,55 @@ const MockupEditor = () => {
             )}
           </div>
 
-          {/* Position controls */}
+          {/* Appearance panel (Recraft-inspired) */}
+          <div className="p-4 border-b border-border">
+            <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aparência</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-mono text-muted-foreground mb-1.5 block">Blend Mode</label>
+                <div className="grid grid-cols-2 gap-1">
+                  {BLEND_MODES.map((bm) => (
+                    <button
+                      key={bm.id}
+                      onClick={() => setBlendMode(bm.id)}
+                      title={bm.desc}
+                      className={`px-2 py-1.5 rounded text-[10px] transition-all ${
+                        blendMode === bm.id
+                          ? "bg-primary/20 text-primary border border-primary/40"
+                          : "bg-surface-2 text-muted-foreground border border-border hover:border-primary/30"
+                      }`}
+                    >
+                      {bm.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-mono text-muted-foreground">Opacidade</label>
+                  <span className="text-[10px] font-mono text-primary">{logoOpacity}%</span>
+                </div>
+                <Slider
+                  value={[logoOpacity]}
+                  onValueChange={([v]) => setLogoOpacity(v)}
+                  min={10} max={100} step={5}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-mono text-muted-foreground">Textura</label>
+                <button
+                  onClick={() => setShowTexture(!showTexture)}
+                  className={`px-2 py-1 rounded text-[10px] border transition-all ${
+                    showTexture
+                      ? "bg-primary/20 text-primary border-primary/40"
+                      : "bg-surface-2 text-muted-foreground border-border"
+                  }`}
+                >
+                  {showTexture ? "On" : "Off"}
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="p-4 border-b border-border">
             <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Posição — {currentView.label}

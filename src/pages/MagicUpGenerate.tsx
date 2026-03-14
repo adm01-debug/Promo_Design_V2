@@ -12,6 +12,7 @@ import type { DbProduct } from "@/lib/db-types";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
 import PromptGenerator from "@/components/PromptGenerator";
 import DownloadMenu from "@/components/DownloadMenu";
+import InspirationGallery from "@/components/InspirationGallery";
 
 /** Build a context-aware prompt from product data + user intent */
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
@@ -275,6 +276,11 @@ const MagicUpGenerate = () => {
               onGenerate={(p) => setPrompt(p)}
               productName={selectedProduct?.name}
             />
+
+            {/* Inspiration Gallery */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <InspirationGallery onUsePrompt={(p) => setPrompt(p)} />
+            </div>
           </div>
 
           {/* Product info */}
