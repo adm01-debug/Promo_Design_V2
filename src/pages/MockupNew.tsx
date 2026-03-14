@@ -476,6 +476,28 @@ const MockupNew = () => {
                   {selectedProduct.engraving_type && (
                     <p className="text-[10px] text-primary font-mono mt-1">{selectedProduct.engraving_type}</p>
                   )}
+                  {/* Variant color swatches in canvas panel */}
+                  {colorVariants.length > 0 && (
+                    <div className="mt-3">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase">Cor</label>
+                      <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                        {colorVariants.map((v) => (
+                          <button
+                            key={v.id}
+                            onClick={() => setSelectedVariant(selectedVariant?.id === v.id ? null : v)}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              selectedVariant?.id === v.id ? "border-primary scale-110 shadow-glow" : "border-border hover:border-primary/40"
+                            }`}
+                            style={{ backgroundColor: v.color_hex || "#ccc" }}
+                            title={v.color_name || v.name}
+                          />
+                        ))}
+                      </div>
+                      {selectedVariant && (
+                        <p className="text-[10px] text-foreground mt-1">{selectedVariant.color_name || selectedVariant.name}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-4 border-b border-border">
