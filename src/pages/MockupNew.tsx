@@ -56,6 +56,7 @@ const MockupNew = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
 
   // Undo/Redo
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
