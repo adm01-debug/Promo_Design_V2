@@ -471,7 +471,7 @@ const ServiceOrder = () => {
               <Eye className="w-4 h-4" /> Preview do PDF
             </Button>
             <Button size="lg" variant="outline" className="flex-1 gap-2" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4" /> Baixar PDF
+              <Download className="w-4 h-4" /> Preview + Baixar
             </Button>
           </div>
         </motion.div>
