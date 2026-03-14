@@ -191,6 +191,8 @@ const MockupNew = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
+      clearWarpCache();
+      setWarpedLogoUrl(null);
       setLogoPreview(dataUrl);
       // Auto-detect surface type from template
       if (selectedTemplate) {
