@@ -69,6 +69,7 @@ const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const artInputRef = useRef<HTMLInputElement>(null);
   const { addOrder, getOrder, updateOrder, orders } = useServiceOrders();
   const editId = searchParams.get("edit");
   const existingOrder = editId ? getOrder(editId) : null;
