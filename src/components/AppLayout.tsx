@@ -1,19 +1,27 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import Breadcrumbs from "./Breadcrumbs";
+import ScrollToTop from "./ScrollToTop";
+import CommandPalette from "./CommandPalette";
+import OnboardingDialog from "./OnboardingDialog";
 
 const AppLayout = () => {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="flex min-h-screen bg-background">
+      <CommandPalette />
+      <OnboardingDialog />
+      <ScrollToTop />
+
       {isMobile ? (
         <>
-          {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(true)}
             className="fixed top-3 left-3 z-50 w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center"
@@ -21,7 +29,6 @@ const AppLayout = () => {
             <Menu className="w-5 h-5 text-foreground" />
           </button>
 
-          {/* Mobile drawer overlay */}
           <AnimatePresence>
             {mobileOpen && (
               <>
@@ -48,14 +55,40 @@ const AppLayout = () => {
           </AnimatePresence>
 
           <main className="flex-1 pt-14">
-            <Outlet />
+            <div className="p-4">
+              <Breadcrumbs />
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </main>
         </>
       ) : (
         <>
           <AppSidebar />
           <main className="flex-1 ml-[240px] transition-all">
-            <Outlet />
+            <div className="p-4 pb-0">
+              <Breadcrumbs />
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </main>
         </>
       )}
