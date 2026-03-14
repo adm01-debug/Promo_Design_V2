@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/lib/mockup-types";
 import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
+import { useMagicUpHistory } from "@/hooks/use-magicup-history";
 
 /** Build a context-aware prompt from product data + user intent */
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
