@@ -3,7 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
-  ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film
+  ChevronRight, FolderOpen, Palette, Wand2, BookOpen, Video, Film,
+  Camera, Eye
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
@@ -40,6 +41,9 @@ const modules = [
     description: "Vídeos Publicitários",
     children: [
       { label: "Novo Vídeo", path: "/video/new", icon: Film },
+      { label: "Moodboard", path: "/video/moodboard", icon: Palette },
+      { label: "Photodump", path: "/video/photodump", icon: Camera },
+      { label: "Inspiração", path: "/video/gallery", icon: Eye },
       { label: "Histórico", path: "/video/history", icon: History },
     ],
   },
