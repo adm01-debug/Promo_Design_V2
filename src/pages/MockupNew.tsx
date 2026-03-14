@@ -130,7 +130,7 @@ const MockupNew = () => {
       if (e.key === "r" && !ctrl) setShowRulers(prev => !prev);
       if (e.key === "+" || e.key === "=") setZoom(prev => Math.min(400, prev + 25));
       if (e.key === "-") setZoom(prev => Math.max(25, prev - 25));
-      if (e.key === "Delete" || e.key === "Backspace") { setLogoPreview(null); setLogoFile(null); }
+      if (e.key === "Delete" || e.key === "Backspace") { setLogoPreview(null); setLogoFile(null); setWarpedLogoUrl(null); clearWarpCache(); }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
