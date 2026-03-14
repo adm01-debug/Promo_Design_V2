@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectItem as StatusSelectItem, SelectTrigger as StatusSelectTrigger, SelectValue as StatusSelectValue } from "@/components/ui/select";
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
   Ruler, Hash, User, Building2, Phone, Mail, Calendar, MessageSquare,
@@ -66,34 +68,85 @@ const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const { addOrder, getOrder, updateOrder, orders } = useServiceOrders();
+  const editId = searchParams.get("edit");
+  const existingOrder = editId ? getOrder(editId) : null;
+  const [saved, setSaved] = useState(!!existingOrder);
 
-  const [form, setForm] = useState<ServiceOrderData>(() => ({
-    osNumber: generateOsNumber(),
-    date: new Date().toISOString().slice(0, 10),
-    clientName: "",
-    clientCompany: "",
-    clientPhone: "",
-    clientEmail: "",
-    productName: searchParams.get("product") || "",
-    productSku: searchParams.get("sku") || "",
-    productMaterial: searchParams.get("material") || "",
-    productColors: searchParams.get("productColors") || "",
-    technique: searchParams.get("technique") || "",
-    areaName: searchParams.get("area") || "",
-    areaWidth: searchParams.get("aw") || "",
-    areaHeight: searchParams.get("ah") || "",
-    areaShape: searchParams.get("shape") || "",
-    artColors: searchParams.get("artColors") || "",
-    artDpi: "300",
-    artFile: searchParams.get("artFile") || "",
-    quantity: "",
-    deliveryDate: "",
-    observations: "",
-    mockupImageUrl: searchParams.get("mockup") || "",
-  }));
+  const [form, setForm] = useState<ServiceOrderData>(() => {
+    if (existingOrder) {
+      return {
+        osNumber: existingOrder.osNumber,
+        date: existingOrder.date,
+        clientName: existingOrder.clientName,
+        clientCompany: existingOrder.clientCompany,
+        clientPhone: existingOrder.clientPhone,
+        clientEmail: existingOrder.clientEmail,
+        productName: existingOrder.productName,
+        productSku: existingOrder.productSku,
+        productMaterial: existingOrder.productMaterial,
+        productColors: existingOrder.productColors,
+        technique: existingOrder.technique,
+        areaName: existingOrder.areaName,
+        areaWidth: existingOrder.areaWidth,
+        areaHeight: existingOrder.areaHeight,
+        areaShape: existingOrder.areaShape,
+        artColors: existingOrder.artColors,
+        artDpi: existingOrder.artDpi,
+        artFile: existingOrder.artFile,
+        quantity: existingOrder.quantity,
+        deliveryDate: existingOrder.deliveryDate,
+        observations: existingOrder.observations,
+        mockupImageUrl: existingOrder.mockupImageUrl,
+      };
+    }
+    return {
+      osNumber: generateOsNumber(),
+      date: new Date().toISOString().slice(0, 10),
+      clientName: "",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: searchParams.get("product") || "",
+      productSku: searchParams.get("sku") || "",
+      productMaterial: searchParams.get("material") || "",
+      productColors: searchParams.get("productColors") || "",
+      technique: searchParams.get("technique") || "",
+      areaName: searchParams.get("area") || "",
+      areaWidth: searchParams.get("aw") || "",
+      areaHeight: searchParams.get("ah") || "",
+      areaShape: searchParams.get("shape") || "",
+      artColors: searchParams.get("artColors") || "",
+      artDpi: "300",
+      artFile: searchParams.get("artFile") || "",
+      quantity: "",
+      deliveryDate: "",
+      observations: "",
+      mockupImageUrl: searchParams.get("mockup") || "",
+    };
+  });
+
+  const [currentStatus, setCurrentStatus] = useState<OsStatus>(existingOrder?.status || "aberta");
 
   const update = (field: keyof ServiceOrderData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setSaved(false);
+  };
+
+  const handleSave = () => {
+    if (!form.productName) {
+      toast.error("Informe ao menos o nome do produto");
+      return;
+    }
+    if (editId && existingOrder) {
+      updateOrder(editId, { ...form, status: currentStatus });
+      toast.success("Ordem de Serviço atualizada!");
+    } else {
+      const newOrder = addOrder(form);
+      navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true });
+      toast.success("Ordem de Serviço salva!");
+    }
+    setSaved(true);
   };
 
   // ──────────── PDF Generation ────────────
@@ -299,6 +352,21 @@ const ServiceOrder = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {editId && (
+            <StatusSelect value={currentStatus} onValueChange={(v) => { setCurrentStatus(v as OsStatus); setSaved(false); }}>
+              <StatusSelectTrigger className="w-[140px] h-9 text-xs">
+                <StatusSelectValue />
+              </StatusSelectTrigger>
+              <StatusSelectContent>
+                {(Object.entries(STATUS_CONFIG) as [OsStatus, { label: string }][]).map(([key, cfg]) => (
+                  <StatusSelectItem key={key} value={key}>{cfg.label}</StatusSelectItem>
+                ))}
+              </StatusSelectContent>
+            </StatusSelect>
+          )}
+          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleSave} disabled={saved}>
+            <CheckCircle2 className="w-3.5 h-3.5" /> {saved ? "Salvo" : "Salvar"}
+          </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handlePrint}>
             <Printer className="w-3.5 h-3.5" /> Imprimir
           </Button>
@@ -463,7 +531,10 @@ const ServiceOrder = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pb-10">
-            <Button size="lg" className="flex-1 gap-2" onClick={handleDownloadPdf}>
+            <Button size="lg" className="flex-1 gap-2" onClick={handleSave} disabled={saved}>
+              <CheckCircle2 className="w-4 h-4" /> {saved ? "OS Salva ✓" : "Salvar Ordem de Serviço"}
+            </Button>
+            <Button size="lg" variant="secondary" className="flex-1 gap-2" onClick={handleDownloadPdf}>
               <Download className="w-4 h-4" /> Baixar PDF da OS
             </Button>
             <Button size="lg" variant="outline" className="flex-1 gap-2" onClick={handlePrint}>

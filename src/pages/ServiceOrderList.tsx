@@ -1,0 +1,246 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FileText, Plus, Search, Filter, Trash2, Eye, MoreHorizontal,
+  Package, Calendar, ArrowUpDown, CheckCircle2
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { toast } from "sonner";
+
+const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [
+  { value: "all", label: "Todas" },
+  { value: "aberta", label: "Abertas" },
+  { value: "em_producao", label: "Em Produção" },
+  { value: "concluida", label: "Concluídas" },
+  { value: "cancelada", label: "Canceladas" },
+];
+
+const ServiceOrderList = () => {
+  const navigate = useNavigate();
+  const { orders, updateStatus, deleteOrder } = useServiceOrders();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
+  const [sortDesc, setSortDesc] = useState(true);
+
+  const filtered = orders
+    .filter((o) => {
+      if (statusFilter !== "all" && o.status !== statusFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return (
+          o.osNumber.toLowerCase().includes(q) ||
+          o.clientName.toLowerCase().includes(q) ||
+          o.clientCompany.toLowerCase().includes(q) ||
+          o.productName.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return sortDesc ? -diff : diff;
+    });
+
+  const handleChangeStatus = (id: string, status: OsStatus) => {
+    updateStatus(id, status);
+    toast.success(`Status atualizado para "${STATUS_CONFIG[status].label}"`);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteOrder(id);
+    toast.success("Ordem de Serviço excluída");
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-lg font-display font-bold text-foreground">Ordens de Serviço</h1>
+            <p className="text-xs text-muted-foreground">{orders.length} ordem(ns) registrada(s)</p>
+          </div>
+          <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
+            <Plus className="w-3.5 h-3.5" /> Nova OS
+          </Button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nº, cliente ou produto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex gap-2">
+            {STATUS_FILTERS.map((f) => (
+              <Button
+                key={f.value}
+                variant={statusFilter === f.value ? "default" : "outline"}
+                size="sm"
+                className="text-xs"
+                onClick={() => setStatusFilter(f.value)}
+              >
+                {f.label}
+              </Button>
+            ))}
+            <Button variant="ghost" size="icon" onClick={() => setSortDesc(!sortDesc)}>
+              <ArrowUpDown className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="max-w-5xl mx-auto p-6">
+        {filtered.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20"
+          >
+            <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm">
+              {orders.length === 0
+                ? "Nenhuma ordem de serviço criada ainda"
+                : "Nenhum resultado para os filtros aplicados"}
+            </p>
+            {orders.length === 0 && (
+              <Button variant="outline" className="mt-4 gap-2" onClick={() => navigate("/mockup/new")}>
+                <Plus className="w-4 h-4" /> Criar do Mockup Studio
+              </Button>
+            )}
+          </motion.div>
+        ) : (
+          <div className="space-y-3">
+            <AnimatePresence>
+              {filtered.map((order) => {
+                const cfg = STATUS_CONFIG[order.status];
+                return (
+                  <motion.div
+                    key={order.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="font-mono text-sm font-semibold text-foreground">{order.osNumber}</span>
+                          <Badge variant="outline" className={`${cfg.bg} ${cfg.color} border-0 text-[10px]`}>
+                            {cfg.label}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Package className="w-3 h-3" />
+                            {order.productName || "Sem produto"}
+                          </span>
+                          {order.clientName && (
+                            <span className="flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              {order.clientName}
+                              {order.clientCompany && ` • ${order.clientCompany}`}
+                            </span>
+                          )}
+                          {order.technique && (
+                            <span className="hidden md:inline">{order.technique}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] text-muted-foreground/60 mt-1">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Criada: {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                          </span>
+                          {order.deliveryDate && (
+                            <span>Entrega: {order.deliveryDate}</span>
+                          )}
+                          {order.quantity && <span>Qtd: {order.quantity}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "aberta")}>
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-400" /> Aberta
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "em_producao")}>
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-amber-400" /> Em Produção
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "concluida")}>
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-400" /> Concluída
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "cancelada")}>
+                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-red-400" /> Cancelada
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir OS {order.osNumber}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(order.id)}>
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ServiceOrderList;
