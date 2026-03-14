@@ -94,11 +94,9 @@ const VideoMoodboard = () => {
             Inspirado no Higgsfield
           </span>
         </div>
-        <Link to="/video/new">
-          <Button size="sm" className="text-xs gap-1.5 bg-gradient-primary text-primary-foreground" disabled={!isComplete}>
+        <Button size="sm" className="text-xs gap-1.5" disabled={!isComplete} onClick={handleApply}>
             Aplicar ao Vídeo <ArrowRight className="w-3.5 h-3.5" />
           </Button>
-        </Link>
       </div>
 
       <div className="flex-1 overflow-auto">
