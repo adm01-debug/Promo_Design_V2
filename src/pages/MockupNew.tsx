@@ -33,7 +33,7 @@ const MockupNew = () => {
 
   // Data from external Supabase
   const { data: productsData, isLoading: productsLoading } = useProducts({
-    search, categoryId: selectedCategoryId, page, pageSize: 24, onlyWithImages: false,
+    search, page, pageSize: 24, onlyWithImages: false,
   });
   const { data: categories } = useCategories();
   const { data: productImages } = useProductImages(selectedProduct?.id || null);
