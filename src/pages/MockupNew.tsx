@@ -90,6 +90,10 @@ const MockupNew = () => {
 
   const colorVariants = (variants || []).filter(v => v.color_hex);
 
+  // Area dimensions (used by auto-fit and canvas)
+  const areaW = selectedArea ? Math.min(selectedArea.max_width * 20, 400) : 200;
+  const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
+
   // ──────────────── History helpers ────────────────
   const pushHistory = useCallback((p: Placement, logo: string | null) => {
     setHistory(prev => [...prev.slice(0, historyIdx + 1), { placement: p, logoPreview: logo }]);
