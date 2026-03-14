@@ -95,6 +95,7 @@ const ServiceOrder = () => {
         artColors: existingOrder.artColors,
         artDpi: existingOrder.artDpi,
         artFile: existingOrder.artFile,
+        artFileDataUrl: existingOrder.artFileDataUrl || "",
         quantity: existingOrder.quantity,
         deliveryDate: existingOrder.deliveryDate,
         observations: existingOrder.observations,
