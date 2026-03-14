@@ -705,11 +705,19 @@ const MockupNew = () => {
                             left: placement.x,
                             top: placement.y,
                             width: `${placement.scale * 100}%`,
-                            transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
+                            ...(surfaceType !== "flat" ? PERSPECTIVE_PRESETS.find(p => p.id === surfaceType)?.css : {}),
                           }}
                           onMouseDown={handleLogoMouseDown}
                         >
-                          <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
+                          <img
+                            src={logoPreview}
+                            alt="Logo"
+                            className="w-full h-full object-contain pointer-events-none"
+                            draggable={false}
+                            style={{
+                              transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
+                            }}
+                          />
                           <div
                             className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
                             onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
