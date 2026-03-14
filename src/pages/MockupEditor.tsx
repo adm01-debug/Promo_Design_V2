@@ -83,6 +83,10 @@ const MockupEditor = () => {
   const currentPlacement = placements[activeView] || INITIAL_PLACEMENT;
   const currentView = VIEWS.find(v => v.id === activeView)!;
 
+  const CANVAS_SIZE = 460;
+  const viewAreaW = (currentView.areaPercent.w / 100) * CANVAS_SIZE;
+  const viewAreaH = (currentView.areaPercent.h / 100) * CANVAS_SIZE;
+
   const updatePlacement = (update: Partial<Placement>) => {
     setPlacements(prev => ({
       ...prev,
