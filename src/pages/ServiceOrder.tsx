@@ -5,7 +5,7 @@ import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-serv
 import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectItem as StatusSelectItem, SelectTrigger as StatusSelectTrigger, SelectValue as StatusSelectValue } from "@/components/ui/select";
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
-  Hash, User, MessageSquare, Image as ImageIcon, Copy, CheckCircle2, Settings2,
+  Hash, User, MessageSquare, Image as ImageIcon, Copy, CheckCircle2, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,6 @@ import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrder
 import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
 import { getLogoDataUrl } from "@/lib/logo-loader";
 import PdfPreviewDialog from "@/components/service-order/PdfPreviewDialog";
-import { Eye } from "lucide-react";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();

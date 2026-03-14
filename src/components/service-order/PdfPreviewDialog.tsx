@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Printer, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Printer, Loader2 } from "lucide-react";
 
 interface PdfPreviewDialogProps {
   open: boolean;
