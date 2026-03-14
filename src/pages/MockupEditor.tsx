@@ -399,7 +399,9 @@ const MockupEditor = () => {
                     }}
                     onMouseDown={handleLogoMouseDown}
                   >
-                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} />
+                    <img src={logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false}
+                      style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100 }}
+                    />
                     <div
                       className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
                     >
