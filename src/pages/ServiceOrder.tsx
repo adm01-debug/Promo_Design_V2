@@ -38,6 +38,7 @@ interface ServiceOrderData {
   artColors: string;
   artDpi: string;
   artFile: string;
+  artFileDataUrl: string;
   quantity: string;
   deliveryDate: string;
   observations: string;
