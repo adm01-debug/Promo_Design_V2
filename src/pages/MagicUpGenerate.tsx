@@ -86,16 +86,22 @@ const MagicUpGenerate = () => {
     setIsGenerating(true);
     // Simulate generation - will use edge function when Cloud is enabled
     setTimeout(() => {
-      setGenerations((prev) => [
-        {
-          id: Date.now().toString(),
-          prompt: finalPrompt,
-          imageUrl: "/placeholder.svg",
-          favorite: false,
-          productName: selectedProduct?.name,
-        },
-        ...prev,
-      ]);
+      const entry = {
+        id: Date.now().toString(),
+        prompt: finalPrompt,
+        imageUrl: "/placeholder.svg",
+        favorite: false,
+        productName: selectedProduct?.name,
+      };
+      setGenerations((prev) => [entry, ...prev]);
+      // Persist to shared history
+      saveToHistory({
+        prompt: finalPrompt,
+        imageUrl: "/placeholder.svg",
+        productName: selectedProduct?.name,
+        productSku: selectedProduct?.sku,
+        style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label,
+      });
       setIsGenerating(false);
     }, 2000);
   };
