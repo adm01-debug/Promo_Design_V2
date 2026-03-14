@@ -137,6 +137,32 @@ const ServiceOrder = () => {
     setSaved(false);
   };
 
+  const handleArtUpload = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      // Non-image file — just store the name
+      update("artFile", file.name);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl }));
+      setSaved(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleArtDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleArtUpload(file);
+  };
+
+  const removeArt = () => {
+    setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "" }));
+    setSaved(false);
+  };
+
   const handleSave = () => {
     if (!form.productName) {
       toast.error("Informe ao menos o nome do produto");
