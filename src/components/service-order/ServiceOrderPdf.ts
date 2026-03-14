@@ -282,7 +282,7 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   doc.setFontSize(6);
   doc.setTextColor(150);
   doc.text(
-    `${form.osNumber} • Gerado por Promo Design Studio • ${new Date().toLocaleString("pt-BR")}`,
+    `${form.osNumber} • Gerado por Promo Design • ${new Date().toLocaleString("pt-BR")}`,
     pw / 2, ph - 5, { align: "center" }
   );
 
