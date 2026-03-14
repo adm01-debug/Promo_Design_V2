@@ -1,23 +1,47 @@
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Breadcrumbs from "./Breadcrumbs";
 import ScrollToTop from "./ScrollToTop";
 import CommandPalette from "./CommandPalette";
 import OnboardingDialog from "./OnboardingDialog";
+import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog";
 
 const AppLayout = () => {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setShortcutsOpen(true);
+      }
+    };
+
+    const onOpenShortcuts = () => setShortcutsOpen(true);
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("promo-open-shortcuts", onOpenShortcuts);
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("promo-open-shortcuts", onOpenShortcuts);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-background">
       <CommandPalette />
       <OnboardingDialog />
+      <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <ScrollToTop />
 
       {isMobile ? (
@@ -36,7 +60,7 @@ const AppLayout = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/50 z-40"
+                  className="fixed inset-0 bg-background/70 z-40"
                   onClick={() => setMobileOpen(false)}
                 />
                 <motion.div

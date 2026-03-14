@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  Image, Sparkles, ArrowRight, Clock, Video, Film, Palette,
-  Camera, Zap, TrendingUp, Layers, Eye
-} from "lucide-react";
+import { Image, Sparkles, Clock, Video, Film, Palette, Camera, FolderOpen } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import MockupListItem from "@/components/MockupListItem";
+import EmptyState from "@/components/EmptyState";
 import { LayoutPopover } from "@/components/LayoutPopover";
 import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector";
 import { useCountUp } from "@/hooks/use-count-up";
@@ -90,7 +88,9 @@ const columnClasses: Record<number, string> = {
   5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
 };
 
-const StatCard = ({ stat, index }: { stat: typeof stats[0]; index: number }) => {
+const headingWords = ["Bem-vindo", "ao"];
+
+const StatCard = ({ stat, index }: { stat: (typeof stats)[0]; index: number }) => {
   const count = useCountUp(stat.value, 1200, index * 100);
   return (
     <motion.div
@@ -119,26 +119,36 @@ const Dashboard = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-6 sm:mb-8"
-      >
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          Bem-vindo ao <span className="text-primary">Promo Design</span>
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex flex-wrap items-center gap-1.5">
+          {headingWords.map((word, i) => (
+            <motion.span
+              key={word}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 * i }}
+            >
+              {word}
+            </motion.span>
+          ))}
+          <motion.span
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-primary"
+          >
+            Promo Design
+          </motion.span>
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">Sistema de Criação para o Time de Artes</p>
       </motion.div>
 
-      {/* Stats with count-up */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {stats.map((stat, i) => (
           <StatCard key={stat.label} stat={stat} index={i} />
         ))}
       </div>
 
-      {/* Quick Actions with tactile feedback */}
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Ações Rápidas</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 sm:mb-8">
         {quickActions.map((action, i) => (
@@ -166,7 +176,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Recent Projects */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Projetos Recentes</h2>
         <LayoutPopover
@@ -177,35 +186,45 @@ const Dashboard = () => {
         />
       </div>
 
-      <AnimatePresence mode="wait">
-        {viewMode === "grid" ? (
-          <motion.div
-            key="grid"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className={`grid ${columnClasses[gridColumns] || columnClasses[4]} gap-3 sm:gap-4`}
-          >
-            {recentProjects.map((project, i) => (
-              <ProjectCard key={project.title} {...project} index={i} />
-            ))}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex flex-col gap-3"
-          >
-            {recentProjects.map((project, i) => (
-              <MockupListItem key={project.title} {...project} index={i} />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {recentProjects.length === 0 ? (
+        <EmptyState
+          icon={FolderOpen}
+          title="Nenhum projeto recente"
+          description="Comece agora e crie seu primeiro mockup profissional para produção."
+          actionLabel="Criar primeiro mockup"
+          actionPath="/mockup/new"
+        />
+      ) : (
+        <AnimatePresence mode="wait">
+          {viewMode === "grid" ? (
+            <motion.div
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`grid ${columnClasses[gridColumns] || columnClasses[4]} gap-3 sm:gap-4`}
+            >
+              {recentProjects.map((project, i) => (
+                <ProjectCard key={project.title} {...project} index={i} />
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-3"
+            >
+              {recentProjects.map((project, i) => (
+                <MockupListItem key={project.title} {...project} index={i} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 };
