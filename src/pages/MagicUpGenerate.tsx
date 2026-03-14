@@ -2,14 +2,16 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wand2, Sparkles, Send, Image, Heart,
-  Download, Copy, ChevronDown, Loader2,
-  Search, Package, ChevronLeft, X
+  Copy, ChevronDown, Loader2,
+  Search, Package, ChevronLeft, X, Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/lib/mockup-types";
 import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
+import PromptGenerator from "@/components/PromptGenerator";
+import DownloadMenu from "@/components/DownloadMenu";
 
 /** Build a context-aware prompt from product data + user intent */
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
@@ -215,7 +217,7 @@ const MagicUpGenerate = () => {
 
           {/* Smart prompt preview */}
           {selectedProduct && smartPrompt && (
-            <div className="p-3 flex-1 overflow-auto">
+            <div className="p-3 border-b border-border">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Prompt Inteligente</h3>
                 <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={applySmartPrompt}>
@@ -227,6 +229,18 @@ const MagicUpGenerate = () => {
               </p>
             </div>
           )}
+
+          {/* Advanced Prompt Generator (4 axes) */}
+          <div className="p-3 flex-1 overflow-auto">
+            <div className="flex items-center gap-1.5 mb-3">
+              <Target className="w-3.5 h-3.5 text-primary" />
+              <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Gerador de Campanha</h3>
+            </div>
+            <PromptGenerator
+              onGenerate={(p) => setPrompt(p)}
+              productName={selectedProduct?.name}
+            />
+          </div>
 
           {/* Product info */}
           {selectedProduct && (
@@ -409,9 +423,7 @@ const MagicUpGenerate = () => {
                         <img src={gen.imageUrl} alt="" className="w-full h-full object-cover" />
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
-                          <Download className="w-4 h-4" />
-                        </Button>
+                        <DownloadMenu imageUrl={gen.imageUrl} fileName={`magicup-${gen.id}`} />
                         <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
                           <Copy className="w-4 h-4" />
                         </Button>

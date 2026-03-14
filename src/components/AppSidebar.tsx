@@ -5,6 +5,7 @@ import {
   Layers, Image, Sparkles, History, Settings, ChevronLeft,
   ChevronRight, FolderOpen, Palette, Wand2, BookOpen
 } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 const modules = [
   {
@@ -140,6 +141,10 @@ const AppSidebar = () => {
 
       {/* Bottom */}
       <div className="border-t border-sidebar-border p-2 space-y-1">
+        <div className="flex items-center justify-between px-3 py-1">
+          {!collapsed && <span className="text-[10px] font-mono text-sidebar-foreground/50 uppercase">Tema</span>}
+          <ThemeToggle />
+        </div>
         <Link
           to="/settings"
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
