@@ -41,12 +41,26 @@ const REFERENCE_SCENES = [
 ];
 
 const VideoMoodboard = () => {
+  const navigate = useNavigate();
+  const setPreferences = useMoodboardStore((s) => s.setPreferences);
   const [selectedTone, setSelectedTone] = useState<Tone | null>(null);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [selectedScenes, setSelectedScenes] = useState<string[]>([]);
   const [customColors, setCustomColors] = useState<string[]>([]);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState("");
+
+  const handleApply = () => {
+    if (!selectedTone || !selectedMood) return;
+    setPreferences({
+      tone: selectedTone,
+      palette: selectedMood,
+      scenes: selectedScenes,
+      customColors,
+      keywords,
+    });
+    navigate("/video/new");
+  };
 
   const toggleScene = (id: string) => {
     setSelectedScenes((prev) =>
