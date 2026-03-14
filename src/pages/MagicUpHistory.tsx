@@ -14,89 +14,17 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-
-interface HistoryItem {
-  id: string;
-  prompt: string;
-  imageUrl: string;
-  favorite: boolean;
-  productName?: string;
-  productSku?: string;
-  style?: string;
-  createdAt: string;
-}
-
-// Demo data until Cloud is enabled
-const DEMO_HISTORY: HistoryItem[] = [
-  {
-    id: "h1",
-    prompt: 'Professional product photography of "Caneca Cerâmica 325ml" on a dark executive desk, warm ambient lighting, shallow depth of field, premium corporate feel',
-    imageUrl: "/placeholder.svg",
-    favorite: true,
-    productName: "Caneca Cerâmica 325ml",
-    productSku: "CAN-001",
-    style: "Premium",
-    createdAt: "2026-03-14T10:30:00",
-  },
-  {
-    id: "h2",
-    prompt: 'Clean flat lay product photography of "Caderno Capa Dura A5" on white marble surface, centered with minimal props, soft natural light',
-    imageUrl: "/placeholder.svg",
-    favorite: false,
-    productName: "Caderno Capa Dura A5",
-    productSku: "CAD-005",
-    style: "Flat Lay",
-    createdAt: "2026-03-13T15:45:00",
-  },
-  {
-    id: "h3",
-    prompt: 'Modern lifestyle scene with "Squeeze Inox 500ml" in daily use, natural environment, authentic feel, bokeh background',
-    imageUrl: "/placeholder.svg",
-    favorite: true,
-    productName: "Squeeze Inox 500ml",
-    productSku: "SQZ-010",
-    style: "Lifestyle",
-    createdAt: "2026-03-13T09:20:00",
-  },
-  {
-    id: "h4",
-    prompt: 'E-commerce product photo of "Camiseta Algodão" on pure white background, centered, even lighting, high resolution',
-    imageUrl: "/placeholder.svg",
-    favorite: false,
-    productName: "Camiseta Algodão P/M/G",
-    productSku: "CAM-002",
-    style: "E-commerce",
-    createdAt: "2026-03-12T14:10:00",
-  },
-  {
-    id: "h5",
-    prompt: "Corporate gift set arrangement with multiple branded items, elegant presentation, professional studio lighting",
-    imageUrl: "/placeholder.svg",
-    favorite: false,
-    style: "Corporativo",
-    createdAt: "2026-03-11T11:00:00",
-  },
-  {
-    id: "h6",
-    prompt: 'Minimalist product shot of "Bloco Adesivado" negative space, single accent color, editorial magazine style',
-    imageUrl: "/placeholder.svg",
-    favorite: true,
-    productName: "Bloco Adesivado",
-    productSku: "BLO-020",
-    style: "Minimalista",
-    createdAt: "2026-03-10T16:30:00",
-  },
-];
+import { useMagicUpHistory, type MagicUpHistoryItem } from "@/hooks/use-magicup-history";
 
 const MagicUpHistory = () => {
+  const { items, toggleFavorite, deleteItem } = useMagicUpHistory();
   const [search, setSearch] = useState("");
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [filterProduct, setFilterProduct] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
-  const [items, setItems] = useState<HistoryItem[]>(DEMO_HISTORY);
-  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MagicUpHistoryItem | null>(null);
 
   // Unique product names for filter
   const productNames = useMemo(() => {
@@ -130,12 +58,8 @@ const MagicUpHistory = () => {
     });
   }, [items, search, filterFavorites, filterProduct, dateFrom, dateTo]);
 
-  const toggleFavorite = (id: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i)));
-  };
-
-  const deleteItem = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+  const handleDelete = (id: string) => {
+    deleteItem(id);
     if (selectedItem?.id === id) setSelectedItem(null);
   };
 
@@ -354,7 +278,7 @@ const MagicUpHistory = () => {
                         variant="ghost"
                         size="sm"
                         className="text-white h-8 w-8 p-0 hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -467,7 +391,7 @@ const MagicUpHistory = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1 gap-1.5 text-xs text-destructive hover:bg-destructive/10"
-                    onClick={() => deleteItem(selectedItem.id)}
+                    onClick={() => handleDelete(selectedItem.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Excluir
                   </Button>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/lib/mockup-types";
 import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct } from "@/lib/db-types";
+import { useMagicUpHistory } from "@/hooks/use-magicup-history";
 
 /** Build a context-aware prompt from product data + user intent */
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
@@ -54,6 +55,7 @@ const MagicUpGenerate = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generations, setGenerations] = useState<{ id: string; prompt: string; imageUrl: string; favorite: boolean; productName?: string }[]>([]);
+  const { addGeneration: saveToHistory } = useMagicUpHistory();
   const [showPromptBank, setShowPromptBank] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
 
@@ -84,16 +86,22 @@ const MagicUpGenerate = () => {
     setIsGenerating(true);
     // Simulate generation - will use edge function when Cloud is enabled
     setTimeout(() => {
-      setGenerations((prev) => [
-        {
-          id: Date.now().toString(),
-          prompt: finalPrompt,
-          imageUrl: "/placeholder.svg",
-          favorite: false,
-          productName: selectedProduct?.name,
-        },
-        ...prev,
-      ]);
+      const entry = {
+        id: Date.now().toString(),
+        prompt: finalPrompt,
+        imageUrl: "/placeholder.svg",
+        favorite: false,
+        productName: selectedProduct?.name,
+      };
+      setGenerations((prev) => [entry, ...prev]);
+      // Persist to shared history
+      saveToHistory({
+        prompt: finalPrompt,
+        imageUrl: "/placeholder.svg",
+        productName: selectedProduct?.name,
+        productSku: selectedProduct?.sku,
+        style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label,
+      });
       setIsGenerating(false);
     }, 2000);
   };
