@@ -209,6 +209,7 @@ const MockupNew = () => {
                           onClick={() => {
                             setSelectedProduct(product);
                             setSelectedArea(null);
+                            setSelectedVariant(null);
                             setStep("area");
                           }}
                           className={`group rounded-lg border transition-all overflow-hidden text-left ${
