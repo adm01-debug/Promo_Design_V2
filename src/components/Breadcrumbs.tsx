@@ -21,6 +21,7 @@ const LABEL_MAP: Record<string, string> = {
   gallery: "Inspiração",
   characters: "Character Studio",
   settings: "Configurações",
+  templates: "Templates",
 };
 
 const Breadcrumbs = () => {

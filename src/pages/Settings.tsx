@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, Palette, Bell, Info } from "lucide-react";
+import { Palette, Info } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/ThemeToggle";
