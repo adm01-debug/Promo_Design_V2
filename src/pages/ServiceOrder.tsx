@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectItem as StatusSelectItem, SelectTrigger as StatusSelectTrigger, SelectValue as StatusSelectValue } from "@/components/ui/select";
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
   Ruler, Hash, User, Building2, Phone, Mail, Calendar, MessageSquare,
