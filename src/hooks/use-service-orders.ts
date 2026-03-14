@@ -24,6 +24,7 @@ export interface StoredServiceOrder {
   artColors: string;
   artDpi: string;
   artFile: string;
+  artFileDataUrl: string;
   quantity: string;
   observations: string;
   mockupImageUrl: string;
