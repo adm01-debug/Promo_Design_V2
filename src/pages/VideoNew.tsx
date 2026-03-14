@@ -386,17 +386,12 @@ const VideoNew = () => {
           {step === "preview" && selectedProduct && (
             <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-8">
               <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[400px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex items-center justify-center mb-6`}>
-                <img
-                  src={getProductImageUrl(selectedProduct)}
-                  alt={selectedProduct.name}
-                  className="max-w-[55%] max-h-[45%] object-contain drop-shadow-2xl"
+                <VideoPreviewAnimation
+                  templateId={creationMode === "template" ? selectedTemplate : "minimal"}
+                  productImage={getProductImageUrl(selectedProduct)}
+                  productName={selectedProduct.name}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center animate-pulse">
-                    <Play className="w-7 h-7 text-primary ml-0.5" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent">
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent z-30">
                   <p className="text-sm font-display font-bold text-foreground">{selectedProduct.name}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">
                     {aspectRatio} · {duration}s · {videoStyle} · {creationMode === "template" ? selectedTemplateMeta?.name : "IA"}
