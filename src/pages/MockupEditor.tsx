@@ -241,9 +241,6 @@ const MockupEditor = () => {
     toast.success("PDF de aprovação gerado");
   };
 
-  const CANVAS_SIZE = 460;
-  const viewAreaW = (currentView.areaPercent.w / 100) * CANVAS_SIZE;
-  const viewAreaH = (currentView.areaPercent.h / 100) * CANVAS_SIZE;
 
   return (
     <div className="h-screen flex flex-col">
