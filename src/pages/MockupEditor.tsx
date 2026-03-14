@@ -90,6 +90,16 @@ const MockupEditor = () => {
     }));
   };
 
+  const autoFitLogo = useCallback((dataUrl: string) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const fit = calculateAutoFit(img, viewAreaW, viewAreaH);
+      updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale });
+      toast.success("Logo auto-encaixado");
+    };
+    img.src = dataUrl;
+  }, [viewAreaW, viewAreaH]);
+
   const handleLogoUpload = useCallback((file: File) => {
     setLogoFile(file);
     const reader = new FileReader();
@@ -97,11 +107,16 @@ const MockupEditor = () => {
       const dataUrl = e.target?.result as string;
       setLogoPreview(dataUrl);
       const img = new window.Image();
-      img.onload = () => setLogoColors(countUniqueColors(img));
+      img.onload = () => {
+        setLogoColors(countUniqueColors(img));
+        const fit = calculateAutoFit(img, viewAreaW, viewAreaH);
+        updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale });
+        toast.success("Logo auto-encaixado na área de gravação");
+      };
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [viewAreaW, viewAreaH]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
