@@ -8,7 +8,7 @@ const Settings = () => {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4">
         <h1 className="text-lg font-display font-bold text-foreground">Configurações</h1>
-        <p className="text-xs text-muted-foreground">Preferências do Promo Design Studio</p>
+        <p className="text-xs text-muted-foreground">Preferências do Promo Design</p>
       </div>
 
       <div className="max-w-2xl mx-auto p-6 space-y-6">
