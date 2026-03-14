@@ -391,6 +391,180 @@ const CinematicAnimation = ({ productImage }: { productImage: string }) => (
   </motion.div>
 );
 
+/** Neon Glow: contorno neon pulsante */
+const NeonGlowAnimation = ({ productImage }: { productImage: string }) => (
+  <motion.div className="absolute inset-0 flex items-center justify-center p-6">
+    <motion.div
+      className="relative"
+      animate={{
+        filter: [
+          "drop-shadow(0 0 8px hsl(var(--primary) / 0.4))",
+          "drop-shadow(0 0 25px hsl(var(--primary) / 0.8))",
+          "drop-shadow(0 0 8px hsl(var(--primary) / 0.4))",
+        ],
+      }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <img src={productImage} alt="" className="max-w-[55%] max-h-[50%] object-contain mx-auto" />
+    </motion.div>
+  </motion.div>
+);
+
+/** Bounce Drop: cai de cima quicando */
+const BounceDropAnimation = ({ productImage }: { productImage: string }) => (
+  <motion.div className="absolute inset-0 flex items-center justify-center p-6">
+    <motion.img
+      src={productImage}
+      alt=""
+      className="max-w-[55%] max-h-[50%] object-contain drop-shadow-2xl"
+      initial={{ y: -300, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 300, damping: 15, mass: 1.2 }}
+    />
+    <motion.div
+      className="absolute bottom-[30%] w-[30%] h-2 rounded-full bg-foreground/5 blur-sm"
+      initial={{ scaleX: 0, opacity: 0 }}
+      animate={{ scaleX: 1, opacity: 1 }}
+      transition={{ delay: 0.4, duration: 0.3 }}
+    />
+  </motion.div>
+);
+
+/** Morph Shapes: formas geométricas no fundo */
+const MorphShapesAnimation = ({ productImage }: { productImage: string }) => (
+  <motion.div className="absolute inset-0 flex items-center justify-center p-6 overflow-hidden">
+    {[...Array(4)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute border border-primary/20 rounded-full"
+        style={{
+          width: 80 + i * 50,
+          height: 80 + i * 50,
+        }}
+        animate={{
+          rotate: [0, 360],
+          borderRadius: ["50%", "30%", "50%"],
+          scale: [1, 1.1, 1],
+        }}
+        transition={{
+          duration: 6 + i * 2,
+          repeat: Infinity,
+          ease: "linear",
+          delay: i * 0.5,
+        }}
+      />
+    ))}
+    <motion.img
+      src={productImage}
+      alt=""
+      className="max-w-[45%] max-h-[40%] object-contain drop-shadow-2xl relative z-10"
+      animate={{ scale: [1, 1.03, 1] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    />
+  </motion.div>
+);
+
+/** Spotlight: foco de luz movendo */
+const SpotlightAnimation = ({ productImage }: { productImage: string }) => (
+  <motion.div className="absolute inset-0 flex items-center justify-center p-6 overflow-hidden bg-black/40">
+    <motion.div
+      className="absolute w-[200px] h-[200px] rounded-full"
+      style={{
+        background: "radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%)",
+      }}
+      animate={{
+        x: [-60, 60, -60],
+        y: [-30, 30, -30],
+      }}
+      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+    />
+    <img src={productImage} alt="" className="max-w-[55%] max-h-[50%] object-contain drop-shadow-2xl relative z-10" />
+  </motion.div>
+);
+
+/** Typewriter: texto aparecendo letra por letra */
+const TypewriterAnimation = ({ productImage }: { productImage: string }) => {
+  const text = "OFERTA ESPECIAL";
+  const [chars, setChars] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChars((c) => {
+        if (c >= text.length) {
+          setTimeout(() => setChars(0), 1500);
+          return c;
+        }
+        return c + 1;
+      });
+    }, 120);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <motion.div className="absolute inset-0 flex flex-col items-center justify-center p-6 gap-4">
+      <motion.img
+        src={productImage}
+        alt=""
+        className="max-w-[45%] max-h-[35%] object-contain drop-shadow-2xl"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      />
+      <div className="text-primary font-display font-bold text-sm tracking-widest">
+        {text.slice(0, chars)}
+        <motion.span
+          className="inline-block w-0.5 h-4 bg-primary ml-0.5 align-middle"
+          animate={{ opacity: [1, 0] }}
+          transition={{ duration: 0.5, repeat: Infinity }}
+        />
+      </div>
+    </motion.div>
+  );
+};
+
+/** Color Sweep: onda de cor passando */
+const ColorSweepAnimation = ({ productImage }: { productImage: string }) => (
+  <motion.div className="absolute inset-0 flex items-center justify-center p-6 overflow-hidden">
+    <motion.div
+      className="absolute inset-0"
+      style={{
+        background: "linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.15) 50%, transparent 100%)",
+        backgroundSize: "200% 100%",
+      }}
+      animate={{ backgroundPosition: ["-100% 0%", "200% 0%"] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
+    />
+    <img src={productImage} alt="" className="max-w-[55%] max-h-[50%] object-contain drop-shadow-2xl relative z-10" />
+  </motion.div>
+);
+
+/** Matrix Rain: linhas de código caindo */
+const MatrixRainAnimation = ({ productImage }: { productImage: string }) => {
+  const cols = 10;
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center p-6 overflow-hidden">
+      {[...Array(cols)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute top-0 text-[8px] font-mono text-primary/30 leading-3 select-none"
+          style={{ left: `${i * 10 + 2}%` }}
+          animate={{ y: [-20, 500] }}
+          transition={{
+            duration: 3 + Math.random() * 3,
+            delay: Math.random() * 2,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        >
+          {"01001".split("").map((c, j) => (
+            <div key={j}>{Math.random() > 0.5 ? "1" : "0"}</div>
+          ))}
+        </motion.div>
+      ))}
+      <img src={productImage} alt="" className="max-w-[50%] max-h-[45%] object-contain drop-shadow-2xl relative z-10" />
+    </motion.div>
+  );
+};
+
 const ANIMATION_MAP: Record<string, React.FC<{ productImage: string }>> = {
   reveal: RevealAnimation,
   showcase: Showcase360Animation,
@@ -405,6 +579,13 @@ const ANIMATION_MAP: Record<string, React.FC<{ productImage: string }>> = {
   glitch: GlitchAnimation,
   floating: FloatingAnimation,
   cinematic: CinematicAnimation,
+  neonglow: NeonGlowAnimation,
+  bouncedrop: BounceDropAnimation,
+  morphshapes: MorphShapesAnimation,
+  spotlight: SpotlightAnimation,
+  typewriter: TypewriterAnimation,
+  colorsweep: ColorSweepAnimation,
+  matrixrain: MatrixRainAnimation,
 };
 
 const VideoPreviewAnimation = ({ templateId, productImage, productName }: VideoPreviewAnimationProps) => {
