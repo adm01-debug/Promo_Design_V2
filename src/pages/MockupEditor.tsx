@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { loadImageWithFallback, countUniqueColors } from "@/lib/canvas-utils";
+import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 
 // ──────────── View definitions ────────────

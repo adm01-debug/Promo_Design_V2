@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
-import { countUniqueColors, composeMockup, loadImageWithFallback } from "@/lib/canvas-utils";
+import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 
