@@ -138,16 +138,33 @@ const ServiceOrder = () => {
   };
 
   const handleArtUpload = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      // Non-image file — just store the name
-      update("artFile", file.name);
+    const maxFileSizeBytes = 2 * 1024 * 1024;
+
+    if (file.size > maxFileSizeBytes) {
+      toast.error("Arquivo muito grande. Use uma arte de até 2MB.");
       return;
     }
+
+    if (!file.type.startsWith("image/")) {
+      setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: "" }));
+      setSaved(false);
+      if (artInputRef.current) artInputRef.current.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
+      const dataUrl = e.target?.result;
+      if (typeof dataUrl !== "string") {
+        toast.error("Não foi possível gerar o preview da arte.");
+        return;
+      }
       setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl }));
       setSaved(false);
+      if (artInputRef.current) artInputRef.current.value = "";
+    };
+    reader.onerror = () => {
+      toast.error("Não foi possível ler o arquivo da arte.");
     };
     reader.readAsDataURL(file);
   };
