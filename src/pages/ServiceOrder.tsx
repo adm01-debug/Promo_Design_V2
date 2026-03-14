@@ -159,29 +159,30 @@ const ServiceOrder = () => {
     setSaved(true);
   };
 
-  const handlePreviewPdf = () => {
+  const getValidatedPdfBlob = (actionLabel: "visualizar" | "gerar") => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      toast.error("Preencha os campos obrigatórios antes de visualizar o PDF");
-      return;
+      toast.error(`Preencha os campos obrigatórios antes de ${actionLabel} o PDF`);
+      return null;
     }
+
     const doc = generateServiceOrderPdf(form, logoRef.current);
-    const blob = doc.output("blob");
+    return doc.output("blob");
+  };
+
+  const handlePreviewPdf = () => {
+    const blob = getValidatedPdfBlob("visualizar");
+    if (!blob) return;
     setPreviewBlob(blob);
     setPreviewOpen(true);
   };
 
   const handleDownloadPdf = () => {
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      toast.error("Preencha os campos obrigatórios antes de gerar o PDF");
-      return;
-    }
-    const doc = generateServiceOrderPdf(form, logoRef.current);
-    doc.save(`${form.osNumber}.pdf`);
-    toast.success("PDF da Ordem de Serviço gerado!");
+    const blob = getValidatedPdfBlob("gerar");
+    if (!blob) return;
+    setPreviewBlob(blob);
+    setPreviewOpen(true);
   };
 
   const handlePrint = () => {
