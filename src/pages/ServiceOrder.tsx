@@ -19,6 +19,8 @@ import ArtUploadField from "@/components/service-order/ArtUploadField";
 import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrderPdf";
 import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
 import { getLogoDataUrl } from "@/lib/logo-loader";
+import PdfPreviewDialog from "@/components/service-order/PdfPreviewDialog";
+import { Eye } from "lucide-react";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
@@ -29,6 +31,8 @@ const ServiceOrder = () => {
   const existingOrder = editId ? getOrder(editId) : null;
   const [saved, setSaved] = useState(!!existingOrder);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const logoRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -156,6 +160,19 @@ const ServiceOrder = () => {
     setSaved(true);
   };
 
+  const handlePreviewPdf = () => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Preencha os campos obrigatórios antes de visualizar o PDF");
+      return;
+    }
+    const doc = generateServiceOrderPdf(form, logoRef.current);
+    const blob = doc.output("blob");
+    setPreviewBlob(blob);
+    setPreviewOpen(true);
+  };
+
   const handleDownloadPdf = () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
@@ -225,6 +242,9 @@ const ServiceOrder = () => {
           )}
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleSave} disabled={saved}>
             <CheckCircle2 className="w-3.5 h-3.5" /> {saved ? "Salvo" : "Salvar"}
+          </Button>
+          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handlePreviewPdf}>
+            <Eye className="w-3.5 h-3.5" /> Preview
           </Button>
           <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handlePrint}>
             <Printer className="w-3.5 h-3.5" /> Imprimir
@@ -447,15 +467,22 @@ const ServiceOrder = () => {
             <Button size="lg" className="flex-1 gap-2" onClick={handleSave} disabled={saved}>
               <CheckCircle2 className="w-4 h-4" /> {saved ? "OS Salva ✓" : "Salvar Ordem de Serviço"}
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1 gap-2" onClick={handleDownloadPdf}>
-              <Download className="w-4 h-4" /> Baixar PDF da OS
+            <Button size="lg" variant="secondary" className="flex-1 gap-2" onClick={handlePreviewPdf}>
+              <Eye className="w-4 h-4" /> Preview do PDF
             </Button>
-            <Button size="lg" variant="outline" className="flex-1 gap-2" onClick={handlePrint}>
-              <Printer className="w-4 h-4" /> Imprimir OS
+            <Button size="lg" variant="outline" className="flex-1 gap-2" onClick={handleDownloadPdf}>
+              <Download className="w-4 h-4" /> Baixar PDF
             </Button>
           </div>
         </motion.div>
       </div>
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        pdfBlob={previewBlob}
+        fileName={`${form.osNumber}.pdf`}
+      />
     </div>
   );
 };
