@@ -32,7 +32,7 @@ const Settings = () => {
             <h3 className="text-sm font-semibold text-foreground">Sobre</h3>
           </div>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong className="text-foreground">Promo Design Studio</strong> — Plataforma de criação de mockups e ordens de serviço para produtos promocionais.</p>
+            <p><strong className="text-foreground">Promo Design</strong> — Plataforma de criação de mockups e ordens de serviço para produtos promocionais.</p>
             <p className="text-xs">Versão 1.0.0</p>
           </div>
         </section>

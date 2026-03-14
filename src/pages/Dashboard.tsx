@@ -102,7 +102,7 @@ const Dashboard = () => {
         className="mb-6 sm:mb-8"
       >
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-          Bem-vindo ao <span className="text-primary">Promo Design Studio</span>
+          Bem-vindo ao <span className="text-primary">Promo Design</span>
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">Sistema de Criação para o Time de Artes</p>
       </motion.div>

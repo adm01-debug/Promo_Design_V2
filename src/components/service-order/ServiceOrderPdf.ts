@@ -371,7 +371,7 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   doc.setFontSize(6);
   doc.setTextColor(150);
   doc.text(
-    `${form.osNumber} • Verso • Promo Design Studio`,
+    `${form.osNumber} • Verso • Promo Design`,
     pw / 2, ph - 5, { align: "center" }
   );
 
