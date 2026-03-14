@@ -18,6 +18,7 @@ const modules = [
     children: [
       { label: "Novo Mockup", path: "/mockup/new", icon: Palette },
       { label: "Rascunhos", path: "/mockup/drafts", icon: FolderOpen },
+      { label: "Ordem de Serviço", path: "/mockup/service-order", icon: ClipboardList },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
   },
