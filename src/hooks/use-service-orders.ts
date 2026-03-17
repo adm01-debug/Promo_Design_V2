@@ -170,9 +170,9 @@ export function useServiceOrders() {
   });
 
   const addOrder = useCallback(
-    (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
-      addMutation.mutate(order);
-      return { ...order, id: crypto.randomUUID(), status: "aberta" as OsStatus, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+      const result = await addMutation.mutateAsync(order);
+      return result;
     },
     [addMutation]
   );
