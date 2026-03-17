@@ -504,6 +504,7 @@ const MockupEditor = () => {
                       style={{
                         mixBlendMode: blendMode,
                         opacity: logoOpacity / 100,
+                        filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined,
                         ...(surfaceType === "flat" ? {
                           transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
                         } : {}),
