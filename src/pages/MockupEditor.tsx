@@ -197,10 +197,11 @@ const MockupEditor = () => {
   const allApproved = VIEWS.every(v => approvedViews.has(v.id));
 
   // ──────────── Export ────────────
-  const handleExportPng = useCallback(async () => {
+  const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     setIsExporting(true);
     try {
       const productImg = await loadImageWithFallback(productImage);
+      const logoImg = logoPreview ? await loadImageWithFallback(logoPreview) : null;
       const canvas = document.createElement("canvas");
       // 2x2 grid of views
       const size = 1200;
@@ -225,6 +226,42 @@ const MockupEditor = () => {
         const dy = oy + (size - productImg.height * scale) / 2;
         ctx.drawImage(productImg, dx, dy, productImg.width * scale, productImg.height * scale);
 
+        // Logo in each view
+        if (logoImg && showLogo) {
+          const vp = placements[view.id] || INITIAL_PLACEMENT;
+          const vAreaW = (view.areaPercent.w / 100) * size * 0.8;
+          const vAreaH = (view.areaPercent.h / 100) * size * 0.8;
+          const vAreaX = dx + (view.areaPercent.x / 100) * (productImg.width * scale);
+          const vAreaY = dy + (view.areaPercent.y / 100) * (productImg.height * scale);
+
+          const logoScale = vp.scale;
+          const logoW = vAreaW * logoScale;
+          const logoH = logoW / (logoImg.width / logoImg.height);
+
+          ctx.save();
+          ctx.globalAlpha = logoOpacity / 100;
+          ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
+
+          const logoX = vAreaX + vp.x * (vAreaW / viewAreaW);
+          const logoY = vAreaY + vp.y * (vAreaH / viewAreaH);
+
+          ctx.translate(logoX + logoW / 2, logoY + logoH / 2);
+          ctx.rotate((vp.rotation * Math.PI) / 180);
+          if (vp.flipH) ctx.scale(-1, 1);
+          if (vp.flipV) ctx.scale(1, -1);
+
+          // Shadow
+          if (shadowEnabled) {
+            ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity / 100})`;
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+          }
+
+          ctx.drawImage(logoImg, -logoW / 2, -logoH / 2, logoW, logoH);
+          ctx.restore();
+        }
+
         // View label
         ctx.fillStyle = "#333333";
         ctx.font = "bold 24px sans-serif";
@@ -248,22 +285,28 @@ const MockupEditor = () => {
         if (row === 0) { ctx.beginPath(); ctx.moveTo(ox, size); ctx.lineTo(ox + size, size); ctx.stroke(); }
       }
 
+      const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+      const quality = format === "png" ? undefined : 0.92;
+      const ext = format;
+
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `mockup-multiview-${productSku}-HD.png`;
+        a.download = `mockup-multiview-${productSku}-HD.${ext}`;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success("PNG multivistas exportado (2400x2400px)");
-      }, "image/png");
+        toast.success(`${ext.toUpperCase()} multivistas exportado (2400×2400px)`);
+      }, mimeType, quality);
     } catch {
       toast.error("Erro ao exportar");
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, approvedViews]);
+  }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH]);
+
+  const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
 
   const handleExportPdf = () => {
     const pdf = generateApprovalPdf({
