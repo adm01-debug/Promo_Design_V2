@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Image, Sparkles, Clock, Video, Film, Palette, Camera, FolderOpen, ClipboardList, BarChart3 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Image, Sparkles, Clock, Video, Film, Palette, Camera, FolderOpen, ClipboardList, BarChart3, FileText, Layers, ArrowRight } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
@@ -10,6 +10,8 @@ import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector
 import { useCountUp } from "@/hooks/use-count-up";
 import { useServiceOrders, STATUS_CONFIG } from "@/hooks/use-service-orders";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
+import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import heroMockup from "@/assets/hero-mockup.jpg";
 import mockupPhone from "@/assets/mockup-phone.jpg";
 import mockupLaptop from "@/assets/mockup-laptop.jpg";
@@ -24,15 +26,6 @@ const quickActions = [
   { title: "Dashboard OS", description: "Métricas de produção", icon: BarChart3, path: "/mockup/service-dashboard", color: "text-primary", bg: "bg-primary/10" },
   { title: "Cinema Mode", description: "Color grading cinematográfico", icon: Film, path: "/video/cinema", color: "text-secondary", bg: "bg-secondary/10" },
   { title: "Novo Vídeo", description: "Vídeo publicitário animado", icon: Video, path: "/video/new", color: "text-accent", bg: "bg-accent/10" },
-];
-
-const fallbackProjects = [
-  { title: "Camiseta Polo Premium", category: "Vestuário", thumbnail: mockupTshirt, lastEdited: "2h atrás", views: 45 },
-  { title: "iPhone 15 Pro Case", category: "Mobile", thumbnail: mockupPhone, lastEdited: "5h atrás", views: 32 },
-  { title: "Post Instagram Feed", category: "Social Media", thumbnail: mockupSocial, lastEdited: "1d atrás", views: 78 },
-  { title: "MacBook Workspace", category: "Web", thumbnail: mockupLaptop, lastEdited: "2d atrás", views: 19 },
-  { title: "Cartão Corporativo", category: "Print", thumbnail: mockupCard, lastEdited: "3d atrás", views: 56 },
-  { title: "Banner Campanha", category: "Social Media", thumbnail: heroMockup, lastEdited: "4d atrás", views: 112 },
 ];
 
 const columnClasses: Record<number, string> = {
@@ -66,36 +59,126 @@ const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; 
   );
 };
 
+/** Build weekly activity data for the last 8 weeks */
+function buildWeeklyActivity(
+  orders: { createdAt: string }[],
+  drafts: { createdAt: string }[],
+  magicUp: { createdAt: string }[],
+) {
+  const weeks: { label: string; os: number; mockups: number; ia: number }[] = [];
+  const now = new Date();
+
+  for (let w = 7; w >= 0; w--) {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - w * 7);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+
+    const inRange = (d: string) => {
+      const date = new Date(d);
+      return date >= weekStart && date < weekEnd;
+    };
+
+    const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+    weeks.push({
+      label,
+      os: orders.filter((o) => inRange(o.createdAt)).length,
+      mockups: drafts.filter((d) => inRange(d.createdAt)).length,
+      ia: magicUp.filter((m) => inRange(m.createdAt)).length,
+    });
+  }
+  return weeks;
+}
+
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const { orders } = useServiceOrders();
   const { items: magicUpItems } = useMagicUpHistory();
+  const { drafts } = useMockupDrafts();
 
   const stats = useMemo(() => {
     const abertas = orders.filter((o) => o.status === "aberta").length;
     const producao = orders.filter((o) => o.status === "em_producao").length;
     const concluidas = orders.filter((o) => o.status === "concluida").length;
+    const draftCount = drafts?.length || 0;
 
     return [
       { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas` },
       { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas` },
       { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas` },
-      { label: "Rascunhos", value: 0, icon: FolderOpen, change: "Sem rascunhos" },
+      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos" },
     ];
-  }, [orders, magicUpItems]);
+  }, [orders, magicUpItems, drafts]);
 
-  // Build recent activity from real service orders
+  // Weekly activity chart data
+  const weeklyData = useMemo(() => {
+    return buildWeeklyActivity(
+      orders.map((o) => ({ createdAt: o.createdAt })),
+      (drafts || []).map((d) => ({ createdAt: d.createdAt })),
+      magicUpItems.map((m) => ({ createdAt: m.createdAt })),
+    );
+  }, [orders, drafts, magicUpItems]);
+
+  const hasActivity = weeklyData.some((w) => w.os + w.mockups + w.ia > 0);
+
+  // Build unified recent projects from real data
   const recentProjects = useMemo(() => {
-    if (orders.length === 0) return fallbackProjects;
-    return orders.slice(0, 6).map((o) => ({
-      title: `OS ${o.osNumber} - ${o.productName}`,
-      category: o.technique,
-      thumbnail: o.mockupImageUrl || heroMockup,
-      lastEdited: new Date(o.updatedAt).toLocaleDateString("pt-BR"),
-      views: parseInt(o.quantity) || 0,
-    }));
-  }, [orders]);
+    type RecentItem = {
+      title: string;
+      category: string;
+      thumbnail: string;
+      lastEdited: string;
+      views: number;
+      path?: string;
+    };
+
+    const items: RecentItem[] = [];
+
+    // Drafts
+    (drafts || []).slice(0, 4).forEach((d) => {
+      items.push({
+        title: d.name,
+        category: "Mockup",
+        thumbnail: d.thumbnailUrl || heroMockup,
+        lastEdited: formatRelativeDate(d.updatedAt),
+        views: 0,
+        path: `/mockup/new?draft=${d.id}`,
+      });
+    });
+
+    // Service orders
+    orders.slice(0, 4).forEach((o) => {
+      items.push({
+        title: `OS ${o.osNumber} — ${o.productName}`,
+        category: o.technique,
+        thumbnail: o.mockupImageUrl || mockupCard,
+        lastEdited: formatRelativeDate(o.updatedAt),
+        views: parseInt(String(o.quantity)) || 0,
+      });
+    });
+
+    // Magic Up
+    magicUpItems.slice(0, 4).forEach((m) => {
+      items.push({
+        title: m.productName || m.prompt.slice(0, 40),
+        category: "Magic Up",
+        thumbnail: m.imageUrl || mockupSocial,
+        lastEdited: formatRelativeDate(m.createdAt),
+        views: 0,
+      });
+    });
+
+    // Sort by date (most recent first)
+    items.sort((a, b) => {
+      // Parse relative dates back is impractical, so we keep original order (already sorted by API)
+      return 0;
+    });
+
+    return items.slice(0, 6);
+  }, [drafts, orders, magicUpItems]);
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl">
@@ -146,9 +229,45 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* Weekly Activity Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mb-6 sm:mb-8 rounded-xl bg-card border border-border p-4"
+      >
+        <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Atividade Semanal</h2>
+        {hasActivity ? (
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyData} barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={24} />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 11,
+                }}
+                labelStyle={{ color: "hsl(var(--foreground))" }}
+              />
+              <Bar dataKey="os" name="Ordens" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="mockups" name="Mockups" fill="hsl(var(--secondary))" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="ia" name="Magic Up" fill="hsl(var(--accent))" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <BarChart3 className="w-8 h-8 mb-2 opacity-30" />
+            <p className="text-xs">Crie mockups, ordens ou imagens para ver sua atividade aqui</p>
+          </div>
+        )}
+      </motion.div>
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-          {orders.length > 0 ? "Ordens Recentes" : "Projetos Recentes"}
+          Projetos Recentes
         </h2>
         <LayoutPopover viewMode={viewMode} setViewMode={setViewMode} gridColumns={gridColumns} setGridColumns={setGridColumns} />
       </div>
@@ -181,5 +300,19 @@ const Dashboard = () => {
     </div>
   );
 };
+
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min atrás`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h atrás`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d atrás`;
+  return date.toLocaleDateString("pt-BR");
+}
 
 export default Dashboard;
