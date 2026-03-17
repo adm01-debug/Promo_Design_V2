@@ -421,7 +421,6 @@ const ServiceOrder = () => {
                 onRemove={removeArt}
                 uploading={uploading}
               />
-              />
             </div>
           </section>
 
