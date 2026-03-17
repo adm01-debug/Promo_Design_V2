@@ -15,15 +15,15 @@ type AuthMode = "login" | "signup" | "forgot";
 const Auth = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  
-  // If already logged in, redirect to dashboard
-  if (authLoading) return null;
-  if (user) return <Navigate to="/" replace />;
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  // If already logged in, redirect to dashboard
+  if (authLoading) return null;
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
