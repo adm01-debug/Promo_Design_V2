@@ -1,4 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./use-auth";
 
 export type OsStatus = "aberta" | "em_producao" | "concluida" | "cancelada";
 
@@ -28,7 +31,6 @@ export interface StoredServiceOrder {
   quantity: string;
   observations: string;
   mockupImageUrl: string;
-  // Novos campos
   identificacaoCaixa: string;
   materialEvento: boolean;
   aprovarPrimeiraPeca: boolean;
@@ -40,86 +42,168 @@ export interface StoredServiceOrder {
   updatedAt: string;
 }
 
-const STORAGE_KEY = "promo-design-service-orders";
-
-function loadOrders(): StoredServiceOrder[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    // Migrar ordens antigas que não possuem os novos campos
-    return parsed.map((o: any) => ({
-      identificacaoCaixa: "",
-      materialEvento: false,
-      aprovarPrimeiraPeca: false,
-      qtdCompra: "",
-      qtdLiberada: "",
-      fazParteKit: false,
-      gravacaoDetalhe: "",
-      ...o,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-function saveOrders(orders: StoredServiceOrder[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-  } catch {
-    try {
-      const compactOrders = orders.map(({ artFileDataUrl, ...order }) => ({
-        ...order,
-        artFileDataUrl: "",
-      }));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(compactOrders));
-    } catch {
-      // Sem espaço no localStorage
-    }
-  }
+function rowToOrder(row: any): StoredServiceOrder {
+  return {
+    id: row.id,
+    osNumber: row.os_number,
+    status: row.status as OsStatus,
+    date: row.date,
+    deliveryDate: row.delivery_date ?? "",
+    clientName: row.client_name,
+    clientCompany: row.client_company ?? "",
+    clientPhone: row.client_phone ?? "",
+    clientEmail: row.client_email ?? "",
+    productName: row.product_name,
+    productSku: row.product_sku ?? "",
+    productMaterial: row.product_material ?? "",
+    productColors: row.product_colors ?? "",
+    technique: row.technique,
+    areaName: row.area_name ?? "",
+    areaWidth: row.area_width ?? "",
+    areaHeight: row.area_height ?? "",
+    areaShape: row.area_shape ?? "",
+    artColors: row.art_colors ?? "",
+    artDpi: row.art_dpi ?? "",
+    artFile: row.art_file ?? "",
+    artFileDataUrl: row.art_file_data_url ?? "",
+    quantity: String(row.quantity),
+    observations: row.observations ?? "",
+    mockupImageUrl: row.mockup_image_url ?? "",
+    identificacaoCaixa: row.identificacao_caixa ?? "",
+    materialEvento: row.material_evento ?? false,
+    aprovarPrimeiraPeca: row.aprovar_primeira_peca ?? false,
+    qtdCompra: row.qtd_compra ?? "",
+    qtdLiberada: row.qtd_liberada ?? "",
+    fazParteKit: row.faz_parte_kit ?? false,
+    gravacaoDetalhe: row.gravacao_detalhe ?? "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export function useServiceOrders() {
-  const [orders, setOrders] = useState<StoredServiceOrder[]>(loadOrders);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    saveOrders(orders);
-  }, [orders]);
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ["service-orders", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("service_orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map(rowToOrder);
+    },
+    enabled: !!user,
+  });
 
-  const addOrder = useCallback((order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
-    const now = new Date().toISOString();
-    const newOrder: StoredServiceOrder = {
-      ...order,
-      id: crypto.randomUUID(),
-      status: "aberta",
-      createdAt: now,
-      updatedAt: now,
-    };
-    setOrders((prev) => [newOrder, ...prev]);
-    return newOrder;
-  }, []);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["service-orders"] });
 
-  const updateOrder = useCallback((id: string, updates: Partial<StoredServiceOrder>) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, ...updates, updatedAt: new Date().toISOString() } : o
-      )
-    );
-  }, []);
+  const addMutation = useMutation({
+    mutationFn: async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+      const { data, error } = await supabase
+        .from("service_orders")
+        .insert({
+          user_id: user!.id,
+          os_number: order.osNumber,
+          date: order.date || new Date().toISOString().split("T")[0],
+          delivery_date: order.deliveryDate || null,
+          client_name: order.clientName,
+          client_company: order.clientCompany || null,
+          client_phone: order.clientPhone || null,
+          client_email: order.clientEmail || null,
+          product_name: order.productName,
+          product_sku: order.productSku || null,
+          product_material: order.productMaterial || null,
+          product_colors: order.productColors || null,
+          technique: order.technique,
+          area_name: order.areaName || null,
+          area_width: order.areaWidth || null,
+          area_height: order.areaHeight || null,
+          area_shape: order.areaShape || null,
+          art_colors: order.artColors || null,
+          art_dpi: order.artDpi || null,
+          art_file: order.artFile || null,
+          art_file_data_url: order.artFileDataUrl || null,
+          quantity: parseInt(order.quantity) || 1,
+          observations: order.observations || null,
+          mockup_image_url: order.mockupImageUrl || null,
+          identificacao_caixa: order.identificacaoCaixa || null,
+          material_evento: order.materialEvento,
+          aprovar_primeira_peca: order.aprovarPrimeiraPeca,
+          qtd_compra: order.qtdCompra || null,
+          qtd_liberada: order.qtdLiberada || null,
+          faz_parte_kit: order.fazParteKit,
+          gravacao_detalhe: order.gravacaoDetalhe || null,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToOrder(data);
+    },
+    onSuccess: invalidate,
+  });
 
-  const updateStatus = useCallback((id: string, status: OsStatus) => {
-    updateOrder(id, { status });
-  }, [updateOrder]);
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<StoredServiceOrder> }) => {
+      const dbUpdates: Record<string, any> = {};
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+      if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
+      if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate;
+      if (updates.quantity !== undefined) dbUpdates.quantity = parseInt(updates.quantity) || 1;
 
-  const deleteOrder = useCallback((id: string) => {
-    setOrders((prev) => prev.filter((o) => o.id !== id));
-  }, []);
+      const { error } = await supabase.from("service_orders").update(dbUpdates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
 
-  const getOrder = useCallback((id: string) => {
-    return orders.find((o) => o.id === id) || null;
-  }, [orders]);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("service_orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+  });
 
-  return { orders, addOrder, updateOrder, updateStatus, deleteOrder, getOrder };
+  const addOrder = useCallback(
+    (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+      addMutation.mutate(order);
+      return { ...order, id: crypto.randomUUID(), status: "aberta" as OsStatus, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    },
+    [addMutation]
+  );
+
+  const updateOrder = useCallback(
+    (id: string, updates: Partial<StoredServiceOrder>) => {
+      updateMutation.mutate({ id, updates });
+    },
+    [updateMutation]
+  );
+
+  const updateStatus = useCallback(
+    (id: string, status: OsStatus) => {
+      updateOrder(id, { status });
+    },
+    [updateOrder]
+  );
+
+  const deleteOrder = useCallback(
+    (id: string) => {
+      deleteMutation.mutate(id);
+    },
+    [deleteMutation]
+  );
+
+  const getOrder = useCallback(
+    (id: string) => orders.find((o) => o.id === id) || null,
+    [orders]
+  );
+
+  return { orders, isLoading, addOrder, updateOrder, updateStatus, deleteOrder, getOrder };
 }
 
 export const STATUS_CONFIG: Record<OsStatus, { label: string; color: string; bg: string }> = {
