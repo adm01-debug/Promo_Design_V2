@@ -346,7 +346,9 @@ const MockupNew = () => {
   };
 
   // ──────────────── Draft save/restore ────────────────
-  const handleSaveDraft = useCallback(async () => {
+  const autoSaveRef = useRef(false);
+
+  const handleSaveDraft = useCallback(async (silent = false) => {
     const editorState: Record<string, unknown> = {
       placement,
       logoPreview,
@@ -383,11 +385,24 @@ const MockupNew = () => {
         setDraftId(result.id);
         setSearchParams({ draft: result.id }, { replace: true });
       }
-      toast.success("Rascunho salvo na nuvem!");
+      if (!silent) toast.success("Rascunho salvo na nuvem!");
     } catch {
-      toast.error("Erro ao salvar rascunho.");
+      if (!silent) toast.error("Erro ao salvar rascunho.");
     }
   }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
+
+  // Auto-save every 60 seconds
+  useEffect(() => {
+    // Only auto-save if there's meaningful state (product selected or logo loaded)
+    if (!selectedProduct && !logoPreview) return;
+
+    const interval = setInterval(() => {
+      autoSaveRef.current = true;
+      handleSaveDraft(true);
+    }, 60_000);
+
+    return () => clearInterval(interval);
+  }, [handleSaveDraft, selectedProduct, logoPreview]);
 
   // Restore draft on mount
   useEffect(() => {
@@ -452,7 +467,7 @@ const MockupNew = () => {
               <div className="w-px h-5 bg-border" />
             </>
           )}
-          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8" onClick={handleSaveDraft} disabled={isSaving}>
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8" onClick={() => handleSaveDraft(false)} disabled={isSaving}>
             {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {draftId ? "Atualizar" : "Salvar"}
           </Button>
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={handleExportPdf}>
