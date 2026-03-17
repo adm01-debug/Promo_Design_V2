@@ -8,13 +8,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 type AuthMode = "login" | "signup" | "forgot";
 
 const Auth = () => {
   const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
