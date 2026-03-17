@@ -70,6 +70,9 @@ const MockupEditor = () => {
   const [logoOpacity, setLogoOpacity] = useState(100);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
   const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
+  const [shadowEnabled, setShadowEnabled] = useState(true);
+  const [shadowIntensity, setShadowIntensity] = useState(40);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
