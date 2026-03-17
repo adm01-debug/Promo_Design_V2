@@ -23,6 +23,7 @@ import {
   BarChart3,
   Bell,
   Keyboard,
+  LogOut,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
