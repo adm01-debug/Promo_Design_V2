@@ -6,7 +6,8 @@ import {
   ChevronDown, Move, FileText, Palette, GripVertical,
   Search, Loader2, Package, ChevronLeft, Undo2, Redo2,
   Grid3X3, Ruler, AlignCenter, Lock, Unlock, Eye, EyeOff,
-  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize, Layers
+  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize, Layers,
+  Sparkles, Wand2, ImageOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -17,6 +18,7 @@ import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp
 import { generateApprovalPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
+import { supabase } from "@/integrations/supabase/client";
 
 // ──────────────── Templates ────────────────
 const MOCKUP_TEMPLATES = [
@@ -80,6 +82,9 @@ const MockupNew = () => {
   const [shadowEnabled, setShadowEnabled] = useState(true);
   const [shadowIntensity, setShadowIntensity] = useState(40);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
+  const [aiReasoning, setAiReasoning] = useState<string | null>(null);
 
   // Undo/Redo
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
@@ -233,6 +238,72 @@ const MockupNew = () => {
     };
     reader.readAsDataURL(file);
   }, [placement, pushHistory, areaW, areaH, selectedTemplate]);
+
+  // ──────────────── AI: Remove Background ────────────────
+  const handleRemoveBg = useCallback(async () => {
+    if (!logoPreview) return;
+    setIsRemovingBg(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: { action: "remove-bg", imageBase64: logoPreview },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.imageBase64) {
+        clearWarpCache();
+        setWarpedLogoUrl(null);
+        setLogoPreview(data.imageBase64);
+        pushHistory(placement, data.imageBase64);
+        toast.success("Fundo removido com IA!");
+      }
+    } catch (e: any) {
+      console.error("Remove BG error:", e);
+      toast.error("Erro ao remover fundo: " + (e?.message || "Tente novamente"));
+    } finally {
+      setIsRemovingBg(false);
+    }
+  }, [logoPreview, placement, pushHistory]);
+
+  // ──────────────── AI: Suggest Placement ────────────────
+  const handleSuggestPlacement = useCallback(async () => {
+    if (!selectedProduct) return;
+    setIsSuggestingPlacement(true);
+    setAiReasoning(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: {
+          action: "suggest-placement",
+          productName: selectedProduct.name,
+          templateId: selectedTemplate || "",
+          areaWidth: selectedArea?.max_width || 15,
+          areaHeight: selectedArea?.max_height || 15,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+
+      const newPlacement: Placement = {
+        x: (data.xPercent / 100) * areaW,
+        y: (data.yPercent / 100) * areaH,
+        scale: Math.max(0.1, Math.min(1.5, data.scale)),
+        rotation: data.rotation || 0,
+        flipH: false,
+        flipV: false,
+      };
+      setPlacement(newPlacement);
+      pushHistory(newPlacement, logoPreview);
+      if (data.blendMode) setBlendMode(data.blendMode);
+      if (data.surfaceType) setSurfaceType(data.surfaceType);
+      if (data.opacity) setLogoOpacity(data.opacity);
+      if (data.reasoning) setAiReasoning(data.reasoning);
+      toast.success("Posicionamento sugerido pela IA aplicado!");
+    } catch (e: any) {
+      console.error("Suggest placement error:", e);
+      toast.error("Erro na sugestão de IA: " + (e?.message || "Tente novamente"));
+    } finally {
+      setIsSuggestingPlacement(false);
+    }
+  }, [selectedProduct, selectedTemplate, selectedArea, areaW, areaH, logoPreview, pushHistory]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -993,8 +1064,50 @@ const MockupNew = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* AI Tools */}
+                  {logoPreview && (
+                    <div className="mt-3 space-y-1.5">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-primary" /> IA
+                      </label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs gap-1.5 border-primary/30 hover:bg-primary/10"
+                        disabled={isRemovingBg}
+                        onClick={handleRemoveBg}
+                      >
+                        {isRemovingBg ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageOff className="w-3 h-3" />}
+                        {isRemovingBg ? "Removendo fundo..." : "Remover Fundo"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
+                {/* AI Placement Suggestion */}
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <Wand2 className="w-3 h-3 text-primary" /> IA Posicionamento
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 border-primary/30 hover:bg-primary/10"
+                      disabled={isSuggestingPlacement || !selectedProduct}
+                      onClick={handleSuggestPlacement}
+                    >
+                      {isSuggestingPlacement ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      {isSuggestingPlacement ? "Analisando..." : "Sugerir"}
+                    </Button>
+                  </div>
+                  {aiReasoning && (
+                    <p className="text-[9px] text-muted-foreground bg-primary/5 border border-primary/10 rounded p-2 mt-1.5 leading-relaxed">
+                      💡 {aiReasoning}
+                    </p>
+                  )}
+                </div>
                 {/* Appearance */}
                 <div className="p-4 border-b border-border">
                   <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aparência</h3>
