@@ -6,7 +6,8 @@ import {
   ChevronDown, Move, FileText, Palette, GripVertical,
   Search, Loader2, Package, ChevronLeft, Undo2, Redo2,
   Grid3X3, Ruler, AlignCenter, Lock, Unlock, Eye, EyeOff,
-  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize, Layers
+  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize, Layers,
+  Sparkles, Wand2, ImageOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
