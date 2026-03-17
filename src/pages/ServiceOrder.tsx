@@ -118,25 +118,46 @@ const ServiceOrder = () => {
     setSaved(false);
   };
 
-  const handleArtUpload = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: "" }));
-      setSaved(false);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result;
-      if (typeof dataUrl !== "string") {
-        toast.error("Não foi possível gerar o preview da arte.");
-        return;
+  const handleArtUpload = useCallback(async (file: File) => {
+    setUploading(true);
+    try {
+      // Upload to cloud storage
+      const publicUrl = await uploadFile(file, "art-files");
+
+      if (publicUrl) {
+        // For images, use the cloud URL as preview; for non-images, no preview
+        const isImage = file.type.startsWith("image/");
+        setForm((prev) => ({
+          ...prev,
+          artFile: file.name,
+          artFileDataUrl: isImage ? publicUrl : "",
+        }));
+        setSaved(false);
+        toast.success("Arte enviada para a nuvem!");
+      } else {
+        // Fallback: read locally if upload fails (e.g. not logged in)
+        if (!file.type.startsWith("image/")) {
+          setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: "" }));
+          setSaved(false);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result;
+          if (typeof dataUrl === "string") {
+            setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl }));
+            setSaved(false);
+          }
+        };
+        reader.readAsDataURL(file);
+        toast.warning("Upload na nuvem falhou. Arte salva localmente.");
       }
-      setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl }));
-      setSaved(false);
-    };
-    reader.onerror = () => toast.error("Não foi possível ler o arquivo.");
-    reader.readAsDataURL(file);
-  };
+    } catch {
+      toast.error("Erro ao enviar a arte.");
+    } finally {
+      setUploading(false);
+    }
+  }, [uploadFile]);
 
   const removeArt = () => {
     setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "" }));
