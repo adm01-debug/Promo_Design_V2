@@ -874,9 +874,14 @@ const MockupNew = () => {
                             alt="Logo"
                             className="w-full h-full object-contain pointer-events-none"
                             draggable={false}
-                            style={surfaceType === "flat" ? {
-                              transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
-                            } : undefined}
+                            style={{
+                              mixBlendMode: blendMode,
+                              opacity: logoOpacity / 100,
+                              filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined,
+                              ...(surfaceType === "flat" ? {
+                                transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})`,
+                              } : {}),
+                            }}
                           />
                           <div
                             className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
