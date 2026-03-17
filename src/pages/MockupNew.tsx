@@ -346,7 +346,9 @@ const MockupNew = () => {
   };
 
   // ──────────────── Draft save/restore ────────────────
-  const handleSaveDraft = useCallback(async () => {
+  const autoSaveRef = useRef(false);
+
+  const handleSaveDraft = useCallback(async (silent = false) => {
     const editorState: Record<string, unknown> = {
       placement,
       logoPreview,
