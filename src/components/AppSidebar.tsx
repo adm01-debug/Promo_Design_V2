@@ -82,11 +82,6 @@ const modules = [
   },
 ];
 
-const notifications = [
-  "Novo projeto disponível no Mockup Studio",
-  "Seu último PDF foi gerado com sucesso",
-  "Dica: use ⌘K para navegação rápida",
-];
 
 const AppSidebar = () => {
   const { user, signOut } = useAuth();
