@@ -277,7 +277,7 @@ const MockupNew = () => {
   };
 
   // ──────────────── Export ────────────────
-  const handleExportPng = useCallback(async () => {
+  const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     if (!selectedProduct || !selectedProductImage) return;
     setIsExporting(true);
     try {
@@ -301,42 +301,56 @@ const MockupNew = () => {
         const logoW = Math.round(logoImg.width * logoScale);
         const logoH = Math.round(logoImg.height * logoScale);
 
-        // Apply mesh warp for non-flat surfaces
         let drawSource: HTMLImageElement | HTMLCanvasElement = logoImg;
         if (surfaceType !== "flat") {
           drawSource = applyMeshWarp(logoImg, logoW, logoH, surfaceType);
         }
 
         ctx.save();
+        ctx.globalAlpha = logoOpacity / 100;
+        ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
         ctx.translate(
-          dx + (250 - exportAreaW / 2 + placement.x) * scale * (500 / 500),
-          dy + (250 - exportAreaH / 2 + placement.y) * scale * (500 / 500)
+          dx + (250 - exportAreaW / 2 + placement.x) * scale,
+          dy + (250 - exportAreaH / 2 + placement.y) * scale
         );
         if (surfaceType === "flat") {
           ctx.rotate((placement.rotation * Math.PI) / 180);
           if (placement.flipH) ctx.scale(-1, 1);
           if (placement.flipV) ctx.scale(1, -1);
         }
+
+        if (shadowEnabled) {
+          ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity / 100})`;
+          ctx.shadowBlur = 12;
+          ctx.shadowOffsetX = 3;
+          ctx.shadowOffsetY = 3;
+        }
+
         ctx.drawImage(drawSource, 0, 0, logoW, logoH);
         ctx.restore();
       }
+
+      const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+      const quality = format === "png" ? undefined : 0.92;
 
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `mockup-${selectedProduct.sku}-HD.png`;
+        a.download = `mockup-${selectedProduct.sku}-HD.${format}`;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success("PNG exportado em alta resolução (2400px)");
-      }, "image/png");
+        toast.success(`${format.toUpperCase()} exportado em alta resolução (2400px)`);
+      }, mimeType, quality);
     } catch {
-      toast.error("Erro ao exportar PNG");
+      toast.error("Erro ao exportar");
     } finally {
       setIsExporting(false);
     }
-  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea, surfaceType]);
+  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea, surfaceType, blendMode, logoOpacity, shadowEnabled, shadowIntensity]);
+
+  const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
 
   const handleExportPdf = () => {
     if (!selectedProduct || !selectedArea) return;
