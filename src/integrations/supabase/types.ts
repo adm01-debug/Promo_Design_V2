@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      magicup_history: {
+        Row: {
+          created_at: string
+          favorite: boolean
+          id: string
+          image_url: string
+          product_name: string | null
+          product_sku: string | null
+          prompt: string
+          style: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          favorite?: boolean
+          id?: string
+          image_url: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt: string
+          style?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          favorite?: boolean
+          id?: string
+          image_url?: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt?: string
+          style?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mockup_drafts: {
+        Row: {
+          created_at: string
+          editor_state: Json | null
+          id: string
+          name: string
+          product_name: string | null
+          product_sku: string | null
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          editor_state?: Json | null
+          id?: string
+          name: string
+          product_name?: string | null
+          product_sku?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          editor_state?: Json | null
+          id?: string
+          name?: string
+          product_name?: string | null
+          product_sku?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_orders: {
         Row: {
           aprovar_primeira_peca: boolean | null
