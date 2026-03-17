@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      service_orders: {
+        Row: {
+          aprovar_primeira_peca: boolean | null
+          area_height: string | null
+          area_name: string | null
+          area_shape: string | null
+          area_width: string | null
+          art_colors: string | null
+          art_dpi: string | null
+          art_file: string | null
+          art_file_data_url: string | null
+          client_company: string | null
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          date: string
+          delivery_date: string | null
+          faz_parte_kit: boolean | null
+          gravacao_detalhe: string | null
+          id: string
+          identificacao_caixa: string | null
+          material_evento: boolean | null
+          mockup_image_url: string | null
+          observations: string | null
+          os_number: string
+          product_colors: string | null
+          product_material: string | null
+          product_name: string
+          product_sku: string | null
+          qtd_compra: string | null
+          qtd_liberada: string | null
+          quantity: number
+          status: string
+          technique: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aprovar_primeira_peca?: boolean | null
+          area_height?: string | null
+          area_name?: string | null
+          area_shape?: string | null
+          area_width?: string | null
+          art_colors?: string | null
+          art_dpi?: string | null
+          art_file?: string | null
+          art_file_data_url?: string | null
+          client_company?: string | null
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          date?: string
+          delivery_date?: string | null
+          faz_parte_kit?: boolean | null
+          gravacao_detalhe?: string | null
+          id?: string
+          identificacao_caixa?: string | null
+          material_evento?: boolean | null
+          mockup_image_url?: string | null
+          observations?: string | null
+          os_number: string
+          product_colors?: string | null
+          product_material?: string | null
+          product_name: string
+          product_sku?: string | null
+          qtd_compra?: string | null
+          qtd_liberada?: string | null
+          quantity?: number
+          status?: string
+          technique: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aprovar_primeira_peca?: boolean | null
+          area_height?: string | null
+          area_name?: string | null
+          area_shape?: string | null
+          area_width?: string | null
+          art_colors?: string | null
+          art_dpi?: string | null
+          art_file?: string | null
+          art_file_data_url?: string | null
+          client_company?: string | null
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          date?: string
+          delivery_date?: string | null
+          faz_parte_kit?: boolean | null
+          gravacao_detalhe?: string | null
+          id?: string
+          identificacao_caixa?: string | null
+          material_evento?: boolean | null
+          mockup_image_url?: string | null
+          observations?: string | null
+          os_number?: string
+          product_colors?: string | null
+          product_material?: string | null
+          product_name?: string
+          product_sku?: string | null
+          qtd_compra?: string | null
+          qtd_liberada?: string | null
+          quantity?: number
+          status?: string
+          technique?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
