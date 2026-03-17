@@ -39,7 +39,7 @@ export function useNotifications() {
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
-        .from("notifications")
+        .from("notifications" as any)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
