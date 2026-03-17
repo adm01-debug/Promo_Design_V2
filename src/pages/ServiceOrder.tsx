@@ -152,8 +152,9 @@ const ServiceOrder = () => {
       updateOrder(editId, { ...form, status: currentStatus });
       toast.success("Ordem de Serviço atualizada!");
     } else {
-      const newOrder = addOrder(form);
-      navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true });
+      addOrder(form).then((newOrder) => {
+        navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true });
+      });
       toast.success("Ordem de Serviço salva!");
     }
     setSaved(true);
