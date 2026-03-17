@@ -694,6 +694,34 @@ const MockupEditor = () => {
                   {showTexture ? "On" : "Off"}
                 </button>
               </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-mono text-muted-foreground">Sombra</label>
+                  <button
+                    onClick={() => setShadowEnabled(!shadowEnabled)}
+                    className={`px-2 py-1 rounded text-[10px] border transition-all ${
+                      shadowEnabled
+                        ? "bg-primary/20 text-primary border-primary/40"
+                        : "bg-surface-2 text-muted-foreground border-border"
+                    }`}
+                  >
+                    {shadowEnabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {shadowEnabled && (
+                  <div className="mt-1.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-mono text-muted-foreground">Intensidade</label>
+                      <span className="text-[10px] font-mono text-primary">{shadowIntensity}%</span>
+                    </div>
+                    <Slider
+                      value={[shadowIntensity]}
+                      onValueChange={([v]) => setShadowIntensity(v)}
+                      min={10} max={80} step={5}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           {/* Auto-Fit & Surface */}
