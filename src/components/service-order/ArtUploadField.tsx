@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Upload, X, FileImage } from "lucide-react";
+import { Upload, X, FileImage, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ interface ArtUploadFieldProps {
   artFileDataUrl: string;
   onUpload: (file: File) => void;
   onRemove: () => void;
+  uploading?: boolean;
 }
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
