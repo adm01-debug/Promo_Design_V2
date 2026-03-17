@@ -452,7 +452,9 @@ const MockupNew = () => {
               <div className="w-px h-5 bg-border" />
             </>
           )}
-          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8"><Save className="w-3.5 h-3.5" /> Salvar</Button>
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8" onClick={handleSaveDraft} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {draftId ? "Atualizar" : "Salvar"}
+          </Button>
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={handleExportPdf}>
             <FileText className="w-3.5 h-3.5" /> PDF
           </Button>
