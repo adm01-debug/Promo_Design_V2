@@ -82,6 +82,9 @@ const MockupNew = () => {
   const [shadowEnabled, setShadowEnabled] = useState(true);
   const [shadowIntensity, setShadowIntensity] = useState(40);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
+  const [aiReasoning, setAiReasoning] = useState<string | null>(null);
 
   // Undo/Redo
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
