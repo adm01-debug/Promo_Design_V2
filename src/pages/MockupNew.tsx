@@ -385,11 +385,24 @@ const MockupNew = () => {
         setDraftId(result.id);
         setSearchParams({ draft: result.id }, { replace: true });
       }
-      toast.success("Rascunho salvo na nuvem!");
+      if (!silent) toast.success("Rascunho salvo na nuvem!");
     } catch {
-      toast.error("Erro ao salvar rascunho.");
+      if (!silent) toast.error("Erro ao salvar rascunho.");
     }
   }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
+
+  // Auto-save every 60 seconds
+  useEffect(() => {
+    // Only auto-save if there's meaningful state (product selected or logo loaded)
+    if (!selectedProduct && !logoPreview) return;
+
+    const interval = setInterval(() => {
+      autoSaveRef.current = true;
+      handleSaveDraft(true);
+    }, 60_000);
+
+    return () => clearInterval(interval);
+  }, [handleSaveDraft, selectedProduct, logoPreview]);
 
   // Restore draft on mount
   useEffect(() => {
