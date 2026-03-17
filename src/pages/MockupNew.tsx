@@ -239,6 +239,72 @@ const MockupNew = () => {
     reader.readAsDataURL(file);
   }, [placement, pushHistory, areaW, areaH, selectedTemplate]);
 
+  // ──────────────── AI: Remove Background ────────────────
+  const handleRemoveBg = useCallback(async () => {
+    if (!logoPreview) return;
+    setIsRemovingBg(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: { action: "remove-bg", imageBase64: logoPreview },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.imageBase64) {
+        clearWarpCache();
+        setWarpedLogoUrl(null);
+        setLogoPreview(data.imageBase64);
+        pushHistory(placement, data.imageBase64);
+        toast.success("Fundo removido com IA!");
+      }
+    } catch (e: any) {
+      console.error("Remove BG error:", e);
+      toast.error("Erro ao remover fundo: " + (e?.message || "Tente novamente"));
+    } finally {
+      setIsRemovingBg(false);
+    }
+  }, [logoPreview, placement, pushHistory]);
+
+  // ──────────────── AI: Suggest Placement ────────────────
+  const handleSuggestPlacement = useCallback(async () => {
+    if (!selectedProduct) return;
+    setIsSuggestingPlacement(true);
+    setAiReasoning(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: {
+          action: "suggest-placement",
+          productName: selectedProduct.name,
+          templateId: selectedTemplate || "",
+          areaWidth: selectedArea?.max_width || 15,
+          areaHeight: selectedArea?.max_height || 15,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+
+      const newPlacement: Placement = {
+        x: (data.xPercent / 100) * areaW,
+        y: (data.yPercent / 100) * areaH,
+        scale: Math.max(0.1, Math.min(1.5, data.scale)),
+        rotation: data.rotation || 0,
+        flipH: false,
+        flipV: false,
+      };
+      setPlacement(newPlacement);
+      pushHistory(newPlacement, logoPreview);
+      if (data.blendMode) setBlendMode(data.blendMode);
+      if (data.surfaceType) setSurfaceType(data.surfaceType);
+      if (data.opacity) setLogoOpacity(data.opacity);
+      if (data.reasoning) setAiReasoning(data.reasoning);
+      toast.success("Posicionamento sugerido pela IA aplicado!");
+    } catch (e: any) {
+      console.error("Suggest placement error:", e);
+      toast.error("Erro na sugestão de IA: " + (e?.message || "Tente novamente"));
+    } finally {
+      setIsSuggestingPlacement(false);
+    }
+  }, [selectedProduct, selectedTemplate, selectedArea, areaW, areaH, logoPreview, pushHistory]);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
