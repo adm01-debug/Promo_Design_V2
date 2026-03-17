@@ -423,18 +423,15 @@ const MockupNew = () => {
     } catch {
       if (!silent) toast.error("Erro ao salvar rascunho.");
     }
-  }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
+  }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, blendMode, logoOpacity, shadowEnabled, shadowIntensity, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
-    // Only auto-save if there's meaningful state (product selected or logo loaded)
     if (!selectedProduct && !logoPreview) return;
-
     const interval = setInterval(() => {
       autoSaveRef.current = true;
       handleSaveDraft(true);
     }, 30_000);
-
     return () => clearInterval(interval);
   }, [handleSaveDraft, selectedProduct, logoPreview]);
 
@@ -460,7 +457,10 @@ const MockupNew = () => {
     if (s.showLogo !== undefined) setShowLogo(s.showLogo as boolean);
     if (s.surfaceType) setSurfaceType(s.surfaceType as SurfaceType);
     if (s.selectedTemplate) setSelectedTemplate(s.selectedTemplate as string);
-    // Product/area/variant will need to be re-selected by user (external DB)
+    if (s.blendMode) setBlendMode(s.blendMode as BlendMode);
+    if (s.logoOpacity !== undefined) setLogoOpacity(s.logoOpacity as number);
+    if (s.shadowEnabled !== undefined) setShadowEnabled(s.shadowEnabled as boolean);
+    if (s.shadowIntensity !== undefined) setShadowIntensity(s.shadowIntensity as number);
     if (s.step === "canvas" && s.logoPreview) setStep("canvas");
   }, [getDraft, searchParams]);
 
