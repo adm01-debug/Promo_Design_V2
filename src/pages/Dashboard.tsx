@@ -92,7 +92,6 @@ function buildWeeklyActivity(
 }
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const { orders } = useServiceOrders();
