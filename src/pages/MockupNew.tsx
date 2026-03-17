@@ -320,7 +320,7 @@ const MockupNew = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea]);
+  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea, surfaceType]);
 
   const handleExportPdf = () => {
     if (!selectedProduct || !selectedArea) return;
