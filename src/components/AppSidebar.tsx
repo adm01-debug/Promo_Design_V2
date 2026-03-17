@@ -21,21 +21,12 @@ import {
   User,
   ClipboardList,
   BarChart3,
-  Bell,
   Keyboard,
   LogOut,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const modules = [
   {
