@@ -419,6 +419,8 @@ const ServiceOrder = () => {
                 artFileDataUrl={form.artFileDataUrl}
                 onUpload={handleArtUpload}
                 onRemove={removeArt}
+                uploading={uploading}
+              />
               />
             </div>
           </section>
