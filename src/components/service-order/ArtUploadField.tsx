@@ -14,7 +14,7 @@ interface ArtUploadFieldProps {
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove }: ArtUploadFieldProps) => {
+const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading }: ArtUploadFieldProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
