@@ -19,7 +19,6 @@ import { generateApprovalPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
 import { supabase } from "@/integrations/supabase/client";
-import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
 
 // ──────────────── Templates ────────────────
 const MOCKUP_TEMPLATES = [
