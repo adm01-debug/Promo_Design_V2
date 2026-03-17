@@ -9,8 +9,10 @@ import ScrollToTop from "./ScrollToTop";
 import CommandPalette from "./CommandPalette";
 import OnboardingDialog from "./OnboardingDialog";
 import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog";
+import { useServiceOrderRealtime } from "@/hooks/use-service-order-realtime";
 
 const AppLayout = () => {
+  useServiceOrderRealtime();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
