@@ -1064,10 +1064,50 @@ const MockupNew = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* AI Tools */}
+                  {logoPreview && (
+                    <div className="mt-3 space-y-1.5">
+                      <label className="text-[10px] font-mono text-muted-foreground uppercase flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-primary" /> IA
+                      </label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs gap-1.5 border-primary/30 hover:bg-primary/10"
+                        disabled={isRemovingBg}
+                        onClick={handleRemoveBg}
+                      >
+                        {isRemovingBg ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageOff className="w-3 h-3" />}
+                        {isRemovingBg ? "Removendo fundo..." : "Remover Fundo"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Appearance */}
+                {/* AI Placement Suggestion */}
                 <div className="p-4 border-b border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <Wand2 className="w-3 h-3 text-primary" /> IA Posicionamento
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 border-primary/30 hover:bg-primary/10"
+                      disabled={isSuggestingPlacement || !selectedProduct}
+                      onClick={handleSuggestPlacement}
+                    >
+                      {isSuggestingPlacement ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      {isSuggestingPlacement ? "Analisando..." : "Sugerir"}
+                    </Button>
+                  </div>
+                  {aiReasoning && (
+                    <p className="text-[9px] text-muted-foreground bg-primary/5 border border-primary/10 rounded p-2 mt-1.5 leading-relaxed">
+                      💡 {aiReasoning}
+                    </p>
+                  )}
+                </div>
                   <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aparência</h3>
                   <div className="space-y-3">
                     <div>
