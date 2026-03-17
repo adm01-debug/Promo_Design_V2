@@ -14,7 +14,6 @@ type AuthMode = "login" | "signup" | "forgot";
 
 const Auth = () => {
   const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

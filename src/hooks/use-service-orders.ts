@@ -151,10 +151,35 @@ export function useServiceOrders() {
       const dbUpdates: Record<string, any> = {};
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
+      if (updates.clientCompany !== undefined) dbUpdates.client_company = updates.clientCompany;
+      if (updates.clientPhone !== undefined) dbUpdates.client_phone = updates.clientPhone;
+      if (updates.clientEmail !== undefined) dbUpdates.client_email = updates.clientEmail;
+      if (updates.productName !== undefined) dbUpdates.product_name = updates.productName;
+      if (updates.productSku !== undefined) dbUpdates.product_sku = updates.productSku;
+      if (updates.productMaterial !== undefined) dbUpdates.product_material = updates.productMaterial;
+      if (updates.productColors !== undefined) dbUpdates.product_colors = updates.productColors;
+      if (updates.technique !== undefined) dbUpdates.technique = updates.technique;
+      if (updates.areaName !== undefined) dbUpdates.area_name = updates.areaName;
+      if (updates.areaWidth !== undefined) dbUpdates.area_width = updates.areaWidth;
+      if (updates.areaHeight !== undefined) dbUpdates.area_height = updates.areaHeight;
+      if (updates.areaShape !== undefined) dbUpdates.area_shape = updates.areaShape;
+      if (updates.artColors !== undefined) dbUpdates.art_colors = updates.artColors;
+      if (updates.artDpi !== undefined) dbUpdates.art_dpi = updates.artDpi;
+      if (updates.artFile !== undefined) dbUpdates.art_file = updates.artFile;
+      if (updates.artFileDataUrl !== undefined) dbUpdates.art_file_data_url = updates.artFileDataUrl;
       if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
       if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate;
       if (updates.quantity !== undefined) dbUpdates.quantity = parseInt(updates.quantity) || 1;
+      if (updates.mockupImageUrl !== undefined) dbUpdates.mockup_image_url = updates.mockupImageUrl;
+      if (updates.identificacaoCaixa !== undefined) dbUpdates.identificacao_caixa = updates.identificacaoCaixa;
+      if (updates.materialEvento !== undefined) dbUpdates.material_evento = updates.materialEvento;
+      if (updates.aprovarPrimeiraPeca !== undefined) dbUpdates.aprovar_primeira_peca = updates.aprovarPrimeiraPeca;
+      if (updates.qtdCompra !== undefined) dbUpdates.qtd_compra = updates.qtdCompra;
+      if (updates.qtdLiberada !== undefined) dbUpdates.qtd_liberada = updates.qtdLiberada;
+      if (updates.fazParteKit !== undefined) dbUpdates.faz_parte_kit = updates.fazParteKit;
+      if (updates.gravacaoDetalhe !== undefined) dbUpdates.gravacao_detalhe = updates.gravacaoDetalhe;
 
+      if (Object.keys(dbUpdates).length === 0) return;
       const { error } = await supabase.from("service_orders").update(dbUpdates).eq("id", id);
       if (error) throw error;
     },
