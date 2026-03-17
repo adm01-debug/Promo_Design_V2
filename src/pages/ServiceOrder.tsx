@@ -27,6 +27,8 @@ const ServiceOrder = () => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const { addOrder, getOrder, updateOrder } = useServiceOrders();
+  const { uploadFile } = useFileUpload();
+  const [uploading, setUploading] = useState(false);
   const editId = searchParams.get("edit");
   const existingOrder = editId ? getOrder(editId) : null;
   const [saved, setSaved] = useState(!!existingOrder);
