@@ -818,11 +818,29 @@ const MockupEditor = () => {
 
           {/* Export */}
           <div className="p-4 mt-auto space-y-2">
+            <div>
+              <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5 block">Formato</label>
+              <div className="grid grid-cols-3 gap-1">
+                {(["png", "jpeg", "webp"] as ExportFormat[]).map((fmt) => (
+                  <button
+                    key={fmt}
+                    onClick={() => setExportFormat(fmt)}
+                    className={`px-2 py-1.5 rounded text-[10px] font-mono uppercase transition-all ${
+                      exportFormat === fmt
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "bg-muted text-muted-foreground border border-border hover:border-primary/30"
+                    }`}
+                  >
+                    {fmt}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}>
               <Printer className="w-3.5 h-3.5" /> Layout Aprovação (PDF)
             </Button>
             <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
-              {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG Multivistas
+              {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
             </Button>
           </div>
         </div>
