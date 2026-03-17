@@ -37,6 +37,9 @@ const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.8, rotation: 0, fl
 
 const MockupNew = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { saveDraft, getDraft, isSaving } = useMockupDrafts();
+  const [draftId, setDraftId] = useState<string | null>(searchParams.get("draft"));
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
