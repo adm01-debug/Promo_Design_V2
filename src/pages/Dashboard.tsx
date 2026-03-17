@@ -133,6 +133,7 @@ const Dashboard = () => {
       lastEdited: string;
       views: number;
       path?: string;
+      _sortDate: string;
     };
 
     const items: RecentItem[] = [];
@@ -146,6 +147,7 @@ const Dashboard = () => {
         lastEdited: formatRelativeDate(d.updatedAt),
         views: 0,
         path: `/mockup/new?draft=${d.id}`,
+        _sortDate: d.updatedAt,
       });
     });
 
@@ -157,6 +159,8 @@ const Dashboard = () => {
         thumbnail: o.mockupImageUrl || mockupCard,
         lastEdited: formatRelativeDate(o.updatedAt),
         views: parseInt(String(o.quantity)) || 0,
+        path: `/mockup/service-order?edit=${o.id}`,
+        _sortDate: o.updatedAt,
       });
     });
 
@@ -168,14 +172,13 @@ const Dashboard = () => {
         thumbnail: m.imageUrl || mockupSocial,
         lastEdited: formatRelativeDate(m.createdAt),
         views: 0,
+        path: `/magicup/history`,
+        _sortDate: m.createdAt,
       });
     });
 
     // Sort by date (most recent first)
-    items.sort((a, b) => {
-      // Parse relative dates back is impractical, so we keep original order (already sorted by API)
-      return 0;
-    });
+    items.sort((a, b) => new Date(b._sortDate).getTime() - new Date(a._sortDate).getTime());
 
     return items.slice(0, 6);
   }, [drafts, orders, magicUpItems]);
