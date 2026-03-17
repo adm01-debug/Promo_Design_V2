@@ -294,6 +294,7 @@ const AppSidebar = () => {
           {!collapsed && <span className="text-sm">Sair</span>}
         </button>
 
+        <button
           onClick={() => setCollapsed(!collapsed)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
