@@ -246,24 +246,7 @@ const AppSidebar = () => {
         )}
 
         <div className="grid grid-cols-2 gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors relative">
-                <Bell className="w-4 h-4" />
-                {!collapsed && <span className="text-xs">Alertas</span>}
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel>Notificações</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {notifications.map((item) => (
-                <DropdownMenuItem key={item} className="text-xs text-muted-foreground py-2 cursor-default">
-                  {item}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationPanel />
 
           <button
             onClick={openShortcuts}
