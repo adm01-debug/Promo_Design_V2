@@ -9,6 +9,7 @@ import OnlineIndicator from "@/components/OnlineIndicator";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
 import LoadingScreen from "@/components/LoadingScreen";
 import AppLayout from "./components/AppLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
@@ -32,6 +33,8 @@ const ServiceOrderDashboard = lazyWithRetry(() => import("./pages/ServiceOrderDa
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
 const Templates = lazyWithRetry(() => import("./pages/Templates"));
 const Editor = lazyWithRetry(() => import("./pages/Editor"));
+const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -47,7 +50,15 @@ const App = () => (
           <RouteErrorBoundary>
             <Suspense fallback={<LoadingScreen />}>
               <Routes>
-                <Route element={<AppLayout />}>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout />
+                    </ProtectedRoute>
+                  }
+                >
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
                   <Route path="/mockup/new" element={<MockupNew />} />
