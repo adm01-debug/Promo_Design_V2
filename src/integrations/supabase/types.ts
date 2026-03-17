@@ -86,6 +86,53 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          new_status: string
+          old_status: string | null
+          os_id: string | null
+          os_number: string
+          product_name: string
+          read: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          new_status: string
+          old_status?: string | null
+          os_id?: string | null
+          os_number: string
+          product_name?: string
+          read?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          new_status?: string
+          old_status?: string | null
+          os_id?: string | null
+          os_number?: string
+          product_name?: string
+          read?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_os_id_fkey"
+            columns: ["os_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_orders: {
         Row: {
           aprovar_primeira_peca: boolean | null

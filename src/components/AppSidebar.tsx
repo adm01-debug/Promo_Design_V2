@@ -21,20 +21,12 @@ import {
   User,
   ClipboardList,
   BarChart3,
-  Bell,
   Keyboard,
   LogOut,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import NotificationPanel from "./NotificationPanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const modules = [
   {
@@ -81,11 +73,6 @@ const modules = [
   },
 ];
 
-const notifications = [
-  "Novo projeto disponível no Mockup Studio",
-  "Seu último PDF foi gerado com sucesso",
-  "Dica: use ⌘K para navegação rápida",
-];
 
 const AppSidebar = () => {
   const { user, signOut } = useAuth();
@@ -250,24 +237,7 @@ const AppSidebar = () => {
         )}
 
         <div className="grid grid-cols-2 gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors relative">
-                <Bell className="w-4 h-4" />
-                {!collapsed && <span className="text-xs">Alertas</span>}
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel>Notificações</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {notifications.map((item) => (
-                <DropdownMenuItem key={item} className="text-xs text-muted-foreground py-2 cursor-default">
-                  {item}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationPanel />
 
           <button
             onClick={openShortcuts}
