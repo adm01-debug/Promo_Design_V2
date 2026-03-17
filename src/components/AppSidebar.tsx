@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
