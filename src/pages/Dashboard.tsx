@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Image, Sparkles, Clock, Video, Film, Palette, Camera, FolderOpen } from "lucide-react";
+import { Image, Sparkles, Clock, Video, Film, Palette, Camera, FolderOpen, ClipboardList, BarChart3 } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
 import { LayoutPopover } from "@/components/LayoutPopover";
 import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector";
 import { useCountUp } from "@/hooks/use-count-up";
+import { useServiceOrders, STATUS_CONFIG } from "@/hooks/use-service-orders";
+import { useMagicUpHistory } from "@/hooks/use-magicup-history";
 import heroMockup from "@/assets/hero-mockup.jpg";
 import mockupPhone from "@/assets/mockup-phone.jpg";
 import mockupLaptop from "@/assets/mockup-laptop.jpg";
@@ -15,65 +17,16 @@ import mockupCard from "@/assets/mockup-card.jpg";
 import mockupTshirt from "@/assets/mockup-tshirt.jpg";
 import mockupSocial from "@/assets/mockup-social.jpg";
 
-const stats = [
-  { label: "Mockups Criados", value: 127, icon: Image, change: "+12 esta semana" },
-  { label: "Imagens IA", value: 84, icon: Sparkles, change: "+5 hoje" },
-  { label: "Vídeos Gerados", value: 23, icon: Video, change: "+3 esta semana" },
-  { label: "Rascunhos", value: 9, icon: Clock, change: "2 pendentes" },
-];
-
 const quickActions = [
-  {
-    title: "Novo Mockup",
-    description: "Layout técnico de personalização",
-    icon: Image,
-    path: "/mockup/new",
-    color: "text-primary",
-    bg: "bg-primary/10",
-  },
-  {
-    title: "Magic Up",
-    description: "Imagem publicitária com IA",
-    icon: Sparkles,
-    path: "/magicup/generate",
-    color: "text-secondary",
-    bg: "bg-secondary/10",
-  },
-  {
-    title: "Novo Vídeo",
-    description: "Vídeo publicitário animado",
-    icon: Video,
-    path: "/video/new",
-    color: "text-accent",
-    bg: "bg-accent/10",
-  },
-  {
-    title: "Cinema Mode",
-    description: "Color grading cinematográfico",
-    icon: Film,
-    path: "/video/cinema",
-    color: "text-primary",
-    bg: "bg-primary/10",
-  },
-  {
-    title: "Moodboard",
-    description: "Direção criativa visual",
-    icon: Palette,
-    path: "/video/moodboard",
-    color: "text-secondary",
-    bg: "bg-secondary/10",
-  },
-  {
-    title: "Photodump",
-    description: "Cenários com IA para produtos",
-    icon: Camera,
-    path: "/video/photodump",
-    color: "text-accent",
-    bg: "bg-accent/10",
-  },
+  { title: "Novo Mockup", description: "Layout técnico de personalização", icon: Image, path: "/mockup/new", color: "text-primary", bg: "bg-primary/10" },
+  { title: "Magic Up", description: "Imagem publicitária com IA", icon: Sparkles, path: "/magicup/generate", color: "text-secondary", bg: "bg-secondary/10" },
+  { title: "Nova OS", description: "Ordem de serviço", icon: ClipboardList, path: "/mockup/service-order", color: "text-accent", bg: "bg-accent/10" },
+  { title: "Dashboard OS", description: "Métricas de produção", icon: BarChart3, path: "/mockup/service-dashboard", color: "text-primary", bg: "bg-primary/10" },
+  { title: "Cinema Mode", description: "Color grading cinematográfico", icon: Film, path: "/video/cinema", color: "text-secondary", bg: "bg-secondary/10" },
+  { title: "Novo Vídeo", description: "Vídeo publicitário animado", icon: Video, path: "/video/new", color: "text-accent", bg: "bg-accent/10" },
 ];
 
-const recentProjects = [
+const fallbackProjects = [
   { title: "Camiseta Polo Premium", category: "Vestuário", thumbnail: mockupTshirt, lastEdited: "2h atrás", views: 45 },
   { title: "iPhone 15 Pro Case", category: "Mobile", thumbnail: mockupPhone, lastEdited: "5h atrás", views: 32 },
   { title: "Post Instagram Feed", category: "Social Media", thumbnail: mockupSocial, lastEdited: "1d atrás", views: 78 },
@@ -90,8 +43,8 @@ const columnClasses: Record<number, string> = {
 
 const headingWords = ["Bem-vindo", "ao"];
 
-const StatCard = ({ stat, index }: { stat: (typeof stats)[0]; index: number }) => {
-  const count = useCountUp(stat.value, 1200, index * 100);
+const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; value: number; icon: any; change: string; index: number }) => {
+  const count = useCountUp(value, 1200, index * 100);
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -101,14 +54,14 @@ const StatCard = ({ stat, index }: { stat: (typeof stats)[0]; index: number }) =
     >
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-          <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
         </div>
         <div className="min-w-0">
           <p className="text-xl sm:text-2xl font-bold text-foreground font-display tabular-nums">{count}</p>
-          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{stat.label}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{label}</p>
         </div>
       </div>
-      <p className="text-[9px] sm:text-[10px] text-primary/70 mt-2 font-medium">{stat.change}</p>
+      <p className="text-[9px] sm:text-[10px] text-primary/70 mt-2 font-medium">{change}</p>
     </motion.div>
   );
 };
@@ -116,27 +69,44 @@ const StatCard = ({ stat, index }: { stat: (typeof stats)[0]; index: number }) =
 const Dashboard = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
+  const { orders } = useServiceOrders();
+  const { items: magicUpItems } = useMagicUpHistory();
+
+  const stats = useMemo(() => {
+    const abertas = orders.filter((o) => o.status === "aberta").length;
+    const producao = orders.filter((o) => o.status === "em_producao").length;
+    const concluidas = orders.filter((o) => o.status === "concluida").length;
+
+    return [
+      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas` },
+      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas` },
+      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas` },
+      { label: "Rascunhos", value: 0, icon: FolderOpen, change: "Sem rascunhos" },
+    ];
+  }, [orders, magicUpItems]);
+
+  // Build recent activity from real service orders
+  const recentProjects = useMemo(() => {
+    if (orders.length === 0) return fallbackProjects;
+    return orders.slice(0, 6).map((o) => ({
+      title: `OS ${o.osNumber} - ${o.productName}`,
+      category: o.technique,
+      thumbnail: o.mockupImageUrl || heroMockup,
+      lastEdited: new Date(o.updatedAt).toLocaleDateString("pt-BR"),
+      views: parseInt(o.quantity) || 0,
+    }));
+  }, [orders]);
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground flex flex-wrap items-center gap-1.5">
           {headingWords.map((word, i) => (
-            <motion.span
-              key={word}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 * i }}
-            >
+            <motion.span key={word} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 * i }}>
               {word}
             </motion.span>
           ))}
-          <motion.span
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-primary"
-          >
+          <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-primary">
             Promo Design
           </motion.span>
         </h1>
@@ -145,7 +115,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {stats.map((stat, i) => (
-          <StatCard key={stat.label} stat={stat} index={i} />
+          <StatCard key={stat.label} {...stat} index={i} />
         ))}
       </div>
 
@@ -177,13 +147,10 @@ const Dashboard = () => {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Projetos Recentes</h2>
-        <LayoutPopover
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          gridColumns={gridColumns}
-          setGridColumns={setGridColumns}
-        />
+        <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+          {orders.length > 0 ? "Ordens Recentes" : "Projetos Recentes"}
+        </h2>
+        <LayoutPopover viewMode={viewMode} setViewMode={setViewMode} gridColumns={gridColumns} setGridColumns={setGridColumns} />
       </div>
 
       {recentProjects.length === 0 ? (
@@ -197,29 +164,15 @@ const Dashboard = () => {
       ) : (
         <AnimatePresence mode="wait">
           {viewMode === "grid" ? (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`grid ${columnClasses[gridColumns] || columnClasses[4]} gap-3 sm:gap-4`}
-            >
+            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className={`grid ${columnClasses[gridColumns] || columnClasses[4]} gap-3 sm:gap-4`}>
               {recentProjects.map((project, i) => (
-                <ProjectCard key={project.title} {...project} index={i} />
+                <ProjectCard key={project.title + i} {...project} index={i} />
               ))}
             </motion.div>
           ) : (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col gap-3"
-            >
+            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col gap-3">
               {recentProjects.map((project, i) => (
-                <MockupListItem key={project.title} {...project} index={i} />
+                <MockupListItem key={project.title + i} {...project} index={i} />
               ))}
             </motion.div>
           )}
