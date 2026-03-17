@@ -391,7 +391,7 @@ const MockupNew = () => {
     }
   }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
 
-  // Auto-save every 60 seconds
+  // Auto-save every 30 seconds
   useEffect(() => {
     // Only auto-save if there's meaningful state (product selected or logo loaded)
     if (!selectedProduct && !logoPreview) return;
@@ -399,7 +399,7 @@ const MockupNew = () => {
     const interval = setInterval(() => {
       autoSaveRef.current = true;
       handleSaveDraft(true);
-    }, 60_000);
+    }, 30_000);
 
     return () => clearInterval(interval);
   }, [handleSaveDraft, selectedProduct, logoPreview]);
