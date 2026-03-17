@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Clock, Eye, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface MockupListItemProps {
   title: string;
@@ -10,11 +11,17 @@ interface MockupListItemProps {
   lastEdited: string;
   views: number;
   index: number;
+  path?: string;
 }
 
-const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index }: MockupListItemProps) => {
+const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index, path }: MockupListItemProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (path) navigate(path);
+  };
 
   return (
     <motion.div
@@ -26,6 +33,7 @@ const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index }
         "transition-all duration-300 ease-out cursor-pointer",
         "hover:border-primary/30 hover:shadow-lg"
       )}
+      onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -58,9 +66,11 @@ const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index }
           <span className="flex items-center gap-1.5 text-xs">
             <Clock className="w-3 h-3" /> {lastEdited}
           </span>
-          <span className="flex items-center gap-1.5 text-xs">
-            <Eye className="w-3 h-3" /> {views}
-          </span>
+          {views > 0 && (
+            <span className="flex items-center gap-1.5 text-xs">
+              <Eye className="w-3 h-3" /> {views}
+            </span>
+          )}
         </div>
       </div>
 

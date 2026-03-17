@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { Image, Sparkles, Clock, Video, Film, Palette, Camera, FolderOpen, ClipboardList, BarChart3, FileText, Layers, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Sparkles, Clock, Video, Film, FolderOpen, ClipboardList, BarChart3, Image } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
@@ -92,7 +92,6 @@ function buildWeeklyActivity(
 }
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const { orders } = useServiceOrders();
@@ -133,6 +132,7 @@ const Dashboard = () => {
       lastEdited: string;
       views: number;
       path?: string;
+      _sortDate: string;
     };
 
     const items: RecentItem[] = [];
@@ -146,6 +146,7 @@ const Dashboard = () => {
         lastEdited: formatRelativeDate(d.updatedAt),
         views: 0,
         path: `/mockup/new?draft=${d.id}`,
+        _sortDate: d.updatedAt,
       });
     });
 
@@ -157,6 +158,8 @@ const Dashboard = () => {
         thumbnail: o.mockupImageUrl || mockupCard,
         lastEdited: formatRelativeDate(o.updatedAt),
         views: parseInt(String(o.quantity)) || 0,
+        path: `/mockup/service-order?edit=${o.id}`,
+        _sortDate: o.updatedAt,
       });
     });
 
@@ -168,14 +171,13 @@ const Dashboard = () => {
         thumbnail: m.imageUrl || mockupSocial,
         lastEdited: formatRelativeDate(m.createdAt),
         views: 0,
+        path: `/magicup/history`,
+        _sortDate: m.createdAt,
       });
     });
 
     // Sort by date (most recent first)
-    items.sort((a, b) => {
-      // Parse relative dates back is impractical, so we keep original order (already sorted by API)
-      return 0;
-    });
+    items.sort((a, b) => new Date(b._sortDate).getTime() - new Date(a._sortDate).getTime());
 
     return items.slice(0, 6);
   }, [drafts, orders, magicUpItems]);
