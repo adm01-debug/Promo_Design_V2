@@ -345,6 +345,72 @@ const MockupNew = () => {
     pushHistory(newPlacement, logoPreview);
   };
 
+  // ──────────────── Draft save/restore ────────────────
+  const handleSaveDraft = useCallback(async () => {
+    const editorState: Record<string, unknown> = {
+      placement,
+      logoPreview,
+      logoColors,
+      step,
+      zoom,
+      showGrid,
+      showRulers,
+      showGuides,
+      lockAspect,
+      showLogo,
+      surfaceType,
+      selectedTemplate,
+      selectedProductId: selectedProduct?.id ?? null,
+      selectedAreaId: selectedArea?.id ?? null,
+      selectedVariantId: selectedVariant?.id ?? null,
+    };
+
+    try {
+      const name = selectedProduct
+        ? `${selectedProduct.name}${selectedArea ? ` – ${selectedArea.location_name}` : ""}`
+        : "Rascunho sem produto";
+
+      const result = await saveDraft({
+        id: draftId ?? undefined,
+        name,
+        productName: selectedProduct?.name ?? null,
+        productSku: selectedProduct?.sku ?? null,
+        thumbnailUrl: selectedProductImage ?? null,
+        editorState,
+      });
+
+      if (!draftId) {
+        setDraftId(result.id);
+        setSearchParams({ draft: result.id }, { replace: true });
+      }
+      toast.success("Rascunho salvo na nuvem!");
+    } catch {
+      toast.error("Erro ao salvar rascunho.");
+    }
+  }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
+
+  // Restore draft on mount
+  useEffect(() => {
+    const draftParam = searchParams.get("draft");
+    if (!draftParam) return;
+    const draft = getDraft(draftParam);
+    if (!draft?.editorState) return;
+    const s = draft.editorState as Record<string, any>;
+    if (s.placement) setPlacement(s.placement as Placement);
+    if (s.logoPreview) setLogoPreview(s.logoPreview as string);
+    if (s.logoColors) setLogoColors(s.logoColors as string[]);
+    if (s.zoom) setZoom(s.zoom as number);
+    if (s.showGrid !== undefined) setShowGrid(s.showGrid as boolean);
+    if (s.showRulers !== undefined) setShowRulers(s.showRulers as boolean);
+    if (s.showGuides !== undefined) setShowGuides(s.showGuides as boolean);
+    if (s.lockAspect !== undefined) setLockAspect(s.lockAspect as boolean);
+    if (s.showLogo !== undefined) setShowLogo(s.showLogo as boolean);
+    if (s.surfaceType) setSurfaceType(s.surfaceType as SurfaceType);
+    if (s.selectedTemplate) setSelectedTemplate(s.selectedTemplate as string);
+    // Product/area/variant will need to be re-selected by user (external DB)
+    if (s.step === "canvas" && s.logoPreview) setStep("canvas");
+  }, []);
+
   // Canvas size
   const CANVAS_SIZE = 500;
 
