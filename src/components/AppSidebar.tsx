@@ -88,6 +88,7 @@ const notifications = [
 ];
 
 const AppSidebar = () => {
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {
