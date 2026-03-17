@@ -34,6 +34,8 @@ type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "colo
 type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, flipH: false, flipV: false };
 
+type ExportFormat = "png" | "jpeg" | "webp";
+
 const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
   { id: "normal", label: "Normal", desc: "Sem efeito" },
   { id: "multiply", label: "Multiply", desc: "Escurece, ideal para tecidos" },
@@ -68,6 +70,9 @@ const MockupEditor = () => {
   const [logoOpacity, setLogoOpacity] = useState(100);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
   const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
+  const [shadowEnabled, setShadowEnabled] = useState(true);
+  const [shadowIntensity, setShadowIntensity] = useState(40);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
 
   // Per-view placements
   const [placements, setPlacements] = useState<Record<string, Placement>>({
@@ -192,10 +197,11 @@ const MockupEditor = () => {
   const allApproved = VIEWS.every(v => approvedViews.has(v.id));
 
   // ──────────── Export ────────────
-  const handleExportPng = useCallback(async () => {
+  const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     setIsExporting(true);
     try {
       const productImg = await loadImageWithFallback(productImage);
+      const logoImg = logoPreview ? await loadImageWithFallback(logoPreview) : null;
       const canvas = document.createElement("canvas");
       // 2x2 grid of views
       const size = 1200;
@@ -220,6 +226,42 @@ const MockupEditor = () => {
         const dy = oy + (size - productImg.height * scale) / 2;
         ctx.drawImage(productImg, dx, dy, productImg.width * scale, productImg.height * scale);
 
+        // Logo in each view
+        if (logoImg && showLogo) {
+          const vp = placements[view.id] || INITIAL_PLACEMENT;
+          const vAreaW = (view.areaPercent.w / 100) * size * 0.8;
+          const vAreaH = (view.areaPercent.h / 100) * size * 0.8;
+          const vAreaX = dx + (view.areaPercent.x / 100) * (productImg.width * scale);
+          const vAreaY = dy + (view.areaPercent.y / 100) * (productImg.height * scale);
+
+          const logoScale = vp.scale;
+          const logoW = vAreaW * logoScale;
+          const logoH = logoW / (logoImg.width / logoImg.height);
+
+          ctx.save();
+          ctx.globalAlpha = logoOpacity / 100;
+          ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
+
+          const logoX = vAreaX + vp.x * (vAreaW / viewAreaW);
+          const logoY = vAreaY + vp.y * (vAreaH / viewAreaH);
+
+          ctx.translate(logoX + logoW / 2, logoY + logoH / 2);
+          ctx.rotate((vp.rotation * Math.PI) / 180);
+          if (vp.flipH) ctx.scale(-1, 1);
+          if (vp.flipV) ctx.scale(1, -1);
+
+          // Shadow
+          if (shadowEnabled) {
+            ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity / 100})`;
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+          }
+
+          ctx.drawImage(logoImg, -logoW / 2, -logoH / 2, logoW, logoH);
+          ctx.restore();
+        }
+
         // View label
         ctx.fillStyle = "#333333";
         ctx.font = "bold 24px sans-serif";
@@ -243,22 +285,28 @@ const MockupEditor = () => {
         if (row === 0) { ctx.beginPath(); ctx.moveTo(ox, size); ctx.lineTo(ox + size, size); ctx.stroke(); }
       }
 
+      const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
+      const quality = format === "png" ? undefined : 0.92;
+      const ext = format;
+
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `mockup-multiview-${productSku}-HD.png`;
+        a.download = `mockup-multiview-${productSku}-HD.${ext}`;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success("PNG multivistas exportado (2400x2400px)");
-      }, "image/png");
+        toast.success(`${ext.toUpperCase()} multivistas exportado (2400×2400px)`);
+      }, mimeType, quality);
     } catch {
       toast.error("Erro ao exportar");
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, approvedViews]);
+  }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH]);
+
+  const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
 
   const handleExportPdf = () => {
     const pdf = generateApprovalPdf({
@@ -456,6 +504,7 @@ const MockupEditor = () => {
                       style={{
                         mixBlendMode: blendMode,
                         opacity: logoOpacity / 100,
+                        filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined,
                         ...(surfaceType === "flat" ? {
                           transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})`,
                         } : {}),
@@ -645,6 +694,34 @@ const MockupEditor = () => {
                   {showTexture ? "On" : "Off"}
                 </button>
               </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-mono text-muted-foreground">Sombra</label>
+                  <button
+                    onClick={() => setShadowEnabled(!shadowEnabled)}
+                    className={`px-2 py-1 rounded text-[10px] border transition-all ${
+                      shadowEnabled
+                        ? "bg-primary/20 text-primary border-primary/40"
+                        : "bg-surface-2 text-muted-foreground border-border"
+                    }`}
+                  >
+                    {shadowEnabled ? "On" : "Off"}
+                  </button>
+                </div>
+                {shadowEnabled && (
+                  <div className="mt-1.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-mono text-muted-foreground">Intensidade</label>
+                      <span className="text-[10px] font-mono text-primary">{shadowIntensity}%</span>
+                    </div>
+                    <Slider
+                      value={[shadowIntensity]}
+                      onValueChange={([v]) => setShadowIntensity(v)}
+                      min={10} max={80} step={5}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           {/* Auto-Fit & Surface */}
@@ -741,11 +818,29 @@ const MockupEditor = () => {
 
           {/* Export */}
           <div className="p-4 mt-auto space-y-2">
+            <div>
+              <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5 block">Formato</label>
+              <div className="grid grid-cols-3 gap-1">
+                {(["png", "jpeg", "webp"] as ExportFormat[]).map((fmt) => (
+                  <button
+                    key={fmt}
+                    onClick={() => setExportFormat(fmt)}
+                    className={`px-2 py-1.5 rounded text-[10px] font-mono uppercase transition-all ${
+                      exportFormat === fmt
+                        ? "bg-primary/20 text-primary border border-primary/40"
+                        : "bg-muted text-muted-foreground border border-border hover:border-primary/30"
+                    }`}
+                  >
+                    {fmt}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}>
               <Printer className="w-3.5 h-3.5" /> Layout Aprovação (PDF)
             </Button>
             <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
-              {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG Multivistas
+              {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
             </Button>
           </div>
         </div>
