@@ -26,7 +26,7 @@ import {
   LogOut,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import NotificationPanel from "./NotificationPanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
