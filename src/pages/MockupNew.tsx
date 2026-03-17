@@ -320,7 +320,7 @@ const MockupNew = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea]);
+  }, [selectedProduct, selectedProductImage, logoPreview, placement, selectedArea, surfaceType]);
 
   const handleExportPdf = () => {
     if (!selectedProduct || !selectedArea) return;
@@ -404,12 +404,16 @@ const MockupNew = () => {
     return () => clearInterval(interval);
   }, [handleSaveDraft, selectedProduct, logoPreview]);
 
-  // Restore draft on mount
+  // Restore draft when drafts finish loading
+  const draftRestoredRef = useRef(false);
   useEffect(() => {
+    if (draftRestoredRef.current) return;
     const draftParam = searchParams.get("draft");
     if (!draftParam) return;
     const draft = getDraft(draftParam);
     if (!draft?.editorState) return;
+    draftRestoredRef.current = true;
+    setDraftId(draftParam);
     const s = draft.editorState as Record<string, any>;
     if (s.placement) setPlacement(s.placement as Placement);
     if (s.logoPreview) setLogoPreview(s.logoPreview as string);
@@ -424,7 +428,7 @@ const MockupNew = () => {
     if (s.selectedTemplate) setSelectedTemplate(s.selectedTemplate as string);
     // Product/area/variant will need to be re-selected by user (external DB)
     if (s.step === "canvas" && s.logoPreview) setStep("canvas");
-  }, []);
+  }, [getDraft, searchParams]);
 
   // Canvas size
   const CANVAS_SIZE = 500;
