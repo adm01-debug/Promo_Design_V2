@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, ZoomIn, ZoomOut, RotateCw, Download, Save,
@@ -16,6 +16,7 @@ import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoF
 import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp";
 import { generateApprovalPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
 
 // ──────────────── Templates ────────────────
 const MOCKUP_TEMPLATES = [
@@ -36,6 +37,9 @@ const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.8, rotation: 0, fl
 
 const MockupNew = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { saveDraft, getDraft, isSaving } = useMockupDrafts();
+  const [draftId, setDraftId] = useState<string | null>(searchParams.get("draft"));
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
@@ -341,6 +345,72 @@ const MockupNew = () => {
     pushHistory(newPlacement, logoPreview);
   };
 
+  // ──────────────── Draft save/restore ────────────────
+  const handleSaveDraft = useCallback(async () => {
+    const editorState: Record<string, unknown> = {
+      placement,
+      logoPreview,
+      logoColors,
+      step,
+      zoom,
+      showGrid,
+      showRulers,
+      showGuides,
+      lockAspect,
+      showLogo,
+      surfaceType,
+      selectedTemplate,
+      selectedProductId: selectedProduct?.id ?? null,
+      selectedAreaId: selectedArea?.id ?? null,
+      selectedVariantId: selectedVariant?.id ?? null,
+    };
+
+    try {
+      const name = selectedProduct
+        ? `${selectedProduct.name}${selectedArea ? ` – ${selectedArea.location_name}` : ""}`
+        : "Rascunho sem produto";
+
+      const result = await saveDraft({
+        id: draftId ?? undefined,
+        name,
+        productName: selectedProduct?.name ?? null,
+        productSku: selectedProduct?.sku ?? null,
+        thumbnailUrl: selectedProductImage ?? null,
+        editorState,
+      });
+
+      if (!draftId) {
+        setDraftId(result.id);
+        setSearchParams({ draft: result.id }, { replace: true });
+      }
+      toast.success("Rascunho salvo na nuvem!");
+    } catch {
+      toast.error("Erro ao salvar rascunho.");
+    }
+  }, [placement, logoPreview, logoColors, step, zoom, showGrid, showRulers, showGuides, lockAspect, showLogo, surfaceType, selectedTemplate, selectedProduct, selectedArea, selectedVariant, selectedProductImage, draftId, saveDraft, setSearchParams]);
+
+  // Restore draft on mount
+  useEffect(() => {
+    const draftParam = searchParams.get("draft");
+    if (!draftParam) return;
+    const draft = getDraft(draftParam);
+    if (!draft?.editorState) return;
+    const s = draft.editorState as Record<string, any>;
+    if (s.placement) setPlacement(s.placement as Placement);
+    if (s.logoPreview) setLogoPreview(s.logoPreview as string);
+    if (s.logoColors) setLogoColors(s.logoColors as string[]);
+    if (s.zoom) setZoom(s.zoom as number);
+    if (s.showGrid !== undefined) setShowGrid(s.showGrid as boolean);
+    if (s.showRulers !== undefined) setShowRulers(s.showRulers as boolean);
+    if (s.showGuides !== undefined) setShowGuides(s.showGuides as boolean);
+    if (s.lockAspect !== undefined) setLockAspect(s.lockAspect as boolean);
+    if (s.showLogo !== undefined) setShowLogo(s.showLogo as boolean);
+    if (s.surfaceType) setSurfaceType(s.surfaceType as SurfaceType);
+    if (s.selectedTemplate) setSelectedTemplate(s.selectedTemplate as string);
+    // Product/area/variant will need to be re-selected by user (external DB)
+    if (s.step === "canvas" && s.logoPreview) setStep("canvas");
+  }, []);
+
   // Canvas size
   const CANVAS_SIZE = 500;
 
@@ -382,7 +452,9 @@ const MockupNew = () => {
               <div className="w-px h-5 bg-border" />
             </>
           )}
-          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8"><Save className="w-3.5 h-3.5" /> Salvar</Button>
+          <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8" onClick={handleSaveDraft} disabled={isSaving}>
+            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {draftId ? "Atualizar" : "Salvar"}
+          </Button>
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={handleExportPdf}>
             <FileText className="w-3.5 h-3.5" /> PDF
           </Button>
