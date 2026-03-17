@@ -1,1 +1,4 @@
 project_id = "ntthcrdfywvzeyqyqofp"
+
+[functions.mockup-ai]
+verify_jwt = false
