@@ -7,6 +7,22 @@ import {
   FileText, Package, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, LineChart, Line, CartesianGrid, Legend,
+} from "recharts";
+
+const CHART_COLORS = [
+  "hsl(160, 60%, 45%)", "hsl(190, 70%, 50%)", "hsl(40, 80%, 55%)", "hsl(350, 65%, 55%)",
+  "hsl(270, 55%, 55%)", "hsl(210, 65%, 55%)", "hsl(25, 75%, 55%)", "hsl(330, 60%, 55%)",
+];
+
+const STATUS_CHART_COLORS: Record<OsStatus, string> = {
+  aberta: "hsl(210, 70%, 55%)",
+  em_producao: "hsl(40, 80%, 55%)",
+  concluida: "hsl(155, 60%, 45%)",
+  cancelada: "hsl(0, 65%, 55%)",
+};
 
 const ServiceOrderDashboard = () => {
   const { orders } = useServiceOrders();
@@ -17,44 +33,59 @@ const ServiceOrderDashboard = () => {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    // Status counts
-    const byStatus: Record<OsStatus, number> = {
-      aberta: 0,
-      em_producao: 0,
-      concluida: 0,
-      cancelada: 0,
-    };
+    const byStatus: Record<OsStatus, number> = { aberta: 0, em_producao: 0, concluida: 0, cancelada: 0 };
     orders.forEach((o) => { byStatus[o.status]++; });
 
-    // By technique
     const byTechnique: Record<string, number> = {};
     orders.forEach((o) => {
-      if (o.technique) {
-        byTechnique[o.technique] = (byTechnique[o.technique] || 0) + 1;
-      }
+      if (o.technique) byTechnique[o.technique] = (byTechnique[o.technique] || 0) + 1;
     });
-    const techniqueEntries = Object.entries(byTechnique)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8);
-    const maxTechCount = techniqueEntries.length > 0 ? techniqueEntries[0][1] : 1;
+    const techniqueEntries = Object.entries(byTechnique).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
-    // Deliveries this month
     const deliveriesThisMonth = orders.filter((o) => {
       if (!o.deliveryDate) return false;
       const d = new Date(o.deliveryDate);
       return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
-    // Overdue (delivery date passed, not concluded/cancelled)
     const overdue = orders.filter((o) => {
       if (!o.deliveryDate || o.status === "concluida" || o.status === "cancelada") return false;
       return new Date(o.deliveryDate) < now;
     });
 
-    // Total quantity
     const totalQty = orders.reduce((sum, o) => sum + (parseInt(o.quantity) || 0), 0);
 
-    return { byStatus, techniqueEntries, maxTechCount, deliveriesThisMonth, overdue, totalQty };
+    // Monthly trend (last 6 months)
+    const monthlyTrend: { month: string; total: number; concluidas: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(currentYear, currentMonth - i, 1);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+      const monthOrders = orders.filter((o) => {
+        const od = new Date(o.createdAt);
+        return od.getMonth() === m && od.getFullYear() === y;
+      });
+      monthlyTrend.push({
+        month: label,
+        total: monthOrders.length,
+        concluidas: monthOrders.filter((o) => o.status === "concluida").length,
+      });
+    }
+
+    // Status pie data
+    const statusPieData = (Object.entries(byStatus) as [OsStatus, number][])
+      .filter(([, v]) => v > 0)
+      .map(([key, value]) => ({ name: STATUS_CONFIG[key].label, value, status: key }));
+
+    // Technique bar data
+    const techniqueBarData = techniqueEntries.map(([name, count]) => ({
+      name: name.length > 18 ? name.slice(0, 16) + "…" : name,
+      fullName: name,
+      count,
+    }));
+
+    return { byStatus, techniqueBarData, deliveriesThisMonth, overdue, totalQty, monthlyTrend, statusPieData };
   }, [orders]);
 
   const statusCards: { key: OsStatus; icon: React.ReactNode }[] = [
@@ -64,10 +95,19 @@ const ServiceOrderDashboard = () => {
     { key: "cancelada", icon: <Package className="w-5 h-5" /> },
   ];
 
-  const techniqueColors = [
-    "bg-emerald-500", "bg-cyan-500", "bg-amber-500", "bg-rose-500",
-    "bg-violet-500", "bg-blue-500", "bg-orange-500", "bg-pink-500",
-  ];
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg text-xs">
+        <p className="font-semibold text-foreground mb-1">{payload[0]?.payload?.fullName || label}</p>
+        {payload.map((p: any, i: number) => (
+          <p key={i} className="text-muted-foreground">
+            {p.name}: <span className="font-mono font-semibold text-foreground">{p.value}</span>
+          </p>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,7 +138,7 @@ const ServiceOrderDashboard = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.08 }}
-                className={`relative overflow-hidden rounded-xl border border-border bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors`}
+                className="relative overflow-hidden rounded-xl border border-border bg-card p-5 cursor-pointer hover:border-primary/40 transition-colors"
                 onClick={() => navigate("/mockup/service-orders")}
               >
                 <div className={`absolute top-0 right-0 w-20 h-20 rounded-bl-full ${cfg.bg} opacity-50`} />
@@ -110,43 +150,106 @@ const ServiceOrderDashboard = () => {
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Technique Chart */}
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Status Pie Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-card rounded-xl border border-border p-5"
+          >
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+              <ClipboardList className="w-4 h-4 text-primary" />
+              Distribuição por Status
+            </h2>
+            {metrics.statusPieData.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-12">Nenhuma OS registrada</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={metrics.statusPieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {metrics.statusPieData.map((entry) => (
+                      <Cell key={entry.status} fill={STATUS_CHART_COLORS[entry.status as OsStatus]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value: string) => <span className="text-xs text-muted-foreground">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </motion.div>
+
+          {/* Technique Bar Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-card rounded-xl border border-border p-5"
+            className="bg-card rounded-xl border border-border p-5 lg:col-span-2"
           >
             <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
               <ClipboardList className="w-4 h-4 text-primary" />
               OS por Técnica de Gravação
             </h2>
-            {metrics.techniqueEntries.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-8">Nenhuma OS registrada ainda</p>
+            {metrics.techniqueBarData.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-12">Nenhuma OS registrada</p>
             ) : (
-              <div className="space-y-3">
-                {metrics.techniqueEntries.map(([name, count], i) => (
-                  <div key={name} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground truncate max-w-[200px]">{name}</span>
-                      <span className="font-mono font-semibold text-foreground">{count}</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(count / metrics.maxTechCount) * 100}%` }}
-                        transition={{ delay: 0.4 + i * 0.05, duration: 0.5 }}
-                        className={`h-full rounded-full ${techniqueColors[i % techniqueColors.length]}`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={metrics.techniqueBarData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="count" name="Ordens" radius={[0, 4, 4, 0]} barSize={18}>
+                    {metrics.techniqueBarData.map((_, i) => (
+                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </motion.div>
+        </div>
 
-          {/* Deliveries this month + Overdue */}
+        {/* Monthly Trend + Deliveries */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Monthly Trend Line Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="bg-card rounded-xl border border-border p-5"
+          >
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              Evolução Mensal (6 meses)
+            </h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={metrics.monthlyTrend} margin={{ left: -10, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="total" name="Total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} />
+                <Line type="monotone" dataKey="concluidas" name="Concluídas" stroke="hsl(155, 60%, 45%)" strokeWidth={2} dot={{ r: 4, fill: "hsl(155, 60%, 45%)" }} />
+                <Legend formatter={(value: string) => <span className="text-xs text-muted-foreground">{value}</span>} />
+              </LineChart>
+            </ResponsiveContainer>
+          </motion.div>
+
+          {/* Deliveries + Overdue */}
           <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -159,9 +262,9 @@ const ServiceOrderDashboard = () => {
                 Entregas do Mês
               </h2>
               {metrics.deliveriesThisMonth.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma entrega programada para este mês</p>
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma entrega programada</p>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-40 overflow-y-auto">
                   {metrics.deliveriesThisMonth.map((o) => {
                     const cfg = STATUS_CONFIG[o.status];
                     return (
@@ -183,23 +286,20 @@ const ServiceOrderDashboard = () => {
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                {metrics.deliveriesThisMonth.length} entrega(s) programada(s)
+                {metrics.deliveriesThisMonth.length} entrega(s)
               </p>
             </motion.div>
 
-            {/* Overdue */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
               className={`rounded-xl border p-5 ${
-                metrics.overdue.length > 0
-                  ? "bg-red-500/5 border-red-500/20"
-                  : "bg-card border-border"
+                metrics.overdue.length > 0 ? "bg-destructive/5 border-destructive/20" : "bg-card border-border"
               }`}
             >
               <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-red-400" />
+                <Clock className="w-4 h-4 text-destructive" />
                 Entregas Atrasadas
               </h2>
               {metrics.overdue.length === 0 ? (
@@ -209,12 +309,12 @@ const ServiceOrderDashboard = () => {
                   {metrics.overdue.slice(0, 5).map((o) => (
                     <div
                       key={o.id}
-                      className="flex items-center justify-between bg-red-500/10 rounded-lg px-3 py-2 cursor-pointer hover:bg-red-500/15 transition-colors"
+                      className="flex items-center justify-between bg-destructive/10 rounded-lg px-3 py-2 cursor-pointer hover:bg-destructive/15 transition-colors"
                       onClick={() => navigate(`/mockup/service-order?edit=${o.id}`)}
                     >
                       <div>
                         <p className="text-xs font-semibold text-foreground">{o.productName}</p>
-                        <p className="text-[10px] text-red-400">{o.clientName} • Entrega: {o.deliveryDate}</p>
+                        <p className="text-[10px] text-destructive">{o.clientName} • Entrega: {o.deliveryDate}</p>
                       </div>
                     </div>
                   ))}
