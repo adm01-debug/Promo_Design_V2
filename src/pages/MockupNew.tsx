@@ -1108,6 +1108,8 @@ const MockupNew = () => {
                     </p>
                   )}
                 </div>
+                {/* Appearance */}
+                <div className="p-4 border-b border-border">
                   <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aparência</h3>
                   <div className="space-y-3">
                     <div>
