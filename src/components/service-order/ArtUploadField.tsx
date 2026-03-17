@@ -82,6 +82,11 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
             <X className="w-3 h-3" /> Remover
           </Button>
         </div>
+      ) : uploading ? (
+        <div className="rounded-lg border-2 border-dashed border-primary/50 bg-muted/20 p-8 flex flex-col items-center justify-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+          <p className="text-sm text-muted-foreground">Enviando arte para a nuvem...</p>
+        </div>
       ) : (
         <div
           onDragOver={(e) => e.preventDefault()}
@@ -91,7 +96,7 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
         >
           <Upload className="w-8 h-8 text-muted-foreground/40 group-hover:text-primary/60 transition-colors mb-2" />
           <p className="text-sm text-muted-foreground">Arraste a arte ou clique para selecionar</p>
-          <p className="text-[10px] text-muted-foreground/60 mt-1">PNG, JPG, SVG, AI, PDF, EPS</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1">PNG, JPG, SVG, AI, PDF, EPS — upload na nuvem ☁️</p>
         </div>
       )}
     </div>
