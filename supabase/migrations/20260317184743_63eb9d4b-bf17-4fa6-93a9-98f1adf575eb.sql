@@ -1,0 +1,1 @@
+ALTER TABLE public.service_orders ALTER COLUMN status SET DEFAULT 'aberta';
