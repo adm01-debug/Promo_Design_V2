@@ -219,13 +219,17 @@ const AppSidebar = () => {
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-xs font-bold text-muted-foreground">PD</span>
+              <span className="text-xs font-bold text-muted-foreground">
+                {user?.email?.[0]?.toUpperCase() ?? "U"}
+              </span>
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-sidebar" />
           </div>
           {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-sidebar-accent-foreground truncate">Designer</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-sidebar-accent-foreground truncate">
+                {user?.email ?? "Usuário"}
+              </p>
               <p className="text-[10px] text-sidebar-foreground/60">Online</p>
             </div>
           )}
