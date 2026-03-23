@@ -64,6 +64,7 @@ const ProjectCard = ({ title, category, thumbnail, lastEdited, views, index, pat
             <DropdownMenuTrigger asChild>
               <button
                 onClick={(e) => e.stopPropagation()}
+                aria-label="Mais opções"
                 className="p-1.5 rounded-md glass text-foreground hover:bg-surface-3"
               >
                 <MoreHorizontal className="w-4 h-4" />
