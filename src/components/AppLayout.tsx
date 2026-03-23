@@ -51,6 +51,7 @@ const AppLayout = () => {
         <>
           <button
             onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menu"
             className="fixed top-3 left-3 z-50 w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center"
           >
             <Menu className="w-5 h-5 text-foreground" />
