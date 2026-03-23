@@ -122,6 +122,7 @@ const Dashboard = () => {
     );
   }, [orders, drafts, magicUpItems]);
 
+  const isLoading = ordersLoading || draftsLoading;
   const hasActivity = weeklyData.some((w) => w.os + w.mockups + w.ia > 0);
 
   // Build unified recent projects from real data
