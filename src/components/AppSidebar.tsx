@@ -265,7 +265,12 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         </button>
 
         <button
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => {
+            const next = !collapsed;
+            setCollapsedState(next);
+            onCollapseChange?.(next);
+          }}
+          aria-label={collapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
           {collapsed ? (
