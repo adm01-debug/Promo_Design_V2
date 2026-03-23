@@ -7,6 +7,7 @@ import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
 import { LayoutPopover } from "@/components/LayoutPopover";
 import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector";
+import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/components/DashboardSkeleton";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useServiceOrders, STATUS_CONFIG } from "@/hooks/use-service-orders";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
@@ -94,9 +95,9 @@ function buildWeeklyActivity(
 const Dashboard = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
-  const { orders } = useServiceOrders();
+  const { orders, isLoading: ordersLoading } = useServiceOrders();
   const { items: magicUpItems } = useMagicUpHistory();
-  const { drafts } = useMockupDrafts();
+  const { drafts, isLoading: draftsLoading } = useMockupDrafts();
 
   const stats = useMemo(() => {
     const abertas = orders.filter((o) => o.status === "aberta").length;
@@ -121,6 +122,7 @@ const Dashboard = () => {
     );
   }, [orders, drafts, magicUpItems]);
 
+  const isLoading = ordersLoading || draftsLoading;
   const hasActivity = weeklyData.some((w) => w.os + w.mockups + w.ia > 0);
 
   // Build unified recent projects from real data
@@ -199,9 +201,10 @@ const Dashboard = () => {
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        {stats.map((stat, i) => (
-          <StatCard key={stat.label} {...stat} index={i} />
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : stats.map((stat, i) => <StatCard key={stat.label} {...stat} index={i} />)
+        }
       </div>
 
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Ações Rápidas</h2>
