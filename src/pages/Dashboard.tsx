@@ -201,9 +201,10 @@ const Dashboard = () => {
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        {stats.map((stat, i) => (
-          <StatCard key={stat.label} {...stat} index={i} />
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : stats.map((stat, i) => <StatCard key={stat.label} {...stat} index={i} />)
+        }
       </div>
 
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Ações Rápidas</h2>
