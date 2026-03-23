@@ -95,9 +95,9 @@ function buildWeeklyActivity(
 const Dashboard = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
-  const { orders } = useServiceOrders();
+  const { orders, isLoading: ordersLoading } = useServiceOrders();
   const { items: magicUpItems } = useMagicUpHistory();
-  const { drafts } = useMockupDrafts();
+  const { drafts, isLoading: draftsLoading } = useMockupDrafts();
 
   const stats = useMemo(() => {
     const abertas = orders.filter((o) => o.status === "aberta").length;
