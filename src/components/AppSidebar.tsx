@@ -74,10 +74,10 @@ const modules = [
 ];
 
 
-const AppSidebar = () => {
+const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boolean) => void }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsedState] = useState(false);
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {
     if (location.pathname.startsWith("/magicup")) return "magicup";
     if (location.pathname.startsWith("/video")) return "video";
