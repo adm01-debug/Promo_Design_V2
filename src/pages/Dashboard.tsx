@@ -7,6 +7,7 @@ import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
 import { LayoutPopover } from "@/components/LayoutPopover";
 import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector";
+import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/components/DashboardSkeleton";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useServiceOrders, STATUS_CONFIG } from "@/hooks/use-service-orders";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
