@@ -49,6 +49,7 @@ const ProjectCard = ({ title, category, thumbnail, lastEdited, views, index, pat
         {/* Favorite */}
         <button
           onClick={(e) => { e.stopPropagation(); setFav(!fav); }}
+          aria-label={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           className="absolute top-2 right-2 p-1.5 rounded-md glass opacity-0 group-hover:opacity-100 transition-all"
         >
           <Star className={`w-3.5 h-3.5 transition-colors ${fav ? "fill-yellow-400 text-yellow-400" : "text-foreground"}`} />
