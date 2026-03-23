@@ -16,6 +16,7 @@ const AppLayout = () => {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -50,6 +51,7 @@ const AppLayout = () => {
         <>
           <button
             onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menu"
             className="fixed top-3 left-3 z-50 w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center"
           >
             <Menu className="w-5 h-5 text-foreground" />
@@ -99,8 +101,8 @@ const AppLayout = () => {
         </>
       ) : (
         <>
-          <AppSidebar />
-          <main className="flex-1 ml-[240px] transition-all">
+          <AppSidebar onCollapseChange={setCollapsed} />
+          <main className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
             <div className="p-4 pb-0">
               <Breadcrumbs />
             </div>
