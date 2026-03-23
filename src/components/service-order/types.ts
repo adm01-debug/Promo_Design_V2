@@ -73,6 +73,7 @@ export function validateForm(form: ServiceOrderData): ValidationErrors {
   if (!form.productName.trim()) errors.productName = "Nome do produto é obrigatório";
   if (!form.clientName.trim()) errors.clientName = "Nome do cliente é obrigatório";
   if (!form.technique) errors.technique = "Selecione a técnica de gravação";
-  if (!form.quantity.trim() || Number(form.quantity) < 1) errors.quantity = "Informe a quantidade (mín. 1)";
+  const qty = Number(form.quantity);
+  if (!form.quantity.trim() || isNaN(qty) || qty < 1) errors.quantity = "Informe a quantidade (mín. 1)";
   return errors;
 }
