@@ -157,7 +157,7 @@ describe("cn() utility", () => {
 // ============================================================
 // 5. Form validation — edge cases
 // ============================================================
-import { validateForm, ServiceOrderData } from "@/components/service-order/types";
+import { validateForm, ServiceOrderData } from "@/features/service-orders";
 
 describe("validateForm — edge cases", () => {
   const base: ServiceOrderData = {

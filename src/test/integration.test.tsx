@@ -201,7 +201,7 @@ describe("Dashboard Skeletons", () => {
 // ============================================================
 // Form validation integration
 // ============================================================
-import { validateForm, ServiceOrderData, TECHNIQUES, generateOsNumber } from "@/components/service-order/types";
+import { validateForm, ServiceOrderData, TECHNIQUES, generateOsNumber } from "@/features/service-orders";
 
 describe("Form validation — integration scenarios", () => {
   const makeForm = (overrides: Partial<ServiceOrderData> = {}): ServiceOrderData => ({

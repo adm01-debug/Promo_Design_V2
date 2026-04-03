@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateServiceOrderPdf, PdfFormData } from "@/components/service-order/ServiceOrderPdf";
+import { generateServiceOrderPdf, PdfFormData } from "@/features/service-orders";
 
 // Mock jspdf since we're testing logic, not actual PDF rendering
 vi.mock("jspdf", () => {
