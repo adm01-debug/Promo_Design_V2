@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalog_products: {
+        Row: {
+          active: boolean
+          category_id: string | null
+          colors: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          material: string | null
+          name: string
+          sku: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          category_id?: string | null
+          colors?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          material?: string | null
+          name: string
+          sku?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string | null
+          colors?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          material?: string | null
+          name?: string
+          sku?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       magicup_history: {
         Row: {
           created_at: string
@@ -132,6 +182,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       service_orders: {
         Row: {
