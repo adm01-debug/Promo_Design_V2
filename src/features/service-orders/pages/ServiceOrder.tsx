@@ -354,6 +354,7 @@ const ServiceOrder = () => {
                 }}
               />
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Nome do Produto *</Label>
                 <Input
