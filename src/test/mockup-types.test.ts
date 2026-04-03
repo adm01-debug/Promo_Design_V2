@@ -4,7 +4,7 @@ import {
   SAMPLE_PROMPTS,
   PROMPT_CATEGORIES,
   INSPIRATION_GALLERY,
-} from "@/lib/mockup-types";
+} from "@/features/magic-up";
 import type {
   Product,
   CustomizationArea,
