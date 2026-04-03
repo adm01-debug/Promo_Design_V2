@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+const CatalogPage = lazyWithRetry(() => import("./features/catalog/pages/CatalogPage"));
 const MockupNew = lazyWithRetry(() => import("./features/mockup/pages/MockupNew"));
 const MockupDrafts = lazyWithRetry(() => import("./features/mockup/pages/MockupDrafts"));
 const MockupHistory = lazyWithRetry(() => import("./features/mockup/pages/MockupHistory"));
