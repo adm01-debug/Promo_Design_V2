@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import type { Tables } from "@/integrations/supabase/types";
 
 export type OsStatus = "aberta" | "em_producao" | "concluida" | "cancelada";
 
