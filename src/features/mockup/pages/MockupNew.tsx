@@ -256,9 +256,9 @@ const MockupNew = () => {
         pushHistory(placement, data.imageBase64);
         toast.success("Fundo removido com IA!");
       }
-    } catch (e: any) {
-      console.error("Remove BG error:", e);
-      toast.error("Erro ao remover fundo: " + (e?.message || "Tente novamente"));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Tente novamente";
+      toast.error("Erro ao remover fundo: " + msg);
     } finally {
       setIsRemovingBg(false);
     }
