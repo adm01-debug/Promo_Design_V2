@@ -15,7 +15,7 @@ export interface MagicUpHistoryItem {
   createdAt: string;
 }
 
-function rowToItem(row: any): MagicUpHistoryItem {
+function rowToItem(row: Tables<"magicup_history">): MagicUpHistoryItem {
   return {
     id: row.id,
     prompt: row.prompt,

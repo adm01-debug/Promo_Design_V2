@@ -15,7 +15,7 @@ export interface MockupDraft {
   updatedAt: string;
 }
 
-function rowToDraft(row: any): MockupDraft {
+function rowToDraft(row: Tables<"mockup_drafts">): MockupDraft {
   return {
     id: row.id,
     name: row.name,

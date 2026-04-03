@@ -149,7 +149,7 @@ export function useServiceOrders() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<StoredServiceOrder> }) => {
-      const dbUpdates: Record<string, any> = {};
+      const dbUpdates: Record<string, string | number | boolean | null> = {};
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
       if (updates.clientCompany !== undefined) dbUpdates.client_company = updates.clientCompany;
