@@ -11,7 +11,7 @@ import type {
   PromptTemplate,
   InspirationItem,
   Technique,
-} from "@/lib/mockup-types";
+} from "@/features/magic-up/lib/mockup-types";
 
 // ============================================================
 // SAMPLE_PRODUCTS
