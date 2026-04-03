@@ -15,5 +15,6 @@ export {
   validateForm,
   generateOsNumber,
   TECHNIQUES,
+  serviceOrderSchema,
 } from "./types";
 export type { ServiceOrderData, ValidationErrors } from "./types";
