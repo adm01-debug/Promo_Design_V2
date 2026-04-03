@@ -57,10 +57,11 @@ const Auth = () => {
         });
         if (error) throw error;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Ocorreu um erro. Tente novamente.";
       toast({
         title: "Erro",
-        description: error.message || "Ocorreu um erro. Tente novamente.",
+        description: msg,
         variant: "destructive",
       });
     } finally {

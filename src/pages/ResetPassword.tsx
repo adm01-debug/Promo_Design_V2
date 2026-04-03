@@ -30,10 +30,11 @@ const ResetPassword = () => {
       if (error) throw error;
       setSuccess(true);
       setTimeout(() => navigate("/", { replace: true }), 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Não foi possível redefinir a senha.";
       toast({
         title: "Erro",
-        description: error.message || "Não foi possível redefinir a senha.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
