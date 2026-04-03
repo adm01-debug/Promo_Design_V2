@@ -75,7 +75,7 @@ export function useCatalog() {
         .select("*")
         .order("name");
       if (error) throw error;
-      return (data ?? []).map((r: any) => rowToProduct(r, categoriesQuery.data));
+      return (data ?? []).map((r) => rowToProduct(r, categoriesQuery.data));
     },
     enabled: !!user && categoriesQuery.isSuccess,
   });
