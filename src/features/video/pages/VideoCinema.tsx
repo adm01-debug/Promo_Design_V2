@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { useProducts, getProductImageUrl } from "@/hooks/use-products";
+import { useProducts, getProductImageUrl } from "@/features/mockup";
 
 type GradingPreset = {
   id: string;

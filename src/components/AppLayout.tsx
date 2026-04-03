@@ -9,7 +9,7 @@ import ScrollToTop from "./ScrollToTop";
 import CommandPalette from "./CommandPalette";
 import OnboardingDialog from "./OnboardingDialog";
 import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog";
-import { useServiceOrderRealtime } from "@/hooks/use-service-order-realtime";
+import { useServiceOrderRealtime } from "@/features/service-orders";
 
 const AppLayout = () => {
   useServiceOrderRealtime();

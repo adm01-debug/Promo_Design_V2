@@ -2,8 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
-import SectionTitle from "@/components/service-order/SectionTitle";
-import ArtUploadField from "@/components/service-order/ArtUploadField";
+import { SectionTitle, ArtUploadField } from "@/features/service-orders";
 import EmptyState from "@/components/EmptyState";
 import LoadingScreen from "@/components/LoadingScreen";
 import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/components/DashboardSkeleton";
@@ -202,7 +201,7 @@ describe("Dashboard Skeletons", () => {
 // ============================================================
 // Form validation integration
 // ============================================================
-import { validateForm, ServiceOrderData, TECHNIQUES, generateOsNumber } from "@/components/service-order/types";
+import { validateForm, ServiceOrderData, TECHNIQUES, generateOsNumber } from "@/features/service-orders";
 
 describe("Form validation — integration scenarios", () => {
   const makeForm = (overrides: Partial<ServiceOrderData> = {}): ServiceOrderData => ({

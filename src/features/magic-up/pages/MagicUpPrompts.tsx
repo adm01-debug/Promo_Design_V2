@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Search, Plus, Copy, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/lib/mockup-types";
+import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
 import { useNavigate } from "react-router-dom";
 
 const MagicUpPrompts = () => {

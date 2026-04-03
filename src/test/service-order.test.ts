@@ -4,7 +4,7 @@ import {
   TECHNIQUES,
   generateOsNumber,
   validateForm,
-} from "@/components/service-order/types";
+} from "@/features/service-orders";
 
 describe("generateOsNumber", () => {
   it("should generate OS number with correct format", () => {

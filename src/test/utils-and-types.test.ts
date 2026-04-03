@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { cn } from "@/lib/utils";
-import { getProductImageUrl } from "@/hooks/use-products";
-import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "@/lib/db-types";
+import { getProductImageUrl } from "@/features/mockup";
+import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "@/features/mockup";
 
 // ============================================================
 // cn() utility — exhaustive tests

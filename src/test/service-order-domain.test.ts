@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
 import {
+  STATUS_CONFIG,
+  type OsStatus,
   validateForm,
   generateOsNumber,
   TECHNIQUES,
   type ServiceOrderData,
   type ValidationErrors,
-} from "@/components/service-order/types";
+} from "@/features/service-orders";
 
 // ============================================================
 // STATUS_CONFIG — exhaustive tests

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { motion } from "framer-motion";
-import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
 import { Select as StatusSelect, SelectContent as StatusSelectContent, SelectItem as StatusSelectItem, SelectTrigger as StatusSelectTrigger, SelectValue as StatusSelectValue } from "@/components/ui/select";
 import {
   FileText, Download, Printer, ChevronLeft, Package, Palette,
@@ -15,12 +15,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import SectionTitle from "@/components/service-order/SectionTitle";
-import ArtUploadField from "@/components/service-order/ArtUploadField";
-import { generateServiceOrderPdf } from "@/components/service-order/ServiceOrderPdf";
-import { ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm } from "@/components/service-order/types";
-import { getLogoDataUrl } from "@/lib/logo-loader";
-import PdfPreviewDialog from "@/components/service-order/PdfPreviewDialog";
+import {
+  SectionTitle, ArtUploadField, PdfPreviewDialog,
+  generateServiceOrderPdf, getLogoDataUrl,
+  ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm,
+} from "@/features/service-orders";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
