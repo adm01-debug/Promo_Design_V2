@@ -341,8 +341,18 @@ const ServiceOrder = () => {
 
           {/* Product */}
           <section className="bg-card rounded-xl border border-border p-6">
-            <SectionTitle icon={Package} title="Dados do Produto" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between mb-4">
+              <SectionTitle icon={Package} title="Dados do Produto" />
+              <ProductPicker
+                value={{ name: form.productName, sku: form.productSku, material: form.productMaterial, colors: form.productColors }}
+                onChange={(p) => {
+                  update("productName", p.name);
+                  update("productSku", p.sku);
+                  update("productMaterial", p.material);
+                  update("productColors", p.colors);
+                }}
+              />
+            </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Nome do Produto *</Label>
                 <Input
