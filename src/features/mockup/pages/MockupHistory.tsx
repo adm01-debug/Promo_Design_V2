@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const MockupHistory = () => {
   const [search, setSearch] = useState("");
-  const mockups: any[] = [];
+  const mockups: Array<{ id: string; productName: string; technique: string; createdAt: string }> = [];
 
   return (
     <div className="p-6">
