@@ -16,7 +16,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
 import { toast } from "sonner";
 
 const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [

@@ -9,7 +9,7 @@ import { LayoutPopover } from "@/components/LayoutPopover";
 import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector";
 import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/components/DashboardSkeleton";
 import { useCountUp } from "@/hooks/use-count-up";
-import { useServiceOrders, STATUS_CONFIG } from "@/hooks/use-service-orders";
+import { useServiceOrders, STATUS_CONFIG } from "@/features/service-orders";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
 import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";

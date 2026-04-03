@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bell, Check, CheckCheck, Trash2, ClipboardList, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
-import { STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
 import {
   Popover,
   PopoverContent,

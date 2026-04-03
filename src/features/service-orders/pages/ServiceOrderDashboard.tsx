@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/hooks/use-service-orders";
+import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
 import {
   BarChart3, ClipboardList, TrendingUp, Calendar, ArrowRight,
   FileText, Package, Clock,
