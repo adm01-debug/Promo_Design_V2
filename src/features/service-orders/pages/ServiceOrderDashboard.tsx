@@ -95,12 +95,12 @@ const ServiceOrderDashboard = () => {
     { key: "cancelada", icon: <Package className="w-5 h-5" /> },
   ];
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; payload?: { fullName?: string } }>; label?: string }) => {
     if (!active || !payload?.length) return null;
     return (
       <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg text-xs">
         <p className="font-semibold text-foreground mb-1">{payload[0]?.payload?.fullName || label}</p>
-        {payload.map((p: any, i: number) => (
+        {payload.map((p, i: number) => (
           <p key={i} className="text-muted-foreground">
             {p.name}: <span className="font-mono font-semibold text-foreground">{p.value}</span>
           </p>

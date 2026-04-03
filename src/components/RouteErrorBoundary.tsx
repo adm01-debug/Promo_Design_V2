@@ -21,8 +21,9 @@ class RouteErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[RouteErrorBoundary]", error, info.componentStack);
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Error is captured in state via getDerivedStateFromError.
+    // In production, this would be sent to an error tracking service (e.g. Sentry).
   }
 
   handleRetry = () => {

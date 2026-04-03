@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const VideoHistory = () => {
   const [search, setSearch] = useState("");
-  const videos: any[] = [];
+  const videos: Array<{ id: string; productName: string; aspectRatio: string; createdAt: string }> = [];
 
   return (
     <div className="p-6 max-w-6xl">
@@ -42,7 +42,7 @@ const VideoHistory = () => {
           </motion.div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {videos.map((video: any, i: number) => (
+            {videos.map((video, i: number) => (
               <motion.div
                 key={video.id}
                 initial={{ opacity: 0, y: 20 }}

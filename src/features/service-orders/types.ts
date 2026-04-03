@@ -1,37 +1,72 @@
-export interface ServiceOrderData {
-  osNumber: string;
-  date: string;
-  deliveryDate: string;
-  clientName: string;
-  clientCompany: string;
-  clientPhone: string;
-  clientEmail: string;
-  productName: string;
-  productSku: string;
-  productMaterial: string;
-  productColors: string;
-  technique: string;
-  areaName: string;
-  areaWidth: string;
-  areaHeight: string;
-  areaShape: string;
-  artColors: string;
-  artDpi: string;
-  artFile: string;
-  artFileDataUrl: string;
-  quantity: string;
-  observations: string;
-  mockupImageUrl: string;
-  // Novos campos baseados no template real
-  identificacaoCaixa: string;
-  materialEvento: boolean;
-  aprovarPrimeiraPeca: boolean;
-  qtdCompra: string;
-  qtdLiberada: string;
-  fazParteKit: boolean;
-  gravacaoDetalhe: string; // ex: "Gravação Laser Escuro"
+import { z } from "zod";
+
+// ─── Zod Schema ────────────────────────────────────────────
+export const serviceOrderSchema = z.object({
+  osNumber: z.string().min(1),
+  date: z.string().min(1),
+  deliveryDate: z.string(),
+  clientName: z.string().trim().min(1, "Nome do cliente é obrigatório"),
+  clientCompany: z.string(),
+  clientPhone: z.string(),
+  clientEmail: z.string(),
+  productName: z.string().trim().min(1, "Nome do produto é obrigatório"),
+  productSku: z.string(),
+  productMaterial: z.string(),
+  productColors: z.string(),
+  technique: z.string().min(1, "Selecione a técnica de gravação"),
+  areaName: z.string(),
+  areaWidth: z.string(),
+  areaHeight: z.string(),
+  areaShape: z.string(),
+  artColors: z.string(),
+  artDpi: z.string(),
+  artFile: z.string(),
+  artFileDataUrl: z.string(),
+  quantity: z
+    .string()
+    .trim()
+    .min(1, "Informe a quantidade (mín. 1)")
+    .refine(
+      (v) => { const n = Number(v); return !isNaN(n) && n >= 1; },
+      "Informe a quantidade (mín. 1)"
+    ),
+  observations: z.string(),
+  mockupImageUrl: z.string(),
+  identificacaoCaixa: z.string(),
+  materialEvento: z.boolean(),
+  aprovarPrimeiraPeca: z.boolean(),
+  qtdCompra: z.string(),
+  qtdLiberada: z.string(),
+  fazParteKit: z.boolean(),
+  gravacaoDetalhe: z.string(),
+});
+
+// ─── Types (derived from Zod) ──────────────────────────────
+export type ServiceOrderData = z.infer<typeof serviceOrderSchema>;
+
+export interface ValidationErrors {
+  [key: string]: string | undefined;
+  productName?: string;
+  clientName?: string;
+  technique?: string;
+  quantity?: string;
 }
 
+export function validateForm(form: ServiceOrderData): ValidationErrors {
+  const result = serviceOrderSchema.safeParse(form);
+  if (result.success) return {};
+
+  const errors: ValidationErrors = {};
+  for (const issue of result.error.issues) {
+    const field = issue.path[0] as string;
+    if (!errors[field]) {
+      errors[field] = issue.message;
+    }
+  }
+  return errors;
+}
+
+// ─── Constants ─────────────────────────────────────────────
 export const TECHNIQUES = [
   "Laser Fiber",
   "Laser UV",
@@ -50,7 +85,7 @@ export const TECHNIQUES = [
   "Bordado",
   "Decalque",
   "Filme de Recorte",
-];
+] as const;
 
 export const generateOsNumber = () => {
   const now = new Date();
@@ -59,21 +94,3 @@ export const generateOsNumber = () => {
   const seq = String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0");
   return `OS-${y}${m}-${seq}`;
 };
-
-export interface ValidationErrors {
-  [key: string]: string | undefined;
-  productName?: string;
-  clientName?: string;
-  technique?: string;
-  quantity?: string;
-}
-
-export function validateForm(form: ServiceOrderData): ValidationErrors {
-  const errors: ValidationErrors = {};
-  if (!form.productName.trim()) errors.productName = "Nome do produto é obrigatório";
-  if (!form.clientName.trim()) errors.clientName = "Nome do cliente é obrigatório";
-  if (!form.technique) errors.technique = "Selecione a técnica de gravação";
-  const qty = Number(form.quantity);
-  if (!form.quantity.trim() || isNaN(qty) || qty < 1) errors.quantity = "Informe a quantidade (mín. 1)";
-  return errors;
-}

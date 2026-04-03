@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import type { Tables } from "@/integrations/supabase/types";
 
 export interface MagicUpHistoryItem {
   id: string;
@@ -14,7 +15,7 @@ export interface MagicUpHistoryItem {
   createdAt: string;
 }
 
-function rowToItem(row: any): MagicUpHistoryItem {
+function rowToItem(row: Tables<"magicup_history">): MagicUpHistoryItem {
   return {
     id: row.id,
     prompt: row.prompt,

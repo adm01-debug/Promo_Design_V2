@@ -37,7 +37,7 @@ const columnClasses: Record<number, string> = {
 
 const headingWords = ["Bem-vindo", "ao"];
 
-const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; value: number; icon: any; change: string; index: number }) => {
+const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number }) => {
   const count = useCountUp(value, 1200, index * 100);
   return (
     <motion.div

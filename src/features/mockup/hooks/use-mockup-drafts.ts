@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import type { Json } from "@/integrations/supabase/types";
+import type { Json, Tables } from "@/integrations/supabase/types";
 
 export interface MockupDraft {
   id: string;
@@ -15,7 +15,7 @@ export interface MockupDraft {
   updatedAt: string;
 }
 
-function rowToDraft(row: any): MockupDraft {
+function rowToDraft(row: Tables<"mockup_drafts">): MockupDraft {
   return {
     id: row.id,
     name: row.name,

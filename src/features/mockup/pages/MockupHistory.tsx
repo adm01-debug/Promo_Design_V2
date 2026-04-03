@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const MockupHistory = () => {
   const [search, setSearch] = useState("");
-  const mockups: any[] = [];
+  const mockups: Array<{ id: string; productName: string; technique: string; createdAt: string }> = [];
 
   return (
     <div className="p-6">
@@ -47,7 +47,7 @@ const MockupHistory = () => {
         </motion.div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {mockups.map((m: any) => (
+          {mockups.map((m) => (
             <motion.div
               key={m.id}
               initial={{ opacity: 0, scale: 0.95 }}

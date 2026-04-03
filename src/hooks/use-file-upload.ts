@@ -17,15 +17,19 @@ export function useFileUpload() {
         .upload(path, file, { upsert: true });
 
       if (error) {
-        console.error("Upload error:", error);
         return null;
       }
 
-      const { data } = supabase.storage
+      // Bucket is private — use signed URL (valid for 1 hour)
+      const { data: signedData, error: signError } = await supabase.storage
         .from("art-uploads")
-        .getPublicUrl(path);
+        .createSignedUrl(path, 3600);
 
-      return data.publicUrl;
+      if (signError || !signedData?.signedUrl) {
+        return null;
+      }
+
+      return signedData.signedUrl;
     },
     [user]
   );

@@ -32,7 +32,7 @@ const ServiceOrder = () => {
   const editId = searchParams.get("edit");
   const existingOrder = editId ? getOrder(editId) : null;
   const [saved, setSaved] = useState(!!existingOrder);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const logoRef = useRef<string | undefined>(undefined);

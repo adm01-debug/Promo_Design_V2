@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileText, Plus, Search, Filter, Trash2, Eye, MoreHorizontal,
-  Package, Calendar, ArrowUpDown, CheckCircle2
+  FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
+  Package, Calendar, ArrowUpDown, CheckCircle2,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
+import {
+  useServiceOrders, STATUS_CONFIG, getNextStatuses,
+  type OsStatus,
+} from "@/features/service-orders";
 import { toast } from "sonner";
+
+const PAGE_SIZE = 20;
 
 const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [
   { value: "all", label: "Todas" },
@@ -33,6 +39,7 @@ const ServiceOrderList = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
   const [sortDesc, setSortDesc] = useState(true);
+  const [page, setPage] = useState(1);
 
   const filtered = orders
     .filter((o) => {
@@ -53,15 +60,27 @@ const ServiceOrderList = () => {
       return sortDesc ? -diff : diff;
     });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const handleChangeStatus = (id: string, status: OsStatus) => {
-    updateStatus(id, status);
-    toast.success(`Status atualizado para "${STATUS_CONFIG[status].label}"`);
+    try {
+      updateStatus(id, status);
+      toast.success(`Status atualizado para "${STATUS_CONFIG[status].label}"`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao atualizar status");
+    }
   };
 
   const handleDelete = (id: string) => {
     deleteOrder(id);
     toast.success("Ordem de Serviço excluída");
   };
+
+  // Reset page when filters change
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const handleFilterChange = (v: OsStatus | "all") => { setStatusFilter(v); setPage(1); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,7 +89,7 @@ const ServiceOrderList = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-lg font-display font-bold text-foreground">Ordens de Serviço</h1>
-            <p className="text-xs text-muted-foreground">{orders.length} ordem(ns) registrada(s)</p>
+            <p className="text-xs text-muted-foreground">{filtered.length} de {orders.length} ordem(ns)</p>
           </div>
           <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
             <Plus className="w-3.5 h-3.5" /> Nova OS
@@ -83,7 +102,7 @@ const ServiceOrderList = () => {
             <Input
               placeholder="Buscar por nº, cliente ou produto..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -94,7 +113,7 @@ const ServiceOrderList = () => {
                 variant={statusFilter === f.value ? "default" : "outline"}
                 size="sm"
                 className="text-xs"
-                onClick={() => setStatusFilter(f.value)}
+                onClick={() => handleFilterChange(f.value)}
               >
                 {f.label}
               </Button>
@@ -127,116 +146,145 @@ const ServiceOrderList = () => {
             )}
           </motion.div>
         ) : (
-          <div className="space-y-3">
-            <AnimatePresence>
-              {filtered.map((order) => {
-                const cfg = STATUS_CONFIG[order.status];
-                return (
-                  <motion.div
-                    key={order.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="font-mono text-sm font-semibold text-foreground">{order.osNumber}</span>
-                          <Badge variant="outline" className={`${cfg.bg} ${cfg.color} border-0 text-[10px]`}>
-                            {cfg.label}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Package className="w-3 h-3" />
-                            {order.productName || "Sem produto"}
-                          </span>
-                          {order.clientName && (
+          <>
+            <div className="space-y-3">
+              <AnimatePresence>
+                {paginated.map((order) => {
+                  const cfg = STATUS_CONFIG[order.status];
+                  const nextStatuses = getNextStatuses(order.status);
+                  return (
+                    <motion.div
+                      key={order.id}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className="font-mono text-sm font-semibold text-foreground">{order.osNumber}</span>
+                            <Badge variant="outline" className={`${cfg.bg} ${cfg.color} border-0 text-[10px]`}>
+                              {cfg.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                             <span className="flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              {order.clientName}
-                              {order.clientCompany && ` • ${order.clientCompany}`}
+                              <Package className="w-3 h-3" />
+                              {order.productName || "Sem produto"}
                             </span>
-                          )}
-                          {order.technique && (
-                            <span className="hidden md:inline">{order.technique}</span>
-                          )}
+                            {order.clientName && (
+                              <span className="flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                {order.clientName}
+                                {order.clientCompany && ` • ${order.clientCompany}`}
+                              </span>
+                            )}
+                            {order.technique && (
+                              <span className="hidden md:inline">{order.technique}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-[10px] text-muted-foreground/60 mt-1">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Criada: {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                            </span>
+                            {order.deliveryDate && (
+                              <span>Entrega: {order.deliveryDate}</span>
+                            )}
+                            {order.quantity && <span>Qtd: {order.quantity}</span>}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] text-muted-foreground/60 mt-1">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Criada: {new Date(order.createdAt).toLocaleDateString("pt-BR")}
-                          </span>
-                          {order.deliveryDate && (
-                            <span>Entrega: {order.deliveryDate}</span>
-                          )}
-                          {order.quantity && <span>Qtd: {order.quantity}</span>}
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-3.5 h-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "aberta")}>
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-blue-400" /> Aberta
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "em_producao")}>
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-amber-400" /> Em Produção
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "concluida")}>
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-400" /> Concluída
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleChangeStatus(order.id, "cancelada")}>
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-red-400" /> Cancelada
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="w-3.5 h-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {nextStatuses.length > 0 ? (
+                                <>
+                                  {nextStatuses.map((s) => (
+                                    <DropdownMenuItem key={s} onClick={() => handleChangeStatus(order.id, s)}>
+                                      <CheckCircle2 className={`w-3.5 h-3.5 mr-2 ${STATUS_CONFIG[s].color}`} />
+                                      {STATUS_CONFIG[s].label}
+                                    </DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                </>
+                              ) : (
+                                <DropdownMenuItem disabled className="text-muted-foreground text-xs">
+                                  Sem transições disponíveis
                                 </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir OS {order.osNumber}?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(order.id)}>
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              )}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                    <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir OS {order.osNumber}?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(order.id)}>
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safePage <= 1}
+                  onClick={() => setPage(safePage - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground font-mono">
+                  {safePage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPage(safePage + 1)}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

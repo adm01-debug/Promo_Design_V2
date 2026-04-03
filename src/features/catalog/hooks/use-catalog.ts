@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import type { Tables } from "@/integrations/supabase/types";
 
 export interface CatalogProduct {
   id: string;
@@ -23,7 +24,7 @@ export interface ProductCategory {
   createdAt: string;
 }
 
-function rowToProduct(row: any, categories?: ProductCategory[]): CatalogProduct {
+function rowToProduct(row: Tables<"catalog_products">, categories?: ProductCategory[]): CatalogProduct {
   const cat = categories?.find((c) => c.id === row.category_id);
   return {
     id: row.id,
@@ -40,7 +41,7 @@ function rowToProduct(row: any, categories?: ProductCategory[]): CatalogProduct 
   };
 }
 
-function rowToCategory(row: any): ProductCategory {
+function rowToCategory(row: Tables<"product_categories">): ProductCategory {
   return {
     id: row.id,
     name: row.name,
@@ -74,7 +75,7 @@ export function useCatalog() {
         .select("*")
         .order("name");
       if (error) throw error;
-      return (data ?? []).map((r: any) => rowToProduct(r, categoriesQuery.data));
+      return (data ?? []).map((r) => rowToProduct(r, categoriesQuery.data));
     },
     enabled: !!user && categoriesQuery.isSuccess,
   });
@@ -97,7 +98,7 @@ export function useCatalog() {
   });
 
   const updateProduct = useMutation({
-    mutationFn: async (p: { id: string; name: string; sku?: string; material?: string; colors?: string; imageUrl?: string; categoryId?: string; active?: boolean }) => {
+    mutationFn: async (p: { id: string; name: string; sku?: string | null; material?: string | null; colors?: string | null; imageUrl?: string | null; categoryId?: string | null; active?: boolean }) => {
       const { error } = await supabase.from("catalog_products").update({
         name: p.name,
         sku: p.sku || null,

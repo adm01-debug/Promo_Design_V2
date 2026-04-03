@@ -1,6 +1,6 @@
 import { lazy, ComponentType } from "react";
 
-type ComponentModule = { default: ComponentType<any> };
+type ComponentModule = { default: ComponentType<Record<string, unknown>> };
 
 export function lazyWithRetry(
   factory: () => Promise<ComponentModule>,
