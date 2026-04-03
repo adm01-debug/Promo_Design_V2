@@ -23,6 +23,7 @@ import {
   BarChart3,
   Keyboard,
   LogOut,
+  Package,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
