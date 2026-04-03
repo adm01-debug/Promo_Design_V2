@@ -98,7 +98,7 @@ export function useCatalog() {
   });
 
   const updateProduct = useMutation({
-    mutationFn: async (p: { id: string; name: string; sku?: string; material?: string; colors?: string; imageUrl?: string; categoryId?: string; active?: boolean }) => {
+    mutationFn: async (p: { id: string; name: string; sku?: string | null; material?: string | null; colors?: string | null; imageUrl?: string | null; categoryId?: string | null; active?: boolean }) => {
       const { error } = await supabase.from("catalog_products").update({
         name: p.name,
         sku: p.sku || null,
