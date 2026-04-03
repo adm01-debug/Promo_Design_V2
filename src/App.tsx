@@ -17,9 +17,9 @@ const MockupNew = lazyWithRetry(() => import("./features/mockup/pages/MockupNew"
 const MockupDrafts = lazyWithRetry(() => import("./features/mockup/pages/MockupDrafts"));
 const MockupHistory = lazyWithRetry(() => import("./features/mockup/pages/MockupHistory"));
 const MockupEditor = lazyWithRetry(() => import("./features/mockup/pages/MockupEditor"));
-const MagicUpGenerate = lazyWithRetry(() => import("./pages/MagicUpGenerate"));
-const MagicUpPrompts = lazyWithRetry(() => import("./pages/MagicUpPrompts"));
-const MagicUpHistory = lazyWithRetry(() => import("./pages/MagicUpHistory"));
+const MagicUpGenerate = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpGenerate"));
+const MagicUpPrompts = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpPrompts"));
+const MagicUpHistory = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpHistory"));
 const VideoNew = lazyWithRetry(() => import("./pages/VideoNew"));
 const VideoHistory = lazyWithRetry(() => import("./pages/VideoHistory"));
 const VideoMoodboard = lazyWithRetry(() => import("./pages/VideoMoodboard"));

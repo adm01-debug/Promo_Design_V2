@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { useMagicUpHistory, type MagicUpHistoryItem } from "@/hooks/use-magicup-history";
+import { useMagicUpHistory, type MagicUpHistoryItem } from "@/features/magic-up";
 
 const MagicUpHistory = () => {
   const { items, toggleFavorite, deleteItem } = useMagicUpHistory();

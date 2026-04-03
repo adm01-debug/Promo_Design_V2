@@ -10,7 +10,7 @@ import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector
 import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/components/DashboardSkeleton";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useServiceOrders, STATUS_CONFIG } from "@/features/service-orders";
-import { useMagicUpHistory } from "@/hooks/use-magicup-history";
+import { useMagicUpHistory } from "@/features/magic-up";
 import { useMockupDrafts } from "@/features/mockup";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import heroMockup from "@/assets/hero-mockup.jpg";
