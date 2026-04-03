@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Users can upload art files" ON storage.objects;
