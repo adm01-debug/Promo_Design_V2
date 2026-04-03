@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const VideoHistory = () => {
   const [search, setSearch] = useState("");
-  const videos: any[] = [];
+  const videos: Array<{ id: string; productName: string; aspectRatio: string; createdAt: string }> = [];
 
   return (
     <div className="p-6 max-w-6xl">
