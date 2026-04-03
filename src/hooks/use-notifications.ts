@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
@@ -15,7 +15,20 @@ export interface Notification {
   createdAt: string;
 }
 
-function rowToNotification(row: any): Notification {
+interface NotificationRow {
+  id: string;
+  os_id: string | null;
+  os_number: string;
+  product_name: string;
+  old_status: string | null;
+  new_status: string;
+  event_type: string;
+  read: boolean;
+  created_at: string;
+  user_id: string;
+}
+
+function rowToNotification(row: NotificationRow): Notification {
   return {
     id: row.id,
     osId: row.os_id,
@@ -29,6 +42,8 @@ function rowToNotification(row: any): Notification {
   };
 }
 
+const POLL_INTERVAL = 15_000; // 15 seconds
+
 export function useNotifications() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -39,45 +54,26 @@ export function useNotifications() {
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
-        .from("notifications" as any)
+        .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return (data ?? []).map(rowToNotification);
+      return ((data as unknown as NotificationRow[]) ?? []).map(rowToNotification);
     },
     enabled: !!user,
+    refetchInterval: POLL_INTERVAL,
   });
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["notifications"] });
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("notifications-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => invalidate()
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
-
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("notifications" as any)
-        .update({ read: true })
+        .from("notifications")
+        .update({ read: true } as never)
         .eq("id", id);
       if (error) throw error;
     },
@@ -88,8 +84,8 @@ export function useNotifications() {
     mutationFn: async () => {
       if (!user) return;
       const { error } = await supabase
-        .from("notifications" as any)
-        .update({ read: true })
+        .from("notifications")
+        .update({ read: true } as never)
         .eq("user_id", user.id)
         .eq("read", false);
       if (error) throw error;
@@ -101,7 +97,7 @@ export function useNotifications() {
     mutationFn: async () => {
       if (!user) return;
       const { error } = await supabase
-        .from("notifications" as any)
+        .from("notifications")
         .delete()
         .eq("user_id", user.id);
       if (error) throw error;
