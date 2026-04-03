@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Layers } from "lucide-react";
 
 const LoadingScreen = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5">
+  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5" role="status" aria-label="Carregando conteúdo">
     {/* Animated logo */}
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}

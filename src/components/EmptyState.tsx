@@ -16,6 +16,8 @@ const EmptyState = ({ icon: Icon, title, description, actionLabel, actionPath }:
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     className="flex flex-col items-center justify-center py-16 px-4 text-center"
+    role="status"
+    aria-label={title}
   >
     <motion.div
       animate={{ y: [0, -6, 0] }}
