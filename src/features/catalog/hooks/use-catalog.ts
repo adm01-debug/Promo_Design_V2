@@ -41,7 +41,7 @@ function rowToProduct(row: Tables<"catalog_products">, categories?: ProductCateg
   };
 }
 
-function rowToCategory(row: any): ProductCategory {
+function rowToCategory(row: Tables<"product_categories">): ProductCategory {
   return {
     id: row.id,
     name: row.name,
