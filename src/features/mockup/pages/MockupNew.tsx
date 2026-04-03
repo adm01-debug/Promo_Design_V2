@@ -297,9 +297,9 @@ const MockupNew = () => {
       if (data.opacity) setLogoOpacity(data.opacity);
       if (data.reasoning) setAiReasoning(data.reasoning);
       toast.success("Posicionamento sugerido pela IA aplicado!");
-    } catch (e: any) {
-      console.error("Suggest placement error:", e);
-      toast.error("Erro na sugestão de IA: " + (e?.message || "Tente novamente"));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Tente novamente";
+      toast.error("Erro na sugestão de IA: " + msg);
     } finally {
       setIsSuggestingPlacement(false);
     }
