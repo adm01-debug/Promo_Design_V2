@@ -211,10 +211,16 @@ export function useServiceOrders() {
   );
 
   const updateStatus = useCallback(
-    (id: string, status: OsStatus) => {
-      updateOrder(id, { status });
+    (id: string, newStatus: OsStatus) => {
+      const order = orders.find((o) => o.id === id);
+      if (order && !canTransition(order.status, newStatus)) {
+        throw new Error(
+          `Transição inválida: ${STATUS_CONFIG[order.status].label} → ${STATUS_CONFIG[newStatus].label}`
+        );
+      }
+      updateOrder(id, { status: newStatus });
     },
-    [updateOrder]
+    [updateOrder, orders]
   );
 
   const deleteOrder = useCallback(
@@ -232,9 +238,28 @@ export function useServiceOrders() {
   return { orders, isLoading, addOrder, updateOrder, updateStatus, deleteOrder, getOrder };
 }
 
+// ─── Status State Machine ──────────────────────────────────
 export const STATUS_CONFIG: Record<OsStatus, { label: string; color: string; bg: string }> = {
   aberta: { label: "Aberta", color: "text-blue-400", bg: "bg-blue-500/15" },
   em_producao: { label: "Em Produção", color: "text-amber-400", bg: "bg-amber-500/15" },
   concluida: { label: "Concluída", color: "text-emerald-400", bg: "bg-emerald-500/15" },
   cancelada: { label: "Cancelada", color: "text-red-400", bg: "bg-red-500/15" },
 };
+
+/** Allowed status transitions (state machine) */
+export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
+  aberta: ["em_producao", "cancelada"],
+  em_producao: ["concluida", "cancelada"],
+  concluida: [], // terminal state
+  cancelada: ["aberta"], // can reopen
+};
+
+/** Check if a status transition is valid */
+export function canTransition(from: OsStatus, to: OsStatus): boolean {
+  return STATUS_TRANSITIONS[from].includes(to);
+}
+
+/** Get allowed next statuses from a given status */
+export function getNextStatuses(current: OsStatus): OsStatus[] {
+  return STATUS_TRANSITIONS[current];
+}
