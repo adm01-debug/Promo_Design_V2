@@ -23,6 +23,7 @@ import {
   BarChart3,
   Keyboard,
   LogOut,
+  Package,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -40,6 +41,7 @@ const modules = [
       { label: "Rascunhos", path: "/mockup/drafts", icon: FolderOpen },
       { label: "Ordens de Serviço", path: "/mockup/service-orders", icon: ClipboardList },
       { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3 },
+      { label: "Catálogo", path: "/catalog", icon: Package },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
   },

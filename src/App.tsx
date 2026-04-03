@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+const CatalogPage = lazyWithRetry(() => import("./features/catalog/pages/CatalogPage"));
 const MockupNew = lazyWithRetry(() => import("./features/mockup/pages/MockupNew"));
 const MockupDrafts = lazyWithRetry(() => import("./features/mockup/pages/MockupDrafts"));
 const MockupHistory = lazyWithRetry(() => import("./features/mockup/pages/MockupHistory"));
@@ -68,6 +69,7 @@ const App = () => (
                   <Route path="/mockup/service-order" element={<ServiceOrder />} />
                   <Route path="/mockup/service-orders" element={<ServiceOrderList />} />
                   <Route path="/mockup/service-dashboard" element={<ServiceOrderDashboard />} />
+                  <Route path="/catalog" element={<CatalogPage />} />
                   <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
                   <Route path="/magicup/generate" element={<MagicUpGenerate />} />
                   <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
