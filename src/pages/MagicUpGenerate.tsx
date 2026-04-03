@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/lib/mockup-types";
-import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/hooks/use-products";
-import type { DbProduct } from "@/lib/db-types";
+import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/features/mockup";
+import type { DbProduct } from "@/features/mockup";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
 import PromptGenerator from "@/components/PromptGenerator";
 import DownloadMenu from "@/components/DownloadMenu";

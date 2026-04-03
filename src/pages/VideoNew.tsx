@@ -8,8 +8,8 @@ import {
   ChevronLeft, ChevronRight, Film, Type, Image as ImageIcon, Music, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts, getProductImageUrl } from "@/hooks/use-products";
-import type { DbProduct } from "@/lib/db-types";
+import { useProducts, getProductImageUrl } from "@/features/mockup";
+import type { DbProduct } from "@/features/mockup";
 import VideoPreviewAnimation from "@/components/VideoPreviewAnimation";
 import { useMoodboardStore, TONE_LABELS, PALETTE_LABELS, TONE_TO_STYLE } from "@/hooks/use-moodboard-preferences";
 import type { MoodboardTone } from "@/hooks/use-moodboard-preferences";

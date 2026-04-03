@@ -10,9 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
-import { getWarpedPreview, clearWarpCache } from "@/lib/mesh-warp";
-import { generateApprovalPdf } from "@/lib/pdf-export";
+import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { getWarpedPreview, clearWarpCache } from "@/features/mockup";
+import { generateApprovalPdf } from "@/features/mockup";
 
 // ──────────── View definitions ────────────
 interface ViewDef {

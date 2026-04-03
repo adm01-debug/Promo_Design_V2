@@ -5,8 +5,8 @@ import {
   ChevronLeft, ChevronRight, Grid3X3, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProducts, getProductImageUrl } from "@/hooks/use-products";
-import type { DbProduct } from "@/lib/db-types";
+import { useProducts, getProductImageUrl } from "@/features/mockup";
+import type { DbProduct } from "@/features/mockup";
 
 const SCENARIOS = [
   { id: "studio-white", label: "Estúdio Branco", emoji: "⬜", desc: "Fundo infinito branco profissional" },

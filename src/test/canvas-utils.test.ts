@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { cmToPx, pxToCm, detectSurfaceType, calculateAutoFit, PERSPECTIVE_PRESETS } from "@/lib/canvas-utils";
-import type { SurfaceType } from "@/lib/canvas-utils";
+import { cmToPx, pxToCm, detectSurfaceType, calculateAutoFit, PERSPECTIVE_PRESETS } from "@/features/mockup";
+import type { SurfaceType } from "@/features/mockup";
 
 // ============================================================
 // cmToPx / pxToCm conversion

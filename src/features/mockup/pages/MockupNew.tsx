@@ -11,13 +11,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/hooks/use-products";
-import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/lib/db-types";
-import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/lib/canvas-utils";
-import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/lib/mesh-warp";
-import { generateApprovalPdf } from "@/lib/pdf-export";
+import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/features/mockup";
+import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
+import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/features/mockup";
+import { generateApprovalPdf } from "@/features/mockup";
 import { toast } from "sonner";
-import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
+import { useMockupDrafts } from "@/features/mockup";
 import { supabase } from "@/integrations/supabase/client";
 
 // ──────────────── Templates ────────────────

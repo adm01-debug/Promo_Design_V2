@@ -11,7 +11,7 @@ import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/componen
 import { useCountUp } from "@/hooks/use-count-up";
 import { useServiceOrders, STATUS_CONFIG } from "@/features/service-orders";
 import { useMagicUpHistory } from "@/hooks/use-magicup-history";
-import { useMockupDrafts } from "@/hooks/use-mockup-drafts";
+import { useMockupDrafts } from "@/features/mockup";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import heroMockup from "@/assets/hero-mockup.jpg";
 import mockupPhone from "@/assets/mockup-phone.jpg";

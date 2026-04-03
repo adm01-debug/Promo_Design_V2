@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { externalSupabase } from "@/lib/external-supabase";
-import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "@/lib/db-types";
+import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "../lib/db-types";
 
 /** Fetch active products with pagination and search */
 export function useProducts(options?: {
