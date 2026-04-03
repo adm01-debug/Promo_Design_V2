@@ -24,7 +24,7 @@ export interface ProductCategory {
   createdAt: string;
 }
 
-function rowToProduct(row: any, categories?: ProductCategory[]): CatalogProduct {
+function rowToProduct(row: Tables<"catalog_products">, categories?: ProductCategory[]): CatalogProduct {
   const cat = categories?.find((c) => c.id === row.category_id);
   return {
     id: row.id,
