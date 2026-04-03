@@ -23,6 +23,7 @@ const pages = [
   { label: "Ordens de Serviço", path: "/mockup/service-orders", icon: ClipboardList, group: "Mockup Studio" },
   { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3, group: "Mockup Studio" },
   { label: "Histórico Mockup", path: "/mockup/history", icon: History, group: "Mockup Studio" },
+  { label: "Catálogo de Produtos", path: "/catalog", icon: Image, group: "Mockup Studio" },
   { label: "Gerar Imagem IA", path: "/magicup/generate", icon: Wand2, group: "Magic Up" },
   { label: "Banco de Prompts", path: "/magicup/prompts", icon: BookOpen, group: "Magic Up" },
   { label: "Histórico Magic Up", path: "/magicup/history", icon: History, group: "Magic Up" },
