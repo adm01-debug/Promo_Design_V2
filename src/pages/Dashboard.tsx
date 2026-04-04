@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Sparkles, Clock, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, Settings2, RotateCcw } from "lucide-react";
+import { Sparkles, Clock, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, Settings2, RotateCcw, CalendarDays } from "lucide-react";
 import {
   DndContext,
   closestCenter,
