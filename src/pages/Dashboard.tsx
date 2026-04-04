@@ -112,6 +112,45 @@ function buildWeeklyActivity(
   return weeks;
 }
 
+function buildMonthlyHeatmap(
+  orders: { createdAt: string }[],
+  drafts: { createdAt: string }[],
+  magicUp: { createdAt: string }[],
+) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0=Sun
+
+  const allDates = [
+    ...orders.map((o) => o.createdAt),
+    ...drafts.map((d) => d.createdAt),
+    ...magicUp.map((m) => m.createdAt),
+  ];
+
+  const countByDay: Record<number, number> = {};
+  for (const d of allDates) {
+    const date = new Date(d);
+    if (date.getFullYear() === year && date.getMonth() === month) {
+      const day = date.getDate();
+      countByDay[day] = (countByDay[day] || 0) + 1;
+    }
+  }
+
+  const days: { day: number; count: number; weekday: number; week: number }[] = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayOfWeek = (firstDayOfWeek + d - 1) % 7;
+    const week = Math.floor((firstDayOfWeek + d - 1) / 7);
+    days.push({ day: d, count: countByDay[d] || 0, weekday: dayOfWeek, week });
+  }
+
+  const maxCount = Math.max(1, ...days.map((d) => d.count));
+  const monthName = new Date(year, month).toLocaleDateString("pt-BR", { month: "long" });
+
+  return { days, maxCount, monthName, year, today: now.getDate(), firstDayOfWeek };
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────
 
 const StatCard = ({ label, value, icon: Icon, change, index, sparkData }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number; sparkData?: number[] }) => {
