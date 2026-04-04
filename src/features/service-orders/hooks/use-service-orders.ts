@@ -6,6 +6,22 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export type OsStatus = "aberta" | "em_producao" | "concluida" | "cancelada";
 
+// ─── State Machine: transições válidas de status ───────────
+export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
+  aberta: ["em_producao", "cancelada"],
+  em_producao: ["concluida", "cancelada"],
+  concluida: [],
+  cancelada: ["aberta"],
+};
+
+export function canTransition(from: OsStatus, to: OsStatus): boolean {
+  return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
+export function getNextStatuses(current: OsStatus): OsStatus[] {
+  return STATUS_TRANSITIONS[current] ?? [];
+}
+
 export interface StoredServiceOrder {
   id: string;
   osNumber: string;
