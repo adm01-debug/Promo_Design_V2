@@ -30,8 +30,9 @@ describe("PasswordStrength – getStrength", () => {
     expect(getStrength("abc").label).toBe("Fraca");
   });
 
-  it("6-char lowercase scores Razoável (length bonus only)", () => {
-    expect(getStrength("abcdef").label).toBe("Razoável");
+  it("6-char lowercase scores Fraca (only 1 criterion met)", () => {
+    // Only length>=6 met → score=1 → Fraca
+    expect(getStrength("abcdef").label).toBe("Fraca");
   });
 
   it("6-char with uppercase scores Razoável", () => {
