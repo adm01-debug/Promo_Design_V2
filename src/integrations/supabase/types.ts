@@ -321,6 +321,41 @@ export type Database = {
         }
         Relationships: []
       }
+      status_audit_log: {
+        Row: {
+          changed_at: string
+          id: string
+          new_status: string
+          old_status: string | null
+          service_order_id: string
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_status: string
+          old_status?: string | null
+          service_order_id: string
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_status?: string
+          old_status?: string | null
+          service_order_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_audit_log_service_order_id_fkey"
+            columns: ["service_order_id"]
+            isOneToOne: false
+            referencedRelation: "service_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
