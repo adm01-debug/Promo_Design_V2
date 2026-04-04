@@ -279,8 +279,7 @@ const Auth = () => {
               </div>
               {emailError && (
                 <p id="email-error" className="text-xs text-destructive mt-1">{emailError}</p>
-              )}
-              </div>
+              )
             </div>
 
             <AnimatePresence mode="wait">
