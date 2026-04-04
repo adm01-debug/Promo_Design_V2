@@ -102,7 +102,12 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex" role="main">
-      {/* Left Hero Panel */}
+      <a
+        href="#auth-form"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Pular para o formulário
+      </a>
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-10" aria-hidden="true">
         {/* Animated grid background */}
         <div className="absolute inset-0 canvas-grid opacity-30" />
