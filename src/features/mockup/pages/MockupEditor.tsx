@@ -5,7 +5,7 @@ import {
   Download, FileText, ChevronLeft, Loader2, Upload,
   RotateCw, FlipHorizontal, FlipVertical, ZoomIn, ZoomOut,
   Eye, EyeOff, Trash2, GripVertical, Maximize, Check,
-  Printer, Share2, Grid3X3
+  Printer, Grid3X3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";

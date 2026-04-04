@@ -10,9 +10,9 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import {
-  Image, Sparkles, Video, Film, Palette, Camera, User,
+  Image, Film, Palette, Camera, User,
   Settings, History, FolderOpen, ClipboardList, BarChart3,
-  BookOpen, Eye, Wand2, Keyboard, Home
+  BookOpen, Eye, Wand2, Home
 } from "lucide-react";
 
 const pages = [

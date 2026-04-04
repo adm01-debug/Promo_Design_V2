@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMoodboardStore } from "@/hooks/use-moodboard-preferences";
 import {
-  Palette, Sparkles, Sun, Moon, Zap, Heart, Eye, Target,
+  Palette, Sparkles, Sun, Zap, Heart, Eye, Target,
   ArrowRight, Plus, X, Check, Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

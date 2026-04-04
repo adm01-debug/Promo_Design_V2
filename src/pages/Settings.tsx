@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ErrorLogger, type LogEntry } from "@/lib/error-logger";
-import { useVisibilityPolling } from "@/hooks/use-visibility-polling";
+import { useVisibilityPolling, type PollingMetrics } from "@/hooks/use-visibility-polling";
 
 const levelColor: Record<string, string> = {
   debug: "bg-muted text-muted-foreground",
@@ -117,7 +117,7 @@ const stateLabels: Record<string, { label: string; color: string }> = {
 };
 
 function PollingMetricsPanel() {
-  const metrics = usePollingMetrics();
+  const metrics = useVisibilityPolling();
 
   return (
     <section className="bg-card rounded-xl border border-border p-6">

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Loader2, Package, Sparkles, Camera, Download,
-  ChevronLeft, ChevronRight, Grid3X3, RefreshCw
+  Search, Loader2, Sparkles, Camera, Download,
+  ChevronLeft, ChevronRight, Grid3X3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/features/mockup";

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   History, Search, Heart, Download, Eye, Trash2,
-  Calendar, Package, Filter, X, SlidersHorizontal, TrendingUp
+  Calendar, X, SlidersHorizontal, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -16,7 +16,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useMagicUpHistory, type MagicUpHistoryItem } from "@/features/magic-up";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
 } from "recharts";
 

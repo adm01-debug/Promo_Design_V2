@@ -16,8 +16,7 @@ import InspirationGallery from "@/features/magic-up/components/InspirationGaller
 
 /** Build a context-aware prompt from product data + user intent */
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
-  const productDesc = product.short_description || product.name;
-  const colors = product.colors?.length ? product.colors.join(", ") : "";
+    const colors = product.colors?.length ? product.colors.join(", ") : "";
   const material = product.engraving_type || "";
   const shape = product.shape_type || "";
 

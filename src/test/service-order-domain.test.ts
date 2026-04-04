@@ -6,7 +6,6 @@ import {
   generateOsNumber,
   TECHNIQUES,
   type ServiceOrderData,
-  type ValidationErrors,
 } from "@/features/service-orders";
 
 // ============================================================
