@@ -192,6 +192,8 @@ function PollingMetricsPanel() {
           </div>
         </section>
 
+        <PollingMetricsPanel />
+
         <DiagnosticsPanel />
 
         <section className="bg-card rounded-xl border border-border p-6">
