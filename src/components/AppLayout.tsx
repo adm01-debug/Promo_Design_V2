@@ -42,6 +42,12 @@ const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Pular para o conteúdo
+      </a>
       <CommandPalette />
       <OnboardingDialog />
       <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
@@ -82,7 +88,7 @@ const AppLayout = () => {
             )}
           </AnimatePresence>
 
-          <main className="flex-1 pt-14">
+          <main id="main-content" className="flex-1 pt-14">
             <div className="p-4">
               <Breadcrumbs />
             </div>
@@ -102,7 +108,7 @@ const AppLayout = () => {
       ) : (
         <>
           <AppSidebar onCollapseChange={setCollapsed} />
-          <main className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
+          <main id="main-content" className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
             <div className="p-4 pb-0">
               <Breadcrumbs />
             </div>
