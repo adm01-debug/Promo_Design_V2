@@ -72,6 +72,7 @@ export function useNotifications() {
     () => qc.invalidateQueries({ queryKey: key }),
     POLL_INTERVAL,
     !!user,
+    "Notificações",
   );
 
   const unreadCount = notifications.filter((n) => !n.read).length;

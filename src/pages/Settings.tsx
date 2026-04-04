@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ErrorLogger, type LogEntry } from "@/lib/error-logger";
+import { usePollingMetrics, type PollingMetrics } from "@/hooks/use-visibility-polling";
 
 const levelColor: Record<string, string> = {
   debug: "bg-muted text-muted-foreground",
@@ -108,6 +109,65 @@ function DiagnosticsPanel() {
     </section>
   );
 }
+const stateLabels: Record<string, { label: string; color: string }> = {
+  active: { label: "Ativo", color: "bg-green-500/10 text-green-600 dark:text-green-400" },
+  blurred: { label: "Lento", color: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400" },
+  hidden: { label: "Pausado", color: "bg-muted text-muted-foreground" },
+  disabled: { label: "Desativado", color: "bg-muted text-muted-foreground" },
+};
+
+function PollingMetricsPanel() {
+  const metrics = usePollingMetrics();
+
+  return (
+    <section className="bg-card rounded-xl border border-border p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Activity className="w-4 h-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Polling & Rate Limiting</h3>
+        <Badge variant="secondary" className="text-xs">{metrics.length} canais</Badge>
+      </div>
+
+      {metrics.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-4">
+          Nenhum polling ativo — faça login para ativar.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {metrics.map((m) => {
+            const st = stateLabels[m.state] ?? stateLabels.disabled;
+            return (
+              <div key={m.label} className="rounded-lg border border-border bg-background p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-foreground">{m.label}</span>
+                  <Badge className={`text-[10px] uppercase ${st.color}`}>{st.label}</Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wide">Requisições</span>
+                    <span className="text-sm font-semibold text-foreground">{m.requestCount}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wide">Intervalo</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {m.currentIntervalMs > 0 ? `${(m.currentIntervalMs / 1000).toFixed(0)}s` : "—"}
+                    </span>
+                    <span className="text-[10px]"> / base {(m.baseIntervalMs / 1000).toFixed(0)}s</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wide">Último poll</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {m.lastPollAt ? new Date(m.lastPollAt).toLocaleTimeString("pt-BR") : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
 
 const Settings = () => {
   return (
@@ -131,6 +191,8 @@ const Settings = () => {
             <ThemeToggle />
           </div>
         </section>
+
+        <PollingMetricsPanel />
 
         <DiagnosticsPanel />
 
