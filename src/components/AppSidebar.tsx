@@ -322,14 +322,31 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
           {!collapsed && <span className="text-sm">Configurações</span>}
         </Link>
 
-        <button
-          onClick={signOut}
-          aria-label="Sair da conta"
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
-          {!collapsed && <span className="text-sm">Sair</span>}
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              aria-label="Sair da conta"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
+              {!collapsed && <span className="text-sm">Sair</span>}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Deseja sair?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você será desconectado da sua conta. Tem certeza que deseja continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={signOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <button
           onClick={() => {
