@@ -88,7 +88,7 @@ const AppLayout = () => {
             )}
           </AnimatePresence>
 
-          <main className="flex-1 pt-14">
+          <main id="main-content" className="flex-1 pt-14">
             <div className="p-4">
               <Breadcrumbs />
             </div>
