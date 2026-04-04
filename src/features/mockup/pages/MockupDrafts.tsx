@@ -38,6 +38,22 @@ const MockupDrafts = () => {
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   };
 
+  const dailyDraftData = useMemo(() => {
+    const map: Record<string, number> = {};
+    const now = new Date();
+    for (let d = 13; d >= 0; d--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - d);
+      const key = format(date, "dd/MM");
+      map[key] = 0;
+    }
+    drafts.forEach((dr) => {
+      const key = format(new Date(dr.createdAt), "dd/MM");
+      if (key in map) map[key]++;
+    });
+    return Object.entries(map).map(([day, count]) => ({ day, count }));
+  }, [drafts]);
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -53,6 +69,38 @@ const MockupDrafts = () => {
           </Button>
         </Link>
       </div>
+
+      {/* Analytics */}
+      {drafts.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-2xl font-bold text-foreground">{drafts.length}</p>
+            <p className="text-xs text-muted-foreground">Total de Rascunhos</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-2xl font-bold text-foreground">{drafts.filter(d => d.productName).length}</p>
+            <p className="text-xs text-muted-foreground">Com Produto Vinculado</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 md:col-span-1">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-primary" /> Criações (14 dias)
+            </h3>
+            <ResponsiveContainer width="100%" height={80}>
+              <AreaChart data={dailyDraftData}>
+                <defs>
+                  <linearGradient id="draftGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--secondary))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--secondary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis hide allowDecimals={false} />
+                <Area type="monotone" dataKey="count" stroke="hsl(var(--secondary))" fill="url(#draftGrad)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">

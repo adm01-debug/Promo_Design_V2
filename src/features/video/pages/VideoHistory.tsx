@@ -19,6 +19,46 @@ const VideoHistory = () => {
         </h1>
         <p className="text-sm text-muted-foreground mb-6">Vídeos publicitários gerados anteriormente</p>
 
+        {/* Analytics Placeholder */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-2xl font-bold text-foreground">{videos.length}</p>
+            <p className="text-xs text-muted-foreground">Total de Vídeos</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-primary" /> Produção Semanal
+            </h3>
+            <ResponsiveContainer width="100%" height={80}>
+              <AreaChart data={[
+                { w: "S1", count: 0 }, { w: "S2", count: 0 }, { w: "S3", count: 0 }, { w: "S4", count: 0 },
+              ]}>
+                <defs>
+                  <linearGradient id="videoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="w" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <YAxis hide allowDecimals={false} />
+                <Area type="monotone" dataKey="count" stroke="hsl(var(--accent))" fill="url(#videoGrad)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
+              <Film className="w-3.5 h-3.5 text-primary" /> Por Formato
+            </h3>
+            <ResponsiveContainer width="100%" height={80}>
+              <PieChart>
+                <Pie data={[{ name: "16:9", value: 1 }]} cx="50%" cy="50%" innerRadius={20} outerRadius={35} dataKey="value" stroke="none">
+                  <Cell fill="hsl(var(--primary))" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         <div className="flex gap-3 mb-6">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
