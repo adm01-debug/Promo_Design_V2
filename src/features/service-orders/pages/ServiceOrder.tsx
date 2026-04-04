@@ -41,6 +41,48 @@ const ServiceOrder = () => {
     getLogoDataUrl().then((url) => { logoRef.current = url; }).catch(() => {});
   }, []);
 
+  // Sync form when existingOrder loads from paginated cache
+  const loadedRef = useRef(false);
+  useEffect(() => {
+    if (existingOrder && !loadedRef.current) {
+      loadedRef.current = true;
+      setForm({
+        osNumber: existingOrder.osNumber,
+        date: existingOrder.date,
+        clientName: existingOrder.clientName,
+        clientCompany: existingOrder.clientCompany,
+        clientPhone: existingOrder.clientPhone,
+        clientEmail: existingOrder.clientEmail,
+        productName: existingOrder.productName,
+        productSku: existingOrder.productSku,
+        productMaterial: existingOrder.productMaterial,
+        productColors: existingOrder.productColors,
+        technique: existingOrder.technique,
+        areaName: existingOrder.areaName,
+        areaWidth: existingOrder.areaWidth,
+        areaHeight: existingOrder.areaHeight,
+        areaShape: existingOrder.areaShape,
+        artColors: existingOrder.artColors,
+        artDpi: existingOrder.artDpi,
+        artFile: existingOrder.artFile,
+        artFileDataUrl: existingOrder.artFileDataUrl || "",
+        quantity: existingOrder.quantity,
+        deliveryDate: existingOrder.deliveryDate,
+        observations: existingOrder.observations,
+        mockupImageUrl: existingOrder.mockupImageUrl,
+        identificacaoCaixa: existingOrder.identificacaoCaixa || "",
+        materialEvento: existingOrder.materialEvento || false,
+        aprovarPrimeiraPeca: existingOrder.aprovarPrimeiraPeca || false,
+        qtdCompra: existingOrder.qtdCompra || "",
+        qtdLiberada: existingOrder.qtdLiberada || "",
+        fazParteKit: existingOrder.fazParteKit || false,
+        gravacaoDetalhe: existingOrder.gravacaoDetalhe || "",
+      });
+      setCurrentStatus(existingOrder.status);
+      setSaved(true);
+    }
+  }, [existingOrder]);
+
   const [form, setForm] = useState<ServiceOrderData>(() => {
     if (existingOrder) {
       return {
@@ -164,7 +206,7 @@ const ServiceOrder = () => {
     setSaved(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -172,16 +214,20 @@ const ServiceOrder = () => {
       toast.error(firstError);
       return;
     }
-    if (editId && existingOrder) {
-      updateOrder(editId, { ...form, status: currentStatus });
-      toast.success("Ordem de Serviço atualizada!");
-    } else {
-      addOrder(form).then((newOrder) => {
+    try {
+      if (editId) {
+        await updateOrder(editId, { ...form, status: currentStatus });
+        toast.success("Ordem de Serviço atualizada!");
+        setSaved(true);
+      } else {
+        const newOrder = await addOrder(form);
         navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true });
-      });
-      toast.success("Ordem de Serviço salva!");
+        toast.success("Ordem de Serviço salva!");
+        setSaved(true);
+      }
+    } catch (err) {
+      toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente"));
     }
-    setSaved(true);
   };
 
   const getValidatedPdfBlob = (actionLabel: "visualizar" | "gerar") => {

@@ -254,8 +254,8 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   );
 
   const updateOrder = useCallback(
-    (id: string, updates: Partial<StoredServiceOrder>) => {
-      updateMutation.mutate({ id, updates });
+    async (id: string, updates: Partial<StoredServiceOrder>) => {
+      await updateMutation.mutateAsync({ id, updates });
     },
     [updateMutation]
   );
