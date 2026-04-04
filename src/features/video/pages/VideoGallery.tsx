@@ -3,8 +3,6 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, Clock, Heart, Eye, Play, Sparkles
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
 type Category = "all" | "produto" | "moda" | "tech" | "food" | "lifestyle";
 type SortBy = "trending" | "recent" | "popular";
 

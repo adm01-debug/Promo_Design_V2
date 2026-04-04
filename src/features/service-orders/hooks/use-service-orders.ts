@@ -6,6 +6,22 @@ import type { Tables } from "@/integrations/supabase/types";
 
 export type OsStatus = "aberta" | "em_producao" | "concluida" | "cancelada";
 
+// ─── State Machine: transições válidas de status ───────────
+export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
+  aberta: ["em_producao", "cancelada"],
+  em_producao: ["concluida", "cancelada"],
+  concluida: [],
+  cancelada: ["aberta"],
+};
+
+export function canTransition(from: OsStatus, to: OsStatus): boolean {
+  return STATUS_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
+export function getNextStatuses(current: OsStatus): OsStatus[] {
+  return STATUS_TRANSITIONS[current] ?? [];
+}
+
 export interface StoredServiceOrder {
   id: string;
   osNumber: string;
@@ -246,20 +262,3 @@ export const STATUS_CONFIG: Record<OsStatus, { label: string; color: string; bg:
   cancelada: { label: "Cancelada", color: "text-[hsl(var(--status-cancelada))]", bg: "bg-[hsl(var(--status-cancelada-bg)/0.15)]" },
 };
 
-/** Allowed status transitions (state machine) */
-export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
-  aberta: ["em_producao", "cancelada"],
-  em_producao: ["concluida", "cancelada"],
-  concluida: [], // terminal state
-  cancelada: ["aberta"], // can reopen
-};
-
-/** Check if a status transition is valid */
-export function canTransition(from: OsStatus, to: OsStatus): boolean {
-  return STATUS_TRANSITIONS[from].includes(to);
-}
-
-/** Get allowed next statuses from a given status */
-export function getNextStatuses(current: OsStatus): OsStatus[] {
-  return STATUS_TRANSITIONS[current];
-}

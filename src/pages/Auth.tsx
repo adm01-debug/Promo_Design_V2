@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, Palette, BarChart3, Users, Shield, Sparkles } from "lucide-react";
+import { Layers, Mail, Lock, Loader2, Eye, EyeOff, Palette, BarChart3, Users, Shield, Sparkles } from "lucide-react";
 import PasswordStrength from "@/components/PasswordStrength";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";

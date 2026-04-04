@@ -3,17 +3,17 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, ZoomIn, ZoomOut, RotateCw, Download, Save,
-  ChevronDown, Move, FileText, Palette, GripVertical,
+  ChevronDown, FileText, Palette, GripVertical,
   Search, Loader2, Package, ChevronLeft, Undo2, Redo2,
-  Grid3X3, Ruler, AlignCenter, Lock, Unlock, Eye, EyeOff,
-  Copy, Trash2, FlipHorizontal, FlipVertical, Maximize, Layers,
+  Grid3X3, Ruler, AlignCenter, Eye, EyeOff,
+  Trash2, FlipHorizontal, FlipVertical, Maximize, Layers,
   Sparkles, Wand2, ImageOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
-import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { countUniqueColors, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/features/mockup";
 import { generateApprovalPdf } from "@/features/mockup";
 import { toast } from "sonner";

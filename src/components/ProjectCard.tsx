@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MoreHorizontal, Clock, Eye, Star, Copy, Trash2 } from "lucide-react";
+import { MoreHorizontal, Clock, Eye, Star, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,

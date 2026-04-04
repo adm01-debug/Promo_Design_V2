@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   Video, Search, Loader2, Package, Sparkles, Play, Clock,
   Monitor, Smartphone, Square, RectangleHorizontal,
-  Palette, Megaphone, ShoppingBag, PartyPopper, Zap, Heart,
-  ChevronLeft, ChevronRight, Film, Type, Image as ImageIcon, Music, X
+  Palette, Megaphone, PartyPopper, Zap, Heart,
+  ChevronLeft, ChevronRight, Film, Image as X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/features/mockup";

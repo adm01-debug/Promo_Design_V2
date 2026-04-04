@@ -3,9 +3,7 @@ import { Video, Search, Clock, Download, Eye, Play, TrendingUp, Film } from "luc
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell, Tooltip,
-} from "recharts";
+  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, } from "recharts";
 
 const VideoHistory = () => {
   const [search, setSearch] = useState("");

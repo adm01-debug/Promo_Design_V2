@@ -17,7 +17,7 @@ interface ProductPickerProps {
 const ProductPicker = ({ value, onChange }: ProductPickerProps) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const { products, categories, isLoading } = useCatalog();
+  const { products, isLoading } = useCatalog();
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();

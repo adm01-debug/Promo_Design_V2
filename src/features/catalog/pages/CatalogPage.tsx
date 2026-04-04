@@ -1,13 +1,12 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Package, Plus, Search, Trash2, Edit3, Tag, X, Check, ToggleLeft, ToggleRight,
+  Package, Plus, Search, Trash2, Edit3, Tag, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -23,7 +22,7 @@ import {
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useCatalog, type CatalogProduct, type ProductCategory } from "@/features/catalog";
+import { useCatalog, type CatalogProduct } from "@/features/catalog";
 
 const emptyForm = { name: "", sku: "", material: "", colors: "", imageUrl: "", categoryId: "" };
 

@@ -3,10 +3,9 @@ import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity 
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ErrorLogger, type LogEntry } from "@/lib/error-logger";
-import { usePollingMetrics, type PollingMetrics } from "@/hooks/use-visibility-polling";
+import { usePollingMetrics } from "@/hooks/use-visibility-polling";
 
 const levelColor: Record<string, string> = {
   debug: "bg-muted text-muted-foreground",
