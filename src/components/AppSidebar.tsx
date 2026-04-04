@@ -126,6 +126,11 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
               <div className="text-sm font-semibold">{mod.label}</div>
               <div className="text-[10px] text-sidebar-foreground/60">{mod.description}</div>
             </div>
+            {badgeCounts[mod.id as keyof typeof badgeCounts] > 0 && (
+              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold px-1">
+                {badgeCounts[mod.id as keyof typeof badgeCounts]}
+              </span>
+            )}
             <ChevronRight
               className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`}
               aria-hidden="true"
