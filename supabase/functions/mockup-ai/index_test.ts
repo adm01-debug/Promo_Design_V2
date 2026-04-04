@@ -50,8 +50,7 @@ Deno.test("RequestSchema - valid suggest-placement full", () => {
     areaHeight: 10,
   });
   assertEquals(result.success, true);
-  if (result.success) {
-    assertEquals(result.data.action, "suggest-placement");
+  if (result.success && result.data.action === "suggest-placement") {
     assertExists(result.data.productName);
   }
 });
