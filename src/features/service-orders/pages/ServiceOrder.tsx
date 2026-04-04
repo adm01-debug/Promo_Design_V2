@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { motion } from "framer-motion";
 import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
