@@ -306,7 +306,8 @@ const Auth = () => {
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                     </button>
-                  </div>
+                   </div>
+                  {mode === "signup" && <PasswordStrength password={password} />}
                 </motion.div>
               )}
             </AnimatePresence>
