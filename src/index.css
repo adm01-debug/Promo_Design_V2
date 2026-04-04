@@ -179,6 +179,11 @@
   code, pre, .font-mono {
     font-family: var(--font-mono);
   }
+
+  /* Enforce minimum 12px font size for accessibility */
+  * {
+    min-font-size: 12px;
+  }
 }
 
 @layer utilities {
