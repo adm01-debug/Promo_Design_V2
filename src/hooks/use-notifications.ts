@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
+import { useVisibilityPolling } from "./use-visibility-polling";
 
 export interface Notification {
   id: string;
@@ -62,8 +63,16 @@ export function useNotifications() {
       return ((data as unknown as NotificationRow[]) ?? []).map(rowToNotification);
     },
     enabled: !!user,
-    refetchInterval: POLL_INTERVAL,
+    // Disable react-query's built-in refetchInterval — we manage it via useVisibilityPolling
+    refetchInterval: false,
   });
+
+  // Visibility-aware polling: pauses when tab hidden, slows when blurred
+  useVisibilityPolling(
+    () => qc.invalidateQueries({ queryKey: key }),
+    POLL_INTERVAL,
+    !!user,
+  );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
