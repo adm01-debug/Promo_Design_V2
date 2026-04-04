@@ -98,23 +98,57 @@ function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
   };
 }
 
-export function useServiceOrders() {
+export interface UseServiceOrdersOptions {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: OsStatus | "all";
+  sortAsc?: boolean;
+}
+
+export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
+  const { page = 1, pageSize = 20, search = "", status = "all", sortAsc = false } = options;
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ["service-orders", user?.id],
+  const { data, isLoading } = useQuery({
+    queryKey: ["service-orders", user?.id, page, pageSize, search, status, sortAsc],
     queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
+      if (!user) return { orders: [] as StoredServiceOrder[], total: 0 };
+
+      let query = supabase
         .from("service_orders")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*", { count: "exact" });
+
+      if (status !== "all") {
+        query = query.eq("status", status);
+      }
+
+      if (search) {
+        query = query.or(
+          `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
+        );
+      }
+
+      query = query.order("created_at", { ascending: sortAsc });
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+
+      const { data: rows, error, count } = await query;
       if (error) throw error;
-      return (data ?? []).map(rowToOrder);
+      return {
+        orders: (rows ?? []).map(rowToOrder),
+        total: count ?? 0,
+      };
     },
     enabled: !!user,
   });
+
+  const orders = data?.orders ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["service-orders"] });
 
