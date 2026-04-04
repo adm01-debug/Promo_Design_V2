@@ -172,16 +172,17 @@ const ServiceOrder = () => {
       toast.error(firstError);
       return;
     }
-    if (editId && existingOrder) {
+    if (editId) {
       updateOrder(editId, { ...form, status: currentStatus });
       toast.success("Ordem de Serviço atualizada!");
+      setSaved(true);
     } else {
       addOrder(form).then((newOrder) => {
         navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true });
+        toast.success("Ordem de Serviço salva!");
+        setSaved(true);
       });
-      toast.success("Ordem de Serviço salva!");
     }
-    setSaved(true);
   };
 
   const getValidatedPdfBlob = (actionLabel: "visualizar" | "gerar") => {
