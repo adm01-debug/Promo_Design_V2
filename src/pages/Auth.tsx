@@ -103,10 +103,42 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex" role="main">
       {/* Left Hero Panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-10" aria-hidden="true">
+        {/* Animated grid background */}
+        <div className="absolute inset-0 canvas-grid opacity-30" />
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: 4 + i * 3,
+                height: 4 + i * 3,
+                left: `${15 + i * 14}%`,
+                top: `${10 + i * 12}%`,
+                background: `hsl(var(--${i % 3 === 0 ? 'primary' : i % 3 === 1 ? 'secondary' : 'accent'}) / 0.4)`,
+              }}
+              animate={{
+                y: [0, -20 - i * 5, 0],
+                x: [0, 10 + i * 3, 0],
+                opacity: [0.3, 0.7, 0.3],
+              }}
+              transition={{
+                duration: 4 + i,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.5,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-primary/5 blur-[120px]" />
           <div className="absolute bottom-1/4 right-0 w-72 h-72 rounded-full bg-secondary/5 blur-[100px]" />
+          <div className="absolute top-2/3 left-1/3 w-64 h-64 rounded-full bg-accent/3 blur-[100px]" />
         </div>
 
         {/* Logo */}
