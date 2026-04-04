@@ -52,6 +52,7 @@ const AppLayout = () => {
       <CommandPalette />
       <OnboardingDialog />
       <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <OnboardingTour />
       <ScrollToTop />
 
       {isMobile ? (
