@@ -128,7 +128,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
               <div className="text-[11px] text-sidebar-foreground/60">{mod.description}</div>
             </div>
             {badgeCounts[mod.id as keyof typeof badgeCounts] > 0 && (
-              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold px-1">
+              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary/15 text-primary text-[11px] font-bold px-1">
                 {badgeCounts[mod.id as keyof typeof badgeCounts]}
               </span>
             )}
