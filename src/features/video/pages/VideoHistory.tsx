@@ -1,7 +1,11 @@
 import { motion } from "framer-motion";
-import { Video, Search, Clock, Download, Eye, Play } from "lucide-react";
+import { Video, Search, Clock, Download, Eye, Play, TrendingUp, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import {
+  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid,
+  PieChart, Pie, Cell, Tooltip,
+} from "recharts";
 
 const VideoHistory = () => {
   const [search, setSearch] = useState("");
