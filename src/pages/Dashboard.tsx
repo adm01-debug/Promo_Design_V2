@@ -164,7 +164,7 @@ const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode
   ),
 
   "quick-actions": () => (
-    <div className="mb-6 sm:mb-8">
+    <div className="mb-6 sm:mb-8" data-tour="quick-actions">
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Ações Rápidas</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {quickActions.map((action, i) => (
