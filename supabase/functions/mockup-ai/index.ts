@@ -24,7 +24,22 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { action, imageBase64, productName, templateId, areaWidth, areaHeight } = await req.json();
+    const body = await req.json();
+    const { action, imageBase64, productName, templateId, areaWidth, areaHeight } = body;
+
+    if (!action || typeof action !== "string") {
+      return new Response(JSON.stringify({ error: "Campo 'action' é obrigatório" }), {
+        status: 400,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "remove-bg" && (!imageBase64 || typeof imageBase64 !== "string")) {
+      return new Response(JSON.stringify({ error: "Campo 'imageBase64' é obrigatório para remove-bg" }), {
+        status: 400,
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      });
+    }
 
     // ─── Action: Remove Background ───
     if (action === "remove-bg") {
