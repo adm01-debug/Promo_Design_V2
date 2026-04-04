@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "react-router-dom";
+import { useServiceOrders } from "@/features/service-orders";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers,
