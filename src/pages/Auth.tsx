@@ -244,7 +244,7 @@ const Auth = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5" aria-describedby="auth-description" aria-label={headingText[mode]}>
+          <form id="auth-form" onSubmit={handleSubmit} className="space-y-5" aria-describedby="auth-description" aria-label={headingText[mode]}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
