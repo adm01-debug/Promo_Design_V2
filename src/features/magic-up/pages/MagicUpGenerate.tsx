@@ -76,7 +76,7 @@ const MagicUpGenerate = () => {
   const { data: productsData, isLoading: productsLoading } = useProducts({
     search: productSearch, page: productPage, pageSize: 12, onlyWithImages: true,
   });
-  const { data: categories } = useCategories();
+  useCategories();
   const { data: variants } = useProductVariants(selectedProduct?.id || null);
 
   const products = productsData?.products || [];
