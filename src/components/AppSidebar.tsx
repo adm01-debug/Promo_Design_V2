@@ -245,12 +245,12 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
       <div className="border-t border-sidebar-border p-2 space-y-1">
         <div className="flex items-center gap-3 px-3 py-2" aria-label="Informações do usuário">
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center" aria-hidden="true">
-              <span className="text-xs font-bold text-muted-foreground">
-                {user?.email?.[0]?.toUpperCase() ?? "U"}
+            <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center" aria-hidden="true">
+              <span className="text-xs font-bold text-primary-foreground">
+                {userInitials}
               </span>
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-sidebar" aria-label="Online" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-sidebar" aria-label="Online" />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
