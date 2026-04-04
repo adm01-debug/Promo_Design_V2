@@ -119,27 +119,7 @@ const Dashboard = () => {
   const greeting = getGreeting();
   const firstName = getUserFirstName(user?.email ?? undefined);
 
-  const stats = useMemo(() => {
-    const abertas = orders.filter((o) => o.status === "aberta").length;
-    const producao = orders.filter((o) => o.status === "em_producao").length;
-    const concluidas = orders.filter((o) => o.status === "concluida").length;
-    const draftCount = drafts?.length || 0;
-
-    // Build sparkline data from weekly activity
-    const weeklyOs = weeklyData.map((w) => w.os);
-    const weeklyMockups = weeklyData.map((w) => w.mockups);
-    const weeklyIa = weeklyData.map((w) => w.ia);
-    const weeklyAll = weeklyData.map((w) => w.os + w.mockups + w.ia);
-
-    return [
-      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas`, sparkData: weeklyOs },
-      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas`, sparkData: weeklyOs },
-      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas`, sparkData: weeklyIa },
-      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos", sparkData: weeklyMockups },
-    ];
-  }, [orders, magicUpItems, drafts]);
-
-  // Weekly activity chart data
+  // Weekly activity chart data (must come before stats since stats uses it)
   const weeklyData = useMemo(() => {
     return buildWeeklyActivity(
       orders.map((o) => ({ createdAt: o.createdAt })),
@@ -147,6 +127,24 @@ const Dashboard = () => {
       magicUpItems.map((m) => ({ createdAt: m.createdAt })),
     );
   }, [orders, drafts, magicUpItems]);
+
+  const stats = useMemo(() => {
+    const abertas = orders.filter((o) => o.status === "aberta").length;
+    const producao = orders.filter((o) => o.status === "em_producao").length;
+    const concluidas = orders.filter((o) => o.status === "concluida").length;
+    const draftCount = drafts?.length || 0;
+
+    const weeklyOs = weeklyData.map((w) => w.os);
+    const weeklyMockups = weeklyData.map((w) => w.mockups);
+    const weeklyIa = weeklyData.map((w) => w.ia);
+
+    return [
+      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas`, sparkData: weeklyOs },
+      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas`, sparkData: weeklyOs },
+      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas`, sparkData: weeklyIa },
+      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos", sparkData: weeklyMockups },
+    ];
+  }, [orders, magicUpItems, drafts, weeklyData]);
 
   const isLoading = ordersLoading || draftsLoading;
   const hasActivity = weeklyData.some((w) => w.os + w.mockups + w.ia > 0);
