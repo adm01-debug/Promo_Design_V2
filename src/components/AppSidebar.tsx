@@ -75,7 +75,6 @@ const modules = [
   },
 ];
 
-
 const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boolean) => void }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
@@ -92,16 +91,20 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
 
   const ModuleButton = ({ mod }: { mod: (typeof modules)[0] }) => {
     const isActive = location.pathname.startsWith(mod.path);
+    const isExpanded = expandedModule === mod.id && !collapsed;
     const btn = (
       <button
         onClick={() => (collapsed ? undefined : toggleModule(mod.id))}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group ${
+        aria-expanded={isExpanded}
+        aria-controls={`submenu-${mod.id}`}
+        aria-label={collapsed ? mod.label : undefined}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
           isActive
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
             : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
         }`}
       >
-        <mod.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} />
+        <mod.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} aria-hidden="true" />
         {!collapsed && (
           <>
             <div className="flex-1 text-left">
@@ -109,7 +112,8 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
               <div className="text-[10px] text-sidebar-foreground/60">{mod.description}</div>
             </div>
             <ChevronRight
-              className={`w-3.5 h-3.5 transition-transform ${expandedModule === mod.id ? "rotate-90" : ""}`}
+              className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+              aria-hidden="true"
             />
           </>
         )}
@@ -139,11 +143,13 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
       animate={{ width: collapsed ? 64 : 240 }}
       transition={{ duration: 0.2 }}
       className="h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40"
+      role="navigation"
+      aria-label="Barra lateral principal"
     >
       <div className="h-14 flex items-center px-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
+        <Link to="/" className="flex items-center gap-2.5 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg" aria-label="Ir para o Dashboard — Promo Design">
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
-            <Layers className="w-4 h-4 text-primary-foreground" />
+            <Layers className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -160,7 +166,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Módulos">
         {modules.map((mod) => {
           const isExpanded = expandedModule === mod.id && !collapsed;
 
@@ -176,26 +182,31 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
+                    id={`submenu-${mod.id}`}
+                    role="region"
+                    aria-label={`Submenu de ${mod.label}`}
                   >
-                    <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+                    <ul className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3" role="list">
                       {mod.children.map((child) => {
                         const childActive = location.pathname === child.path;
                         return (
-                          <Link
-                            key={child.path}
-                            to={child.path}
-                            className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${
-                              childActive
-                                ? "text-sidebar-primary bg-sidebar-accent/60 font-medium"
-                                : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/30"
-                            }`}
-                          >
-                            <child.icon className="w-3.5 h-3.5" />
-                            {child.label}
-                          </Link>
+                          <li key={child.path}>
+                            <Link
+                              to={child.path}
+                              aria-current={childActive ? "page" : undefined}
+                              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                                childActive
+                                  ? "text-sidebar-primary bg-sidebar-accent/60 font-medium"
+                                  : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/30"
+                              }`}
+                            >
+                              <child.icon className="w-3.5 h-3.5" aria-hidden="true" />
+                              {child.label}
+                            </Link>
+                          </li>
                         );
                       })}
-                    </div>
+                    </ul>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -205,32 +216,32 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
       </nav>
 
       <div className="border-t border-sidebar-border p-2 space-y-1">
-        <div className="flex items-center gap-3 px-3 py-2">
+        <div className="flex items-center gap-3 px-3 py-2" aria-label="Informações do usuário">
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center" aria-hidden="true">
               <span className="text-xs font-bold text-muted-foreground">
                 {user?.email?.[0]?.toUpperCase() ?? "U"}
               </span>
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-sidebar" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-sidebar" aria-label="Online" />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-sidebar-accent-foreground truncate">
                 {user?.email ?? "Usuário"}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/60">Online</p>
+              <p className="text-[10px] text-sidebar-foreground/60" aria-live="polite">Online</p>
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between px-3 py-1">
-          {!collapsed && <span className="text-[10px] font-mono text-sidebar-foreground/50 uppercase">Tema</span>}
+          {!collapsed && <span className="text-[10px] font-mono text-sidebar-foreground/50 uppercase" id="theme-label">Tema</span>}
           <ThemeToggle />
         </div>
 
         {!collapsed && (
-          <div className="flex items-center justify-center gap-1 py-1">
+          <div className="flex items-center justify-center gap-1 py-1" aria-hidden="true">
             <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">
               ⌘K
             </kbd>
@@ -243,27 +254,29 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
 
           <button
             onClick={openShortcuts}
-            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+            aria-label="Abrir atalhos de teclado"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <Keyboard className="w-4 h-4" />
+            <Keyboard className="w-4 h-4" aria-hidden="true" />
             {!collapsed && <span className="text-xs">Atalhos</span>}
           </button>
         </div>
 
         <Link
           to="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors"
+          aria-label="Configurações"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <Settings className="w-5 h-5 shrink-0" />
+          <Settings className="w-5 h-5 shrink-0" aria-hidden="true" />
           {!collapsed && <span className="text-sm">Configurações</span>}
         </Link>
 
         <button
           onClick={signOut}
           aria-label="Sair da conta"
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <LogOut className="w-5 h-5 shrink-0" />
+          <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
           {!collapsed && <span className="text-sm">Sair</span>}
         </button>
 
@@ -274,13 +287,13 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
             onCollapseChange?.(next);
           }}
           aria-label={collapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {collapsed ? (
-            <ChevronRight className="w-5 h-5 shrink-0" />
+            <ChevronRight className="w-5 h-5 shrink-0" aria-hidden="true" />
           ) : (
             <>
-              <ChevronLeft className="w-5 h-5 shrink-0" />
+              <ChevronLeft className="w-5 h-5 shrink-0" aria-hidden="true" />
               <span className="text-sm">Recolher</span>
             </>
           )}
