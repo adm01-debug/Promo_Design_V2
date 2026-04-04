@@ -1,10 +1,10 @@
 import { useState, useCallback } from "react";
 
-export type WidgetId = "stats" | "quick-actions" | "activity-chart" | "recent-projects";
+export type WidgetId = "stats" | "quick-actions" | "activity-chart" | "heatmap" | "recent-projects";
 
 const STORAGE_KEY = "promo-dashboard-widget-order";
 
-const DEFAULT_ORDER: WidgetId[] = ["stats", "quick-actions", "activity-chart", "recent-projects"];
+const DEFAULT_ORDER: WidgetId[] = ["stats", "quick-actions", "activity-chart", "heatmap", "recent-projects"];
 
 function loadOrder(): WidgetId[] {
   try {

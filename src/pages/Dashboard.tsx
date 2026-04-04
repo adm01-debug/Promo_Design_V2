@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Sparkles, Clock, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, Settings2, RotateCcw } from "lucide-react";
+import { Sparkles, Clock, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, Settings2, RotateCcw, CalendarDays } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -112,6 +112,45 @@ function buildWeeklyActivity(
   return weeks;
 }
 
+function buildMonthlyHeatmap(
+  orders: { createdAt: string }[],
+  drafts: { createdAt: string }[],
+  magicUp: { createdAt: string }[],
+) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0=Sun
+
+  const allDates = [
+    ...orders.map((o) => o.createdAt),
+    ...drafts.map((d) => d.createdAt),
+    ...magicUp.map((m) => m.createdAt),
+  ];
+
+  const countByDay: Record<number, number> = {};
+  for (const d of allDates) {
+    const date = new Date(d);
+    if (date.getFullYear() === year && date.getMonth() === month) {
+      const day = date.getDate();
+      countByDay[day] = (countByDay[day] || 0) + 1;
+    }
+  }
+
+  const days: { day: number; count: number; weekday: number; week: number }[] = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayOfWeek = (firstDayOfWeek + d - 1) % 7;
+    const week = Math.floor((firstDayOfWeek + d - 1) / 7);
+    days.push({ day: d, count: countByDay[d] || 0, weekday: dayOfWeek, week });
+  }
+
+  const maxCount = Math.max(1, ...days.map((d) => d.count));
+  const monthName = new Date(year, month).toLocaleDateString("pt-BR", { month: "long" });
+
+  return { days, maxCount, monthName, year, today: now.getDate(), firstDayOfWeek };
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────
 
 const StatCard = ({ label, value, icon: Icon, change, index, sparkData }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number; sparkData?: number[] }) => {
@@ -147,6 +186,7 @@ interface WidgetProps {
   isLoading: boolean;
   weeklyData: { label: string; os: number; mockups: number; ia: number }[];
   hasActivity: boolean;
+  heatmapData: ReturnType<typeof buildMonthlyHeatmap>;
   recentProjects: { title: string; category: string; thumbnail: string; lastEdited: string; views: number; path?: string }[];
   viewMode: "grid" | "list";
   setViewMode: (v: "grid" | "list") => void;
@@ -230,6 +270,91 @@ const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode
       )}
     </motion.div>
   ),
+
+  heatmap: ({ heatmapData }) => {
+    const WEEKDAY_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
+    const { days, maxCount, monthName, year, today, firstDayOfWeek } = heatmapData;
+    const totalWeeks = Math.ceil((firstDayOfWeek + days.length) / 7);
+
+    const getIntensityClass = (count: number) => {
+      if (count === 0) return "bg-muted/50";
+      const ratio = count / maxCount;
+      if (ratio <= 0.25) return "bg-primary/20";
+      if (ratio <= 0.5) return "bg-primary/40";
+      if (ratio <= 0.75) return "bg-primary/70";
+      return "bg-primary";
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="mb-6 sm:mb-8 rounded-xl bg-card border border-border p-4"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-primary" />
+            <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+              Atividade — {monthName} {year}
+            </h2>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <span>Menos</span>
+            <div className="w-2.5 h-2.5 rounded-[3px] bg-muted/50" />
+            <div className="w-2.5 h-2.5 rounded-[3px] bg-primary/20" />
+            <div className="w-2.5 h-2.5 rounded-[3px] bg-primary/40" />
+            <div className="w-2.5 h-2.5 rounded-[3px] bg-primary/70" />
+            <div className="w-2.5 h-2.5 rounded-[3px] bg-primary" />
+            <span>Mais</span>
+          </div>
+        </div>
+
+        <div className="flex gap-1">
+          {/* Weekday labels */}
+          <div className="flex flex-col gap-1 mr-1 pt-0">
+            {WEEKDAY_LABELS.map((label, i) => (
+              <div key={i} className="w-4 h-6 flex items-center justify-center text-[9px] text-muted-foreground font-mono">
+                {i % 2 === 1 ? label : ""}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          {Array.from({ length: totalWeeks }).map((_, weekIdx) => (
+            <div key={weekIdx} className="flex flex-col gap-1 flex-1">
+              {Array.from({ length: 7 }).map((_, dayIdx) => {
+                const dayNum = weekIdx * 7 + dayIdx - firstDayOfWeek + 1;
+                const dayData = days.find((d) => d.day === dayNum);
+
+                if (!dayData) {
+                  return <div key={dayIdx} className="h-6 rounded-[3px]" />;
+                }
+
+                return (
+                  <UITooltip key={dayIdx}>
+                    <TooltipTrigger asChild>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: dayData.day * 0.01 }}
+                        className={`h-6 rounded-[3px] cursor-default transition-colors ${getIntensityClass(dayData.count)} ${dayData.day === today ? "ring-1 ring-primary ring-offset-1 ring-offset-card" : ""}`}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <span className="font-semibold">{dayData.day}/{monthName.slice(0, 3)}</span>
+                      {" — "}
+                      {dayData.count === 0 ? "Sem atividade" : `${dayData.count} atividade${dayData.count > 1 ? "s" : ""}`}
+                    </TooltipContent>
+                  </UITooltip>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    );
+  },
 
   "recent-projects": ({ recentProjects, viewMode, setViewMode, gridColumns, setGridColumns }) => (
     <div>
@@ -342,8 +467,16 @@ const Dashboard = () => {
     return items.slice(0, 6);
   }, [drafts, orders, magicUpItems]);
 
+  const heatmapData = useMemo(() => {
+    return buildMonthlyHeatmap(
+      orders.map((o) => ({ createdAt: o.createdAt })),
+      (drafts || []).map((d) => ({ createdAt: d.createdAt })),
+      magicUpItems.map((m) => ({ createdAt: m.createdAt })),
+    );
+  }, [orders, drafts, magicUpItems]);
+
   const widgetProps: WidgetProps = {
-    stats, isLoading, weeklyData, hasActivity, recentProjects,
+    stats, isLoading, weeklyData, hasActivity, heatmapData, recentProjects,
     viewMode, setViewMode, gridColumns, setGridColumns,
   };
 
