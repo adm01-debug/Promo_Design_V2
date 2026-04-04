@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Download, FileText, ChevronLeft, Loader2, Upload,
   RotateCw, FlipHorizontal, FlipVertical, ZoomIn, ZoomOut,
@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { loadImageWithFallback, countUniqueColors, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { loadImageWithFallback, countUniqueColors, calculateAutoFit, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateApprovalPdf } from "@/features/mockup";
 

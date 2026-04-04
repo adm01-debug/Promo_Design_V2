@@ -17,8 +17,7 @@ function calculatePosition(
   preferredPosition: TourStep["position"],
 ): TooltipPosition {
   const GAP = 16;
-  const ARROW_OFFSET = 12;
-  const vw = window.innerWidth;
+    const vw = window.innerWidth;
   const vh = window.innerHeight;
 
   let top = 0;

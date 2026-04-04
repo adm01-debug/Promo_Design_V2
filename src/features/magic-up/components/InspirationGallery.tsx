@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Lightbulb, Copy, Send, Search } from "lucide-react";
-import { INSPIRATION_GALLERY, PROMPT_CATEGORIES } from "@/features/magic-up";
+import { INSPIRATION_GALLERY } from "@/features/magic-up";
 import { toast } from "sonner";
 
 interface Props {

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
-import { countUniqueColors, composeMockup, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { countUniqueColors, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/features/mockup";
 import { generateApprovalPdf } from "@/features/mockup";
 import { toast } from "sonner";
