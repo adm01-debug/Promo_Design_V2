@@ -285,7 +285,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
     [orders]
   );
 
-  return { orders, isLoading, addOrder, updateOrder, updateStatus, deleteOrder, getOrder };
+  return { orders, total, totalPages, isLoading, addOrder, updateOrder, updateStatus, deleteOrder, getOrder };
 }
 
 // ─── Status State Machine ──────────────────────────────────
