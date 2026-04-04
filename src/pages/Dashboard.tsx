@@ -125,11 +125,17 @@ const Dashboard = () => {
     const concluidas = orders.filter((o) => o.status === "concluida").length;
     const draftCount = drafts?.length || 0;
 
+    // Build sparkline data from weekly activity
+    const weeklyOs = weeklyData.map((w) => w.os);
+    const weeklyMockups = weeklyData.map((w) => w.mockups);
+    const weeklyIa = weeklyData.map((w) => w.ia);
+    const weeklyAll = weeklyData.map((w) => w.os + w.mockups + w.ia);
+
     return [
-      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas` },
-      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas` },
-      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas` },
-      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos" },
+      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas`, sparkData: weeklyOs },
+      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas`, sparkData: weeklyOs },
+      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas`, sparkData: weeklyIa },
+      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos", sparkData: weeklyMockups },
     ];
   }, [orders, magicUpItems, drafts]);
 
