@@ -25,6 +25,7 @@ import {
   Keyboard,
   LogOut,
   Package,
+  GraduationCap,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -186,7 +187,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Módulos">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Módulos" data-tour="sidebar-nav">
         {modules.map((mod) => {
           const isExpanded = expandedModule === mod.id && !collapsed;
 
@@ -276,7 +277,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-3 gap-1">
           <NotificationPanel />
 
           <button
@@ -285,7 +286,19 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
             className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Keyboard className="w-4 h-4" aria-hidden="true" />
-            {!collapsed && <span className="text-xs">Atalhos</span>}
+            {!collapsed && <span className="text-xs sr-only sm:not-sr-only">Atalhos</span>}
+          </button>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem("promo-tour-completed");
+              window.location.href = "/";
+            }}
+            aria-label="Reiniciar tour de onboarding"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <GraduationCap className="w-4 h-4" aria-hidden="true" />
+            {!collapsed && <span className="text-xs sr-only sm:not-sr-only">Tour</span>}
           </button>
         </div>
 

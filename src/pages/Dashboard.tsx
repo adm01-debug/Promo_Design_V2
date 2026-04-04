@@ -156,7 +156,7 @@ interface WidgetProps {
 
 const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode> = {
   stats: ({ stats, isLoading }) => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8" role="region" aria-label="Métricas do sistema" aria-live="polite">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8" role="region" aria-label="Métricas do sistema" aria-live="polite" data-tour="stats">
       {isLoading
         ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         : stats.map((stat, i) => <StatCard key={stat.label} {...stat} index={i} />)}
@@ -164,7 +164,7 @@ const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode
   ),
 
   "quick-actions": () => (
-    <div className="mb-6 sm:mb-8">
+    <div className="mb-6 sm:mb-8" data-tour="quick-actions">
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Ações Rápidas</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {quickActions.map((action, i) => (
@@ -199,7 +199,7 @@ const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="mb-6 sm:mb-8 rounded-xl bg-card border border-border p-4"
+      className="mb-6 sm:mb-8 rounded-xl bg-card border border-border p-4" data-tour="activity-chart"
     >
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Atividade Semanal</h2>
       {hasActivity ? (
@@ -351,7 +351,7 @@ const Dashboard = () => {
     <div className="p-4 sm:p-6 max-w-6xl">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 flex items-start justify-between">
-        <div>
+        <div data-tour="greeting">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex flex-wrap items-center gap-1.5">
             <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               {greeting}{firstName ? "," : "!"}
@@ -394,6 +394,7 @@ const Dashboard = () => {
                 onClick={() => setIsEditing(!isEditing)}
                 aria-label={isEditing ? "Concluir edição do layout" : "Personalizar layout"}
                 className={isEditing ? "bg-primary text-primary-foreground" : ""}
+                data-tour="customize"
               >
                 <Settings2 className="w-4 h-4 mr-1.5" />
                 <span className="text-xs hidden sm:inline">{isEditing ? "Concluir" : "Personalizar"}</span>

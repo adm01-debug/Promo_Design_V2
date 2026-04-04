@@ -9,6 +9,7 @@ import ScrollToTop from "./ScrollToTop";
 import CommandPalette from "./CommandPalette";
 import OnboardingDialog from "./OnboardingDialog";
 import KeyboardShortcutsDialog from "./KeyboardShortcutsDialog";
+import OnboardingTour from "./OnboardingTour";
 import { useServiceOrderRealtime } from "@/features/service-orders";
 
 const AppLayout = () => {
@@ -51,6 +52,7 @@ const AppLayout = () => {
       <CommandPalette />
       <OnboardingDialog />
       <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <OnboardingTour />
       <ScrollToTop />
 
       {isMobile ? (
