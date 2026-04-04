@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Columns3, Grid2x2, Grid3x3 } from "lucide-react";
+import { Columns3, Grid2x2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
