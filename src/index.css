@@ -70,6 +70,15 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 240 6% 14%;
     --sidebar-ring: 190 95% 55%;
+
+    --status-aberta: 217 91% 60%;
+    --status-aberta-bg: 217 91% 60%;
+    --status-producao: 38 92% 50%;
+    --status-producao-bg: 38 92% 50%;
+    --status-concluida: 152 60% 45%;
+    --status-concluida-bg: 152 60% 45%;
+    --status-cancelada: 0 72% 55%;
+    --status-cancelada-bg: 0 72% 55%;
   }
 
   .light {
