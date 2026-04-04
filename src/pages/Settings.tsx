@@ -47,6 +47,9 @@ function DiagnosticsPanel() {
           <Badge variant="secondary" className="text-xs">{entries.length}</Badge>
         </div>
         <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => { ErrorLogger.error("Erro de teste manual", new Error("fake-error-diagnostico"), { source: "DiagnosticsPanel" }); refresh(); }} className="text-xs text-yellow-600 dark:text-yellow-400">
+            🧪 Testar
+          </Button>
           <Button variant="ghost" size="sm" onClick={refresh} className="text-xs">
             Atualizar
           </Button>
