@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FolderOpen, Clock, Trash2, Edit3, Loader2, Package } from "lucide-react";
+import { FolderOpen, Clock, Trash2, Edit3, Loader2, Package, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useMockupDrafts } from "@/features/mockup";
