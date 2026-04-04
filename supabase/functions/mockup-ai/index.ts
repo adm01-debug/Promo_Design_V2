@@ -17,7 +17,7 @@ function getCorsHeaders(req: Request) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -31,7 +31,7 @@ serve(async (req) => {
       if (!imageBase64) {
         return new Response(JSON.stringify({ error: "imageBase64 is required" }), {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
@@ -66,20 +66,20 @@ serve(async (req) => {
         if (response.status === 429) {
           return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
             status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           });
         }
         if (response.status === 402) {
           return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso." }), {
             status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           });
         }
         const t = await response.text();
         console.error("AI gateway error:", response.status, t);
         return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
@@ -89,12 +89,12 @@ serve(async (req) => {
       if (!resultImage) {
         return new Response(JSON.stringify({ error: "IA não retornou imagem processada" }), {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
       return new Response(JSON.stringify({ imageBase64: resultImage }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -186,20 +186,20 @@ Suggest the best placement for a logo on this product, considering:
         if (response.status === 429) {
           return new Response(JSON.stringify({ error: "Limite de requisições excedido." }), {
             status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           });
         }
         if (response.status === 402) {
           return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
             status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
           });
         }
         const t = await response.text();
         console.error("AI gateway error:", response.status, t);
         return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
@@ -208,25 +208,25 @@ Suggest the best placement for a logo on this product, considering:
       if (!toolCall) {
         return new Response(JSON.stringify({ error: "IA não retornou sugestão" }), {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         });
       }
 
       const suggestion = JSON.parse(toolCall.function.arguments);
       return new Response(JSON.stringify(suggestion), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("mockup-ai error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
     );
   }
 });
