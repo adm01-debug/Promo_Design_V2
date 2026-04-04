@@ -258,7 +258,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
               <p className="text-xs font-semibold text-sidebar-accent-foreground truncate">
                 {user?.email ?? "Usuário"}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/60" aria-live="polite">Online</p>
+              <p className="text-[11px] text-sidebar-foreground/60" aria-live="polite">Online</p>
             </div>
           )}
         </div>
