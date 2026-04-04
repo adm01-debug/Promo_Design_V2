@@ -159,7 +159,7 @@ const Auth = () => {
           </div>
           <div>
             <span className="text-lg font-display font-bold text-foreground">Promo Design</span>
-            <span className="block text-[10px] font-mono tracking-[0.3em] uppercase text-primary">
+            <span className="block text-[11px] font-mono tracking-[0.3em] uppercase text-primary">
               Design Suite
             </span>
           </div>

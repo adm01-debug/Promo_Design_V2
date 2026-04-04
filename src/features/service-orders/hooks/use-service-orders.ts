@@ -240,10 +240,10 @@ export function useServiceOrders() {
 
 // ─── Status State Machine ──────────────────────────────────
 export const STATUS_CONFIG: Record<OsStatus, { label: string; color: string; bg: string }> = {
-  aberta: { label: "Aberta", color: "text-blue-400", bg: "bg-blue-500/15" },
-  em_producao: { label: "Em Produção", color: "text-amber-400", bg: "bg-amber-500/15" },
-  concluida: { label: "Concluída", color: "text-emerald-400", bg: "bg-emerald-500/15" },
-  cancelada: { label: "Cancelada", color: "text-red-400", bg: "bg-red-500/15" },
+  aberta: { label: "Aberta", color: "text-[hsl(var(--status-aberta))]", bg: "bg-[hsl(var(--status-aberta-bg)/0.15)]" },
+  em_producao: { label: "Em Produção", color: "text-[hsl(var(--status-producao))]", bg: "bg-[hsl(var(--status-producao-bg)/0.15)]" },
+  concluida: { label: "Concluída", color: "text-[hsl(var(--status-concluida))]", bg: "bg-[hsl(var(--status-concluida-bg)/0.15)]" },
+  cancelada: { label: "Cancelada", color: "text-[hsl(var(--status-cancelada))]", bg: "bg-[hsl(var(--status-cancelada-bg)/0.15)]" },
 };
 
 /** Allowed status transitions (state machine) */
