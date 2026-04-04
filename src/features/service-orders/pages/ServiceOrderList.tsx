@@ -35,34 +35,21 @@ const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [
 
 const ServiceOrderList = () => {
   const navigate = useNavigate();
-  const { orders, updateStatus, deleteOrder } = useServiceOrders();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
   const [sortDesc, setSortDesc] = useState(true);
   const [page, setPage] = useState(1);
 
-  const filtered = orders
-    .filter((o) => {
-      if (statusFilter !== "all" && o.status !== statusFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return (
-          o.osNumber.toLowerCase().includes(q) ||
-          o.clientName.toLowerCase().includes(q) ||
-          o.clientCompany.toLowerCase().includes(q) ||
-          o.productName.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return sortDesc ? -diff : diff;
-    });
+  const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
+    page,
+    pageSize: PAGE_SIZE,
+    search,
+    status: statusFilter,
+    sortAsc: !sortDesc,
+  });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  // Also fetch total unfiltered count for display
+  const { total: allTotal } = useServiceOrders({ pageSize: 1 });
 
   const handleChangeStatus = (id: string, status: OsStatus) => {
     try {
