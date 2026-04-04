@@ -219,7 +219,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       if (updates.artFile !== undefined) dbUpdates.art_file = updates.artFile;
       if (updates.artFileDataUrl !== undefined) dbUpdates.art_file_data_url = updates.artFileDataUrl;
       if (updates.observations !== undefined) dbUpdates.observations = updates.observations;
-      if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate;
+      if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate || null;
       if (updates.quantity !== undefined) dbUpdates.quantity = parseInt(updates.quantity) || 1;
       if (updates.mockupImageUrl !== undefined) dbUpdates.mockup_image_url = updates.mockupImageUrl;
       if (updates.identificacaoCaixa !== undefined) dbUpdates.identificacao_caixa = updates.identificacaoCaixa;
