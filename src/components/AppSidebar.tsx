@@ -270,10 +270,10 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
 
         {!collapsed && (
           <div className="flex items-center justify-center gap-1 py-1" aria-hidden="true">
-            <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">
+            <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">
               ⌘K
             </kbd>
-            <span className="text-[9px] text-sidebar-foreground/40">Busca rápida</span>
+            <span className="text-[11px] text-sidebar-foreground/40">Busca rápida</span>
           </div>
         )}
 
