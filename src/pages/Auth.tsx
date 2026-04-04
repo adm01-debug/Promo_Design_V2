@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, Palette, BarChart3, Users, Shield, Sparkles } from "lucide-react";
+import PasswordStrength from "@/components/PasswordStrength";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Navigate } from "react-router-dom";
@@ -101,12 +102,49 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background flex" role="main">
-      {/* Left Hero Panel */}
+      <a
+        href="#auth-form"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        Pular para o formulário
+      </a>
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-10" aria-hidden="true">
+        {/* Animated grid background */}
+        <div className="absolute inset-0 canvas-grid opacity-30" />
+
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: 4 + i * 3,
+                height: 4 + i * 3,
+                left: `${15 + i * 14}%`,
+                top: `${10 + i * 12}%`,
+                background: `hsl(var(--${i % 3 === 0 ? 'primary' : i % 3 === 1 ? 'secondary' : 'accent'}) / 0.4)`,
+              }}
+              animate={{
+                y: [0, -20 - i * 5, 0],
+                x: [0, 10 + i * 3, 0],
+                opacity: [0.3, 0.7, 0.3],
+              }}
+              transition={{
+                duration: 4 + i,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.5,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-primary/5 blur-[120px]" />
           <div className="absolute bottom-1/4 right-0 w-72 h-72 rounded-full bg-secondary/5 blur-[100px]" />
+          <div className="absolute top-2/3 left-1/3 w-64 h-64 rounded-full bg-accent/3 blur-[100px]" />
         </div>
 
         {/* Logo */}
@@ -200,13 +238,13 @@ const Auth = () => {
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
               {headingText[mode]}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1" id="auth-description">
+            <p className="text-sm text-foreground/60 mt-1" id="auth-description">
               {subtitleText[mode]}
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5" aria-describedby="auth-description" aria-label={headingText[mode]}>
+          <form id="auth-form" onSubmit={handleSubmit} className="space-y-5" aria-describedby="auth-description" aria-label={headingText[mode]}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -268,7 +306,8 @@ const Auth = () => {
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                     </button>
-                  </div>
+                   </div>
+                  {mode === "signup" && <PasswordStrength password={password} />}
                 </motion.div>
               )}
             </AnimatePresence>

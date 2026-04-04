@@ -30,6 +30,12 @@
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 98%;
 
+    --success: 152 60% 45%;
+    --success-foreground: 0 0% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 8%;
+
     --border: 240 6% 18%;
     --input: 240 6% 18%;
     --ring: 190 95% 55%;
@@ -91,6 +97,12 @@
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
+    --success: 152 55% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 45%;
+    --warning-foreground: 0 0% 8%;
+
     --border: 240 6% 85%;
     --input: 240 6% 85%;
     --ring: 190 95% 40%;
@@ -135,6 +147,15 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   code, pre, .font-mono {

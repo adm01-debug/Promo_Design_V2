@@ -12,6 +12,8 @@ import { useCountUp } from "@/hooks/use-count-up";
 import { useServiceOrders, STATUS_CONFIG } from "@/features/service-orders";
 import { useMagicUpHistory } from "@/features/magic-up";
 import { useMockupDrafts } from "@/features/mockup";
+import { useAuth } from "@/hooks/use-auth";
+import MiniSparkline from "@/components/MiniSparkline";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import heroMockup from "@/assets/hero-mockup.jpg";
 import mockupPhone from "@/assets/mockup-phone.jpg";
@@ -35,9 +37,20 @@ const columnClasses: Record<number, string> = {
   5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
 };
 
-const headingWords = ["Bem-vindo", "ao"];
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
 
-const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number }) => {
+function getUserFirstName(email?: string): string {
+  if (!email) return "";
+  const local = email.split("@")[0];
+  return local.charAt(0).toUpperCase() + local.slice(1).split(/[._-]/)[0];
+}
+
+const StatCard = ({ label, value, icon: Icon, change, index, sparkData }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number; sparkData?: number[] }) => {
   const count = useCountUp(value, 1200, index * 100);
   return (
     <motion.div
@@ -50,8 +63,11 @@ const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; 
         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
           <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
         </div>
-        <div className="min-w-0">
-          <p className="text-xl sm:text-2xl font-bold text-foreground font-display tabular-nums">{count}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between">
+            <p className="text-xl sm:text-2xl font-bold text-foreground font-display tabular-nums">{count}</p>
+            {sparkData && <MiniSparkline data={sparkData} />}
+          </div>
           <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{label}</p>
         </div>
       </div>
@@ -93,27 +109,17 @@ function buildWeeklyActivity(
 }
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const { orders, isLoading: ordersLoading } = useServiceOrders();
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
 
-  const stats = useMemo(() => {
-    const abertas = orders.filter((o) => o.status === "aberta").length;
-    const producao = orders.filter((o) => o.status === "em_producao").length;
-    const concluidas = orders.filter((o) => o.status === "concluida").length;
-    const draftCount = drafts?.length || 0;
+  const greeting = getGreeting();
+  const firstName = getUserFirstName(user?.email ?? undefined);
 
-    return [
-      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas` },
-      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas` },
-      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas` },
-      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos" },
-    ];
-  }, [orders, magicUpItems, drafts]);
-
-  // Weekly activity chart data
+  // Weekly activity chart data (must come before stats since stats uses it)
   const weeklyData = useMemo(() => {
     return buildWeeklyActivity(
       orders.map((o) => ({ createdAt: o.createdAt })),
@@ -121,6 +127,24 @@ const Dashboard = () => {
       magicUpItems.map((m) => ({ createdAt: m.createdAt })),
     );
   }, [orders, drafts, magicUpItems]);
+
+  const stats = useMemo(() => {
+    const abertas = orders.filter((o) => o.status === "aberta").length;
+    const producao = orders.filter((o) => o.status === "em_producao").length;
+    const concluidas = orders.filter((o) => o.status === "concluida").length;
+    const draftCount = drafts?.length || 0;
+
+    const weeklyOs = weeklyData.map((w) => w.os);
+    const weeklyMockups = weeklyData.map((w) => w.mockups);
+    const weeklyIa = weeklyData.map((w) => w.ia);
+
+    return [
+      { label: "Ordens de Serviço", value: orders.length, icon: ClipboardList, change: `${abertas} abertas`, sparkData: weeklyOs },
+      { label: "Em Produção", value: producao, icon: Clock, change: `${concluidas} concluídas`, sparkData: weeklyOs },
+      { label: "Imagens IA", value: magicUpItems.length, icon: Sparkles, change: `${magicUpItems.filter((i) => i.favorite).length} favoritas`, sparkData: weeklyIa },
+      { label: "Rascunhos", value: draftCount, icon: FolderOpen, change: draftCount > 0 ? `${draftCount} salvos` : "Sem rascunhos", sparkData: weeklyMockups },
+    ];
+  }, [orders, magicUpItems, drafts, weeklyData]);
 
   const isLoading = ordersLoading || draftsLoading;
   const hasActivity = weeklyData.some((w) => w.os + w.mockups + w.ia > 0);
@@ -188,19 +212,22 @@ const Dashboard = () => {
     <div className="p-4 sm:p-6 max-w-6xl">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-bold text-foreground flex flex-wrap items-center gap-1.5">
-          {headingWords.map((word, i) => (
-            <motion.span key={word} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 * i }}>
-              {word}
+          <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+            {greeting}{firstName ? "," : "!"}
+          </motion.span>
+          {firstName && (
+            <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-primary">
+              {firstName}
             </motion.span>
-          ))}
-          <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-primary">
-            Promo Design
+          )}
+          <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="text-muted-foreground font-normal text-base sm:text-lg">
+            👋
           </motion.span>
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">Sistema de Criação para o Time de Artes</p>
       </motion.div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8" role="region" aria-label="Métricas do sistema" aria-live="polite">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : stats.map((stat, i) => <StatCard key={stat.label} {...stat} index={i} />)

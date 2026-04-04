@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "react-router-dom";
+import { useServiceOrders } from "@/features/service-orders";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Layers,
@@ -85,6 +86,20 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
     return "mockup";
   });
 
+  // Badge counts
+  const { orders } = useServiceOrders();
+  const badgeCounts = useMemo(() => {
+    const abertas = orders.filter((o) => o.status === "aberta" || o.status === "em_producao").length;
+    return { mockup: abertas };
+  }, [orders]);
+
+  const userInitials = useMemo(() => {
+    const email = user?.email ?? "";
+    const parts = email.split("@")[0].split(/[._-]/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return email.slice(0, 2).toUpperCase() || "U";
+  }, [user?.email]);
+
   const toggleModule = (id: string) => {
     setExpandedModule(expandedModule === id ? null : id);
   };
@@ -111,6 +126,11 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
               <div className="text-sm font-semibold">{mod.label}</div>
               <div className="text-[10px] text-sidebar-foreground/60">{mod.description}</div>
             </div>
+            {badgeCounts[mod.id as keyof typeof badgeCounts] > 0 && (
+              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold px-1">
+                {badgeCounts[mod.id as keyof typeof badgeCounts]}
+              </span>
+            )}
             <ChevronRight
               className={`w-3.5 h-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`}
               aria-hidden="true"
@@ -194,12 +214,19 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
                             <Link
                               to={child.path}
                               aria-current={childActive ? "page" : undefined}
-                              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                              className={`relative flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                                 childActive
                                   ? "text-sidebar-primary bg-sidebar-accent/60 font-medium"
                                   : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/30"
                               }`}
                             >
+                              {childActive && (
+                                <motion.span
+                                  layoutId="active-child-indicator"
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-primary"
+                                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                />
+                              )}
                               <child.icon className="w-3.5 h-3.5" aria-hidden="true" />
                               {child.label}
                             </Link>
@@ -218,12 +245,12 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
       <div className="border-t border-sidebar-border p-2 space-y-1">
         <div className="flex items-center gap-3 px-3 py-2" aria-label="Informações do usuário">
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center" aria-hidden="true">
-              <span className="text-xs font-bold text-muted-foreground">
-                {user?.email?.[0]?.toUpperCase() ?? "U"}
+            <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center" aria-hidden="true">
+              <span className="text-xs font-bold text-primary-foreground">
+                {userInitials}
               </span>
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-sidebar" aria-label="Online" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-sidebar" aria-label="Online" />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
