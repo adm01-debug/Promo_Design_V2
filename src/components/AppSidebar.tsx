@@ -264,7 +264,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         </div>
 
         <div className="flex items-center justify-between px-3 py-1">
-          {!collapsed && <span className="text-[10px] font-mono text-sidebar-foreground/50 uppercase" id="theme-label">Tema</span>}
+          {!collapsed && <span className="text-[11px] font-mono text-sidebar-foreground/50 uppercase" id="theme-label">Tema</span>}
           <ThemeToggle />
         </div>
 
