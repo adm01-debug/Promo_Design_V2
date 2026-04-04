@@ -37,7 +37,18 @@ const columnClasses: Record<number, string> = {
   5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
 };
 
-const headingWords = ["Bem-vindo", "ao"];
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+function getUserFirstName(email?: string): string {
+  if (!email) return "";
+  const local = email.split("@")[0];
+  return local.charAt(0).toUpperCase() + local.slice(1).split(/[._-]/)[0];
+}
 
 const StatCard = ({ label, value, icon: Icon, change, index }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number }) => {
   const count = useCountUp(value, 1200, index * 100);
