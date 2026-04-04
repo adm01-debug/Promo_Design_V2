@@ -268,11 +268,18 @@ const Auth = () => {
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                  className={`pl-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${emailError ? "border-destructive" : ""}`}
                   required
                   autoComplete="email"
                   aria-required="true"
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? "email-error" : undefined}
                 />
+              </div>
+              {emailError && (
+                <p id="email-error" className="text-xs text-destructive mt-1">{emailError}</p>
+              )}
               </div>
             </div>
 
