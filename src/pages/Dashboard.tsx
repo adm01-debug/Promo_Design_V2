@@ -109,11 +109,15 @@ function buildWeeklyActivity(
 }
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const { orders, isLoading: ordersLoading } = useServiceOrders();
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
+
+  const greeting = getGreeting();
+  const firstName = getUserFirstName(user?.email ?? undefined);
 
   const stats = useMemo(() => {
     const abertas = orders.filter((o) => o.status === "aberta").length;
