@@ -76,7 +76,7 @@ const ServiceOrderList = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-lg font-display font-bold text-foreground">Ordens de Serviço</h1>
-            <p className="text-xs text-muted-foreground">{filtered.length} de {orders.length} ordem(ns)</p>
+            <p className="text-xs text-muted-foreground">{total} de {allTotal} ordem(ns)</p>
           </div>
           <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
             <Plus className="w-3.5 h-3.5" /> Nova OS
