@@ -114,7 +114,7 @@ const ServiceOrderList = () => {
 
       {/* List */}
       <div className="max-w-5xl mx-auto p-6">
-        {filtered.length === 0 ? (
+        {paginated.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -122,11 +122,11 @@ const ServiceOrderList = () => {
           >
             <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground text-sm">
-              {orders.length === 0
+              {allTotal === 0
                 ? "Nenhuma ordem de serviço criada ainda"
                 : "Nenhum resultado para os filtros aplicados"}
             </p>
-            {orders.length === 0 && (
+            {allTotal === 0 && (
               <Button variant="outline" className="mt-4 gap-2" onClick={() => navigate("/mockup/new")}>
                 <Plus className="w-4 h-4" /> Criar do Mockup Studio
               </Button>
