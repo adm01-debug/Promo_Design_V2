@@ -35,34 +35,21 @@ const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [
 
 const ServiceOrderList = () => {
   const navigate = useNavigate();
-  const { orders, updateStatus, deleteOrder } = useServiceOrders();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
   const [sortDesc, setSortDesc] = useState(true);
   const [page, setPage] = useState(1);
 
-  const filtered = orders
-    .filter((o) => {
-      if (statusFilter !== "all" && o.status !== statusFilter) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        return (
-          o.osNumber.toLowerCase().includes(q) ||
-          o.clientName.toLowerCase().includes(q) ||
-          o.clientCompany.toLowerCase().includes(q) ||
-          o.productName.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return sortDesc ? -diff : diff;
-    });
+  const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
+    page,
+    pageSize: PAGE_SIZE,
+    search,
+    status: statusFilter,
+    sortAsc: !sortDesc,
+  });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  // Also fetch total unfiltered count for display
+  const { total: allTotal } = useServiceOrders({ pageSize: 1 });
 
   const handleChangeStatus = (id: string, status: OsStatus) => {
     try {
@@ -89,7 +76,7 @@ const ServiceOrderList = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-lg font-display font-bold text-foreground">Ordens de Serviço</h1>
-            <p className="text-xs text-muted-foreground">{filtered.length} de {orders.length} ordem(ns)</p>
+            <p className="text-xs text-muted-foreground">{total} de {allTotal} ordem(ns)</p>
           </div>
           <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
             <Plus className="w-3.5 h-3.5" /> Nova OS
@@ -127,7 +114,7 @@ const ServiceOrderList = () => {
 
       {/* List */}
       <div className="max-w-5xl mx-auto p-6">
-        {filtered.length === 0 ? (
+        {paginated.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -135,11 +122,11 @@ const ServiceOrderList = () => {
           >
             <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground text-sm">
-              {orders.length === 0
+              {allTotal === 0
                 ? "Nenhuma ordem de serviço criada ainda"
                 : "Nenhum resultado para os filtros aplicados"}
             </p>
-            {orders.length === 0 && (
+            {allTotal === 0 && (
               <Button variant="outline" className="mt-4 gap-2" onClick={() => navigate("/mockup/new")}>
                 <Plus className="w-4 h-4" /> Criar do Mockup Studio
               </Button>
@@ -266,19 +253,19 @@ const ServiceOrderList = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={safePage <= 1}
-                  onClick={() => setPage(safePage - 1)}
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <span className="text-sm text-muted-foreground font-mono">
-                  {safePage} / {totalPages}
+                  {page} / {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={safePage >= totalPages}
-                  onClick={() => setPage(safePage + 1)}
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
