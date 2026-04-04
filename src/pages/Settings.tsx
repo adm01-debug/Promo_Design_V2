@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ErrorLogger, type LogEntry } from "@/lib/error-logger";
-import { useVisibilityPolling, type PollingMetrics } from "@/hooks/use-visibility-polling";
+import { usePollingMetrics } from "@/hooks/use-visibility-polling";
 
 const levelColor: Record<string, string> = {
   debug: "bg-muted text-muted-foreground",
