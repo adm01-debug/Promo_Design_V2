@@ -467,8 +467,16 @@ const Dashboard = () => {
     return items.slice(0, 6);
   }, [drafts, orders, magicUpItems]);
 
+  const heatmapData = useMemo(() => {
+    return buildMonthlyHeatmap(
+      orders.map((o) => ({ createdAt: o.createdAt })),
+      (drafts || []).map((d) => ({ createdAt: d.createdAt })),
+      magicUpItems.map((m) => ({ createdAt: m.createdAt })),
+    );
+  }, [orders, drafts, magicUpItems]);
+
   const widgetProps: WidgetProps = {
-    stats, isLoading, weeklyData, hasActivity, recentProjects,
+    stats, isLoading, weeklyData, hasActivity, heatmapData, recentProjects,
     viewMode, setViewMode, gridColumns, setGridColumns,
   };
 
