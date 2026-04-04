@@ -199,7 +199,7 @@ const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="mb-6 sm:mb-8 rounded-xl bg-card border border-border p-4"
+      className="mb-6 sm:mb-8 rounded-xl bg-card border border-border p-4" data-tour="activity-chart"
     >
       <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-4">Atividade Semanal</h2>
       {hasActivity ? (

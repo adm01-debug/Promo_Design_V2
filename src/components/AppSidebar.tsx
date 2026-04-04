@@ -186,7 +186,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Módulos">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Módulos" data-tour="sidebar-nav">
         {modules.map((mod) => {
           const isExpanded = expandedModule === mod.id && !collapsed;
 
