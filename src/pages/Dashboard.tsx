@@ -351,7 +351,7 @@ const Dashboard = () => {
     <div className="p-4 sm:p-6 max-w-6xl">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 flex items-start justify-between">
-        <div>
+        <div data-tour="greeting">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex flex-wrap items-center gap-1.5">
             <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               {greeting}{firstName ? "," : "!"}
