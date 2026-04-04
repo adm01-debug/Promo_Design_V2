@@ -123,7 +123,70 @@ const MagicUpHistory = () => {
         </div>
       </div>
 
-      {/* Filter bar */}
+      {/* Analytics Section */}
+      {items.length > 0 && (
+        <div className="px-4 pt-3 border-b border-border pb-4">
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-xl font-bold text-foreground">{items.length}</p>
+              <p className="text-xs text-muted-foreground">Total Geradas</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-xl font-bold text-foreground">{favCount}</p>
+              <p className="text-xs text-muted-foreground">Favoritas</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-3">
+              <p className="text-xl font-bold text-foreground">{productNames.length}</p>
+              <p className="text-xs text-muted-foreground">Produtos</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="rounded-lg border border-border bg-card p-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-primary" /> Gerações (14 dias)
+              </h3>
+              <ResponsiveContainer width="100%" height={120}>
+                <AreaChart data={dailyChartData}>
+                  <defs>
+                    <linearGradient id="magicGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={20} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} />
+                  <Area type="monotone" dataKey="count" name="Gerações" stroke="hsl(var(--primary))" fill="url(#magicGrad)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            {styleChartData.length > 1 && (
+              <div className="rounded-lg border border-border bg-card p-3">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Por Estilo</h3>
+                <ResponsiveContainer width="100%" height={120}>
+                  <PieChart>
+                    <Pie data={styleChartData} cx="50%" cy="50%" innerRadius={30} outerRadius={50} paddingAngle={3} dataKey="value" stroke="none">
+                      {styleChartData.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {styleChartData.map((d, i) => (
+                    <span key={d.name} className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="w-2 h-2 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                      {d.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className="p-4 border-b border-border space-y-3 shrink-0">
         <div className="flex gap-3">
           <div className="flex-1 relative">
