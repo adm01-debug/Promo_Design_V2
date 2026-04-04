@@ -253,19 +253,19 @@ const ServiceOrderList = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={safePage <= 1}
-                  onClick={() => setPage(safePage - 1)}
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <span className="text-sm text-muted-foreground font-mono">
-                  {safePage} / {totalPages}
+                  {page} / {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={safePage >= totalPages}
-                  onClick={() => setPage(safePage + 1)}
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
