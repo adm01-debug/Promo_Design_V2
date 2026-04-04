@@ -394,6 +394,7 @@ const Dashboard = () => {
                 onClick={() => setIsEditing(!isEditing)}
                 aria-label={isEditing ? "Concluir edição do layout" : "Personalizar layout"}
                 className={isEditing ? "bg-primary text-primary-foreground" : ""}
+                data-tour="customize"
               >
                 <Settings2 className="w-4 h-4 mr-1.5" />
                 <span className="text-xs hidden sm:inline">{isEditing ? "Concluir" : "Personalizar"}</span>
