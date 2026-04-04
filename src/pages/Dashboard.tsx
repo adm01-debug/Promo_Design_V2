@@ -186,6 +186,7 @@ interface WidgetProps {
   isLoading: boolean;
   weeklyData: { label: string; os: number; mockups: number; ia: number }[];
   hasActivity: boolean;
+  heatmapData: ReturnType<typeof buildMonthlyHeatmap>;
   recentProjects: { title: string; category: string; thumbnail: string; lastEdited: string; views: number; path?: string }[];
   viewMode: "grid" | "list";
   setViewMode: (v: "grid" | "list") => void;
