@@ -238,7 +238,7 @@ const Auth = () => {
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
               {headingText[mode]}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1" id="auth-description">
+            <p className="text-sm text-foreground/60 mt-1" id="auth-description">
               {subtitleText[mode]}
             </p>
           </div>
