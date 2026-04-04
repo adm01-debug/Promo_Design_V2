@@ -38,7 +38,20 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
   const { toast } = useToast();
+
+  const emailError = useMemo(() => {
+    if (!touched.email || !email) return "";
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email) ? "" : "E-mail inválido";
+  }, [email, touched.email]);
+
+  const passwordError = useMemo(() => {
+    if (!touched.password || !password || mode === "forgot") return "";
+    if (password.length < 6) return "Mínimo de 6 caracteres";
+    return "";
+  }, [password, touched.password, mode]);
 
   if (authLoading) return null;
   if (user) return <Navigate to="/" replace />;
