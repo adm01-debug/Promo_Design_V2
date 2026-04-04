@@ -312,11 +312,14 @@ const Auth = () => {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                      className={`pl-10 pr-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${passwordError ? "border-destructive" : ""}`}
                       required
                       minLength={6}
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
                       aria-required="true"
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? "password-error" : undefined}
                     />
                     <button
                       type="button"
@@ -327,6 +330,9 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                     </button>
                    </div>
+                  {passwordError && (
+                    <p id="password-error" className="text-xs text-destructive mt-1">{passwordError}</p>
+                  )}
                   {mode === "signup" && <PasswordStrength password={password} />}
                 </motion.div>
               )}
