@@ -214,12 +214,19 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
                             <Link
                               to={child.path}
                               aria-current={childActive ? "page" : undefined}
-                              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                              className={`relative flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                                 childActive
                                   ? "text-sidebar-primary bg-sidebar-accent/60 font-medium"
                                   : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/30"
                               }`}
                             >
+                              {childActive && (
+                                <motion.span
+                                  layoutId="active-child-indicator"
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-primary"
+                                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                />
+                              )}
                               <child.icon className="w-3.5 h-3.5" aria-hidden="true" />
                               {child.label}
                             </Link>
