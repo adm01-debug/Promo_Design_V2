@@ -156,7 +156,7 @@ interface WidgetProps {
 
 const WIDGET_RENDERERS: Record<WidgetId, (props: WidgetProps) => React.ReactNode> = {
   stats: ({ stats, isLoading }) => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8" role="region" aria-label="Métricas do sistema" aria-live="polite">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8" role="region" aria-label="Métricas do sistema" aria-live="polite" data-tour="stats">
       {isLoading
         ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         : stats.map((stat, i) => <StatCard key={stat.label} {...stat} index={i} />)}
