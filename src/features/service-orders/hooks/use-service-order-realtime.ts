@@ -45,5 +45,5 @@ export function useServiceOrderRealtime() {
     }
   }, [user, queryClient, toast]);
 
-  useVisibilityPolling(poll, POLL_INTERVAL, !!user);
+  useVisibilityPolling(poll, POLL_INTERVAL, !!user, "Service Orders");
 }
