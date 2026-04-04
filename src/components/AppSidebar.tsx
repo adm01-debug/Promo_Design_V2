@@ -30,6 +30,17 @@ import {
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const modules = [
   {
@@ -125,10 +136,10 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
           <>
             <div className="flex-1 text-left">
               <div className="text-sm font-semibold">{mod.label}</div>
-              <div className="text-[10px] text-sidebar-foreground/60">{mod.description}</div>
+              <div className="text-[11px] text-sidebar-foreground/60">{mod.description}</div>
             </div>
             {badgeCounts[mod.id as keyof typeof badgeCounts] > 0 && (
-              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary/15 text-primary text-[10px] font-bold px-1">
+              <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-primary/15 text-primary text-[11px] font-bold px-1">
                 {badgeCounts[mod.id as keyof typeof badgeCounts]}
               </span>
             )}
@@ -258,22 +269,22 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
               <p className="text-xs font-semibold text-sidebar-accent-foreground truncate">
                 {user?.email ?? "Usuário"}
               </p>
-              <p className="text-[10px] text-sidebar-foreground/60" aria-live="polite">Online</p>
+              <p className="text-[11px] text-sidebar-foreground/60" aria-live="polite">Online</p>
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between px-3 py-1">
-          {!collapsed && <span className="text-[10px] font-mono text-sidebar-foreground/50 uppercase" id="theme-label">Tema</span>}
+          {!collapsed && <span className="text-[11px] font-mono text-sidebar-foreground/50 uppercase" id="theme-label">Tema</span>}
           <ThemeToggle />
         </div>
 
         {!collapsed && (
           <div className="flex items-center justify-center gap-1 py-1" aria-hidden="true">
-            <kbd className="px-1.5 py-0.5 text-[9px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">
+            <kbd className="px-1.5 py-0.5 text-[11px] font-mono bg-sidebar-accent text-sidebar-foreground/60 rounded border border-sidebar-border">
               ⌘K
             </kbd>
-            <span className="text-[9px] text-sidebar-foreground/40">Busca rápida</span>
+            <span className="text-[11px] text-sidebar-foreground/40">Busca rápida</span>
           </div>
         )}
 
@@ -311,14 +322,31 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
           {!collapsed && <span className="text-sm">Configurações</span>}
         </Link>
 
-        <button
-          onClick={signOut}
-          aria-label="Sair da conta"
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
-          {!collapsed && <span className="text-sm">Sair</span>}
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              aria-label="Sair da conta"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
+              {!collapsed && <span className="text-sm">Sair</span>}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Deseja sair?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você será desconectado da sua conta. Tem certeza que deseja continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={signOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sair
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <button
           onClick={() => {

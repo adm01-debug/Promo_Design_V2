@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,20 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState<{ email?: boolean; password?: boolean }>({});
   const { toast } = useToast();
+
+  const emailError = useMemo(() => {
+    if (!touched.email || !email) return "";
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email) ? "" : "E-mail inválido";
+  }, [email, touched.email]);
+
+  const passwordError = useMemo(() => {
+    if (!touched.password || !password || mode === "forgot") return "";
+    if (password.length < 6) return "Mínimo de 6 caracteres";
+    return "";
+  }, [password, touched.password, mode]);
 
   if (authLoading) return null;
   if (user) return <Navigate to="/" replace />;
@@ -159,7 +172,7 @@ const Auth = () => {
           </div>
           <div>
             <span className="text-lg font-display font-bold text-foreground">Promo Design</span>
-            <span className="block text-[10px] font-mono tracking-[0.3em] uppercase text-primary">
+            <span className="block text-[11px] font-mono tracking-[0.3em] uppercase text-primary">
               Design Suite
             </span>
           </div>
@@ -255,12 +268,18 @@ const Auth = () => {
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                  className={`pl-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${emailError ? "border-destructive" : ""}`}
                   required
                   autoComplete="email"
                   aria-required="true"
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? "email-error" : undefined}
                 />
               </div>
+              {emailError && (
+                <p id="email-error" className="text-xs text-destructive mt-1">{emailError}</p>
+              )}
             </div>
 
             <AnimatePresence mode="wait">
@@ -292,11 +311,14 @@ const Auth = () => {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                      className={`pl-10 pr-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${passwordError ? "border-destructive" : ""}`}
                       required
                       minLength={6}
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
                       aria-required="true"
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? "password-error" : undefined}
                     />
                     <button
                       type="button"
@@ -307,6 +329,9 @@ const Auth = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                     </button>
                    </div>
+                  {passwordError && (
+                    <p id="password-error" className="text-xs text-destructive mt-1">{passwordError}</p>
+                  )}
                   {mode === "signup" && <PasswordStrength password={password} />}
                 </motion.div>
               )}
