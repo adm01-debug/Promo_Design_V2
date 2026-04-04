@@ -77,6 +77,32 @@ const MagicUpHistory = () => {
 
   const hasActiveFilters = filterFavorites || filterProduct || dateFrom || dateTo;
 
+  const CHART_COLORS = ["hsl(190, 95%, 55%)", "hsl(260, 60%, 60%)", "hsl(330, 80%, 60%)", "hsl(38, 92%, 50%)", "hsl(152, 60%, 45%)"];
+
+  const styleChartData = useMemo(() => {
+    const map: Record<string, number> = {};
+    items.forEach((i) => { const s = i.style || "Padrão"; map[s] = (map[s] || 0) + 1; });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
+  }, [items]);
+
+  const dailyChartData = useMemo(() => {
+    const map: Record<string, number> = {};
+    const now = new Date();
+    for (let d = 13; d >= 0; d--) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - d);
+      const key = format(date, "dd/MM");
+      map[key] = 0;
+    }
+    items.forEach((i) => {
+      const key = format(new Date(i.createdAt), "dd/MM");
+      if (key in map) map[key]++;
+    });
+    return Object.entries(map).map(([day, count]) => ({ day, count }));
+  }, [items]);
+
+  const favCount = items.filter((i) => i.favorite).length;
+
   return (
     <div className="h-screen flex flex-col">
       {/* Header */}
