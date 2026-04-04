@@ -108,7 +108,7 @@ const AppLayout = () => {
       ) : (
         <>
           <AppSidebar onCollapseChange={setCollapsed} />
-          <main className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
+          <main id="main-content" className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
             <div className="p-4 pb-0">
               <Breadcrumbs />
             </div>
