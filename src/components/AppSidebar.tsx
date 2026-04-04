@@ -25,6 +25,7 @@ import {
   Keyboard,
   LogOut,
   Package,
+  GraduationCap,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
