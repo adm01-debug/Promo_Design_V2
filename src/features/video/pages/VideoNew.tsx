@@ -12,7 +12,7 @@ import { useProducts, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
 import VideoPreviewAnimation from "@/features/video/components/VideoPreviewAnimation";
 import { useMoodboardStore, TONE_LABELS, PALETTE_LABELS, TONE_TO_STYLE } from "@/hooks/use-moodboard-preferences";
-import type { MoodboardTone } from "@/hooks/use-moodboard-preferences";
+
 import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 
 type AspectRatio = "9:16" | "1:1" | "16:9" | "4:5";
