@@ -86,6 +86,20 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
     return "mockup";
   });
 
+  // Badge counts
+  const { orders } = useServiceOrders();
+  const badgeCounts = useMemo(() => {
+    const abertas = orders.filter((o) => o.status === "aberta" || o.status === "em_producao").length;
+    return { mockup: abertas };
+  }, [orders]);
+
+  const userInitials = useMemo(() => {
+    const email = user?.email ?? "";
+    const parts = email.split("@")[0].split(/[._-]/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return email.slice(0, 2).toUpperCase() || "U";
+  }, [user?.email]);
+
   const toggleModule = (id: string) => {
     setExpandedModule(expandedModule === id ? null : id);
   };
