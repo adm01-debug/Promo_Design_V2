@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
@@ -11,7 +11,6 @@ import MockupCanvas from "@/features/mockup/components/MockupCanvas";
 import MockupRightPanel from "@/features/mockup/components/MockupRightPanel";
 
 const MockupNew = () => {
-  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
