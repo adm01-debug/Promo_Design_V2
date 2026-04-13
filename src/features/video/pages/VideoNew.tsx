@@ -44,7 +44,7 @@ const VideoNew = () => {
             {(["product", "config", "preview"] as const).map((s, i) => (
               <span key={s} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight className="w-3 h-3" />}
-                <button onClick={() => { if (s === "product") setStep(s); else if (s !== "product" && selectedProduct) setStep(s); }} className={`px-2.5 py-1 rounded-md transition-colors ${step === s ? "bg-primary/20 text-primary font-medium" : "hover:text-foreground"}`}>
+                <button onClick={() => { if (s === "product" || selectedProduct) setStep(s); }} className={`px-2.5 py-1 rounded-md transition-colors ${step === s ? "bg-primary/20 text-primary font-medium" : "hover:text-foreground"}`}>
                   {i + 1}. {s === "product" ? "Produto" : s === "config" ? "Configurar" : "Preview"}
                 </button>
               </span>

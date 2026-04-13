@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Clock, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, CalendarDays } from "lucide-react";
+import { Sparkles, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, CalendarDays } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
