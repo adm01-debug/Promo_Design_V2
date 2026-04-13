@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Wand2, Package, X, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProductImageUrl } from "@/features/mockup";
