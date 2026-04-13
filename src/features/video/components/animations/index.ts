@@ -1,0 +1,21 @@
+// Re-export all animation components from a single barrel
+export { default as RevealAnimation } from "./RevealAnimation";
+export { default as Showcase360Animation } from "./Showcase360Animation";
+export { default as FlashPromoAnimation } from "./FlashPromoAnimation";
+export { default as LifestyleAnimation } from "./LifestyleAnimation";
+export { default as UnboxingAnimation } from "./UnboxingAnimation";
+export { default as CleanMinimalAnimation } from "./CleanMinimalAnimation";
+export { default as SocialBurstAnimation } from "./SocialBurstAnimation";
+export { default as StoryCarouselAnimation } from "./StoryCarouselAnimation";
+export { default as ZoomPulseAnimation } from "./ZoomPulseAnimation";
+export { default as SplitRevealAnimation } from "./SplitRevealAnimation";
+export { default as GlitchAnimation } from "./GlitchAnimation";
+export { default as FloatingAnimation } from "./FloatingAnimation";
+export { default as CinematicAnimation } from "./CinematicAnimation";
+export { default as NeonGlowAnimation } from "./NeonGlowAnimation";
+export { default as BounceDropAnimation } from "./BounceDropAnimation";
+export { default as MorphShapesAnimation } from "./MorphShapesAnimation";
+export { default as SpotlightAnimation } from "./SpotlightAnimation";
+export { default as TypewriterAnimation } from "./TypewriterAnimation";
+export { default as ColorSweepAnimation } from "./ColorSweepAnimation";
+export { default as MatrixRainAnimation } from "./MatrixRainAnimation";
