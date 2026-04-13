@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Wand2, Sparkles, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
-import { useProducts, useCategories, useProductVariants, getProductImageUrl } from "@/features/mockup";
+import { useProducts, useCategories, useProductVariants } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
 import { useMagicUpHistory } from "@/features/magic-up";
 import MagicUpLeftPanel, { STYLE_OPTIONS } from "@/features/magic-up/components/MagicUpLeftPanel";
