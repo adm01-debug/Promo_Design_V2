@@ -24,7 +24,7 @@ interface MockupRightPanelProps {
   showLogo: boolean;
   setShowLogo: React.Dispatch<React.SetStateAction<boolean>>;
   clearLogo: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
   handleLogoUpload: (file: File) => void;
   isRemovingBg: boolean;
   handleRemoveBg: () => void;

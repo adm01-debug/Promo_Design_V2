@@ -39,9 +39,9 @@ interface MockupCanvasProps {
   handleMouseUp: () => void;
   handleDrop: (e: React.DragEvent) => void;
   setIsResizing: (v: boolean) => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  areaRef: React.RefObject<HTMLDivElement | null>;
-  canvasContainerRef: React.RefObject<HTMLDivElement | null>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  areaRef: React.RefObject<HTMLDivElement>;
+  canvasContainerRef: React.RefObject<HTMLDivElement>;
 }
 
 const CANVAS_SIZE = 500;

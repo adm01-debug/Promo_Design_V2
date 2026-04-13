@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { countUniqueColors, loadImageWithFallback, calculateAutoFit, detectSurfaceType, PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { countUniqueColors, loadImageWithFallback, calculateAutoFit, detectSurfaceType, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/features/mockup";
 import { generateApprovalPdf } from "@/features/mockup";
 import { toast } from "sonner";
