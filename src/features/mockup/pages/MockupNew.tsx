@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useProducts, useProductImages, useProductVariants, usePrintAreaTechniques, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
