@@ -1,75 +1,60 @@
 
 
-## Checklist de funcionalidades por módulo
+## DAM — Busca e filtros avançados (tags múltiplas, tipo, ordenação por relevância)
 
-Vou gerar um documento `.docx` com checklist organizada por módulo, mapeando cada funcionalidade à(s) rota(s) e arquivo(s) que a implementam. Saída em `/mnt/documents/`.
+A maior parte da infraestrutura já existe (trigram + GIN index, paginação, sort por data/nome/tamanho/versão). Vou **acrescentar 4 melhorias focadas em velocidade de localização**:
 
-### Estrutura do documento
+### O que vai mudar
 
-**Capa + sumário** com 5 seções (uma por módulo). Cada seção contém uma tabela com 4 colunas:
+**1. Tags múltiplas com modo AND/OR**
+- O `TagFilter` atual usa contains (AND implícito). Adicionar toggle "Todas as tags / Qualquer tag" no filtro
+- AND → operador `cs` (contains) no Postgres
+- OR → operador `ov` (overlaps)
+- Indicador visual do modo ativo + chip-counter ("3 tags · Todas")
 
-| Funcionalidade | Status | Rota(s) | Arquivo principal |
-|---|---|---|---|
+**2. Multi-seleção de tipos de asset**
+- Hoje o filtro de tipo é único (logo OU art OU foto...). Trocar por **multi-select** com checkboxes
+- Badges no topo continuam funcionando, mas viram toggle (clique adiciona/remove)
+- Query passa a usar `.in('asset_type', selectedTypes)` quando >1
 
-Status usa ícone: ✅ implementado · 🟡 parcial · ⬜ pendente.
+**3. Ordenação por relevância (quando há busca textual)**
+- Quando o campo de busca está preenchido, adicionar opção **"Relevância"** no select de sort
+- Usa `similarity(name, query)` do `pg_trgm` como score (RPC nova `search_assets_ranked`) para ranquear por proximidade
+- Quando busca está vazia, "Relevância" some e cai pro default "Mais recentes"
 
-### Conteúdo (resumo do que vai listar)
+**4. Barra de filtros ativos (chips removíveis)**
+- Logo abaixo da search bar, mostrar todos os filtros aplicados como chips:
+  - "Tipo: Logo, Foto ×"
+  - "Cliente: Acme ×"
+  - "Tags: brand, hero (Todas) ×"
+  - "Busca: capacete ×"
+- Botão "Limpar tudo" no final
+- Cada chip removível individualmente
 
-**1. DAM — Digital Asset Management** (`/dam`)
-- Upload drag-and-drop com tags · multi-arquivo · progresso · tolerância a falhas
-- Versionamento (`parent_asset_id`, `version`) · aba "Versões" no drawer
-- Busca server-side (trigram) · filtro por tags (GIN) · cliente · tipo · arquivados
-- Sort configurável (data/nome/tamanho/versão) · paginação · page-size persistido
-- Toggle grid/lista · detalhes em drawer · download via signed URL
-- AssetPicker reutilizável (usado em Mockup e OS)
+### Detalhes técnicos
 
-**2. Brand Guidelines** (`/clients/:clientId/brand`)
-- Editor de paleta primária e secundária · color picker
-- Lista de fontes (nome/uso/source)
-- Regras Do/Don't (textarea + chips deletáveis)
-- Logo principal via AssetPicker
-- Copy hex ao clicar · badge WCAG AA/AAA/FAIL
-- Google Fonts dinâmico no preview
-- Abas "Card de marca" e "Aplicação completa"
-- Exportar PDF (`brand-kit-{cliente}.pdf`)
-- RBAC: edição gated em owner/admin/designer
+- **RPC nova** `search_assets_ranked(org_id, query, ...)`: `SELECT *, similarity(name, query) + 0.3*similarity(coalesce(description,''), query) AS rank FROM assets WHERE ... ORDER BY rank DESC` — usa o índice trigram já existente
+- **`useAssets`**: estender `AssetFilters` com `assetTypes?: AssetType[]` (substitui gradualmente `assetType`), `tagsMode?: "all" | "any"`, sort `"relevance"`
+- **Persistência**: salvar `tagsMode` em localStorage (`dam-tags-mode`), default "all"
+- **A11y**: chips com `aria-label="Remover filtro X"`, toggle AND/OR como `role="radiogroup"`
+- **Performance**: query continua paginada server-side; relevance só ativa quando há texto (evita ordenação cara em listagens vazias)
 
-**3. Mockup Studio** (`/mockup/*`)
-- Wizard 3 passos: produto → área → canvas (`/mockup/new`)
-- Drafts com restore (`/mockup/drafts`)
-- Histórico (`/mockup/history`)
-- Editor multi-view (`/mockup/editor`)
-- Upload de logo · "Escolher do DAM" via AssetPicker
-- AI: remover background · sugerir posicionamento
-- Mesh warp por superfície · blend modes · sombra
-- Auto-fit · perspective presets · undo/redo
-- Export PNG/JPEG/WebP/PDF de aprovação
-- Service Order vinculada (`/mockup/service-order`, `/mockup/service-orders`, `/mockup/service-dashboard`)
+### Arquivos a criar/editar
 
-**4. Magic Up — AI Imagery** (`/magicup/*`)
-- Geração com prompt manual ou smart (`/magicup/generate`)
-- Prompt bank com categorias (`/magicup/prompts`)
-- Histórico com favoritos · filtros · charts (`/magicup/history`)
-- Product picker integrado · variantes
-- Inspiration gallery
-- Download menu
+| Arquivo | Ação |
+|---|---|
+| `supabase/migrations/<ts>_search_assets_ranked.sql` | Criar — RPC `search_assets_ranked` |
+| `src/features/dam/hooks/use-assets.ts` | Editar — `assetTypes[]`, `tagsMode`, sort `relevance`, branch para RPC quando relevance |
+| `src/features/dam/components/TagFilter.tsx` | Editar — toggle AND/OR + counter |
+| `src/features/dam/components/ActiveFiltersBar.tsx` | Criar — chips de filtros ativos |
+| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — multi-select de tipos, integrar ActiveFiltersBar, sort com Relevância condicional |
 
-**5. Dashboard** (`/`)
-- Saudação dinâmica · greeting + nome
-- Widgets reordenáveis (dnd-kit) com layout persistido
-- Estatísticas: OS, em produção, imagens IA, rascunhos
-- Gráfico semanal · heatmap mensal
-- Projetos recentes (drafts + OS + magic up unificados)
-- Toggle grid/lista · seletor de colunas
-- Modo "Personalizar" · reset de layout
-- Tour de onboarding · command palette (⌘K)
+### Critérios de aceite
 
-### Geração
-
-Script Node usando `docx` (já no skill DOCX) → arquivo único `checklist-funcionalidades.docx` em `/mnt/documents/`. Após gerar, converter para PDF via LibreOffice e fazer QA visual de cada página antes de entregar.
-
-### Arquivos a produzir
-
-- `/mnt/documents/checklist-funcionalidades.docx` — entrega principal
-- `<lov-artifact>` tag para o usuário baixar
+- Toggle "Todas / Qualquer tag" muda comportamento da query (verificável por contagem diferente de resultados)
+- Selecionar 2+ tipos no filtro lista assets de qualquer tipo selecionado
+- Com busca preenchida, opção "Relevância" aparece no sort e ranqueia matches mais próximos primeiro
+- Barra de filtros ativos mostra todos os filtros como chips removíveis
+- Botão "Limpar tudo" reseta busca, tipos, cliente, tags e tagsMode
+- Sem regressões nas otimizações já existentes (trigram, GIN, paginação)
 
