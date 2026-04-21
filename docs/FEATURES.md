@@ -2,22 +2,22 @@
 
 Mapa de referência das features do app Promo Design — rota exata e arquivo principal de implementação. Útil para onboarding, QA e localização rápida de código.
 
-**Legenda de status:** ✅ Implementado · 🟡 Parcial · 🔴 Pendente · 🔵 Refinar
+**Legenda de status:** ✅ Implementado · 🟡 Parcial · 🔴 Pendente (⬜) · 🔵 Refinar
 
 ---
 
 ## 1. Dashboard & Navegação
 
-| Funcionalidade | Rota | Arquivo principal | Status |
-|---|---|---|---|
-| Dashboard principal | `/` | `src/pages/Dashboard.tsx` | ✅ |
-| Sidebar colapsável | (global) | `src/components/AppSidebar.tsx` | ✅ |
-| Command Palette (⌘K) | (global) | `src/components/CommandPalette.tsx` | ✅ |
-| Notificações (polling 15s) | (global) | `src/components/NotificationPanel.tsx` | ✅ |
-| Onboarding tour | (global) | `src/components/OnboardingTour.tsx` | ✅ |
-| Atalhos de teclado | (global) | `src/components/KeyboardShortcutsDialog.tsx` | ✅ |
-| Dashboard analytics avançado | `/dashboard/analytics` | *(planejado)* | 🔴 |
-| Widgets customizáveis (config UI) | `/dashboard/widgets` | *(planejado)* | 🔴 |
+| Funcionalidade | Rota | Arquivo principal | Status | Observação |
+|---|---|---|---|---|
+| Dashboard principal | `/` | `src/pages/Dashboard.tsx` | ✅ | — |
+| Sidebar colapsável | (global) | `src/components/AppSidebar.tsx` | ✅ | — |
+| Command Palette (⌘K) | (global) | `src/components/CommandPalette.tsx` | ✅ | — |
+| Notificações (polling 15s) | (global) | `src/components/NotificationPanel.tsx` | ✅ | — |
+| Onboarding tour | (global) | `src/components/OnboardingTour.tsx` | ✅ | — |
+| Atalhos de teclado | (global) | `src/components/KeyboardShortcutsDialog.tsx` | ✅ | — |
+| Dashboard analytics avançado | `/dashboard/analytics` | *(planejado)* | 🔴 | Widgets atuais mostram contagens; falta agregação temporal e métricas de produtividade. |
+| Widgets customizáveis (config UI) | `/dashboard/widgets` | *(planejado)* | 🔴 | `useWidgetLayout` persiste ordem; falta tela para adicionar/remover/configurar widgets. |
 
 ## 2. Autenticação & Organização
 
