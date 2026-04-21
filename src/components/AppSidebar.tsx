@@ -26,6 +26,9 @@ import {
   LogOut,
   Package,
   GraduationCap,
+  Building2,
+  Users,
+  ScrollText,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -55,6 +58,7 @@ const modules = [
       { label: "Ordens de Serviço", path: "/mockup/service-orders", icon: ClipboardList },
       { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3 },
       { label: "Catálogo", path: "/catalog", icon: Package },
+      { label: "Clientes", path: "/clients", icon: Users },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
   },
