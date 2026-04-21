@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy, Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -73,6 +73,7 @@ export default function BrandGuidelinesPage() {
   const [logoId, setLogoId] = useState<string | null>(null);
   const [notes, setNotes] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (!guidelines) return;
@@ -112,6 +113,9 @@ export default function BrandGuidelinesPage() {
   };
 
   const handleExportPdf = async () => {
+    setIsExporting(true);
+    const tId = toast.loading("Gerando PDF...");
+    try {
     let logoDataUrl: string | null = null;
     if (logoAsset) {
       try {
@@ -139,8 +143,15 @@ export default function BrandGuidelinesPage() {
       logoDataUrl,
     });
     const safe = (client?.name ?? "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    pdf.save(`brand-kit-${safe}.pdf`);
-    toast.success("Brand kit exportado");
+    const date = new Date().toISOString().slice(0, 10);
+    pdf.save(`brand-kit-${safe}-${date}.pdf`);
+    toast.success("Brand kit exportado", { id: tId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Falha ao gerar PDF", { id: tId });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const ColorList = ({
@@ -269,14 +280,21 @@ export default function BrandGuidelinesPage() {
             Identidade visual {client?.name ? `de ${client.name}` : "do cliente"}
           </p>
         </div>
-        {editable && (
-          <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
-            <Save className="w-4 h-4 mr-2" /> Salvar
+        <div className="flex items-center gap-2">
+          {editable && (
+            <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
+              <Save className="w-4 h-4 mr-2" /> Salvar
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleExportPdf} disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Exportar PDF
           </Button>
-        )}
-        <Button variant="outline" onClick={handleExportPdf} className="ml-2">
-          <Download className="w-4 h-4 mr-2" /> Exportar PDF
-        </Button>
+        </div>
       </div>
 
       {!isLoading && !guidelines && (
