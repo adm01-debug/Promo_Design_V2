@@ -17,6 +17,7 @@ import { AssetUploadDialog } from "../components/AssetUploadDialog";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
+import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
   Pagination,
