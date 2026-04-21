@@ -1,36 +1,44 @@
 
 
-## Lazy-load de signed URLs nas thumbs do strip
+## Atalhos avançados e navegação acessível na preview
 
-Hoje `PreviewThumbStrip` renderiza um `AssetThumbnail` para **cada** asset retornado (até 50 por página). Cada `AssetThumbnail` chama `getAssetSignedUrl` no `useEffect` de montagem — ou seja, ao abrir a preview com 50 resultados, disparamos 50 requisições `createSignedUrl` mesmo que só ~6-8 thumbs estejam visíveis no strip horizontal.
+Hoje a preview tem `Enter` (abre drawer), `Esc` (volta à biblioteca) e setas/`j`/`k`/`Home`/`End` para navegar. Faltam dois refinamentos pedidos:
 
-O cache em `asset-urls.ts` ajuda em re-aberturas, mas a **primeira** carga ainda paga o custo. Vamos carregar a URL apenas quando a thumb entrar no viewport (ou for a ativa).
+1. **`Ctrl/Cmd+Enter`** → abrir o asset ativo em **nova aba** (deep link `/dam/preview?asset=<id>&...filtros`), útil para comparar dois assets lado a lado.
+2. **`Tab`/`Shift+Tab` + `Esc` acessíveis** → atualmente o handler global usa `e.preventDefault()` em `Esc` mesmo quando o foco está em um elemento focável legítimo (sidebar, botões). Vamos melhorar a hierarquia de Esc e garantir que a ordem natural de Tab funcione bem.
 
 ### Mudanças
 
-**`src/features/dam/components/AssetThumbnail.tsx`**
-- Adicionar prop opcional `eager?: boolean` (default `false`).
-- Quando `eager === false`: usar `IntersectionObserver` num `ref` do container; só chamar `getAssetSignedUrl` quando `isIntersecting` virar `true` pela primeira vez. Depois disso, manter a URL (não recarregar ao sair do viewport).
-- Quando `eager === true`: comportamento atual (carrega no mount) — usado para o asset ativo da stage e qualquer caso onde queremos pré-carregar.
-- Fallback gracioso: se `IntersectionObserver` indisponível (SSR/jsdom), tratar como `eager`.
-- Manter o placeholder `ImageIcon animate-pulse` enquanto não há URL (vale tanto para "ainda não visível" quanto "visível, carregando").
-- Cleanup do observer no unmount.
+**`src/features/dam/pages/DamPreviewPage.tsx`**
 
-**`src/features/dam/components/PreviewThumbStrip.tsx`**
-- Passar `eager={i === activeIndex}` para `AssetThumbnail`, garantindo que a thumb ativa carrega imediatamente mesmo se estiver fora do viewport inicial (raro, mas possível após `scrollIntoView`).
-- Nenhuma mudança na lógica de scroll.
+1. **`Ctrl/Cmd+Enter` → nova aba**:
+   - No handler `onKey`, antes do branch atual de `Enter`, detectar `e.key === "Enter" && (e.ctrlKey || e.metaKey)`.
+   - Construir a URL: `/dam/preview?${queryString sem leading "?"}&asset=${activeAsset.id}` (mesclar com `queryString` atual de `useDamFilters`, garantindo `asset` presente sem duplicar).
+   - `window.open(url, "_blank", "noopener,noreferrer")`.
+   - Continua respeitando guards de input/textarea/contentEditable e drawer aberto.
 
-**Onde mais `AssetThumbnail` é usado**: rg pelo projeto para verificar; a princípio só `PreviewThumbStrip`. Se houver outros consumidores (ex: grids da biblioteca), eles continuam funcionando — o default `eager=false` ativa o lazy automaticamente, o que é desejável e seguro graças ao placeholder.
+2. **Hierarquia de `Esc` mais inteligente**:
+   - Se o `detailAsset` (drawer) está aberto → não interceptar (Radix Sheet já fecha com Esc).
+   - Se o foco está dentro de um `<input>`/`<textarea>` (ex: campo de busca da sidebar) → não voltar à biblioteca; em vez disso, fazer `target.blur()` para liberar foco (UX comum: 1º Esc tira foco, 2º Esc volta).
+   - Caso contrário, comportamento atual: navegar para `/dam${queryString}`.
 
-### Por que não mexer em `PreviewStage`
+3. **Suporte a Tab acessível**:
+   - Remover qualquer `tabIndex={-1}` desnecessário do container raiz (verificar — atualmente não tem, ok).
+   - Garantir que os botões do `PreviewStage` (Copiar/Baixar/Detalhes/Setas) já têm `aria-label` e são focáveis na ordem natural (já estão).
+   - Adicionar `role="region"` + `aria-label="Pré-visualização de assets"` no container principal para melhor leitura por screen readers.
+   - Os atalhos de letra única (`j`/`k`/`c`/`d`/`z`) já ignoram quando o foco está em input — mantém Tab/foco totalmente livre.
 
-A stage já carrega URL apenas para o `asset` ativo (um `useEffect` com `[asset]`), então só faz **1** chamada por troca de asset. O cache de 5 min em `asset-urls.ts` cobre voltas (`←`/`→`) sem novas requisições. Sem otimização adicional necessária.
+4. **Atualizar a legenda de atalhos** no header e `PopoverContent` mobile:
+   `← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar`
 
 ### Critérios de aceite
 
-- Abrir `/dam/preview` com ≥30 resultados dispara apenas as chamadas `createSignedUrl` das thumbs visíveis no strip horizontal + a do asset ativo (verificável na aba Network).
-- Rolar o strip horizontalmente carrega as thumbs adicionais sob demanda, sem flicker da thumb ativa.
-- Navegação por `←`/`→`/`j`/`k`/`Home`/`End` continua instantânea (cache + eager para a ativa).
-- Sem regressão em outros componentes que usem `AssetThumbnail` (default lazy é seguro pelo placeholder).
-- Sem warnings TS estritos; observer é limpo no unmount.
+- `Ctrl+Enter` (Win/Linux) e `Cmd+Enter` (Mac) abrem `/dam/preview?...&asset=<id-atual>` em nova aba, preservando todos os filtros atuais.
+- `Enter` simples continua abrindo o drawer de detalhes na aba atual.
+- `Esc` com foco em um input da sidebar apenas tira o foco; um segundo `Esc` (ou `Esc` em foco neutro) volta à biblioteca.
+- `Esc` com o drawer aberto fecha o drawer (Radix), sem voltar à biblioteca.
+- `Tab`/`Shift+Tab` percorrem em ordem lógica: busca → filtros da sidebar → botões do overlay (Copiar/Baixar/Detalhes/zoom) → setas de navegação → thumbs do strip.
+- Container principal expõe `role="region"` + `aria-label`.
+- Legenda de atalhos atualizada no header e popover mobile.
+- Sem regressão nos atalhos existentes (setas, j/k, Home/End, c/d/z, Enter simples).
 
