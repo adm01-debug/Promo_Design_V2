@@ -91,37 +91,6 @@ const AuditLogPage = () => {
   const [exporting, setExporting] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
 
-  const emptyFilters: AuditFilterState = useMemo(
-    () => ({
-      actions: [],
-      recordIdQuery: "",
-      valueKey: "",
-      valueQuery: "",
-      ipQuery: "",
-      userAgentQuery: "",
-      from: undefined,
-      to: undefined,
-      tableName: undefined,
-      userId: undefined,
-    }),
-    [],
-  );
-
-  const hasAnyFilter = useMemo(
-    () =>
-      !!filterState.from ||
-      !!filterState.to ||
-      filterState.actions.length > 0 ||
-      !!filterState.tableName ||
-      !!filterState.userId ||
-      filterState.recordIdQuery.length > 0 ||
-      filterState.valueKey.length > 0 ||
-      filterState.valueQuery.length > 0 ||
-      filterState.ipQuery.length > 0 ||
-      filterState.userAgentQuery.length > 0,
-    [filterState],
-  );
-
   // Hidrata da URL ou, se URL vazia, do localStorage (uma única vez na montagem).
   useEffect(() => {
     const hasAnyParam = Array.from(params.keys()).length > 0;
@@ -142,77 +111,6 @@ const AuditLogPage = () => {
     if (Array.from(next.keys()).length > 0) setParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Keyboard shortcuts: "/" foca a busca por ID, "Esc" limpa filtros, "g a" abre Alertas.
-  useEffect(() => {
-    let pendingG = false;
-    let pendingGTimer: number | undefined;
-
-    const isEditable = (el: EventTarget | null): boolean => {
-      const node = el as HTMLElement | null;
-      if (!node) return false;
-      const tag = node.tagName;
-      return (
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        node.isContentEditable === true
-      );
-    };
-
-    const handler = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const editable = isEditable(e.target);
-
-      // Esc — só limpa filtros quando NÃO estiver digitando (evita conflito com popovers/dialogs).
-      if (e.key === "Escape" && !editable) {
-        if (hasAnyFilter) {
-          e.preventDefault();
-          setFilters(emptyFilters);
-          toast({ title: "Filtros limpos" });
-        }
-        return;
-      }
-
-      if (editable) return;
-
-      // "/" — foca a busca por ID do registro.
-      if (e.key === "/") {
-        const input = document.getElementById("audit-record-id-input") as HTMLInputElement | null;
-        if (input) {
-          e.preventDefault();
-          input.focus();
-          input.select();
-        }
-        return;
-      }
-
-      // "g a" — abre o painel de Alertas.
-      if (e.key.toLowerCase() === "g") {
-        pendingG = true;
-        window.clearTimeout(pendingGTimer);
-        pendingGTimer = window.setTimeout(() => {
-          pendingG = false;
-        }, 800);
-        return;
-      }
-      if (pendingG && e.key.toLowerCase() === "a") {
-        pendingG = false;
-        window.clearTimeout(pendingGTimer);
-        if (currentOrgId) {
-          e.preventDefault();
-          setAlertsOpen(true);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handler);
-    return () => {
-      window.removeEventListener("keydown", handler);
-      window.clearTimeout(pendingGTimer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasAnyFilter, currentOrgId, emptyFilters]);
 
   // Initialize from querystring (once per param change)
   const filterState: AuditFilterState = useMemo(
