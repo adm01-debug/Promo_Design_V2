@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ScrollText, Download, ChevronLeft, ChevronRight, Eye, Copy } from "lucide-react";
+import { ScrollText, Download, Eye, Copy } from "lucide-react";
 import { useOrganizations, useOrgMembers } from "@/hooks/use-organization";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import {
 import { AuditFilters, type AuditFilterState } from "../components/AuditFilters";
 import { AuditDiffDialog } from "../components/AuditDiffDialog";
 import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
+import { ResultsPagination } from "@/components/ResultsPagination";
 
 const PAGE_SIZE = 50;
 
@@ -161,30 +162,14 @@ const AuditLogPage = () => {
         <CardContent className="p-4 space-y-4">
           <AuditFilters state={filterState} onChange={setFilters} tables={tables} members={memberOpts} />
 
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>
-              {total.toLocaleString("pt-BR")} {total === 1 ? "evento" : "eventos"}
-              {totalPages > 1 && ` · página ${page + 1} de ${totalPages}`}
-            </span>
-            <div className="flex gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={page + 1 >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <ResultsPagination
+            page={page + 1}
+            pageSize={PAGE_SIZE}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={(p) => setPage(p - 1)}
+            itemNoun="evento"
+          />
 
           {!currentOrgId ? (
             <p className="text-muted-foreground py-8 text-center">Selecione uma organização.</p>

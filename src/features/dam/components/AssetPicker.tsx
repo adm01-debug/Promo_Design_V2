@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { ResultsPagination } from "@/components/ResultsPagination";
 import { LayoutGrid, List, Search, Image as ImageIcon, Check } from "lucide-react";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
 import { AssetCard } from "./AssetCard";
@@ -153,9 +153,6 @@ export function AssetPicker(props: AssetPickerProps) {
     onOpenChange(false);
   };
 
-  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const to = Math.min(page * PAGE_SIZE, total);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col gap-4">
@@ -292,35 +289,15 @@ export function AssetPicker(props: AssetPickerProps) {
         </div>
 
         {/* Footer with counter + pagination */}
-        <div className="flex items-center justify-between gap-3 pt-2 border-t border-border">
-          <p className="text-xs text-muted-foreground">
-            {total === 0 ? "Nenhum resultado" : `Mostrando ${from}–${to} de ${total}`}
-          </p>
-          {totalPages > 1 && (
-            <Pagination className="mx-0 w-auto">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1); }}
-                    aria-disabled={page === 1}
-                    className={page === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationLink href="#" isActive>{page}</PaginationLink>
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => { e.preventDefault(); if (page < totalPages) setPage(page + 1); }}
-                    aria-disabled={page === totalPages}
-                    className={page === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+        <div className="pt-2 border-t border-border">
+          <ResultsPagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            itemNoun="asset"
+          />
         </div>
       </DialogContent>
     </Dialog>

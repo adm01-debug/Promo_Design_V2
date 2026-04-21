@@ -25,15 +25,7 @@ import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
 import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LAST_ASSET_KEY, LAST_ASSET_TTL_MS } from "./DamPreviewPage";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { ResultsPagination } from "@/components/ResultsPagination";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -71,18 +63,6 @@ function writeLS(key: string, value: string | null) {
 }
 
 type PaginationMode = "pages" | "loadmore";
-
-function buildPageList(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | "ellipsis")[] = [1];
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  if (start > 2) pages.push("ellipsis");
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (end < total - 1) pages.push("ellipsis");
-  pages.push(total);
-  return pages;
-}
 
 type SortValue = "relevance" | "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
 const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version" | "relevance"; sortDir: "asc" | "desc" }[] = [
@@ -707,42 +687,15 @@ export default function DamLibraryPage() {
         </div>
       )}
 
-      {paginationMode === "pages" && totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1); }}
-                aria-disabled={page <= 1}
-                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-            {buildPageList(page, totalPages).map((p, i) =>
-              p === "ellipsis" ? (
-                <PaginationItem key={`e-${i}`}><PaginationEllipsis /></PaginationItem>
-              ) : (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    href="#"
-                    isActive={p === page}
-                    onClick={(e) => { e.preventDefault(); setPage(p); }}
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={(e) => { e.preventDefault(); if (page < totalPages) setPage(page + 1); }}
-                aria-disabled={page >= totalPages}
-                className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+      {paginationMode === "pages" && total > 0 && (
+        <ResultsPagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          itemNoun="asset"
+        />
       )}
 
       <AssetUploadDialog
