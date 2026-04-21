@@ -81,22 +81,24 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       if (useRelevance) {
         const limit = hasPagination ? pageSize : 1000;
         const offset = hasPagination ? (page - 1) * pageSize : 0;
-        const { data, error } = await supabase.rpc("search_assets_ranked", {
+        const rpcArgs: Record<string, unknown> = {
           _org_id: organizationId!,
           _query: searchTerm,
-          _client_id: filters.clientId ?? null,
-          _asset_types:
-            filters.assetTypes && filters.assetTypes.length > 0
-              ? filters.assetTypes
-              : filters.assetType && filters.assetType !== "all"
-                ? [filters.assetType]
-                : null,
-          _tags: filters.tags && filters.tags.length > 0 ? filters.tags : null,
           _tags_mode: filters.tagsMode ?? "all",
           _include_archived: filters.includeArchived ?? false,
           _limit: limit,
           _offset: offset,
-        });
+        };
+        if (filters.clientId) rpcArgs._client_id = filters.clientId;
+        const types =
+          filters.assetTypes && filters.assetTypes.length > 0
+            ? filters.assetTypes
+            : filters.assetType && filters.assetType !== "all"
+              ? [filters.assetType]
+              : null;
+        if (types) rpcArgs._asset_types = types;
+        if (filters.tags && filters.tags.length > 0) rpcArgs._tags = filters.tags;
+        const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
         if (error) throw error;
         const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
         return {
