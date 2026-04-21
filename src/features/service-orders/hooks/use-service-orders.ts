@@ -94,6 +94,7 @@ function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
     qtdLiberada: row.qtd_liberada ?? "",
     fazParteKit: row.faz_parte_kit ?? false,
     gravacaoDetalhe: row.gravacao_detalhe ?? "",
+    artAssetId: (row as unknown as { art_asset_id?: string | null }).art_asset_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
