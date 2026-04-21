@@ -1,35 +1,45 @@
 
 
-## Novas opções de ordenação no DAM: tamanho (asc) e última modificação
+## Componente de paginação reutilizável com total de resultados
 
-Hoje a lista de ordenações em `useDamFilters` (`SORT_OPTIONS`) tem "Maior arquivo" mas não "Menor arquivo", e ordena por `created_at` mas não por `updated_at`. Adicionar 2 novas opções para cobrir os casos pedidos.
+Criar um `<DamPagination>` que mostre "X–Y de Z resultados", desabilite Anterior/Próximo nos limites, e use a paginação numerada existente (`buildPageList` com elipses). Substituir os 3 blocos de paginação ad-hoc atuais por esse componente.
 
-### Mudanças
+### Arquivo novo: `src/features/dam/components/DamPagination.tsx`
 
-**`src/features/dam/hooks/use-dam-filters.ts`**
-- Estender o tipo `SortValue` com:
-  - `"size_asc"` — Menor arquivo
-  - `"updated_desc"` — Modificados recentemente
-  - `"updated_asc"` — Modificados há mais tempo
-- Adicionar entradas correspondentes em `SORT_OPTIONS`:
-  - `{ value: "size_asc", label: "Menor arquivo", sortBy: "file_size", sortDir: "asc" }`
-  - `{ value: "updated_desc", label: "Modificados recentemente", sortBy: "updated_at", sortDir: "desc" }`
-  - `{ value: "updated_asc", label: "Modificados há mais tempo", sortBy: "updated_at", sortDir: "asc" }`
-- Manter ordem visual: relevância → criação → nome → tamanho (desc, asc) → modificação (desc, asc) → versão.
+Props:
+- `page: number` (1-based)
+- `pageSize: number`
+- `total: number`
+- `totalPages: number`
+- `onPageChange: (page: number) => void`
+- `className?: string`
 
-**`src/features/dam/hooks/use-assets.ts`**
-- Estender o tipo `sortBy` em `AssetFilters` para aceitar `"updated_at"` (além dos atuais `"created_at" | "name" | "file_size" | "version" | "relevance"`).
-- O branch sem RPC já passa `sortBy` direto para `.order(...)`, então basta o tipo aceitar — `updated_at` existe na tabela.
-- Para o branch RPC (`relevance`), nada muda: as novas opções não usam relevance.
+Renderiza dois blocos:
+1. **Contador** (à esquerda): `Mostrando <strong>{from}–{to}</strong> de <strong>{total}</strong> resultados` — quando `total === 0`, mostra "Nenhum resultado". `from = (page-1)*pageSize + 1`, `to = Math.min(page*pageSize, total)`.
+2. **Controles** (à direita): usa `Pagination`/`PaginationContent`/`PaginationLink` do shadcn (`src/components/ui/pagination.tsx` já existe). Botões Anterior/Próximo com `aria-disabled` + `pointer-events-none opacity-50` quando `page === 1` ou `page === totalPages`. Páginas numeradas via helper `buildPageList(page, totalPages)` (mover de `DamLibraryPage` para dentro do componente — ou exportar de `lib/`).
 
-**`docs/FEATURES.md`**
-- Atualizar a observação da linha de ordenação na seção 6 mencionando as novas opções (tamanho asc + modificação asc/desc), se já houver linha; senão deixar como está.
+Layout: `flex items-center justify-between gap-4 flex-wrap` — conta colapsa abaixo em telas estreitas.
+
+Acessibilidade: `nav aria-label="Paginação"`, `aria-current="page"` no item ativo, `aria-disabled` real (não só visual) nos limites.
+
+### Refatorar consumidores
+
+**`src/features/dam/pages/DamLibraryPage.tsx`**
+- Remover o `buildPageList` local e o JSX de paginação manual (modo `pages`).
+- Substituir por `<DamPagination page={page} pageSize={pageSize} total={total} totalPages={totalPages} onPageChange={setPage} />` — só renderizar quando `paginationMode === "pages"` e `total > 0`.
+
+**`src/features/dam/components/AssetPicker.tsx`**
+- Substituir o rodapé com `Anterior`/`Próximo` simples por `<DamPagination />`.
+
+**`src/features/audit/pages/AuditLogPage.tsx`**
+- Atualmente mostra só Anterior/Próximo + "X de Y". Trocar pelo mesmo componente (renomeá-lo para `ResultsPagination` em `src/components/ResultsPagination.tsx` se for reutilizar fora de DAM — caso contrário, manter no folder dam e o audit faz import). **Decisão**: criar como `src/components/ResultsPagination.tsx` (genérico, sem dependência de feature) já que serve 3 lugares.
 
 ### Critérios de aceite
 
-- O `Select` de ordenação no header de `/dam` (e no `PreviewSidebar`) mostra as 3 novas opções sem quebra de layout.
-- Selecionar "Menor arquivo" lista do menor `file_size` ao maior; "Modificados recentemente" ordena por `updated_at` desc.
-- A seleção persiste em URL (`?sort=…`) e localStorage como já acontece.
-- Saved searches existentes continuam válidas (valores antigos seguem aceitos pelo `VALID_SORTS` estendido).
-- TypeScript estrito sem erros (tipo `sortBy` em `AssetFilters` aceita `updated_at`).
+- Componente único `<ResultsPagination>` em `src/components/`.
+- Mostra "X–Y de Z resultados" (ou "Nenhum resultado" / "Z resultados" no singular para 1 página).
+- Botão Anterior desabilitado (visual + `aria-disabled` + sem clique) na página 1; Próximo idem na última.
+- Links numerados com elipses para mais de ~7 páginas.
+- `DamLibraryPage` (modo páginas), `AssetPicker` e `AuditLogPage` passam a usar o componente; nenhum bloco de paginação manual remanescente nesses arquivos.
+- TypeScript estrito; sem regressão visual (mesmo espaçamento e altura das paginações atuais).
 
