@@ -371,17 +371,32 @@ export function AssetUploadDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row sm:items-center gap-2">
+          {(doneCount > 0 || errorCount > 0) && (
+            <div className="text-xs text-muted-foreground sm:mr-auto">
+              {doneCount} enviado(s){errorCount > 0 ? ` · ${errorCount} com erro` : ""}
+            </div>
+          )}
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0 || !!tagError}>
-            {isUploading
-              ? "Enviando..."
-              : isVersionMode
-                ? `Criar versão v${(parentAsset?.version ?? 1) + 1}`
-                : "Enviar"}
-          </Button>
+          {errorCount > 0 && !isUploading && (
+            <Button variant="outline" onClick={handleRetry} disabled={!!tagError}>
+              <RotateCw className="w-4 h-4" />
+              Tentar novamente ({errorCount})
+            </Button>
+          )}
+          {allDone && errorCount === 0 ? (
+            <Button onClick={() => onOpenChange(false)}>Concluir</Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0 || !!tagError || (doneCount > 0 && errorCount === 0)}>
+              {isUploading
+                ? "Enviando..."
+                : isVersionMode
+                  ? `Criar versão v${(parentAsset?.version ?? 1) + 1}`
+                  : "Enviar"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
