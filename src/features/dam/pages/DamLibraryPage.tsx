@@ -375,6 +375,7 @@ export default function DamLibraryPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
           <Button variant="outline" asChild>
             <Link
               to={(() => {
