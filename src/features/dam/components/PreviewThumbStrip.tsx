@@ -42,7 +42,7 @@ export function PreviewThumbStrip({ assets, activeIndex, onSelect }: Props) {
           aria-label={a.name}
           aria-current={i === activeIndex}
         >
-          <AssetThumbnail asset={a} className="w-full h-full" />
+          <AssetThumbnail asset={a} className="w-full h-full" eager={i === activeIndex} />
         </button>
       ))}
     </div>
