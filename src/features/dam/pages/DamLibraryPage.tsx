@@ -127,7 +127,10 @@ export default function DamLibraryPage() {
   });
   const [page, setPage] = useState<number>(() => {
     const fromUrl = Number(searchParams.get("page"));
-    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
+    if (Number.isFinite(fromUrl) && fromUrl > 0) return fromUrl;
+    if (typeof window === "undefined") return 1;
+    const saved = Number(localStorage.getItem(PAGE_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : 1;
   });
   const [pageSize, setPageSize] = useState<number>(() => {
     const fromUrl = Number(searchParams.get("pageSize"));
