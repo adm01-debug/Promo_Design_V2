@@ -234,22 +234,38 @@ export default function DamPreviewPage() {
           <FolderArchive className="w-4 h-4" />
           Pré-visualização rápida
         </div>
-        <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
+        <Button
+          variant={compareMode ? "default" : "outline"}
+          size="sm"
+          onClick={() => setCompareMode((v) => !v)}
+          className="ml-auto h-8 gap-1.5"
+          aria-pressed={compareMode}
+          title="Modo comparação (M)"
+        >
+          <Layers className="w-3.5 h-3.5" />
+          Compare
+          {compare.count > 0 && (
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px] ml-0.5">
+              {compare.count}
+            </Badge>
+          )}
+        </Button>
+        <div className="text-xs text-muted-foreground hidden md:block">
+          ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto md:hidden h-8 w-8"
+              className="md:hidden h-8 w-8"
               aria-label="Atalhos de teclado"
             >
               <Keyboard className="w-4 h-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar (no compare) · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
@@ -264,15 +280,40 @@ export default function DamPreviewPage() {
         />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <PreviewStage
-            asset={activeAsset}
-            index={activeIndex}
-            total={assets.length}
-            onPrev={goPrev}
-            onNext={goNext}
-            onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)}
+          {compareMode ? (
+            <>
+              <CompareTopBar
+                count={compare.count}
+                max={compare.max}
+                onClear={compare.clear}
+                onExit={() => setCompareMode(false)}
+              />
+              {selectedAssets.length >= 2 ? (
+                <CompareGrid assets={selectedAssets} onRemove={compare.remove} />
+              ) : (
+                <div className="flex-1 flex items-center justify-center bg-muted/10 text-sm text-muted-foreground p-6 text-center">
+                  Selecione ao menos 2 assets do strip abaixo (até {compare.max}) para comparar lado a lado.
+                </div>
+              )}
+            </>
+          ) : (
+            <PreviewStage
+              asset={activeAsset}
+              index={activeIndex}
+              total={assets.length}
+              onPrev={goPrev}
+              onNext={goNext}
+              onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)}
+            />
+          )}
+          <PreviewThumbStrip
+            assets={assets}
+            activeIndex={activeIndex}
+            onSelect={setActiveIndex}
+            selectionMode={compareMode}
+            selectedIds={compare.selectedIds}
+            onToggleSelect={compare.toggle}
           />
-          <PreviewThumbStrip assets={assets} activeIndex={activeIndex} onSelect={setActiveIndex} />
         </div>
       </div>
 
