@@ -1,34 +1,29 @@
 
 
-## Preservar parâmetros externos (ex: `?asset=`) ao sincronizar filtros na URL
+## Refinar a navegação por teclado já existente
 
-Os filtros já são sincronizados na URL (`q`, `type`, `client`, `tags`, `tagsMode`, `archived`, `sort`) por `useDamFilters`. O problema é que o efeito de sync **reconstrói o querystring do zero**, apagando parâmetros que não pertencem aos filtros — em particular o `?asset=<id>` da pré-visualização rápida, que guarda qual asset está selecionado para compartilhamento/recarga.
+A base está implementada (`←/→` navega, `Enter` abre detalhes, `Esc` volta) em `DamPreviewPage.tsx` linhas 105-128. Vamos só preencher lacunas e tornar a UX mais profissional.
 
-Resultado prático hoje: copiar a URL `/dam/preview?q=logo&asset=abc123` e recarregar funciona só para os filtros — o `asset=abc123` é apagado no primeiro tick do efeito e a página volta para o índice 0.
+### Mudanças
 
-### Mudança em `src/features/dam/hooks/use-dam-filters.ts`
+**`src/features/dam/pages/DamPreviewPage.tsx`**
 
-Preservar todos os parâmetros que **não são** controlados por `useDamFilters`. Lista de chaves "owned": `q`, `type`, `client`, `tags`, `tagsMode`, `archived`, `sort`.
+1. **Adicionar `Home` / `End`** para pular ao primeiro/último asset da lista atual — útil em listas grandes.
 
-No efeito de sync (linhas 110-121), em vez de `new URLSearchParams()`, fazer:
+2. **Adicionar `j` / `k`** (estilo Vim) como aliases de `→` / `←`, alinhado com o resto da app que prioriza teclado (ver `mem://features/productivity-tools`).
 
-```ts
-const next = new URLSearchParams(params);
-// Limpar apenas as chaves que esse hook controla
-["q", "type", "client", "tags", "tagsMode", "archived", "sort"].forEach((k) => next.delete(k));
-// Re-aplicar os ativos
-if (state.search.trim()) next.set("q", state.search.trim());
-// ... resto igual
-setParams(next, { replace: true });
-```
+3. **Comportamento de `Esc` quando o drawer está aberto**: hoje o `useEffect` curto-circuita com `if (detailAsset) return;`, então `Esc` no drawer só fecha o próprio drawer (já tratado pelo Radix). Manter — está correto, mas adicionar comentário explicando.
 
-Aplicar a mesma lógica em `queryString` (linhas ~205-215) para que links "voltar à biblioteca" também preservem `asset` quando relevante (no caso da biblioteca isso é inofensivo — ela ignora `asset`).
+4. **Atualizar a dica do header** para refletir os novos atalhos: 
+   `← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · Esc voltar`
+
+5. **Tornar a dica acessível em telas menores**: trocar `hidden md:block` por um `Popover`/`Tooltip` com ícone `Keyboard` (lucide) em mobile, mantendo o texto inline em ≥md. Isso evita o "hint" desaparecer silenciosamente.
 
 ### Critérios de aceite
 
-- Em `/dam/preview?q=logo&type=art&asset=abc123`: ao carregar, o asset `abc123` permanece selecionado (não cai para índice 0) e os filtros aparecem aplicados.
-- Mudar um filtro (ex: clicar tag) atualiza a URL preservando `asset=<id-atual>` que `DamPreviewPage` mantém em sync.
-- Compartilhar a URL com outro usuário/aba abre exatamente a mesma seleção (mesmos filtros + mesmo asset ativo).
-- `/dam` (biblioteca) continua funcionando igual; nenhum parâmetro estranho é introduzido.
-- Sem regressão nos testes existentes de `useAssets`.
+- `Home` move para o primeiro asset (índice 0); `End` para o último (`assets.length - 1`).
+- `j` avança e `k` retrocede, idênticos a `→` e `←`.
+- Atalhos seguem ignorando inputs/textareas/contentEditable e o drawer aberto.
+- A linha de atalhos no header lista todos os novos; em mobile aparece um ícone de teclado clicável que mostra a mesma legenda.
+- Sem regressão nos atalhos atuais nem no `Z` do zoom (que já vive em `PreviewStage`).
 
