@@ -248,6 +248,21 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
         </Button>
       </div>
+
+      <AssetPicker
+        open={damPickerOpen}
+        onOpenChange={setDamPickerOpen}
+        defaultAssetType="logo"
+        title="Escolher logo da biblioteca"
+        onSelect={async (asset) => {
+          const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
+          if (!file) {
+            toast.error("Não foi possível carregar o asset");
+            return;
+          }
+          handleLogoUpload(file);
+        }}
+      />
     </div>
   );
 };
