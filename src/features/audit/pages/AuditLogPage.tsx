@@ -37,6 +37,7 @@ import { AuditSavedViewsMenu } from "../components/AuditSavedViewsMenu";
 import { AuditTableSkeleton } from "../components/AuditTableSkeleton";
 import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 const LS_KEY = "audit-filters-v1";
