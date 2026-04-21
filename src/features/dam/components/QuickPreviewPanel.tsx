@@ -29,7 +29,8 @@ function formatBytes(bytes: number | null | undefined): string {
 
 function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: QuickPreviewPanelProps) {
   const [url, setUrl] = useState<string | null>(null);
-  const { hasUpdate } = useLatestAssetVersion(asset?.id ?? null);
+  const latestQuery = useLatestAssetVersion(asset?.id ?? null);
+  const hasUpdate = Boolean(latestQuery.data?.hasUpdate);
 
   useEffect(() => {
     let active = true;
