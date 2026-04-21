@@ -379,6 +379,18 @@ export default function DamLibraryPage() {
         </div>
         <div className="flex items-center gap-2">
           <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
+          <Toggle
+            pressed={quickPreview.enabled}
+            onPressedChange={quickPreview.toggleEnabled}
+            size="sm"
+            variant="outline"
+            aria-label="Prévia rápida"
+            aria-pressed={quickPreview.enabled}
+            title="Prévia rápida"
+          >
+            <PanelRight className="w-4 h-4 mr-2" />
+            Prévia
+          </Toggle>
           <Button variant="outline" asChild>
             <Link
               to={(() => {
