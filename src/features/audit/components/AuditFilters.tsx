@@ -185,6 +185,8 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
 
         {/* Record ID search */}
         <Input
+          id="audit-record-id-input"
+          data-testid="audit-record-id-input"
           placeholder="ID do registro (mín. 4)"
           value={state.recordIdQuery}
           onChange={(e) => onChange({ ...state, recordIdQuery: e.target.value })}
