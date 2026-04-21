@@ -310,6 +310,56 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
 
+  // Keyboard shortcuts for pagination: ← / → (or J/K) navigate pages,
+  // Home / End jump to first/last page. Disabled in load-more mode and while typing.
+  useEffect(() => {
+    if (paginationMode !== "pages") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target?.isContentEditable;
+      if (isTyping) return;
+      if (totalPages <= 1) return;
+      switch (e.key) {
+        case "ArrowLeft":
+        case "j":
+        case "J":
+          if (page > 1) {
+            e.preventDefault();
+            setPage((p) => Math.max(1, p - 1));
+          }
+          break;
+        case "ArrowRight":
+        case "k":
+        case "K":
+          if (page < totalPages) {
+            e.preventDefault();
+            setPage((p) => Math.min(totalPages, p + 1));
+          }
+          break;
+        case "Home":
+          if (page !== 1) {
+            e.preventDefault();
+            setPage(1);
+          }
+          break;
+        case "End":
+          if (page !== totalPages) {
+            e.preventDefault();
+            setPage(totalPages);
+          }
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [page, totalPages, paginationMode]);
+
   // Accumulate results in load-more mode
   useEffect(() => {
     if (paginationMode !== "loadmore") return;
@@ -866,14 +916,27 @@ export default function DamLibraryPage() {
       )}
 
       {paginationMode === "pages" && total > 0 && (
-        <ResultsPagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          itemNoun="asset"
-        />
+        <nav
+          aria-label="Paginação de assets"
+          className="space-y-1"
+        >
+          <ResultsPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            itemNoun="asset"
+          />
+          {totalPages > 1 && (
+            <p className="text-[11px] text-muted-foreground text-right">
+              Atalhos: <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">←</kbd>{" "}
+              <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">→</kbd> navegar ·{" "}
+              <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">Home</kbd>{" "}
+              <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">End</kbd> primeira/última
+            </p>
+          )}
+        </nav>
       )}
 
       <AssetUploadDialog

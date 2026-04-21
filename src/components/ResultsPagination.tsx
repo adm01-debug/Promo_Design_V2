@@ -95,6 +95,7 @@ export function ResultsPagination({
               <PaginationPrevious
                 href="#"
                 aria-disabled={isFirst}
+                aria-label={`Ir para página anterior${isFirst ? " (desabilitado)" : ""}`}
                 tabIndex={isFirst ? -1 : undefined}
                 className={cn(isFirst && "pointer-events-none opacity-50")}
                 onClick={(e) => {
@@ -114,6 +115,9 @@ export function ResultsPagination({
                     href="#"
                     isActive={p === safePage}
                     aria-current={p === safePage ? "page" : undefined}
+                    aria-label={
+                      p === safePage ? `Página ${p}, atual` : `Ir para página ${p}`
+                    }
                     onClick={(e) => {
                       e.preventDefault();
                       go(p);
@@ -128,6 +132,7 @@ export function ResultsPagination({
               <PaginationNext
                 href="#"
                 aria-disabled={isLast}
+                aria-label={`Ir para próxima página${isLast ? " (desabilitado)" : ""}`}
                 tabIndex={isLast ? -1 : undefined}
                 className={cn(isLast && "pointer-events-none opacity-50")}
                 onClick={(e) => {
