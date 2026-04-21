@@ -307,19 +307,22 @@ export default function BrandGuidelinesPage() {
         </div>
         <div className="space-y-2">
           {fonts.map((f, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center">
-              <Input className="col-span-4" placeholder="Nome" value={f.name} disabled={!editable}
-                onChange={(e) => { const next = [...fonts]; next[i] = { ...f, name: e.target.value }; setFonts(next); }} />
-              <Input className="col-span-3" placeholder="Uso (ex: Títulos)" value={f.usage ?? ""} disabled={!editable}
-                onChange={(e) => { const next = [...fonts]; next[i] = { ...f, usage: e.target.value }; setFonts(next); }} />
-              <Input className="col-span-4" placeholder="Fonte/link" value={f.source ?? ""} disabled={!editable}
-                onChange={(e) => { const next = [...fonts]; next[i] = { ...f, source: e.target.value }; setFonts(next); }} />
-              {editable && (
-                <Button className="col-span-1" size="icon" variant="ghost"
-                  onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
+            <div key={i} className="space-y-1.5">
+              <div className="grid grid-cols-12 gap-2 items-center">
+                <Input className="col-span-4" placeholder="Nome (ex: Playfair Display)" value={f.name} disabled={!editable}
+                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, name: e.target.value }; setFonts(next); }} />
+                <Input className="col-span-3" placeholder="Uso (ex: Títulos)" value={f.usage ?? ""} disabled={!editable}
+                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, usage: e.target.value }; setFonts(next); }} />
+                <Input className="col-span-4" placeholder="Fonte/link" value={f.source ?? ""} disabled={!editable}
+                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, source: e.target.value }; setFonts(next); }} />
+                {editable && (
+                  <Button className="col-span-1" size="icon" variant="ghost"
+                    onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <FontLivePreview name={f.name} />
             </div>
           ))}
           {fonts.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma fonte adicionada.</div>}
