@@ -58,6 +58,7 @@ export function AssetUploadDialog({
   const [tags, setTags] = useState<string[]>(parentAsset?.tags ?? []);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
 
   // Reset when re-opening or switching parent
   useEffect(() => {
@@ -131,6 +132,18 @@ export function AssetUploadDialog({
 
   const handleSubmit = async () => {
     if (entries.length === 0) return;
+    if (tagError) {
+      toast.error("Corrija as tags antes de enviar");
+      return;
+    }
+    // Defensive normalization + dedupe
+    const cleanTags = Array.from(
+      new Set(
+        tags
+          .map((t) => t.trim().toLowerCase().replace(/\s+/g, " "))
+          .filter((t) => t.length > 0)
+      )
+    );
     setIsUploading(true);
     let okCount = 0;
     let lastUploaded: Asset | null = null;
@@ -142,7 +155,7 @@ export function AssetUploadDialog({
           organizationId,
           clientId,
           assetType,
-          tags,
+          tags: cleanTags,
           parentAsset: parentAsset ?? undefined,
         });
         lastUploaded = created ?? null;
