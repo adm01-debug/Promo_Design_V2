@@ -466,6 +466,9 @@ export default function DamPreviewPage() {
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (activeAsset) setDetailAsset(activeAsset);
+      } else if ((e.key === "C" || (e.key === "c" && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey) {
+        e.preventDefault();
+        void handleCopyShareLink();
       }
     };
     window.addEventListener("keydown", onKey);
