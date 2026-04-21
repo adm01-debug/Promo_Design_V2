@@ -23,6 +23,29 @@ export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
 export const COMPARE_MODE_KEY = "dam-compare-mode";
 
+/**
+ * Reads the last viewed preview asset id from localStorage, validating TTL.
+ * Returns null if missing, malformed, or expired.
+ */
+export function readLastPreviewAsset(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_ASSET_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { id?: string; ts?: number };
+    if (!parsed?.id || typeof parsed.ts !== "number") return null;
+    if (Date.now() - parsed.ts > LAST_ASSET_TTL_MS) return null;
+    return parsed.id;
+  } catch {
+    return null;
+  }
+}
+
+export function clearLastPreviewAsset(): void {
+  if (typeof window === "undefined") return;
+  try { localStorage.removeItem(LAST_ASSET_KEY); } catch { /* ignore */ }
+}
+
 export default function DamPreviewPage() {
   const navigate = useNavigate();
   const { currentOrgId } = useOrganizations();
