@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
@@ -44,6 +44,9 @@ const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
+const PAGINATION_MODE_KEY = "dam-pagination-mode";
+
+type PaginationMode = "pages" | "loadmore";
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -89,12 +92,24 @@ export default function DamLibraryPage() {
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
   });
   const [sort, setSort] = useState<SortValue>("created_desc");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(() => {
+    const fromUrl = Number(searchParams.get("page"));
+    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
+  });
   const [pageSize, setPageSize] = useState<number>(() => {
+    const fromUrl = Number(searchParams.get("pageSize"));
+    if ([24, 48, 96].includes(fromUrl)) return fromUrl;
     if (typeof window === "undefined") return 24;
     const saved = Number(localStorage.getItem(PAGE_SIZE_KEY));
     return [24, 48, 96].includes(saved) ? saved : 24;
   });
+  const [paginationMode, setPaginationMode] = useState<PaginationMode>(() => {
+    const fromUrl = searchParams.get("mode");
+    if (fromUrl === "loadmore" || fromUrl === "pages") return fromUrl;
+    if (typeof window === "undefined") return "pages";
+    return (localStorage.getItem(PAGINATION_MODE_KEY) as PaginationMode) || "pages";
+  });
+  const [accumulated, setAccumulated] = useState<Asset[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
@@ -124,6 +139,28 @@ export default function DamLibraryPage() {
     }, { replace: true });
   }, [includeArchived, setSearchParams]);
 
+  useEffect(() => {
+    try { localStorage.setItem(PAGINATION_MODE_KEY, paginationMode); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (paginationMode === "loadmore") next.set("mode", "loadmore");
+      else next.delete("mode");
+      return next;
+    }, { replace: true });
+  }, [paginationMode, setSearchParams]);
+
+  // Sync page/pageSize with URL
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (page > 1 && paginationMode === "pages") next.set("page", String(page));
+      else next.delete("page");
+      if (pageSize !== 24) next.set("pageSize", String(pageSize));
+      else next.delete("pageSize");
+      return next;
+    }, { replace: true });
+  }, [page, pageSize, paginationMode, setSearchParams]);
+
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
     if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
@@ -132,6 +169,7 @@ export default function DamLibraryPage() {
   // Reset to page 1 when filters/search/sort/pageSize change
   useEffect(() => {
     setPage(1);
+    setAccumulated([]);
   }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort, pageSize]);
 
   const filters = useMemo(
