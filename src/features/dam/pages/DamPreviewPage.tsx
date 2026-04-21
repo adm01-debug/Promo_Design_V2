@@ -55,6 +55,8 @@ export default function DamPreviewPage() {
   const { state, queryString, setSort } = filters;
   const [searchParams, setSearchParams] = useSearchParams();
   const assetIdParam = searchParams.get("asset");
+  const didInitRef = useRef(false);
+  const userNavRef = useRef(false);
 
   const debouncedSearch = useDebounce(state.search, 300);
 
@@ -126,19 +128,25 @@ export default function DamPreviewPage() {
       .filter((a): a is Asset => Boolean(a));
   }, [assets, compare.selectedIds]);
 
-  // Restore activeIndex from ?asset=<id> when assets load / filters change.
-  // If id is missing or not in the current list, fall back to index 0.
+  // React to ?asset= changes (incl. browser back/forward) — explicitly depend on assetIdParam.
   useEffect(() => {
     if (assets.length === 0) return;
-    if (assetIdParam) {
-      const idx = assets.findIndex((a) => a.id === assetIdParam);
-      if (idx >= 0) {
-        setActiveIndex(idx);
-        return;
-      }
+    if (!assetIdParam) return;
+    const idx = assets.findIndex((a) => a.id === assetIdParam);
+    if (idx >= 0 && idx !== activeIndex) {
+      setActiveIndex(idx);
     }
-    setActiveIndex(0);
-  }, [assets, assetIdParam]);
+  }, [assetIdParam, assets, activeIndex]);
+
+  // First-load fallback: when no ?asset= and assets just arrived, default to index 0 once.
+  useEffect(() => {
+    if (didInitRef.current) return;
+    if (assets.length === 0) return;
+    didInitRef.current = true;
+    if (!assetIdParam) {
+      setActiveIndex(0);
+    }
+  }, [assets.length, assetIdParam]);
 
   // Clamp activeIndex if list shrinks
   useEffect(() => {
@@ -148,14 +156,20 @@ export default function DamPreviewPage() {
   }, [assets.length, activeIndex]);
 
   const activeAsset = assets[activeIndex] ?? null;
+  const assetMissingFromList =
+    Boolean(assetIdParam) && assets.length > 0 && !assets.some((a) => a.id === assetIdParam);
 
-  // Sync URL ?asset=<id> with current activeAsset (replace, no history spam).
+  // Sync URL ?asset=<id> with current activeAsset.
+  // Use push when the change came from a deliberate user action (arrows/thumbs),
+  // replace when it's a passive sync (clamp/init/filter change).
   useEffect(() => {
     if (!activeAsset) return;
     if (searchParams.get("asset") === activeAsset.id) return;
     const next = new URLSearchParams(searchParams);
     next.set("asset", activeAsset.id);
-    setSearchParams(next, { replace: true });
+    const replace = !userNavRef.current;
+    userNavRef.current = false;
+    setSearchParams(next, { replace });
   }, [activeAsset, searchParams, setSearchParams]);
 
   // Persist last viewed asset to localStorage (for re-entry from library).
@@ -169,14 +183,13 @@ export default function DamPreviewPage() {
     } catch { /* ignore */ }
   }, [activeAsset]);
 
-  const goPrev = () => {
+  const selectAssetAt = (idx: number, opts?: { pushHistory?: boolean }) => {
     if (assets.length === 0) return;
-    setActiveIndex((i) => (i - 1 + assets.length) % assets.length);
+    if (opts?.pushHistory) userNavRef.current = true;
+    setActiveIndex(((idx % assets.length) + assets.length) % assets.length);
   };
-  const goNext = () => {
-    if (assets.length === 0) return;
-    setActiveIndex((i) => (i + 1) % assets.length);
-  };
+  const goPrev = () => selectAssetAt(activeIndex - 1, { pushHistory: true });
+  const goNext = () => selectAssetAt(activeIndex + 1, { pushHistory: true });
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -219,10 +232,10 @@ export default function DamPreviewPage() {
         goNext();
       } else if (e.key === "Home") {
         e.preventDefault();
-        if (assets.length > 0) setActiveIndex(0);
+        if (assets.length > 0) selectAssetAt(0, { pushHistory: true });
       } else if (e.key === "End") {
         e.preventDefault();
-        if (assets.length > 0) setActiveIndex(assets.length - 1);
+        if (assets.length > 0) selectAssetAt(assets.length - 1, { pushHistory: true });
       } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         if (activeAsset) {
