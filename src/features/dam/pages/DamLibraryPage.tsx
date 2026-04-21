@@ -162,6 +162,28 @@ export default function DamLibraryPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
 
+  const hasActiveFilters =
+    debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
+    assetTypes.length > 0 ||
+    clientId !== "all" ||
+    selectedTags.length > 0 ||
+    includeArchived;
+
+  const canUpload = can(["owner", "admin", "designer"]);
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setAssetTypes([]);
+    setClientId("all");
+    setSelectedTags([]);
+    setIncludeArchived(false);
+    writeLS(SEARCH_KEY, null);
+    writeLS(ASSET_TYPES_KEY, null);
+    writeLS(CLIENT_ID_KEY, null);
+    writeLS(TAGS_KEY, null);
+    writeLS(SORT_KEY, null);
+  };
+
   useEffect(() => {
     try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* ignore */ }
   }, [viewMode]);
