@@ -317,10 +317,13 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
         defaultAssetType="logo"
         title="Escolher logo da biblioteca"
         onSelect={async (asset) => {
-          const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
-          if (!file) { toast.error("Não foi possível carregar o logo."); return; }
-          handleLogoUpload(file);
-          toast.success("Logo carregado da biblioteca");
+          try {
+            const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
+            handleLogoUpload(file);
+            toast.success("Logo carregado da biblioteca");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Não foi possível carregar o logo.");
+          }
         }}
       />
     </div>

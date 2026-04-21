@@ -85,12 +85,11 @@ const ServiceOrder = () => {
   const handlePickFromDam = useCallback(async (asset: Asset) => {
     try {
       const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
-      if (!file) { toast.error("Não foi possível carregar o asset."); return; }
       await handleArtUpload(file);
       setForm((prev) => ({ ...prev, artAssetId: asset.id }));
       toast.success("Arte vinculada à biblioteca");
-    } catch {
-      toast.error("Erro ao carregar arte do DAM.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao carregar arte do DAM.");
     }
   }, [handleArtUpload]);
 

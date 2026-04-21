@@ -254,12 +254,12 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
         defaultAssetType="logo"
         title="Escolher logo da biblioteca"
         onSelect={async (asset) => {
-          const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
-          if (!file) {
-            toast.error("Não foi possível carregar o asset");
-            return;
+          try {
+            const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
+            handleLogoUpload(file);
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Não foi possível carregar o asset");
           }
-          handleLogoUpload(file);
         }}
       />
     </div>
