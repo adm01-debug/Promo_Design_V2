@@ -101,9 +101,7 @@ export function ResultsPagination({
                   e.preventDefault();
                   if (!isFirst) go(safePage - 1);
                 }}
-              >
-                <span className="sr-only sm:not-sr-only">Anterior</span>
-              </PaginationPrevious>
+              />
             </PaginationItem>
             {buildPageList(safePage, totalPages).map((p, i) =>
               p === "ellipsis" ? (
@@ -136,9 +134,7 @@ export function ResultsPagination({
                   e.preventDefault();
                   if (!isLast) go(safePage + 1);
                 }}
-              >
-                <span className="sr-only sm:not-sr-only">Próximo</span>
-              </PaginationNext>
+              />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
