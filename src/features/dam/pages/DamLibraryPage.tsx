@@ -251,8 +251,12 @@ export default function DamLibraryPage() {
               variant={active ? "default" : "outline"}
               className="cursor-pointer select-none"
               onClick={() => {
-                if (isAll) setAssetTypes([]);
-                else setAssetTypes((prev) => (prev.includes(t.value as AssetType) ? prev.filter((x) => x !== t.value) : [...prev, t.value as AssetType]));
+                if (isAll) {
+                  setAssetTypes([]);
+                } else {
+                  const v = t.value as AssetType;
+                  setAssetTypes((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]));
+                }
               }}
               role="button"
               aria-pressed={active}
