@@ -19,6 +19,8 @@ import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
 import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
+import { SavedSearchesMenu } from "../components/SavedSearchesMenu";
+import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LAST_ASSET_KEY, LAST_ASSET_TTL_MS } from "./DamPreviewPage";
 import {
