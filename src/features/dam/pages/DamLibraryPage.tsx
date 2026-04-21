@@ -5,11 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Toggle } from "@/components/ui/toggle";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
@@ -44,6 +43,7 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
 const TAGS_MODE_KEY = "dam-tags-mode";
+const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -71,6 +71,7 @@ const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "n
 export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
@@ -80,7 +81,13 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return "all";
     return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
   });
-  const [includeArchived, setIncludeArchived] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = searchParams.get("archived");
+    if (fromUrl === "1") return true;
+    if (fromUrl === "0") return false;
+    return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
+  });
   const [sort, setSort] = useState<SortValue>("created_desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(() => {
@@ -106,6 +113,16 @@ export default function DamLibraryPage() {
   useEffect(() => {
     try { localStorage.setItem(TAGS_MODE_KEY, tagsMode); } catch { /* ignore */ }
   }, [tagsMode]);
+
+  useEffect(() => {
+    try { localStorage.setItem(INCLUDE_ARCHIVED_KEY, includeArchived ? "1" : "0"); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (includeArchived) next.set("archived", "1");
+      else next.delete("archived");
+      return next;
+    }, { replace: true });
+  }, [includeArchived, setSearchParams]);
 
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
@@ -137,6 +154,11 @@ export default function DamLibraryPage() {
   );
 
   const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
+
+  const archivedCount = useMemo(
+    () => assets.filter((a) => a.is_archived).length,
+    [assets],
+  );
 
   const availableTags = useMemo(() => {
     const set = new Set<string>();
@@ -246,16 +268,17 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-2 mr-2">
-            <Switch
-              id="archived-toggle"
-              checked={includeArchived}
-              onCheckedChange={setIncludeArchived}
-            />
-            <Label htmlFor="archived-toggle" className="text-xs cursor-pointer">
-              Arquivados
-            </Label>
-          </div>
+          <Toggle
+            pressed={includeArchived}
+            onPressedChange={setIncludeArchived}
+            size="sm"
+            variant="outline"
+            aria-label="Mostrar arquivados"
+            title="Mostrar arquivados"
+          >
+            <Archive className="w-4 h-4 mr-2" />
+            Arquivados
+          </Toggle>
           <ToggleGroup
             type="single"
             value={viewMode}
@@ -335,7 +358,11 @@ export default function DamLibraryPage() {
           ? "Carregando..."
           : total === 0
             ? "Nenhum asset encontrado"
-            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
+            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
+                includeArchived && archivedCount > 0
+                  ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
+                  : ""
+              }`}
       </div>
 
       {isLoading ? (
