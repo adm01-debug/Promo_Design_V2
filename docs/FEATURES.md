@@ -32,17 +32,17 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 ## 3. Mockup Studio
 
-| Funcionalidade | Rota | Arquivo principal | Status |
-|---|---|---|---|
-| Novo mockup (3 steps) | `/mockup/new` | `src/features/mockup/pages/MockupNew.tsx` | ✅ |
-| Drafts salvos | `/mockup/drafts` | `src/features/mockup/pages/MockupDrafts.tsx` | ✅ |
-| Histórico | `/mockup/history` | `src/features/mockup/pages/MockupHistory.tsx` | ✅ |
-| Editor multi-view | `/mockup/editor` | `src/features/mockup/pages/MockupEditor.tsx` | ✅ |
-| Canvas + mesh warp | (componente) | `src/features/mockup/components/MockupCanvas.tsx` | ✅ |
-| Hook editor (state, AI, draft) | (hook) | `src/features/mockup/hooks/use-mockup-editor.ts` | ✅ |
-| Templates de mockup salvos | `/mockup/templates` | *(planejado, hoje só `/templates` genérico)* | 🔴 |
-| Comparador de versões | `/mockup/compare` | *(planejado)* | 🔴 |
-| Aprovação de cliente (link público) | `/mockup/approve/:token` | *(planejado)* | 🔴 |
+| Funcionalidade | Rota | Arquivo principal | Status | Observação |
+|---|---|---|---|---|
+| Novo mockup (3 steps) | `/mockup/new` | `src/features/mockup/pages/MockupNew.tsx` | ✅ | — |
+| Drafts salvos | `/mockup/drafts` | `src/features/mockup/pages/MockupDrafts.tsx` | ✅ | — |
+| Histórico | `/mockup/history` | `src/features/mockup/pages/MockupHistory.tsx` | ✅ | — |
+| Editor multi-view | `/mockup/editor` | `src/features/mockup/pages/MockupEditor.tsx` | ✅ | — |
+| Canvas + mesh warp | (componente) | `src/features/mockup/components/MockupCanvas.tsx` | ✅ | — |
+| Hook editor (state, AI, draft) | (hook) | `src/features/mockup/hooks/use-mockup-editor.ts` | ✅ | — |
+| Templates de mockup salvos | `/mockup/templates` | *(planejado, hoje só `/templates` genérico)* | 🔴 | `/templates` é genérico (mock estático); falta CRUD vinculado a `mockup_drafts` com flag `is_template`. |
+| Comparador de versões | `/mockup/compare` | *(planejado)* | 🔴 | `MockupHistory` lista mockups; falta UI side-by-side com diff visual. |
+| Aprovação de cliente (link público) | `/mockup/approve/:token` | *(planejado)* | 🔴 | Requer tabela `approval_tokens`, edge function pública e página sem auth. |
 
 ## 4. Service Orders
 
