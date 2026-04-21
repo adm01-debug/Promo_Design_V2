@@ -3,20 +3,25 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, Trash2 } from "lucide-react";
+import { Download, Copy, Archive, Trash2, GitBranch } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AssetVersionHistory } from "./AssetVersionHistory";
+import { AssetUploadDialog } from "./AssetUploadDialog";
 
 interface Props {
   asset: Asset | null;
   onClose: () => void;
+  onSelectAsset?: (a: Asset) => void;
 }
 
-export function AssetDetailDrawer({ asset, onClose }: Props) {
+export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const { currentOrgId, can } = useOrganizations();
   const { archive, remove } = useAssets(currentOrgId);
+  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!asset) return;
@@ -40,7 +45,13 @@ export function AssetDetailDrawer({ asset, onClose }: Props) {
         <SheetHeader>
           <SheetTitle className="truncate">{asset.name}</SheetTitle>
         </SheetHeader>
-        <div className="space-y-4 mt-4">
+        <Tabs defaultValue="details" className="mt-4">
+          <TabsList className="grid grid-cols-2 w-full">
+            <TabsTrigger value="details">Detalhes</TabsTrigger>
+            <TabsTrigger value="versions">Versões</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="space-y-4 mt-4">
           {isImage && url && (
             <div className="bg-muted rounded-lg overflow-hidden flex items-center justify-center max-h-96">
               <img src={url} alt={asset.name} className="max-w-full max-h-96 object-contain" />
@@ -102,6 +113,11 @@ export function AssetDetailDrawer({ asset, onClose }: Props) {
             <Button variant="outline" size="sm" onClick={handleCopy} disabled={!url}>
               <Copy className="w-4 h-4 mr-2" />Copiar URL
             </Button>
+            {can(["owner", "admin", "designer"]) && (
+              <Button variant="outline" size="sm" onClick={() => setVersionDialogOpen(true)}>
+                <GitBranch className="w-4 h-4 mr-2" />Nova versão
+              </Button>
+            )}
             {can(["owner", "admin", "designer"]) && !asset.is_archived && (
               <Button
                 variant="outline"
@@ -130,7 +146,24 @@ export function AssetDetailDrawer({ asset, onClose }: Props) {
               </Button>
             )}
           </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="versions" className="mt-4">
+            <AssetVersionHistory
+              asset={asset}
+              onSelect={(a) => onSelectAsset?.(a)}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {currentOrgId && (
+          <AssetUploadDialog
+            open={versionDialogOpen}
+            onOpenChange={setVersionDialogOpen}
+            organizationId={currentOrgId}
+            parentAsset={asset}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );
