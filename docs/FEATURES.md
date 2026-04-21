@@ -91,7 +91,7 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Upload com tags | (componente) | `src/features/dam/components/AssetUploadDialog.tsx` | ✅ | — |
 | Coleções/Pastas | `/dam/collections` | *(planejado)* | 🔴 | Sem tabela `collections` no schema; requer migração + UI hierárquica. |
 | Lixeira (assets arquivados) | `/dam/trash` | *(parcial via filtro `archived` em `DamLibraryPage.tsx`)* | 🟡 | Filtro `is_archived` existe; falta view dedicada com restore em lote. |
-| Busca avançada (saved searches) | `/dam/search` | *(planejado)* | 🔴 | Filtros são transientes em `use-dam-filters`; falta tabela `saved_searches`. |
+| Busca avançada (saved searches) | `/dam` | `src/features/dam/components/SavedSearchesMenu.tsx` + `src/features/dam/hooks/use-saved-searches.ts` | ✅ | Filtros nomeados, fixáveis e reaplicáveis em 1 clique; persistidos por usuário/organização na tabela `dam_saved_searches`. |
 
 ## 7. Magic Up (AI)
 
@@ -138,12 +138,11 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 4 | Magic Up — Batch jobs | `/magicup/jobs` | 🔴 | G | Visibilidade de fila para gerações longas em lote. |
 | 5 | Templates de mockup salvos | `/mockup/templates` | 🔴 | M | Reuso de configurações; hoje só existe `/templates` genérico. |
 | 6 | Comparador de versões de mockup | `/mockup/compare` | 🔴 | M | Facilita revisão A/B entre iterações. |
-| 7 | Busca avançada DAM (saved searches) | `/dam/search` | 🔴 | M | Filtros complexos persistidos para workflows recorrentes. |
-| 8 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | 🔴 | M | Auditoria de mudanças no manual de marca. |
-| 9 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | M | Hoje hardcoded; bloqueia personalização por cliente. |
-| 10 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | M | Métricas de uso e produtividade além dos widgets atuais. |
-| 11 | Lixeira DAM | `/dam/trash` | 🟡 | P | Existe filtro `archived`, falta UI dedicada com restore. |
-| 12 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | P | Existe filtro em `/magicup/history`, falta galeria dedicada. |
-| 13 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | P | Hoje layout é editável inline; falta tela de gestão. |
+| 7 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | 🔴 | M | Auditoria de mudanças no manual de marca. |
+| 8 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | M | Hoje hardcoded; bloqueia personalização por cliente. |
+| 9 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | M | Métricas de uso e produtividade além dos widgets atuais. |
+| 10 | Lixeira DAM | `/dam/trash` | 🟡 | P | Existe filtro `archived`, falta UI dedicada com restore. |
+| 11 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | P | Existe filtro em `/magicup/history`, falta galeria dedicada. |
+| 12 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | P | Hoje layout é editável inline; falta tela de gestão. |
 
 **Esforço:** P = até 1 dia · M = 2-4 dias · G = 5+ dias.

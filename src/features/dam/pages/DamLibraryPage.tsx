@@ -19,6 +19,8 @@ import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
 import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
+import { SavedSearchesMenu } from "../components/SavedSearchesMenu";
+import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LAST_ASSET_KEY, LAST_ASSET_TTL_MS } from "./DamPreviewPage";
 import {
@@ -323,6 +325,29 @@ export default function DamLibraryPage() {
     return Array.from(set);
   }, [displayedAssets]);
 
+  const currentSavedFilters: SavedFiltersPayload = useMemo(() => ({
+    _v: 1,
+    search: debouncedSearch.trim(),
+    assetTypes,
+    clientId,
+    tags: selectedTags,
+    tagsMode,
+    includeArchived,
+    sort,
+  }), [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort]);
+
+  const applySavedFilters = (snap: SavedFiltersPayload) => {
+    setSearch(snap.search ?? "");
+    setAssetTypes(snap.assetTypes ?? []);
+    setClientId((snap.clientId as typeof clientId) ?? "all");
+    setSelectedTags(snap.tags ?? []);
+    setTagsMode(snap.tagsMode ?? "all");
+    setIncludeArchived(Boolean(snap.includeArchived));
+    setSort((snap.sort as SortValue) ?? "created_desc");
+    setPage(1);
+    setAccumulated([]);
+  };
+
   if (!currentOrgId) {
     return (
       <div className="p-6">
@@ -350,6 +375,7 @@ export default function DamLibraryPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
           <Button variant="outline" asChild>
             <Link
               to={(() => {
