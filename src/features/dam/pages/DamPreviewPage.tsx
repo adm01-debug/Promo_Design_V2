@@ -92,6 +92,9 @@ export default function DamPreviewPage() {
   const didShowExpiredToastRef = useRef(false);
   const didShowFallbackToastRef = useRef(false);
   const lastUserSelectedIdRef = useRef<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<number | null>(null);
+  const didHydrateCompareRef = useRef(false);
 
   // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
@@ -148,6 +151,26 @@ export default function DamPreviewPage() {
     } catch { /* ignore */ }
   }, [compareMode]);
   const compare = useCompareSelection();
+
+  // Hydrate compare selection from ?compare=id1,id2,... on first load when assets are available.
+  useEffect(() => {
+    if (didHydrateCompareRef.current) return;
+    if (assets.length === 0) return;
+    const raw = searchParams.get("compare");
+    if (!raw) {
+      didHydrateCompareRef.current = true;
+      return;
+    }
+    const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    const valid = ids.filter((id) => assets.some((a) => a.id === id)).slice(0, compare.max);
+    if (valid.length >= 2) {
+      compare.clear();
+      valid.forEach((id) => compare.toggle(id));
+      setCompareMode(true);
+    }
+    didHydrateCompareRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets]);
 
   // Last asset that was actually visible in results — used to diagnose why it
   // disappeared after a filter change, and to restore selection when filters clear.
@@ -334,6 +357,59 @@ export default function DamPreviewPage() {
   };
   const goPrev = () => selectAssetAt(activeIndex - 1, { pushHistory: true });
   const goNext = () => selectAssetAt(activeIndex + 1, { pushHistory: true });
+
+  const buildShareableUrl = (): string | null => {
+    if (typeof window === "undefined") return null;
+    if (!activeAsset) return null;
+    const params = new URLSearchParams(searchParams);
+    params.set("asset", activeAsset.id);
+    if (compareMode && compare.selectedIds.length >= 2) {
+      params.set("compare", compare.selectedIds.join(","));
+    } else {
+      params.delete("compare");
+    }
+    const qs = params.toString();
+    return `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ""}`;
+  };
+
+  const handleCopyShareLink = async () => {
+    const url = buildShareableUrl();
+    if (!url) return;
+    const showSuccess = () => {
+      setCopied(true);
+      if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
+      copiedTimeoutRef.current = window.setTimeout(() => setCopied(false), 1500);
+      toast.success("Link copiado", {
+        description: compareMode && compare.selectedIds.length >= 2
+          ? "Quem abrir verá a mesma comparação e filtros."
+          : "Quem abrir verá o mesmo asset e filtros.",
+        duration: 2500,
+      });
+    };
+    try {
+      await navigator.clipboard.writeText(url);
+      showSuccess();
+      return;
+    } catch { /* fallback below */ }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (ok) { showSuccess(); return; }
+      throw new Error("execCommand failed");
+    } catch {
+      toast.error("Não foi possível copiar", { description: url, duration: 6000 });
+    }
+  };
+
+  useEffect(() => () => {
+    if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
