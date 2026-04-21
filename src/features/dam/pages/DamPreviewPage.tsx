@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset } from "../hooks/use-assets";
@@ -45,6 +46,26 @@ export function readLastPreviewAsset(): string | null {
 export function clearLastPreviewAsset(): void {
   if (typeof window === "undefined") return;
   try { localStorage.removeItem(LAST_ASSET_KEY); } catch { /* ignore */ }
+}
+
+/**
+ * Peeks the raw localStorage entry without clearing it.
+ * Returns { id, expired } so callers can show UX hints (e.g. expiration toasts).
+ * - id is null if there is no entry or the entry is malformed.
+ * - expired is true only when an entry exists but is past its TTL.
+ */
+export function peekLastPreviewAssetRaw(): { id: string | null; expired: boolean } {
+  if (typeof window === "undefined") return { id: null, expired: false };
+  try {
+    const raw = localStorage.getItem(LAST_ASSET_KEY);
+    if (!raw) return { id: null, expired: false };
+    const parsed = JSON.parse(raw) as { id?: string; ts?: number };
+    if (!parsed?.id || typeof parsed.ts !== "number") return { id: null, expired: false };
+    const expired = Date.now() - parsed.ts > LAST_ASSET_TTL_MS;
+    return { id: expired ? null : parsed.id, expired };
+  } catch {
+    return { id: null, expired: false };
+  }
 }
 
 export default function DamPreviewPage() {
