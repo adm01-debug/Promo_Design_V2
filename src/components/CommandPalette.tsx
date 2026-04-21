@@ -12,8 +12,11 @@ import {
 import {
   Image, Film, Palette, Camera, User,
   Settings, History, FolderOpen, ClipboardList, BarChart3,
-  BookOpen, Eye, Wand2, Home
+  BookOpen, Eye, Wand2, Home, ScanText
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useOrganizations } from "@/hooks/use-organization";
+import { toast } from "sonner";
 
 const pages = [
   { label: "Dashboard", path: "/", icon: Home, group: "Navegação" },
@@ -44,6 +47,7 @@ interface CommandPaletteProps {
 const CommandPalette = ({ open: controlledOpen, onOpenChange }: CommandPaletteProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const navigate = useNavigate();
+  const { currentOrgId } = useOrganizations();
 
   const open = controlledOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
@@ -66,6 +70,49 @@ const CommandPalette = ({ open: controlledOpen, onOpenChange }: CommandPalettePr
     },
     [navigate, setOpen]
   );
+
+  const handleIndexOcr = useCallback(async () => {
+    setOpen(false);
+    if (!currentOrgId) {
+      toast.error("Selecione uma organização primeiro");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("assets")
+      .select("id, file_path, mime_type")
+      .eq("organization_id", currentOrgId)
+      .eq("ocr_status", "none")
+      .like("mime_type", "image/%")
+      .limit(100);
+    if (error) {
+      toast.error("Falha ao listar assets pendentes");
+      return;
+    }
+    const pending = (data ?? []) as { id: string; file_path: string; mime_type: string | null }[];
+    if (pending.length === 0) {
+      toast.success("Nenhuma imagem pendente de OCR");
+      return;
+    }
+    const total = pending.length;
+    const toastId = toast.loading(`Indexando OCR: 0/${total}`);
+    let done = 0;
+    let failed = 0;
+    for (const a of pending) {
+      try {
+        const { error: invErr } = await supabase.functions.invoke("asset-ocr", {
+          body: { assetId: a.id, filePath: a.file_path, mimeType: a.mime_type ?? "" },
+        });
+        if (invErr) failed++;
+      } catch {
+        failed++;
+      }
+      done++;
+      toast.loading(`Indexando OCR: ${done}/${total}`, { id: toastId });
+      // 500ms delay to avoid 429
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    toast.success(`OCR concluído: ${done - failed}/${total} processados`, { id: toastId });
+  }, [currentOrgId, setOpen]);
 
   const groups = [...new Set(pages.map((p) => p.group))];
 
@@ -94,6 +141,17 @@ const CommandPalette = ({ open: controlledOpen, onOpenChange }: CommandPalettePr
             </CommandGroup>
           </div>
         ))}
+        <CommandSeparator />
+        <CommandGroup heading="Ações">
+          <CommandItem
+            value="DAM Indexar OCR de imagens pendentes"
+            onSelect={handleIndexOcr}
+            className="gap-3 cursor-pointer"
+          >
+            <ScanText className="w-4 h-4 text-muted-foreground" />
+            <span>DAM: Indexar OCR de imagens pendentes</span>
+          </CommandItem>
+        </CommandGroup>
       </CommandList>
     </CommandDialog>
   );
