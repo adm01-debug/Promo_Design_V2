@@ -1,72 +1,64 @@
 
 
-## Painel de prévia rápida (Quick Preview) na biblioteca DAM
+## Busca por OCR no DAM — encontrar imagens pelo texto interno
 
-Adicionar um painel lateral fixo (não-modal) que mostra thumbnail ampliado, metadados completos e versão do asset selecionado/em hover na grade de `/dam`, sem sair da lista nem abrir o drawer pesado de detalhes.
+Adicionar extração de texto (OCR) em assets de imagem no momento do upload e permitir que a busca atual (`/dam` e `AssetPicker`) também procure dentro desse texto, marcando os hits com badge "OCR".
 
-### UX
+### Backend
 
-- **Toggle no header**: botão "Prévia rápida" ao lado de "Filtros salvos" liga/desliga o painel (estado em `localStorage` `dam-quickpreview-enabled`).
-- **Quando ligado**: layout vira 2 colunas — grade de assets + painel sticky de ~320px à direita (em telas `lg+`). Em telas menores o painel vira drawer inferior recolhível.
-- **Seleção**:
-  - Hover em um card (debounce 150ms) → atualiza prévia.
-  - Clique simples → "fixa" o asset no painel (mantém ao mover mouse fora). Clicar no mesmo de novo desfixa.
-  - Clique em "Abrir detalhes" no painel → abre o `AssetDetailDrawer` existente (preserva fluxo atual de edição).
-- **Sem painel**: comportamento atual intacto (clique abre drawer direto).
+**Migração SQL**:
+- `ALTER TABLE public.assets ADD COLUMN ocr_text text NULL;`
+- `ALTER TABLE public.assets ADD COLUMN ocr_status text NOT NULL DEFAULT 'none';` (`none` | `pending` | `done` | `failed` | `skipped`)
+- Índice GIN trigram: `CREATE INDEX assets_ocr_text_trgm_idx ON public.assets USING gin (ocr_text gin_trgm_ops);`
+- Atualizar `search_assets_ranked`:
+  - `WHERE` ganha `OR ocr_text ILIKE '%query%' OR similarity(coalesce(ocr_text,''), _query) > 0.1`
+  - `rank` passa a somar `+ 0.2 * similarity(coalesce(ocr_text,''), _query)`
+  - Retornar nova coluna `ocr_match boolean` (true quando o match veio do `ocr_text` e não do nome/descrição) para o frontend exibir badge.
 
-### Conteúdo do painel `QuickPreviewPanel`
+**Edge Function nova `supabase/functions/asset-ocr/index.ts`**:
+- CORS + JWT obrigatório (padrão da memória `ai-integration`).
+- Body Zod: `{ assetId: string (uuid), filePath: string, mimeType: string }`.
+- Verifica que `mimeType` começa com `image/` (skip outros → grava `ocr_status='skipped'`).
+- Cria signed URL do bucket `assets` (1h), baixa imagem, converte para base64.
+- Chama Lovable AI Gateway com `google/gemini-3-flash-preview` via tool calling estruturado:
+  - Tool `extract_text` com schema `{ text: string, has_text: boolean }`.
+  - Prompt: "Extraia todo texto visível na imagem. Preserve quebras de linha. Se não houver texto, retorne has_text=false."
+- Atualiza `assets`: `ocr_text` (truncado a 5000 chars), `ocr_status='done'` (ou `failed` em erro). Retorna `{ ok, length }`.
+- Trata 429/402 do gateway gravando `ocr_status='failed'` e devolvendo erro amigável.
 
-- Thumbnail ampliado (~280px, aspect square) via `AssetThumbnail`.
-- Nome + badge de tipo + badge `v{version}` se >1.
-- Bloco metadados:
-  - Cliente (nome resolvido)
-  - Tamanho formatado (KB/MB)
-  - Dimensões (`width`×`height` se imagem)
-  - MIME type
-  - Data criação (relativa pt-BR via `formatDistanceToNow`)
-  - Tags (chips, max 6 + "+N")
-  - Cores dominantes (4 swatches)
-- Indicador de versão: se `useLatestAssetVersion(asset.id).hasUpdate` → badge "Nova versão disponível".
-- Ações compactas: "Abrir detalhes", "Copiar URL" (signed URL), "Baixar".
-- Atalhos: `Space` fixa/desfixa; `Enter` abre detalhes; setas ↑↓ navegam pelos cards quando painel fixado.
+### Frontend
 
-### Arquivos
+**1. Disparo automático em `use-asset-upload.ts`**
+- Após `create.mutateAsync`, se `mime_type.startsWith("image/")` e arquivo ≤ 10MB, dispara `supabase.functions.invoke("asset-ocr", { body: {...} })` em background (sem bloquear UI). Falha silenciosa — `ocr_status` cobre o estado.
+- `dam-upload-image-max-mb` controlado por constante (default 10).
 
-**Novo**: `src/features/dam/components/QuickPreviewPanel.tsx`
-- Props: `asset: Asset | null`, `pinned: boolean`, `onPin: () => void`, `onOpenDetails: () => void`, `clients: Client[]`.
-- Reutiliza: `AssetThumbnail`, `getAssetSignedUrl`, `useLatestAssetVersion`, componentes shadcn (`Card`, `Badge`, `Button`, `Separator`).
+**2. Reprocesso manual no `AssetDetailDrawer`**
+- Botão "Extrair texto (OCR)" aparece para assets de imagem. Estados: "Extrair", "Processando…" (quando `ocr_status='pending'`), "Reprocessar" (quando `done`/`failed`).
+- Mostra preview do `ocr_text` (collapsible, max 6 linhas) com badge do status.
 
-**Novo hook**: `src/features/dam/hooks/use-quick-preview.ts`
-- Estado: `enabled`, `hoverAsset`, `pinnedAsset`, com debounce no hover (150ms).
-- Persiste `enabled` em `localStorage`.
-- Expõe: `{ enabled, toggleEnabled, activeAsset, setHoverAsset, pinnedId, togglePin }`.
-- `activeAsset = pinnedAsset ?? hoverAsset`.
+**3. UI de busca**
+- `Input` de busca em `DamLibraryPage` ganha hint placeholder: "Buscar por nome, descrição ou texto da imagem (OCR)".
+- Em `AssetCard` e `AssetListView`: quando o item vem com `ocr_match=true`, exibir badge pequeno "OCR" no canto. Tipos `Asset` ganham campo opcional `ocr_match?: boolean` (só populado pela RPC).
+- `useAssets` propaga `ocr_match` quando vier da RPC; sort `relevance` agora vale também só com OCR (sem mudança de UX adicional).
 
-**Editar**: `src/features/dam/pages/DamLibraryPage.tsx`
-- Importar hook + painel.
-- Botão toggle no header (ícone `PanelRight`, ao lado do `SavedSearchesMenu`).
-- Wrapper de layout: `<div className="flex gap-4">` quando `enabled`, com grade em `flex-1` e painel em `w-80 shrink-0 sticky top-4 self-start`.
-- Passar `onMouseEnter`/`onClick` para os `AssetCard`s via callbacks novos (`onHover`, `onQuickSelect`) — só quando painel ligado.
-
-**Editar**: `src/features/dam/components/AssetCard.tsx`
-- Adicionar props opcionais `onHover?: () => void`, `onQuickSelect?: () => void`, `isQuickActive?: boolean`.
-- Aplicar `ring-2 ring-primary` quando `isQuickActive`.
-- `onMouseEnter` chama `onHover`; `onClick` mantém comportamento atual mas chama `onQuickSelect` antes — quando painel está ligado a página decide se abre drawer ou só seleciona.
+**4. Indexação retroativa**
+- Botão "Indexar OCR pendente" em `AssetDetailDrawer`? Não — em vez disso, criar uma **action no command palette**: "DAM: Indexar OCR de imagens pendentes". Roda em loop client-side: busca até 100 assets de imagem com `ocr_status='none'` da org atual, dispara a edge function 1 a 1 com 500ms de delay (evita 429), mostra toast com progresso.
 
 ### Detalhes técnicos
 
-- **Performance**: hover debounced; signed URL cacheado em `useState` no painel via `useEffect` com cleanup; sem refetch desnecessário ao alternar entre assets já visitados (cache local Map id→url).
-- **Acessibilidade**: painel tem `role="complementary"`, `aria-label="Prévia rápida do asset"`. Botão toggle com `aria-pressed`.
-- **Responsivo**: `< lg` → painel vira `Sheet` lateral (mantém componente, troca container).
-- **Sem regressão**: todo comportamento atual permanece intocado quando `enabled=false` (estado inicial padrão).
+- **Modelo**: `google/gemini-3-flash-preview` (texto + imagem, rápido e barato — suficiente para OCR de logos/artes/banners).
+- **Privacidade**: imagens só são lidas pelo edge function autenticado; nenhum texto OCR vai para o client a não ser do próprio usuário (RLS de `assets` cobre).
+- **Performance**: trigram index garante `ILIKE` rápido; truncar `ocr_text` a 5000 chars evita inflar payload do `select *`.
+- **Tipos**: regenerar `src/integrations/supabase/types.ts` (auto), e estender manualmente `Asset` com `ocr_text?: string | null`, `ocr_status?: string`, `ocr_match?: boolean`.
+- **Compatibilidade**: assets pré-existentes ficam `ocr_status='none'` e seguem buscáveis por nome/descrição como hoje — sem regressão.
+- **Sem mudança de RLS**: `ocr_text` herda as políticas existentes da tabela `assets`.
 
 ### Critérios de aceite
 
-- Botão "Prévia rápida" no header de `/dam` liga/desliga painel; estado persiste entre sessões.
-- Com painel ligado: hover em card mostra preview após 150ms; clique fixa; clique novamente desfixa.
-- Painel mostra thumbnail ampliado, nome, tipo, versão, cliente, tamanho, dimensões, MIME, data, tags, cores e badge de nova versão quando aplicável.
-- Botões "Abrir detalhes", "Copiar URL", "Baixar" funcionam.
-- Atalhos `Space`/`Enter`/setas operam quando painel está visível e foco não está em input.
-- Em mobile/tablet (`< lg`) painel vira drawer lateral.
-- `docs/FEATURES.md`: nova linha na seção 6 "Prévia rápida (quick preview)" → ✅ apontando para `QuickPreviewPanel.tsx`.
+- Upload de imagem dispara OCR em background; em ~5s o `ocr_text` aparece no drawer de detalhes.
+- Busca por uma palavra que existe **dentro** da imagem (não no nome) retorna o asset; card mostra badge "OCR".
+- Botão "Reprocessar" no drawer atualiza `ocr_text` e `ocr_status`.
+- Command Palette ganha ação para indexar pendentes; toast informa progresso e total.
+- Não-imagens (PDF, SVG, doc) ficam com `ocr_status='skipped'` e não disparam edge function.
+- `docs/FEATURES.md`: nova linha na seção 6 "Busca por OCR (texto em imagens)" → ✅ apontando para `asset-ocr` edge function + migração.
 
