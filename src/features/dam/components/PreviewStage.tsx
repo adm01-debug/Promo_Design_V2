@@ -208,14 +208,43 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
               </Button>
             </div>
           )}
-          <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!url} title="Copiar URL">
-            <LinkIcon className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            disabled={!url}
+            title="Copiar URL (C)"
+            aria-label="Copiar URL"
+            className="h-8 px-2 text-xs gap-1"
+          >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <LinkIcon className="w-3.5 h-3.5" />}
+            {copied ? "Copiado" : "Copiar"}
+            <span className="sr-only" aria-live="polite">
+              {copied ? "URL copiada para a área de transferência" : ""}
+            </span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleDownload} disabled={!url} title="Download">
-            <Download className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownload}
+            disabled={!url}
+            title="Download (D)"
+            aria-label="Baixar arquivo"
+            className="h-8 px-2 text-xs gap-1"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Baixar
           </Button>
-          <Button variant="ghost" size="sm" onClick={onOpenDetails} title="Detalhes (Enter)">
-            <Info className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenDetails}
+            title="Detalhes (Enter)"
+            aria-label="Abrir detalhes do asset"
+            className="h-8 px-2 text-xs gap-1"
+          >
+            <Info className="w-3.5 h-3.5" />
+            Detalhes
           </Button>
         </div>
       </div>
