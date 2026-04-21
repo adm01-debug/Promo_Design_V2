@@ -45,6 +45,7 @@ declare module "recharts" {
     ) => ReactNode;
     contentStyle?: CSSProperties;
     labelStyle?: CSSProperties;
+    labelClassName?: string;
     itemStyle?: CSSProperties;
     wrapperStyle?: CSSProperties;
     cursor?: boolean | object | ReactNode;
