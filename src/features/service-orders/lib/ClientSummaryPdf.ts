@@ -135,11 +135,13 @@ export async function generateClientSummaryPdf(
   orders: StoredServiceOrder[],
   periodDays: number,
   logoDataUrl?: string,
+  onProgress?: ClientSummaryProgressCallback,
 ): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const m = 12;
 
+  onProgress?.({ stage: "Preparando capa", current: 0, total: 0, percent: 5 });
   // ─── Capa ───
   doc.setFillColor(...GREEN);
   doc.rect(0, 0, pw, 50, "F");
@@ -158,6 +160,7 @@ export async function generateClientSummaryPdf(
   doc.text(`Período: últimos ${periodDays} dias • Gerado em ${new Date().toLocaleDateString("pt-BR")}`, logoDataUrl ? 48 : m, 45);
 
   // ─── KPIs ───
+  onProgress?.({ stage: "Calculando KPIs", current: 0, total: 0, percent: 15 });
   const totalOrders = orders.length;
   const totalQty = orders.reduce((s, o) => s + (parseInt(o.quantity) || 0), 0);
   const byStatus: Record<OsStatus, number> = { aberta: 0, em_producao: 0, concluida: 0, cancelada: 0 };
@@ -229,6 +232,7 @@ export async function generateClientSummaryPdf(
   }
 
   // ─── Timeline ───
+  onProgress?.({ stage: "Montando histórico", current: 0, total: 0, percent: 25 });
   doc.addPage();
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
@@ -261,7 +265,32 @@ export async function generateClientSummaryPdf(
     doc.setTextColor(...DARK);
     doc.text("Galeria de Mockups", m, 18);
 
-    const dataUrls = await Promise.all(withMockups.map((o) => fetchAsDataUrl(o.mockupImageUrl)));
+    let done = 0;
+    onProgress?.({
+      stage: "Baixando mockups",
+      current: 0,
+      total: withMockups.length,
+      percent: 30,
+    });
+    const dataUrls = await Promise.all(
+      withMockups.map(async (o) => {
+        const url = await fetchAsDataUrl(o.mockupImageUrl);
+        done++;
+        onProgress?.({
+          stage: "Baixando mockups",
+          current: done,
+          total: withMockups.length,
+          percent: 30 + (done / withMockups.length) * 50,
+        });
+        return url;
+      }),
+    );
+    onProgress?.({
+      stage: "Montando galeria",
+      current: withMockups.length,
+      total: withMockups.length,
+      percent: 85,
+    });
 
     const cols = 3;
     const gap = 6;
@@ -304,12 +333,14 @@ export async function generateClientSummaryPdf(
   }
 
   // Footers
+  onProgress?.({ stage: "Finalizando", current: 0, total: 0, percent: 95 });
   const total = doc.getNumberOfPages();
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
     drawFooter(doc, i, total);
   }
 
+  onProgress?.({ stage: "Pronto", current: 0, total: 0, percent: 100 });
   return doc;
 }
 
