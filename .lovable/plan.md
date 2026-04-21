@@ -1,104 +1,119 @@
 
 
-## Estados de carregamento/progresso para PDFs (batch e resumo)
+## Tela de detalhes do evento de Audit Trail por record_id
 
-Hoje, ao gerar o **PDF consolidado** (`/service-orders` → "Exportar PDF") e o **Resumo do projeto** (`/clients` → "Resumo PDF"), o usuário só vê um spinner pequeno no botão. Para batches grandes (até 1000 OSs no consolidado, até 12 mockups no resumo), a geração pode levar 10-60s e parece travada — sem feedback de progresso real, com risco do usuário fechar a aba ou clicar de novo.
-
-Vamos adicionar um overlay de progresso com etapas reais e contagem de itens processados em ambos os fluxos.
+Hoje o `AuditDiffDialog` já mostra os valores `old/new` lado a lado, mas só dentro de um modal a partir da listagem — não há rota dedicada nem forma de compartilhar/abrir um evento específico por URL. Vamos criar uma página de detalhes acessível por `record_id` (com fallback para `id` do evento) que mostra tudo: metadados completos, diff visual, e contexto histórico do mesmo registro.
 
 ### Mudanças
 
-**1. Novo componente compartilhado: `src/components/PdfProgressOverlay.tsx`**
+**1. Nova rota: `/audit/event/:eventId`**
 
-Dialog modal não-fechável (sem `X`, sem overlay click) com:
-- Título dinâmico ("Gerando PDF consolidado…" / "Gerando resumo do projeto…").
-- `Progress` (shadcn) com valor 0-100.
-- Label da etapa atual ("Buscando OSs", "Baixando mockups 5/12", "Montando páginas 23/87", "Finalizando").
-- Contador "X de Y" quando aplicável.
-- Tempo decorrido em segundos (atualiza a cada 500ms).
-- Texto fixo: "Não feche esta aba. O download começa automaticamente."
-- Sem botão cancelar nesta primeira versão (geração é síncrona via jsPDF; cancelar exigiria refatorar com `AbortSignal` — fora do escopo).
+Em `src/App.tsx`, adicionar:
+```tsx
+<Route path="audit/event/:eventId" element={<AuditEventDetailPage />} />
+```
+Lazy-load a página, igual ao `AuditLogPage`.
 
-Props:
+**2. Nova página: `src/features/audit/pages/AuditEventDetailPage.tsx`**
+
+Estrutura:
+- **Header**: botão "Voltar para auditoria" (link para `/audit` preservando filtros via `document.referrer` ou fallback), título com badge da ação (INSERT/UPDATE/DELETE colorido), nome da tabela em monospace, timestamp formatado + relativo.
+- **Card de metadados** (grid 2 colunas):
+  - ID do evento (com botão copiar)
+  - Record ID (com botão copiar e link "Ver outros eventos deste registro" → filtra `/audit?q=<record_id>`)
+  - Tabela
+  - Usuário (label do `useOrgMembers` + uuid completo)
+  - Organização ID
+  - IP address (`ip_address`)
+  - User agent (`user_agent`, truncado com tooltip)
+  - Data/hora ISO completa
+- **Card de diff**: reusa exatamente a lógica visual do `AuditDiffDialog` (Antes/Depois lado a lado, highlight de chaves alteradas em âmbar), mas inline na página (não em modal), expandido por padrão. Adicionar toggle "Mostrar apenas campos alterados" (filtra chaves não-modificadas em UPDATE).
+- **Card de JSON cru**: dois `<pre>` colapsáveis (`Collapsible`) com `old_values` e `new_values` em JSON formatado, com botão "Copiar JSON".
+- **Card "Histórico do registro"**: lista os outros eventos do mesmo `record_id` (mesma tabela + mesmo record_id, ordenado por `created_at desc`, máximo 20), cada item clicável navega para `/audit/event/<id>`. Destaca o evento atual.
+
+**3. Refatorar `AuditDiffDialog.tsx` em componente compartilhado**
+
+Extrair a lógica de diff (`changedKeys`, `renderJson`, layout Antes/Depois) para `src/features/audit/components/AuditDiffView.tsx`. O `AuditDiffDialog` passa a ser um wrapper fino que usa `AuditDiffView` dentro do `Dialog`. A `AuditEventDetailPage` consome `AuditDiffView` diretamente.
+
+Props de `AuditDiffView`:
 ```ts
-interface PdfProgressOverlayProps {
-  open: boolean;
-  title: string;
-  stage: string;          // "Baixando mockups", "Montando páginas"
-  current?: number;        // ex: 5
-  total?: number;          // ex: 12
-  percent: number;         // 0-100
+interface AuditDiffViewProps {
+  oldValues: unknown;
+  newValues: unknown;
+  action: AuditAction;
+  showOnlyChanged?: boolean;
 }
 ```
 
-**2. Editar `src/features/service-orders/lib/ServiceOrderBatchPdf.ts`**
+**4. Hook novo em `use-audit-log.ts`**
 
-Adicionar parâmetro opcional `onProgress?: (p: { stage: string; current: number; total: number; percent: number }) => void`:
-- Após `drawCover` → emitir `{ stage: "Capa montada", current: 0, total: orders.length, percent: 5 }`.
-- Dentro do loop `for (const order of orders)` → antes do `await drawOrderPage`, emitir `{ stage: "Montando OS", current: i+1, total: orders.length, percent: 5 + (i / orders.length) * 90 }`.
-- Dentro de `drawOrderPage`, quando há `mockupImageUrl`, o `fetchAsDataUrl` pode demorar — sub-emitir `{ stage: "Baixando mockup", current: i+1, total: orders.length, percent: ... }` antes do fetch (callback opcional passado adiante).
-- Após o loop e antes de retornar → `{ stage: "Finalizando", current: orders.length, total: orders.length, percent: 100 }`.
+```ts
+export function useAuditEvent(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ["audit-event", eventId],
+    enabled: !!eventId,
+    queryFn: async (): Promise<AuditEntry & { ip_address: string | null; user_agent: string | null; organization_id: string | null }> => {
+      const { data, error } = await supabase
+        .from("audit_log")
+        .select("id, organization_id, user_id, table_name, record_id, action, created_at, old_values, new_values, ip_address, user_agent")
+        .eq("id", eventId!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Evento não encontrado");
+      return data as any;
+    },
+  });
+}
 
-Yield para o browser pintar: a cada N iterações (ex: a cada 5 OSs), `await new Promise(r => setTimeout(r, 0))` para o React conseguir re-renderizar o overlay durante o loop síncrono.
+export function useAuditRecordHistory(tableName: string | undefined, recordId: string | null | undefined, excludeEventId?: string) {
+  return useQuery({
+    queryKey: ["audit-record-history", tableName, recordId],
+    enabled: !!tableName && !!recordId,
+    queryFn: async (): Promise<AuditEntry[]> => {
+      const { data, error } = await supabase
+        .from("audit_log")
+        .select("id, user_id, table_name, record_id, action, created_at, old_values, new_values")
+        .eq("table_name", tableName!)
+        .eq("record_id", recordId!)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as AuditEntry[];
+    },
+  });
+}
+```
 
-**3. Editar `src/features/service-orders/lib/ClientSummaryPdf.ts`**
+**5. Tornar a linha clicável + botão "Abrir página" no `AuditLogPage.tsx`**
 
-Mesma assinatura de `onProgress` opcional. Etapas:
-- "Preparando capa" (5%).
-- "Calculando KPIs" (15%).
-- "Baixando mockups X/Y" durante o `Promise.all` — substituir por loop com contador incremental:
-  ```ts
-  let done = 0;
-  const dataUrls = await Promise.all(
-    withMockups.map(async (o) => {
-      const url = await fetchAsDataUrl(o.mockupImageUrl);
-      done++;
-      onProgress?.({ stage: "Baixando mockups", current: done, total: withMockups.length, percent: 30 + (done / withMockups.length) * 50 });
-      return url;
-    })
-  );
-  ```
-- "Montando galeria" (85%).
-- "Finalizando" (100%).
+No `Eye` button da tabela, manter o comportamento atual (abrir modal rápido) mas adicionar segundo botão `ExternalLink` que navega para `/audit/event/<entry.id>` em nova aba (ou mesma, decidir por padrão = mesma aba). Isso mantém o fluxo rápido (modal) e habilita o fluxo profundo (página dedicada compartilhável).
 
-**4. Editar `src/features/service-orders/pages/ServiceOrderList.tsx`**
+No `AuditDiffDialog`, adicionar link "Abrir página completa" no header do dialog que navega para a página de detalhes e fecha o modal.
 
-- Estado `pdfProgress: { stage: string; current: number; total: number; percent: number } | null`.
-- No `handleExportPdf`:
-  - Trocar o `setExporting(true)` por `setPdfProgress({ stage: "Buscando OSs", current: 0, total: 0, percent: 0 })`.
-  - Após o `supabase.from(...).select()` → `setPdfProgress({ stage: "Preparando dados", current: data.length, total: data.length, percent: 5 })`.
-  - Passar `onProgress: setPdfProgress` para `generateBatchPdf`.
-  - No `finally` → `setPdfProgress(null)`.
-- Renderizar `<PdfProgressOverlay open={!!pdfProgress} title="Gerando PDF consolidado…" {...pdfProgress} />`.
-- Manter o spinner no botão "Exportar PDF" quando `pdfProgress !== null`.
+**6. Estados de erro/loading**
 
-**5. Editar `src/features/clients/pages/ClientsPage.tsx`**
-
-Mesma estrutura: estado `summaryProgress`, passar `onProgress` para `generateClientSummaryPdf`, renderizar `<PdfProgressOverlay open={!!summaryProgress} title={\`Gerando resumo — ${summaryClient?.name}\`} {...summaryProgress} />`. O Dialog de seleção de período fecha imediatamente ao clicar em "Gerar PDF" e o overlay assume o controle visual.
+- Loading: skeleton dos 3 cards.
+- Erro / não encontrado: card centrado com ícone, mensagem "Evento não encontrado ou você não tem permissão" e botão "Voltar para auditoria".
+- RLS: a policy `Org members can view audit log` já cobre — se o usuário não for membro da org do evento, o `maybeSingle()` retorna `null` e cai no estado de erro.
 
 ### Arquivos tocados
 
-- `src/components/PdfProgressOverlay.tsx` (novo)
-- `src/features/service-orders/lib/ServiceOrderBatchPdf.ts`
-- `src/features/service-orders/lib/ClientSummaryPdf.ts`
-- `src/features/service-orders/pages/ServiceOrderList.tsx`
-- `src/features/clients/pages/ClientsPage.tsx`
-
-### Comportamento
-
-- Click em "Exportar PDF" / "Resumo PDF" → overlay aparece imediatamente com progresso 0%.
-- Etapas atualizam em tempo real ("Baixando mockups 7/12 — 62%").
-- Yield periódico evita freeze da UI durante batches grandes.
-- Toast de sucesso após `doc.save()`; overlay desaparece.
-- Em caso de erro: overlay fecha, toast de erro mostra mensagem.
+- `src/App.tsx` (nova rota)
+- `src/features/audit/pages/AuditEventDetailPage.tsx` (novo)
+- `src/features/audit/components/AuditDiffView.tsx` (novo, extraído do dialog)
+- `src/features/audit/components/AuditDiffDialog.tsx` (refatorado para usar `AuditDiffView`, +link "página completa")
+- `src/features/audit/hooks/use-audit-log.ts` (+`useAuditEvent`, +`useAuditRecordHistory`)
+- `src/features/audit/pages/AuditLogPage.tsx` (botão `ExternalLink` por linha)
 
 ### Critérios de aceite
 
-- Overlay modal aparece em ambos os fluxos com `Progress` animada.
-- Etapa textual muda conforme processamento ("Buscando OSs" → "Montando OS 23/87" → "Finalizando").
-- Tempo decorrido visível em segundos.
-- UI não congela durante batches de 100+ OSs (yield com `setTimeout(0)`).
-- Overlay não pode ser fechado por click fora ou ESC.
-- Botões de origem ficam desabilitados durante geração.
-- Sem regressão no PDF gerado (mesmo conteúdo, mesmas imagens embutidas).
+- URL `/audit/event/:eventId` carrega evento isolado com todos os metadados (incluindo `ip_address`, `user_agent`, `organization_id`).
+- Diff visual idêntico ao do modal, com toggle "apenas campos alterados".
+- JSON cru copiável de ambos `old_values` e `new_values`.
+- Card "Histórico do registro" lista até 20 eventos do mesmo `record_id`, evento atual destacado, demais clicáveis.
+- Botão "Voltar" retorna para `/audit` (preserva filtros se vier de lá via histórico do navegador).
+- Modal rápido continua funcionando + ganha link "Abrir página completa".
+- Listagem ganha botão `ExternalLink` por linha que abre a página dedicada.
+- Acessibilidade: foco visível, `aria-label` nos botões de copiar, badges com `role="status"`.
+- Sem regressão: filtros, paginação, exportação CSV, busca por valor JSON continuam intactos.
 
