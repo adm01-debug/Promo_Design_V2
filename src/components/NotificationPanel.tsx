@@ -73,7 +73,7 @@ const NotificationItem = ({
       notification.read
         ? "opacity-60 hover:opacity-80"
         : notification.eventType === "audit_alert"
-          ? "bg-amber-500/5 hover:bg-amber-500/10"
+          ? "bg-warning/5 hover:bg-warning/10"
           : "bg-primary/5 hover:bg-primary/10"
     )}
     onClick={() => {
@@ -83,7 +83,7 @@ const NotificationItem = ({
   >
     <div className="mt-0.5 shrink-0" aria-hidden="true">
       {notification.eventType === "audit_alert" ? (
-        <ShieldAlert className="w-4 h-4 text-amber-500" />
+        <ShieldAlert className="w-4 h-4 text-warning" />
       ) : (
         <ClipboardList className={cn("w-4 h-4", getStatusDot(notification.newStatus))} />
       )}
@@ -92,7 +92,7 @@ const NotificationItem = ({
       <p className="text-xs font-medium text-foreground truncate">
         {notification.eventType === "audit_alert" ? (
           <>
-            <span className="text-amber-500">Alerta</span>
+            <span className="text-warning">Alerta</span>
             {notification.productName && (
               <span className="text-muted-foreground font-normal"> — {notification.productName}</span>
             )}
@@ -117,7 +117,7 @@ const NotificationItem = ({
         <span
           className={cn(
             "w-2 h-2 rounded-full",
-            notification.eventType === "audit_alert" ? "bg-amber-500" : "bg-primary",
+            notification.eventType === "audit_alert" ? "bg-warning" : "bg-primary",
           )}
           aria-hidden="true"
         />
