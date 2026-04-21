@@ -1,32 +1,60 @@
 
 
-## Botão "Escolher do DAM" no Mockup Studio
+## AssetPicker reutilizável já existe — consolidar e documentar
 
-Adicionar fluxo de seleção de logo a partir da biblioteca DAM, ao lado do upload tradicional, no painel direito do editor de mockup. A logo escolhida é baixada via signed URL e injetada no pipeline existente (auto-fit + warp + drag).
+O componente `src/features/dam/components/AssetPicker.tsx` **já implementa todos os requisitos pedidos**: modal com busca debounced (mínimo 3 chars), filtro por tipo (`defaultAssetType` + dropdown), filtro por cliente (com `lockClient`), filtro por tags (`TagFilter`), paginação (24/página), views grid/list, skeleton de loading, empty state, e callback `onSelect(asset)`. Já é usado em:
+
+- `MockupRightPanel.tsx` (logo no MockupNew)
+- `EditorRightPanel.tsx` (logo no MockupEditor)
+- `ServiceOrder.tsx` via `ArtUploadField` (arte da OS)
+
+Não vale recriar — vale **endurecer a API e expor barrel export** para reuso futuro consistente.
 
 ### Mudanças
 
-**`src/features/mockup/components/MockupRightPanel.tsx`**
-- Importar `AssetPicker` (`@/features/dam/components/AssetPicker`), `downloadAssetAsFile` (`@/features/dam/lib/asset-urls`), `Library` icon, `toast` (sonner) e `useState`.
-- Adicionar estado local `damPickerOpen`.
-- Na seção "Logo" (logo card), abaixo do botão "Fazer upload", adicionar botão secundário **"Escolher do DAM"** (variant `outline`, ícone `Library`, full width).
-- Quando o usuário seleciona um asset:
-  1. `downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type)` → retorna `File`.
-  2. Em sucesso: `props.handleLogoUpload(file)` (reusa pipeline existente: preview, auto-fit, extração de cores).
-  3. Em falha: `toast.error("Não foi possível carregar o asset")`.
-- Filtros padrão do picker: `defaultAssetType="logo"`, `clientId={null}` (sem lock — designer pode pegar de qualquer cliente), `title="Escolher logo da biblioteca"`.
+**`src/features/dam/components/AssetPicker.tsx`** — pequenos refinamentos:
+- Adicionar prop opcional `defaultClientId?: string | null` distinta de `clientId`/`lockClient` (hoje `clientId` faz papel duplo: pré-selecionar e travar). Refator: `clientId` continua como pré-seleção, `lockClient` continua travando o select. Comportamento atual preservado.
+- Adicionar prop `multiSelect?: boolean` (default `false`) — quando `true`, troca `onSelect(asset)` por `onSelect(assets: Asset[])` via union de tipos discriminados. Header ganha contador "N selecionado(s)" + botão "Confirmar". Cards mostram checkbox no canto.
+- Adicionar prop `excludeAssetIds?: string[]` para esconder assets já vinculados (útil em telas que listam múltiplos vínculos).
+- Garantir foco inicial no input de busca e `ESC` fechando (já vem do Radix Dialog).
+- Reset de filtros ao abrir já existe — manter.
 
-**`src/features/mockup/hooks/use-mockup-editor.ts`** — sem mudanças. `handleLogoUpload(file: File)` já cobre o fluxo completo (preview, cores, auto-fit, push history).
+**`src/features/dam/index.ts`** (criar se não existir, ou estender) — barrel export:
+```ts
+export { AssetPicker } from "./components/AssetPicker";
+export { downloadAssetAsFile } from "./lib/asset-urls";
+export type { Asset, AssetType, AssetFilters } from "./hooks/use-assets";
+```
 
-**`src/features/mockup/pages/MockupEditor.tsx`** — adicionar o mesmo botão "Escolher do DAM" no `EditorRightPanel` (mesmo padrão), pois é o segundo ponto onde se faz upload de logo. Reaproveita `handleLogoUpload` já presente.
+**Atualizar imports nos 3 consumidores existentes** para usar `@/features/dam` em vez de caminhos profundos:
+- `MockupRightPanel.tsx`
+- `EditorRightPanel.tsx`
+- `ArtUploadField.tsx` (ou onde quer que `AssetPicker` seja importado em service-orders)
 
-**`src/features/mockup/components/EditorRightPanel.tsx`** — receber prop opcional `onPickFromDam?: () => void` ou inlinar o `AssetPicker` lá também (decisão: inlinar para manter simetria com `MockupRightPanel`).
+**Documentação inline** — JSDoc no topo do `AssetPicker` listando props, comportamento de `lockClient`/`clientId`/`defaultAssetType`, callback shape e exemplo curto de uso.
+
+### API final (resumo)
+
+```ts
+interface AssetPickerProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  clientId?: string | null;          // pré-seleciona cliente
+  lockClient?: boolean;              // trava o select de cliente
+  defaultAssetType?: AssetType;      // pré-filtra tipo
+  excludeAssetIds?: string[];        // esconde assets já vinculados
+  title?: string;
+  multiSelect?: boolean;             // false = onSelect(asset), true = onSelect(asset[])
+  onSelect: (asset: Asset | Asset[]) => void;
+}
+```
 
 ### Critérios de aceite
 
-- No painel direito do `MockupNew` (ao montar o mockup) e do `MockupEditor` (edição avançada), aparece botão **"Escolher do DAM"** abaixo do "Fazer upload".
-- Clicar abre o `AssetPicker` com filtro padrão `asset_type=logo` e respeita os filtros persistidos do DAM (busca, cliente, tags).
-- Selecionar um asset fecha o picker, baixa o arquivo via signed URL, faz auto-fit na área de impressão e a logo aparece imediatamente no canvas — pronta para drag/resize/warp.
-- Erros de download mostram toast e não quebram o estado atual da edição.
-- Sem regressão: upload por arquivo, drag-drop no canvas, AI remove background, suggest placement, mesh warp, export PNG/PDF e draft save continuam funcionando.
+- `AssetPicker` exportado via barrel `@/features/dam` e usado por Mockup Studio (logo) e Service Order (arte) sem mudança de comportamento visível.
+- Nova prop `multiSelect` funciona: clicar em cards alterna seleção, header mostra contador, botão "Confirmar" emite array.
+- Nova prop `excludeAssetIds` filtra resultados client-side (sem novo round-trip).
+- `lockClient` continua travando o seletor de cliente conforme já usado por Service Order.
+- Busca server-side com mínimo 3 chars, paginação 24/página, filtros tipo/cliente/tags, views grid/list — todos preservados.
+- Sem regressão nos 3 pontos de consumo existentes.
 
