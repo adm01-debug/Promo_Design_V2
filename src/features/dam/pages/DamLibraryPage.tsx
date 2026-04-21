@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -561,33 +563,51 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
-          <Toggle
-            pressed={includeArchived}
-            onPressedChange={setIncludeArchived}
-            size="sm"
-            variant="outline"
-            aria-label={
-              includeArchived
-                ? "Ocultar itens arquivados (preferência lembrada entre sessões)"
-                : "Mostrar itens arquivados (preferência lembrada entre sessões)"
-            }
-            title={
-              includeArchived
-                ? "Ocultando para esconder. Sua preferência fica salva entre sessões."
-                : "Mostrar arquivados. Sua preferência fica salva entre sessões."
-            }
-            data-testid="dam-archived-toggle"
-            data-state-persisted="true"
-          >
-            <Archive className="w-4 h-4 mr-2" />
-            Arquivados
-            {includeArchived && (
-              <span
-                aria-hidden="true"
-                className="ml-2 inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse"
-              />
-            )}
-          </Toggle>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={includeArchived}
+                onPressedChange={setIncludeArchived}
+                size="sm"
+                variant="outline"
+                aria-label={
+                  includeArchived
+                    ? "Ocultar itens arquivados (preferência lembrada entre sessões)"
+                    : "Mostrar itens arquivados (preferência lembrada entre sessões)"
+                }
+                data-testid="dam-archived-toggle"
+                data-state-persisted="true"
+                className={cn(
+                  "gap-2 transition-colors",
+                  includeArchived &&
+                    "bg-primary/10 text-primary border-primary/40 hover:bg-primary/15 data-[state=on]:bg-primary/10 data-[state=on]:text-primary",
+                )}
+              >
+                {includeArchived ? (
+                  <ArchiveRestore className="w-4 h-4" />
+                ) : (
+                  <Archive className="w-4 h-4" />
+                )}
+                <span className="font-medium">
+                  {includeArchived ? "Incluindo arquivados" : "Incluir arquivados"}
+                </span>
+                {includeArchived && archivedCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-primary/15 text-primary border-primary/30 text-[10px] h-5 px-1.5"
+                    aria-label={`${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} visíveis`}
+                  >
+                    {archivedCount}
+                  </Badge>
+                )}
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+              {includeArchived
+                ? "Itens arquivados estão visíveis nesta listagem. Clique para ocultar."
+                : "Mostrar também itens arquivados. Sua preferência fica salva entre sessões."}
+            </TooltipContent>
+          </Tooltip>
           <ToggleGroup
             type="single"
             value={viewMode}
