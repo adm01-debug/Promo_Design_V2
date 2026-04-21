@@ -398,8 +398,18 @@ const AuditLogPage = () => {
             <Bell className="h-4 w-4" />
             Alertas
           </Button>
-          <Button onClick={handleExport} disabled={exporting || !currentOrgId || total === 0} variant="outline">
-            <Download className="h-4 w-4" />
+          <Button
+            onClick={handleExport}
+            disabled={exporting || !currentOrgId || total === 0}
+            variant="outline"
+            aria-busy={exporting}
+            data-testid="audit-export-button"
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
             {exporting ? "Exportando…" : "Exportar CSV"}
           </Button>
         </div>
