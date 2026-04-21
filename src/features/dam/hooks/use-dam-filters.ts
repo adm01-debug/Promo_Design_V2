@@ -3,6 +3,23 @@ import { useSearchParams } from "react-router-dom";
 import type { AssetType } from "./use-assets";
 
 const TAGS_MODE_KEY = "dam-tags-mode";
+const SEARCH_KEY = "dam-search";
+const ASSET_TYPES_KEY = "dam-asset-types";
+const CLIENT_ID_KEY = "dam-client-id";
+const TAGS_KEY = "dam-tags";
+const SORT_KEY = "dam-sort";
+
+function readLS(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function writeLS(key: string, value: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (value === null || value === "") localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch { /* ignore */ }
+}
 
 export type SortValue =
   | "relevance"
@@ -54,20 +71,29 @@ export function useDamFilters() {
   const [params, setParams] = useSearchParams();
 
   const initial: DamFiltersState = useMemo(() => {
-    const types = (params.get("type") ?? "")
+    const typesSrc = params.get("type") ?? readLS(ASSET_TYPES_KEY) ?? "";
+    const types = typesSrc
       .split(",")
       .filter((s) => s && (VALID_TYPES as string[]).includes(s)) as AssetType[];
-    const tags = (params.get("tags") ?? "").split(",").filter(Boolean);
-    const sort = (params.get("sort") as SortValue) ?? "created_desc";
+    const tagsSrc = params.get("tags") ?? readLS(TAGS_KEY) ?? "";
+    const tags = tagsSrc.split(",").filter(Boolean);
+    const sortFromUrl = params.get("sort") as SortValue | null;
+    const sortFromLs = readLS(SORT_KEY) as SortValue | null;
+    const sort: SortValue =
+      (sortFromUrl && VALID_SORTS.includes(sortFromUrl) && sortFromUrl) ||
+      (sortFromLs && VALID_SORTS.includes(sortFromLs) && sortFromLs) ||
+      "created_desc";
     const tagsMode = (params.get("tagsMode") as "all" | "any") || readInitialTagsMode();
+    const clientFromUrl = params.get("client") as DamFiltersState["clientId"] | null;
+    const clientFromLs = readLS(CLIENT_ID_KEY) as DamFiltersState["clientId"] | null;
     return {
-      search: params.get("q") ?? "",
+      search: params.get("q") ?? readLS(SEARCH_KEY) ?? "",
       assetTypes: types,
-      clientId: (params.get("client") as DamFiltersState["clientId"]) || "all",
+      clientId: clientFromUrl || clientFromLs || "all",
       tags,
       tagsMode,
       includeArchived: params.get("archived") === "1",
-      sort: VALID_SORTS.includes(sort) ? sort : "created_desc",
+      sort,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -95,6 +121,23 @@ export function useDamFilters() {
       /* ignore */
     }
   }, [state.tagsMode]);
+
+  // Persist filters to localStorage (shared with DamLibraryPage)
+  useEffect(() => {
+    writeLS(SEARCH_KEY, state.search.trim() || null);
+  }, [state.search]);
+  useEffect(() => {
+    writeLS(ASSET_TYPES_KEY, state.assetTypes.length > 0 ? state.assetTypes.join(",") : null);
+  }, [state.assetTypes]);
+  useEffect(() => {
+    writeLS(CLIENT_ID_KEY, state.clientId !== "all" ? state.clientId : null);
+  }, [state.clientId]);
+  useEffect(() => {
+    writeLS(TAGS_KEY, state.tags.length > 0 ? state.tags.join(",") : null);
+  }, [state.tags]);
+  useEffect(() => {
+    writeLS(SORT_KEY, state.sort !== "created_desc" ? state.sort : null);
+  }, [state.sort]);
 
   // Auto-fallback if relevance is selected without a search term
   useEffect(() => {
@@ -144,6 +187,11 @@ export function useDamFilters() {
       includeArchived: false,
       sort: "created_desc",
     });
+    writeLS(SEARCH_KEY, null);
+    writeLS(ASSET_TYPES_KEY, null);
+    writeLS(CLIENT_ID_KEY, null);
+    writeLS(TAGS_KEY, null);
+    writeLS(SORT_KEY, null);
   }, []);
 
   const queryString = useMemo(() => {
