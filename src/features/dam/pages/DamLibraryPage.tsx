@@ -310,6 +310,20 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
 
+  // Cache last-known totals so the counter stays stable during refetches and never
+  // flickers back to "Carregando..." when paginating or filtering.
+  const lastTotalsRef = useRef<{ total: number; totalPages: number; page: number; pageSize: number; displayedLen: number } | null>(null);
+  if (!isLoading) {
+    lastTotalsRef.current = {
+      total,
+      totalPages,
+      page,
+      pageSize,
+      displayedLen: assets.length,
+    };
+  }
+  const stable = lastTotalsRef.current;
+
   // Keyboard shortcuts for pagination: ← / → (or J/K) navigate pages,
   // Home / End jump to first/last page. Disabled in load-more mode and while typing.
   useEffect(() => {
