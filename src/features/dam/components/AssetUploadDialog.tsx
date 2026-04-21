@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAssetUpload } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
 
@@ -130,12 +130,7 @@ export function AssetUploadDialog({
     addFiles(Array.from(e.dataTransfer.files));
   };
 
-  const handleSubmit = async () => {
-    if (entries.length === 0) return;
-    if (tagError) {
-      toast.error("Corrija as tags antes de enviar");
-      return;
-    }
+  const uploadEntries = async (targets: FileEntry[]) => {
     // Defensive normalization + dedupe
     const cleanTags = Array.from(
       new Set(
@@ -146,10 +141,11 @@ export function AssetUploadDialog({
     );
     setIsUploading(true);
     let okCount = 0;
+    let errCount = 0;
     let lastUploaded: Asset | null = null;
-    for (const entry of entries) {
+    for (const entry of targets) {
       if (entry.status === "done") { okCount++; continue; }
-      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10 } : e));
+      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined } : e));
       try {
         const created = await uploadFile(entry.file, {
           organizationId,
@@ -159,25 +155,52 @@ export function AssetUploadDialog({
           parentAsset: parentAsset ?? undefined,
         });
         lastUploaded = created ?? null;
+        if (created) onUploaded?.(created);
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100 } : e));
         okCount++;
       } catch (err) {
         const msg = (err as Error).message;
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "error", error: msg } : e));
         toast.error(`${entry.file.name}: ${msg}`);
+        errCount++;
       }
     }
     setIsUploading(false);
-    if (okCount > 0) {
+
+    if (okCount > 0 && errCount === 0) {
       toast.success(
         isVersionMode
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
           : `${okCount} asset(s) enviado(s)`
       );
-      if (lastUploaded) onUploaded?.(lastUploaded);
       onOpenChange(false);
+    } else if (okCount > 0 && errCount > 0) {
+      toast.success(`${okCount} enviado(s) · ${errCount} com erro`);
     }
+    return { okCount, errCount, lastUploaded };
   };
+
+  const handleSubmit = async () => {
+    if (entries.length === 0) return;
+    if (tagError) {
+      toast.error("Corrija as tags antes de enviar");
+      return;
+    }
+    await uploadEntries(entries);
+  };
+
+  const handleRetry = async () => {
+    const failed = entries.filter((e) => e.status === "error");
+    if (failed.length === 0) return;
+    setEntries((prev) => prev.map((e) => e.status === "error" ? { ...e, status: "pending", error: undefined, progress: 0 } : e));
+    // Use the freshly-reset entries (status pending) for upload
+    const targets = failed.map((e) => ({ ...e, status: "pending" as const, error: undefined, progress: 0 }));
+    await uploadEntries(targets);
+  };
+
+  const errorCount = entries.filter((e) => e.status === "error").length;
+  const doneCount = entries.filter((e) => e.status === "done").length;
+  const allDone = entries.length > 0 && doneCount === entries.length;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isUploading && onOpenChange(v)}>
@@ -250,11 +273,16 @@ export function AssetUploadDialog({
                     <div className="text-sm truncate flex items-center gap-2">
                       {e.file.name}
                       {e.status === "done" && <Badge variant="secondary" className="text-[10px]">ok</Badge>}
-                      {e.status === "error" && <Badge variant="destructive" className="text-[10px]">erro</Badge>}
+                      {e.status === "error" && (
+                        <Badge variant="destructive" className="text-[10px]" title={e.error}>erro</Badge>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {(e.file.size / 1024).toFixed(1)} KB
                     </div>
+                    {e.status === "error" && e.error && (
+                      <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
+                    )}
                     {e.status === "uploading" && <Progress value={e.progress} className="h-1 mt-1" />}
                   </div>
                   {!isUploading && e.status !== "done" && (
@@ -343,17 +371,32 @@ export function AssetUploadDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row sm:items-center gap-2">
+          {(doneCount > 0 || errorCount > 0) && (
+            <div className="text-xs text-muted-foreground sm:mr-auto">
+              {doneCount} enviado(s){errorCount > 0 ? ` · ${errorCount} com erro` : ""}
+            </div>
+          )}
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0 || !!tagError}>
-            {isUploading
-              ? "Enviando..."
-              : isVersionMode
-                ? `Criar versão v${(parentAsset?.version ?? 1) + 1}`
-                : "Enviar"}
-          </Button>
+          {errorCount > 0 && !isUploading && (
+            <Button variant="outline" onClick={handleRetry} disabled={!!tagError}>
+              <RotateCw className="w-4 h-4" />
+              Tentar novamente ({errorCount})
+            </Button>
+          )}
+          {allDone && errorCount === 0 ? (
+            <Button onClick={() => onOpenChange(false)}>Concluir</Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0 || !!tagError || (doneCount > 0 && errorCount === 0)}>
+              {isUploading
+                ? "Enviando..."
+                : isVersionMode
+                  ? `Criar versão v${(parentAsset?.version ?? 1) + 1}`
+                  : "Enviar"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
