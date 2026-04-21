@@ -151,6 +151,23 @@ export default function DamLibraryPage() {
   // "Continue where you left off" — last asset viewed in /dam/preview.
   const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(() => readLastPreviewAsset());
   const highlightedRef = useRef<string | null>(null);
+  const didShowExpiredToastRef = useRef(false);
+  const [fallbackDismissed, setFallbackDismissed] = useState(false);
+
+  // One-time toast on mount when the persisted "last preview" entry has expired (>24h).
+  useEffect(() => {
+    if (didShowExpiredToastRef.current) return;
+    const { expired } = peekLastPreviewAssetRaw();
+    if (expired) {
+      didShowExpiredToastRef.current = true;
+      clearLastPreviewAsset();
+      setLastPreviewAssetId(null);
+      toast("Sessão de pré-visualização expirada", {
+        description: "Sua última sessão tem mais de 24h. Começando do início.",
+        duration: 4000,
+      });
+    }
+  }, []);
 
   const hasActiveFilters =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
