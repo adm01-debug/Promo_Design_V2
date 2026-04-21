@@ -182,6 +182,15 @@ export default function DamLibraryPage() {
                 if (selectedTags.length > 1) sp.set("tagsMode", tagsMode);
                 if (includeArchived) sp.set("archived", "1");
                 if (sort !== "created_desc") sp.set("sort", sort);
+                try {
+                  const raw = localStorage.getItem(LAST_ASSET_KEY);
+                  if (raw) {
+                    const parsed = JSON.parse(raw) as { id?: string; ts?: number };
+                    if (parsed?.id && typeof parsed.ts === "number" && Date.now() - parsed.ts < LAST_ASSET_TTL_MS) {
+                      sp.set("asset", parsed.id);
+                    }
+                  }
+                } catch { /* ignore */ }
                 const qs = sp.toString();
                 return `/dam/preview${qs ? `?${qs}` : ""}`;
               })()}
