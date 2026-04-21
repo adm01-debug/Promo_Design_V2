@@ -149,6 +149,10 @@ export default function DamPreviewPage() {
   }, [compareMode]);
   const compare = useCompareSelection();
 
+  // Last asset that was actually visible in results — used to diagnose why it
+  // disappeared after a filter change, and to restore selection when filters clear.
+  const [lastKnownAsset, setLastKnownAsset] = useState<Asset | null>(null);
+
   const queryFilters = useMemo(() => {
     const opt = SORT_OPTIONS.find((s) => s.value === state.sort) ?? SORT_OPTIONS[1];
     return {
