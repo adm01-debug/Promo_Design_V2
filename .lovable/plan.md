@@ -1,61 +1,77 @@
 
 
-## Implementação completa das rotas `/dam` e `/clients/:clientId/brand`
+## Upload drag-and-drop + Versionamento de Assets
 
-As páginas já existem no projeto (`DamLibraryPage.tsx` e `BrandGuidelinesPage.tsx`) e estão registradas em `App.tsx`. O que falta é **completar lacunas de UX** identificadas na auditoria de gaps: toggle grid/lista, filtro por tags, e melhorias de busca.
+Estender o fluxo de upload do DAM com drag-and-drop completo, tags multi-chip, e capacidade de criar **nova versão** de um asset existente preservando `parent_asset_id` e incrementando `version`.
 
-### O que vai ser entregue
+### O que vai mudar
 
-**1. `/dam` — DamLibraryPage com filtros completos**
-- Toggle **grid ↔ lista** (reaproveitar `LayoutPopover` existente, igual aos outros módulos)
-- View "lista": tabela com thumbnail, nome, tipo, cliente, tags, cores, data
-- **Filtro por tags** (multi-select) — chips clicáveis abaixo da busca; lê tags únicas dos assets carregados
-- **Toggle "Mostrar arquivados"** (gap #3 da auditoria) — switch ao lado dos filtros
-- Busca por nome já existe; estender para também buscar em `description` e `tags`
-- Contador de resultados ("12 assets encontrados")
-- Skeleton loader enquanto carrega
+**1. `AssetUploadDialog` — refatorar para drag-and-drop premium**
+- Dropzone real com eventos `onDragEnter/Leave/Over/Drop` (estado visual de hover ativo)
+- Lista de arquivos selecionados com thumbnail-preview, nome, tamanho, e botão remover por arquivo
+- Validação de tamanho (max 20MB) e tipos (imagem/PDF/SVG/AI/PSD)
+- Campo de **tags como chips** (input + Enter/vírgula adiciona, X remove) em vez do textarea CSV atual
+- Sugestão de tags já existentes na organização (autocomplete via Popover/Command)
+- Progresso individual por arquivo durante upload em lote
+- Modo dual: **"Novos assets"** (default) ou **"Nova versão de X"** (quando vem de um asset existente)
 
-**2. `/clients/:clientId/brand` — BrandGuidelinesPage**
-- Já está implementada; vou apenas:
-  - Adicionar **breadcrumb** "Clientes › [Nome do cliente] › Brand"
-  - Mostrar **nome do cliente** no header (buscar via `useClients`)
-  - Adicionar **preview "Brand Card"** ao final: card visual aplicando paleta primária + fonte do título + logo
-  - Validar empty state quando não há guidelines salvas
+**2. Hook `useAssetUpload` — suportar versionamento**
+- Novo parâmetro opcional `parentAsset?: Asset` em `UploadOptions`
+- Quando presente:
+  - `parent_asset_id = parentAsset.id` (ou raiz da cadeia: `parent_asset_id ?? id`)
+  - `version = parentAsset.version + 1`
+  - Herda `asset_type`, `client_id`, `tags` do pai (editáveis no diálogo)
+  - Nome default: `"{nome original} v{N}"`
+- Mantém geração de thumbnail e extração de cores dominantes existentes
 
-**3. Componente novo: `AssetListView`**
-- View tabular reutilizável para a lista de assets
-- Colunas: thumbnail (40px), nome, tipo (badge), cliente, tags (chips), cores (swatch), data
-- Click na linha abre o `AssetDetailDrawer`
+**3. `AssetDetailDrawer` — botão "Nova versão"**
+- Visível para roles `owner/admin/designer`
+- Abre `AssetUploadDialog` em modo versão, pré-populando metadados do asset atual
+- Após upload, drawer atualiza para mostrar a nova versão
 
-**4. Componente novo: `TagFilter`**
-- Multi-select de tags com chips removíveis
-- Extrai tags únicas dos assets carregados
-- Suporta busca dentro do dropdown
+**4. Nova aba "Histórico de versões" no `AssetDetailDrawer`**
+- Lista todas as versões do asset (query: `parent_asset_id = root OR id = root`)
+- Mostra versão, data, autor, thumbnail; click em versão antiga abre seu próprio drawer
+- Badge "atual" na versão mais recente
+
+**5. Hook `use-assets` — nova query helper**
+- `useAssetVersions(rootAssetId)` retorna todas as versões ordenadas por `version DESC`
+- Resolve a raiz da cadeia (se o asset clicado já é uma versão, sobe até `parent_asset_id IS NULL`)
+
+**6. Componente novo: `TagChipsInput`**
+- Reutilizável: input com chips, sugestões, validação
+- Usado no upload e no `AssetDetailDrawer` (substituir editor de tags atual se houver)
 
 ### Arquivos a criar/editar
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — adicionar toggle view, tag filter, archived toggle |
-| `src/features/dam/pages/BrandGuidelinesPage.tsx` | Editar — breadcrumb, nome cliente, brand card preview |
-| `src/features/dam/components/AssetListView.tsx` | Criar — view tabular |
-| `src/features/dam/components/TagFilter.tsx` | Criar — multi-select de tags |
-| `src/features/dam/components/BrandPreviewCard.tsx` | Criar — preview visual aplicando guidelines |
-| `src/features/dam/hooks/use-assets.ts` | Editar — passar `includeArchived` e busca em tags |
+| `src/features/dam/components/AssetUploadDialog.tsx` | Reescrever — dropzone, lista de arquivos, modo versão |
+| `src/features/dam/components/TagChipsInput.tsx` | Criar — input de tags com chips + sugestões |
+| `src/features/dam/components/AssetVersionHistory.tsx` | Criar — aba de histórico de versões |
+| `src/features/dam/components/AssetDetailDrawer.tsx` | Editar — botão "Nova versão" + tab versions |
+| `src/features/dam/hooks/use-asset-upload.ts` | Editar — suportar `parentAsset` e versão |
+| `src/features/dam/hooks/use-assets.ts` | Editar — adicionar `useAssetVersions` helper |
+| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — passar callback de "Nova versão" para o drawer |
 
 ### Detalhes técnicos
 
-- Persistir preferência grid/lista em `localStorage["dam-view-mode"]`
-- `useAssets` já aceita `includeArchived`; passar do toggle UI
-- Tag filter envia `filters.tags` ao hook (já suportado)
-- Brand Card usa CSS variables inline para aplicar a cor primária dinamicamente
-- Mantém RBAC: botões "Novo asset" e edições gated via `can(["owner","admin","designer"])`
+- **Drag-and-drop**: prevenir default em `dragover` para habilitar drop; estado `isDragging` controla classe visual (`border-primary bg-primary/5`)
+- **Tag suggestions**: derivar de `assets[].tags` (já carregados via `useAssets`); passar como prop `suggestions: string[]`
+- **Versionamento — raiz**: se `parentAsset.parent_asset_id` existe, usar essa raiz; senão usar `parentAsset.id` (cadeia plana, todas versões apontam para o original)
+- **Query de versões**: `.or('id.eq.{root},parent_asset_id.eq.{root}')` ordenada por `version DESC`
+- **Thumbnail e cores**: pipeline `processImage()` existente é reutilizado sem mudanças
+- **Audit log**: já é gravado automaticamente via trigger `write_audit_log` em `assets`
+- **RBAC**: botão "Nova versão" e dropzone só aparecem com `can(["owner","admin","designer"])`
+- **Limites**: max 10 arquivos por batch, 20MB cada, tipos validados antes do upload
 
 ### Critérios de aceite
 
-- Toggle grid/lista alterna sem perder filtros
-- Click em uma tag adiciona ao filtro; click novamente remove
-- Switch "Arquivados" mostra/esconde assets com `is_archived=true`
-- Em `/clients/:id/brand` o nome do cliente aparece no header
-- Brand Card renderiza paleta + fonte aplicadas, mesmo sem logo
+- Arrastar arquivos sobre o diálogo destaca a dropzone e aceita o drop
+- Cada arquivo na lista mostra preview, nome, tamanho e botão para remover
+- Tags são chips clicáveis com sugestões da org (autocomplete)
+- Click em "Nova versão" no drawer abre o upload pré-configurado
+- Nova versão grava `parent_asset_id` correto e `version = anterior + 1`
+- Aba "Versões" lista todas as versões do asset com badge "atual"
+- Upload em lote mostra progresso e tolera falhas individuais (uma falha não cancela as outras)
 
