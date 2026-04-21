@@ -433,6 +433,41 @@ export default function DamLibraryPage() {
         </div>
       </header>
 
+      {lastPreviewAsset && (
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+          <History className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground">Continuar de onde parou:</span>
+          <span className="font-medium truncate">{lastPreviewAsset.name}</span>
+          <Button variant="outline" size="sm" asChild className="ml-auto h-7">
+            <Link
+              to={(() => {
+                const sp = new URLSearchParams();
+                if (debouncedSearch.trim()) sp.set("q", debouncedSearch.trim());
+                if (assetTypes.length > 0) sp.set("type", assetTypes.join(","));
+                if (clientId !== "all") sp.set("client", clientId);
+                if (selectedTags.length > 0) sp.set("tags", selectedTags.join(","));
+                if (selectedTags.length > 1) sp.set("tagsMode", tagsMode);
+                if (includeArchived) sp.set("archived", "1");
+                if (sort !== "created_desc") sp.set("sort", sort);
+                sp.set("asset", lastPreviewAsset.id);
+                return `/dam/preview?${sp.toString()}`;
+              })()}
+            >
+              <Eye className="w-3.5 h-3.5 mr-1.5" /> Reabrir no preview
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={dismissLastPreview}
+            aria-label="Descartar"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex flex-col max-w-xs w-full">
           <Input
