@@ -649,13 +649,45 @@ export default function DamLibraryPage() {
             ) : null}
           </Card>
         </motion.div>
-      ) : viewMode === "list" ? (
-        <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {displayedAssets.map((a) => (
-            <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
-          ))}
+        <div className={quickPreview.enabled ? "flex gap-4 items-start" : undefined}>
+          <div className="flex-1 min-w-0">
+            {viewMode === "list" ? (
+              <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {displayedAssets.map((a) => (
+                  <AssetCard
+                    key={a.id}
+                    asset={a}
+                    isQuickActive={quickPreview.enabled && quickPreview.activeAsset?.id === a.id}
+                    onHover={quickPreview.enabled ? () => quickPreview.setHoverAsset(a) : undefined}
+                    onHoverEnd={quickPreview.enabled ? () => quickPreview.setHoverAsset(null) : undefined}
+                    onClick={() => {
+                      if (quickPreview.enabled) {
+                        quickPreview.togglePin(a);
+                      } else {
+                        setSelected(a);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          {quickPreview.enabled && (
+            <QuickPreviewPanel
+              asset={quickPreview.activeAsset}
+              pinned={!!quickPreview.activeAsset && quickPreview.pinnedId === quickPreview.activeAsset.id}
+              onTogglePin={() => {
+                if (quickPreview.activeAsset) quickPreview.togglePin(quickPreview.activeAsset);
+              }}
+              onOpenDetails={() => {
+                if (quickPreview.activeAsset) setSelected(quickPreview.activeAsset);
+              }}
+              clients={clients}
+            />
+          )}
         </div>
       )}
 
