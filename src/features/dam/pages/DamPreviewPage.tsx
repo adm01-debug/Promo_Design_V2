@@ -74,13 +74,24 @@ export default function DamPreviewPage() {
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const { state, queryString, setSort, reset: resetFilters } = filters;
+  const {
+    state,
+    queryString,
+    setSort,
+    reset: resetFilters,
+    setAssetTypes,
+    setClientId,
+    setTags,
+    setSearch,
+    setIncludeArchived,
+  } = filters;
   const [searchParams, setSearchParams] = useSearchParams();
   const assetIdParam = searchParams.get("asset");
   const didInitRef = useRef(false);
   const userNavRef = useRef(false);
   const didShowExpiredToastRef = useRef(false);
   const didShowFallbackToastRef = useRef(false);
+  const lastUserSelectedIdRef = useRef<string | null>(null);
 
   // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
