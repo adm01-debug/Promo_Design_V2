@@ -325,7 +325,10 @@ export default function DamPreviewPage() {
   const selectAssetAt = (idx: number, opts?: { pushHistory?: boolean }) => {
     if (assets.length === 0) return;
     if (opts?.pushHistory) userNavRef.current = true;
-    setActiveIndex(((idx % assets.length) + assets.length) % assets.length);
+    const normalized = ((idx % assets.length) + assets.length) % assets.length;
+    const target = assets[normalized];
+    if (target) lastUserSelectedIdRef.current = target.id;
+    setActiveIndex(normalized);
   };
   const goPrev = () => selectAssetAt(activeIndex - 1, { pushHistory: true });
   const goNext = () => selectAssetAt(activeIndex + 1, { pushHistory: true });
