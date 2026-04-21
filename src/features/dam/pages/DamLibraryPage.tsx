@@ -200,7 +200,7 @@ export default function DamLibraryPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.map((o) => (
+              {SORT_OPTIONS.filter((o) => o.value !== "relevance" || debouncedSearch.trim().length > 0).map((o) => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
               ))}
             </SelectContent>
