@@ -110,7 +110,7 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
             </SelectTrigger>
             <SelectContent>
               {SORT_OPTIONS.filter(
-                (o) => o.value !== "relevance" || state.search.trim().length > 0,
+                (o) => o.value !== "relevance" || state.search.trim().length >= MIN_SEARCH_LENGTH,
               ).map((o) => (
                 <SelectItem key={o.value} value={o.value}>
                   {o.label}
