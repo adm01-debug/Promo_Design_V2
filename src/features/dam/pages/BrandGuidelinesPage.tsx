@@ -9,6 +9,8 @@ import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy, Loader2 } from
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
