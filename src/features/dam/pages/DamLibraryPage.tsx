@@ -193,6 +193,23 @@ export default function DamLibraryPage() {
     }, { replace: true });
   }, [paginationMode, setSearchParams]);
 
+  // Persist filters to localStorage so they survive navigation back to /dam
+  useEffect(() => {
+    writeLS(SEARCH_KEY, debouncedSearch.trim() || null);
+  }, [debouncedSearch]);
+  useEffect(() => {
+    writeLS(ASSET_TYPES_KEY, assetTypes.length > 0 ? assetTypes.join(",") : null);
+  }, [assetTypes]);
+  useEffect(() => {
+    writeLS(CLIENT_ID_KEY, clientId !== "all" ? clientId : null);
+  }, [clientId]);
+  useEffect(() => {
+    writeLS(TAGS_KEY, selectedTags.length > 0 ? selectedTags.join(",") : null);
+  }, [selectedTags]);
+  useEffect(() => {
+    writeLS(SORT_KEY, sort !== "created_desc" ? sort : null);
+  }, [sort]);
+
   // Sync page/pageSize with URL
   useEffect(() => {
     setSearchParams((prev) => {
@@ -491,6 +508,11 @@ export default function DamLibraryPage() {
           setClientId("all");
           setSelectedTags([]);
           setIncludeArchived(false);
+          writeLS(SEARCH_KEY, null);
+          writeLS(ASSET_TYPES_KEY, null);
+          writeLS(CLIENT_ID_KEY, null);
+          writeLS(TAGS_KEY, null);
+          writeLS(SORT_KEY, null);
         }}
       />
 
