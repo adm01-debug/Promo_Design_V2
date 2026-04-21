@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { FolderArchive, LayoutGrid, List, Plus } from "lucide-react";
+import { FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
@@ -168,11 +169,31 @@ export default function DamLibraryPage() {
             Logos, artes, fotos e mockups da organização
           </p>
         </div>
-        {can(["owner", "admin", "designer"]) && (
-          <Button onClick={() => setUploadOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" /> Novo asset
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link
+              to={(() => {
+                const sp = new URLSearchParams();
+                if (debouncedSearch.trim()) sp.set("q", debouncedSearch.trim());
+                if (assetTypes.length > 0) sp.set("type", assetTypes.join(","));
+                if (clientId !== "all") sp.set("client", clientId);
+                if (selectedTags.length > 0) sp.set("tags", selectedTags.join(","));
+                if (selectedTags.length > 1) sp.set("tagsMode", tagsMode);
+                if (includeArchived) sp.set("archived", "1");
+                if (sort !== "created_desc") sp.set("sort", sort);
+                const qs = sp.toString();
+                return `/dam/preview${qs ? `?${qs}` : ""}`;
+              })()}
+            >
+              <Eye className="w-4 h-4 mr-2" /> Pré-visualizar
+            </Link>
           </Button>
-        )}
+          {can(["owner", "admin", "designer"]) && (
+            <Button onClick={() => setUploadOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" /> Novo asset
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="flex flex-wrap gap-3 items-center">
