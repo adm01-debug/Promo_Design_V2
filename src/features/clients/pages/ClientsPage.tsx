@@ -36,11 +36,13 @@ const ClientsPage = () => {
   const [summaryPeriod, setSummaryPeriod] = useState<30 | 90 | 365>(90);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [summaryProgress, setSummaryProgress] = useState<PdfProgress | null>(null);
+  const [summaryTitle, setSummaryTitle] = useState<string>("");
 
   const handleGenerateSummary = async () => {
     if (!summaryClient) return;
     const clientName = summaryClient.name;
     setGeneratingSummary(true);
+    setSummaryTitle(`Gerando resumo — ${clientName}`);
     setSummaryProgress({ stage: "Buscando OSs", current: 0, total: 0, percent: 0 });
     // Fechar o diálogo de seleção de período — overlay assume o controle visual
     setSummaryClient(null);
@@ -276,6 +278,12 @@ const ClientsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PdfProgressOverlay
+        open={!!summaryProgress}
+        title={summaryTitle}
+        progress={summaryProgress}
+      />
     </div>
   );
 };
