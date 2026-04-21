@@ -1,51 +1,50 @@
 
 
-## Fallback visual quando o asset salvo expira ou desaparece
+## Preservar asset ativo ao mudar filtros + explicar motivo da remoção
 
-Hoje, quando o asset persistido em `localStorage` (`dam-last-preview-asset`) não está mais nos resultados (arquivado, excluído, ou fora dos filtros atuais), o `DamPreviewPage` silenciosamente cai no índice 0 e o `DamLibraryPage` simplesmente não destaca nada nem mostra o banner de "Continuar de onde parou". O usuário não sabe o que aconteceu com o último asset que viu.
+Hoje, ao mudar filtros em `/dam/preview`, se o asset ativo não estiver mais nos resultados, o usuário vê apenas um chip genérico "Fora dos filtros". Vamos preservar o asset quando ele continua visível e, quando não continua, identificar qual filtro específico o removeu (tipo, cliente, tags, busca, arquivado).
 
 ### Mudanças
 
 **Editar: `src/features/dam/pages/DamPreviewPage.tsx`**
-- Já existe o chip "Fora dos filtros atuais" quando `?asset=` referencia id ausente. Estender para também cobrir o caso "veio do `localStorage` e não foi encontrado":
-  - Detectar: se na primeira carga `assetIdParam` está presente mas `assetMissingFromList === true`, disparar `toast` discreto (variante padrão, 4s):
-    - "O asset que você visualizou por último não está disponível nos filtros atuais. Mostrando o primeiro disponível."
-    - Ação no toast: botão "Limpar filtros" → chama uma função que reseta filtros via `useDamFilters` (`resetAll()` se existir, ou navega para `/dam/preview` sem query).
-  - Usar `useRef` `didShowFallbackToastRef` para garantir que o toast aparece só uma vez por sessão de preview.
-  - Limpar `localStorage` (`clearLastPreviewAsset()`) só quando o usuário escolher "Limpar filtros" ou após confirmação — caso contrário, manter o id salvo (filtros podem ter sido mudados temporariamente).
 
-**Editar: `src/features/dam/pages/DamLibraryPage.tsx`**
-- Hoje o banner "Continuar de onde parou" só aparece quando o asset está nos resultados. Adicionar caso de fallback:
-  - Após carregar `assets` e `lastPreviewAssetId` estar setado mas `lastPreviewAsset === undefined` (não encontrado nos resultados atuais), renderizar um banner alternativo discreto (variante `outline`, ícone `AlertCircle` em `text-muted-foreground`):
-    - Texto: "O último asset visualizado não está nos resultados atuais (pode ter sido arquivado ou removido pelos filtros)."
-    - Botões: `Limpar filtros` (chama `clearAllFilters()`) e `Descartar` (chama `clearLastPreviewAsset()` + esconde o banner).
-  - Se o asset existir, mantém o banner atual de "Continuar de onde parou".
-  - Banner de fallback some automaticamente quando o usuário muda filtros e o asset volta a aparecer.
+1. **Preservar asset ativo entre mudanças de filtro**
+   - Hoje: o efeito de leitura de `?asset=` já reposiciona `activeIndex` quando o id ainda existe na lista nova — isso já funciona. Garantir que o efeito de "init no índice 0" (`didInitRef`) NÃO sobrescreva quando há `?asset=` válido.
+   - Adicionar guarda: se `activeAsset` muda de id apenas por causa de re-fetch (filtro mudou e id antigo sumiu), não atualizar imediatamente o `localStorage` com o id novo — manter o id antigo persistido por curto prazo (até o usuário interagir) para permitir restauração ao limpar filtros.
+   - Implementação: usar um `useRef` `lastUserSelectedIdRef` que só atualiza quando o usuário clica/usa setas. O efeito de persist no `localStorage` passa a usar esse ref em vez do `activeAsset.id` puro.
 
-**Editar: `src/features/dam/pages/DamPreviewPage.tsx` (expiração)**
-- A expiração de TTL (24h) já é tratada em `readLastPreviewAsset()` retornando `null` quando expirado. Adicionar comportamento visual:
-  - No mount, se `localStorage.getItem(LAST_ASSET_KEY)` existe mas `readLastPreviewAsset()` retorna `null` (expirado), disparar `toast` informativo único:
-    - "Sua sessão de pré-visualização anterior expirou (mais de 24h). Começando do início."
-  - Limpar a entrada expirada de `localStorage` automaticamente nesse caso.
+2. **Diagnosticar motivo da remoção**
+   - Criar helper `diagnoseAssetRemoval(asset: Asset, state: DamFiltersState): string[]` em `src/features/dam/lib/filter-diagnosis.ts` que recebe o asset "perdido" (precisamos ter ele em memória) e o `state` atual de filtros, e retorna lista de razões legíveis:
+     - `assetTypes`: "Filtro de tipo (Logo) exclui este asset (tipo: Arte)"
+     - `clientId`: "Filtro de cliente (Cliente X) exclui este asset (cliente: Cliente Y / sem cliente)"
+     - `tags` + `tagsMode`: "Filtro de tags exige [X, Y] (modo: todas/qualquer); asset tem [Z]"
+     - `includeArchived`: "Asset está arquivado e filtro 'incluir arquivados' está desligado"
+     - `search`: "Busca '<termo>' não corresponde ao nome/tags do asset"
+   - Para isso precisamos manter o **último asset visualizado completo** (não só o id). Adicionar estado `lastKnownAsset: Asset | null` que é atualizado sempre que `activeAsset` muda enquanto está nos resultados. Quando o asset some, usamos `lastKnownAsset` para diagnosticar.
 
-**Editar: `src/features/dam/pages/DamLibraryPage.tsx` (expiração)**
-- Mesma lógica: detectar entrada expirada no mount, mostrar toast discreto único e limpar `localStorage`.
-- Extrair helper compartilhado em `DamPreviewPage.tsx` (já exporta `LAST_ASSET_KEY`/`LAST_ASSET_TTL_MS`): adicionar `peekLastPreviewAssetRaw()` que retorna `{ id, expired }` sem limpar, para que cada página decida se mostra toast.
+3. **UI: mostrar motivos no chip + toast**
+   - Substituir o chip atual "Fora dos filtros" por um `Popover` clicável: trigger é o badge `AlertCircle` "Asset removido pelos filtros", o conteúdo lista os motivos retornados pelo helper como bullets, com ações:
+     - Botão "Limpar filtros" → `resetFilters()` + reposiciona no asset.
+     - Botão "Remover apenas filtro de [tipo X]" para cada filtro identificado como causa (chama setter específico de `useDamFilters`).
+   - Toast de fallback (que hoje só diz "fora dos filtros") passa a incluir o primeiro motivo na descrição: "Removido pelo filtro de tipo (Logo). Mostrando o primeiro disponível."
+
+4. **Persist do `lastKnownAsset`**
+   - Quando `activeAsset` está nos resultados, atualizar `setLastKnownAsset(activeAsset)`.
+   - Quando some, manter o último valor para diagnóstico (não limpar).
+   - Ao limpar filtros via botão, reposicionar `activeIndex` no índice do `lastKnownAsset.id` se voltou a aparecer.
 
 ### Comportamento
 
-- **Expirado (>24h)**: ao entrar em `/dam` ou `/dam/preview`, toast discreto "sessão expirada", localStorage limpo, página continua normal.
-- **Asset arquivado/removido por filtro**: 
-  - Em `/dam/preview?asset=X` (X não nos resultados): chip "Fora dos filtros" + toast com botão "Limpar filtros", primeiro asset vira ativo.
-  - Em `/dam` voltando do preview: banner alternativo "último asset não está nos resultados" com ações Limpar filtros / Descartar.
-- **Asset disponível**: comportamento atual mantido (destaque + banner "Continuar de onde parou").
+- Mudar filtros e o asset continuar visível → permanece ativo (sem mudanças visíveis para o usuário).
+- Mudar filtros e o asset sumir → chip clicável "Asset removido pelos filtros" aparece; toast discreto explica o motivo principal; clicar no chip abre popover com lista de motivos e ações para remover filtros específicos.
+- Limpar filtros (via botão do chip ou do toast) → asset volta a ser o ativo automaticamente, sem cair no índice 0.
+- Sem regressão na sincronização com `?asset=`, back/forward, banner de "Continuar de onde parou", expiração ou compare mode.
 
 ### Critérios de aceite
 
-- Toast de expiração aparece uma única vez quando entrada do localStorage está expirada, e a entrada é limpa automaticamente.
-- Toast/chip de "fora dos filtros" no `/dam/preview` quando o asset salvo não está nos resultados, com ação para limpar filtros.
-- Banner de fallback no `/dam` quando o asset salvo não está nos resultados, com ações Limpar filtros e Descartar.
-- Limpar filtros restaura o destaque/banner normal se o asset voltar a aparecer.
-- Descartar remove a entrada do localStorage e o banner some.
-- Sem regressão no banner "Continuar de onde parou" quando o asset existe, nem em filtros, paginação, upload, drawer ou quick preview.
+- Asset ativo permanece selecionado após mudança de filtro quando ainda está nos resultados.
+- Quando some, chip "Asset removido pelos filtros" aparece com popover listando motivos específicos (tipo/cliente/tags/busca/arquivado).
+- Toast inclui motivo principal na descrição.
+- Ações no popover removem filtros específicos e reposicionam o asset.
+- Limpar filtros restaura o asset anterior se ele voltar a aparecer.
 
