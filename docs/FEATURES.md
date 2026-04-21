@@ -142,7 +142,7 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 8 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | M | Hoje hardcoded; bloqueia personalização por cliente. |
 | 9 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | M | Métricas de uso e produtividade além dos widgets atuais. |
 | 10 | Lixeira DAM | `/dam/trash` | 🟡 | P | Existe filtro `archived`, falta UI dedicada com restore. |
-| 12 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | P | Existe filtro em `/magicup/history`, falta galeria dedicada. |
-| 13 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | P | Hoje layout é editável inline; falta tela de gestão. |
+| 11 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | P | Existe filtro em `/magicup/history`, falta galeria dedicada. |
+| 12 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | P | Hoje layout é editável inline; falta tela de gestão. |
 
 **Esforço:** P = até 1 dia · M = 2-4 dias · G = 5+ dias.
