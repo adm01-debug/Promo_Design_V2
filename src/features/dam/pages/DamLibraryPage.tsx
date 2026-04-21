@@ -155,6 +155,11 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
 
+  const archivedCount = useMemo(
+    () => assets.filter((a) => a.is_archived).length,
+    [assets],
+  );
+
   const availableTags = useMemo(() => {
     const set = new Set<string>();
     assets.forEach((a) => a.tags.forEach((t) => set.add(t)));
@@ -353,7 +358,11 @@ export default function DamLibraryPage() {
           ? "Carregando..."
           : total === 0
             ? "Nenhum asset encontrado"
-            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
+            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
+                includeArchived && archivedCount > 0
+                  ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
+                  : ""
+              }`}
       </div>
 
       {isLoading ? (
