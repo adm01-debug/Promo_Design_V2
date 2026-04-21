@@ -113,6 +113,14 @@ export default function BrandGuidelinesPage() {
   const removeDont = (idx: number) => {
     setDontRules(dontList.filter((_, i) => i !== idx).join("\n"));
   };
+  const addDo = (rule: string) => {
+    if (doList.some((r) => r.toLowerCase() === rule.toLowerCase())) return;
+    setDoRules([...doList, rule].join("\n"));
+  };
+  const addDont = (rule: string) => {
+    if (dontList.some((r) => r.toLowerCase() === rule.toLowerCase())) return;
+    setDontRules([...dontList, rule].join("\n"));
+  };
 
   const handleExportPdf = async () => {
     setIsExporting(true);
