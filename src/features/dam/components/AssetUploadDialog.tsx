@@ -130,12 +130,7 @@ export function AssetUploadDialog({
     addFiles(Array.from(e.dataTransfer.files));
   };
 
-  const handleSubmit = async () => {
-    if (entries.length === 0) return;
-    if (tagError) {
-      toast.error("Corrija as tags antes de enviar");
-      return;
-    }
+  const uploadEntries = async (targets: FileEntry[]) => {
     // Defensive normalization + dedupe
     const cleanTags = Array.from(
       new Set(
@@ -146,10 +141,11 @@ export function AssetUploadDialog({
     );
     setIsUploading(true);
     let okCount = 0;
+    let errCount = 0;
     let lastUploaded: Asset | null = null;
-    for (const entry of entries) {
+    for (const entry of targets) {
       if (entry.status === "done") { okCount++; continue; }
-      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10 } : e));
+      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined } : e));
       try {
         const created = await uploadFile(entry.file, {
           organizationId,
@@ -159,25 +155,52 @@ export function AssetUploadDialog({
           parentAsset: parentAsset ?? undefined,
         });
         lastUploaded = created ?? null;
+        if (created) onUploaded?.(created);
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100 } : e));
         okCount++;
       } catch (err) {
         const msg = (err as Error).message;
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "error", error: msg } : e));
         toast.error(`${entry.file.name}: ${msg}`);
+        errCount++;
       }
     }
     setIsUploading(false);
-    if (okCount > 0) {
+
+    if (okCount > 0 && errCount === 0) {
       toast.success(
         isVersionMode
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
           : `${okCount} asset(s) enviado(s)`
       );
-      if (lastUploaded) onUploaded?.(lastUploaded);
       onOpenChange(false);
+    } else if (okCount > 0 && errCount > 0) {
+      toast.success(`${okCount} enviado(s) · ${errCount} com erro`);
     }
+    return { okCount, errCount, lastUploaded };
   };
+
+  const handleSubmit = async () => {
+    if (entries.length === 0) return;
+    if (tagError) {
+      toast.error("Corrija as tags antes de enviar");
+      return;
+    }
+    await uploadEntries(entries);
+  };
+
+  const handleRetry = async () => {
+    const failed = entries.filter((e) => e.status === "error");
+    if (failed.length === 0) return;
+    setEntries((prev) => prev.map((e) => e.status === "error" ? { ...e, status: "pending", error: undefined, progress: 0 } : e));
+    // Use the freshly-reset entries (status pending) for upload
+    const targets = failed.map((e) => ({ ...e, status: "pending" as const, error: undefined, progress: 0 }));
+    await uploadEntries(targets);
+  };
+
+  const errorCount = entries.filter((e) => e.status === "error").length;
+  const doneCount = entries.filter((e) => e.status === "done").length;
+  const allDone = entries.length > 0 && doneCount === entries.length;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !isUploading && onOpenChange(v)}>
