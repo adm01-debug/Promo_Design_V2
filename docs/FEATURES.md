@@ -138,11 +138,10 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 4 | Magic Up — Batch jobs | `/magicup/jobs` | 🔴 | G | Visibilidade de fila para gerações longas em lote. |
 | 5 | Templates de mockup salvos | `/mockup/templates` | 🔴 | M | Reuso de configurações; hoje só existe `/templates` genérico. |
 | 6 | Comparador de versões de mockup | `/mockup/compare` | 🔴 | M | Facilita revisão A/B entre iterações. |
-| 7 | Busca avançada DAM (saved searches) | `/dam/search` | 🔴 | M | Filtros complexos persistidos para workflows recorrentes. |
-| 8 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | 🔴 | M | Auditoria de mudanças no manual de marca. |
-| 9 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | M | Hoje hardcoded; bloqueia personalização por cliente. |
-| 10 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | M | Métricas de uso e produtividade além dos widgets atuais. |
-| 11 | Lixeira DAM | `/dam/trash` | 🟡 | P | Existe filtro `archived`, falta UI dedicada com restore. |
+| 7 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | 🔴 | M | Auditoria de mudanças no manual de marca. |
+| 8 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | M | Hoje hardcoded; bloqueia personalização por cliente. |
+| 9 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | M | Métricas de uso e produtividade além dos widgets atuais. |
+| 10 | Lixeira DAM | `/dam/trash` | 🟡 | P | Existe filtro `archived`, falta UI dedicada com restore. |
 | 12 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | P | Existe filtro em `/magicup/history`, falta galeria dedicada. |
 | 13 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | P | Hoje layout é editável inline; falta tela de gestão. |
 
