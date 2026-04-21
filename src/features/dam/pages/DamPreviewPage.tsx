@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderArchive, Keyboard } from "lucide-react";
+import { ArrowLeft, FolderArchive, Keyboard, Layers } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
@@ -13,6 +14,9 @@ import { PreviewSidebar } from "../components/PreviewSidebar";
 import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
+import { CompareGrid } from "../components/CompareGrid";
+import { CompareTopBar } from "../components/CompareTopBar";
+import { useCompareSelection } from "../hooks/use-compare-selection";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
