@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Users, Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Users, Plus, Search, Pencil, Trash2, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const empty: ClientInput = { name: "", company: "", email: "", phone: "", notes: "" };
 
@@ -112,6 +113,9 @@ const ClientsPage = () => {
                   {c.email && <p className="text-xs text-muted-foreground">{c.email}</p>}
                   {c.phone && <p className="text-xs text-muted-foreground">{c.phone}</p>}
                   <div className="flex gap-2 pt-2">
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/clients/${c.id}/brand`}><Palette className="h-3 w-3 mr-1" /> Brand</Link>
+                    </Button>
                     {canEdit && <Button variant="ghost" size="sm" onClick={() => openEdit(c)}><Pencil className="h-3 w-3 mr-1" /> Editar</Button>}
                     {canDelete && <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)}><Trash2 className="h-3 w-3 mr-1" /> Excluir</Button>}
                   </div>
