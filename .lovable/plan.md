@@ -1,55 +1,40 @@
 
 
-## "Mostrar arquivados" — já existe, precisa de polimento
+## Validação de tags no upload
 
-O toggle **já existe** em `DamLibraryPage.tsx` (Switch "Arquivados" na barra de filtros) e funciona: alimenta `includeArchived` no filtro do `useAssets`, aparece como chip na `ActiveFiltersBar`, e o `AssetCard`/`AssetListView` já marcam visualmente arquivados com badge "Arquivado".
-
-O que falta para a feature ficar redonda:
-
-### Gaps
-
-1. **Não persiste** entre sessões (sempre volta para `false` ao recarregar) — os outros toggles (`viewMode`, `pageSize`, `tagsMode`) já persistem em localStorage; este foi esquecido.
-2. **Não sincroniza com URL** — o `Link` para `/dam/preview` já passa `archived=1`, mas o estado inicial em `DamLibraryPage` não lê da URL (filtros não compartilháveis).
-3. **Sem indicador no contador** — quando arquivados estão visíveis, "Mostrando 24 de 87" não distingue ativos vs arquivados; ajudaria mostrar "(inclui X arquivados)".
-4. **Visual do toggle pouco descobrível** — fica espremido entre `pageSize` e o `ToggleGroup`; merece um label mais claro com ícone (Archive).
+Hoje `TagChipsInput` já normaliza (trim + lowercase) e bloqueia duplicatas/vazias silenciosamente, mas não mostra feedback. Além disso, `AssetUploadDialog` permite enviar com qualquer estado de tags. Vamos endurecer e dar feedback visível.
 
 ### Mudanças
 
-**`DamLibraryPage.tsx`**:
-- Adicionar `INCLUDE_ARCHIVED_KEY = "dam-include-archived"` e ler da URL (`?archived=1`) com fallback para `localStorage`
-- Persistir mudanças em `localStorage` via `useEffect` (mesmo padrão dos outros toggles)
-- Sincronizar com URL via `useSearchParams` (set/delete `archived`)
-- Trocar o Switch por um `Toggle` (shadcn) com ícone `Archive` da lucide e label "Arquivados", visualmente alinhado com o `ToggleGroup` de view mode
-- No contador de resultados, quando `includeArchived` está ativo, anexar "(N arquivados)" baseado em `assets.filter(a => a.is_archived).length` da página atual
+**`src/features/dam/components/TagChipsInput.tsx`**
+- Adicionar prop opcional `error?: string` e `onValidationChange?: (err: string | null) => void`
+- Em `addTag(raw)`:
+  - normalizar: `raw.trim().toLowerCase().replace(/\s+/g, " ")`
+  - se vazio após trim → setar erro inline "Tag não pode ser vazia"
+  - se duplicada → erro "Tag já adicionada"
+  - se exceder `maxTags` → erro "Máximo de N tags"
+  - se passar regex inválida (apenas `[a-z0-9-_ ]`, 1–30 chars) → erro "Use letras, números, - ou _"
+- Limpar erro automaticamente após 2.5s ou ao digitar de novo
+- Renderizar mensagem de erro abaixo do container (texto `text-destructive text-xs mt-1`)
+- Borda do container vira `border-destructive` quando há erro
 
-**`use-assets.ts`**:
-- Já retorna `is_archived` no row; sem mudanças
+**`src/features/dam/components/AssetUploadDialog.tsx`**
+- Antes de `handleSubmit`, validar `tags`:
+  - Deduplica defensivamente (mesmo já vindo limpo do input)
+  - Se houver tag inválida residual → bloquear submit + `toast.error("Corrija as tags antes de enviar")`
+- Não bloqueia upload se tags estiver vazia (tags são opcionais), só se tiver entrada inválida no campo (draft pendente com erro)
+- Passar handler de erro pro `TagChipsInput` para refletir estado no botão "Enviar" (desabilitado enquanto houver erro de tag)
 
-**`AssetCard.tsx`** / **`AssetListView.tsx`**:
-- Já mostram badge "Arquivado"; sem mudanças
-
-### Arquivos
-
-| Arquivo | Ação |
-|---|---|
-| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — persistência localStorage + URL sync + Toggle visual + contador enriquecido |
-
-### Detalhes técnicos
-
-- Reusa `useSearchParams` (já importado indiretamente via Link) — adicionar import direto
-- `INCLUDE_ARCHIVED_KEY` segue convenção dos outros (`VIEW_MODE_KEY`, `PAGE_SIZE_KEY`, `TAGS_MODE_KEY`)
-- Estado inicial: `urlParams.get("archived") === "1" ?? localStorage ?? false`
-- Toggle component: `<Toggle pressed={includeArchived} onPressedChange={setIncludeArchived}>` com `<Archive className="w-4 h-4 mr-2" /> Arquivados`
-- Contador: `{includeArchived && archivedCount > 0 && ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""}`}`
-- Sem mudanças no banco, RLS, ou hook de query
+**Sem mudanças** em banco, RLS, hooks ou outros componentes.
 
 ### Critérios de aceite
 
-- Toggle "Arquivados" persiste entre reloads (localStorage)
-- URL `?archived=1` ativa o toggle ao abrir
-- Mudar o toggle atualiza URL (compartilhável)
-- Contador mostra "Mostrando X de Y · N arquivados" quando ativo
-- Visual do toggle mais descobrível (ícone + label)
-- Chip "Arquivados incluídos" e botão "Limpar filtros" continuam funcionando
-- Sem regressão na lista, paginação, ou filtros existentes
+- Tentar adicionar tag vazia mostra erro inline ("Tag não pode ser vazia")
+- Tentar adicionar tag duplicada (case-insensitive, com espaços extras) mostra "Tag já adicionada"
+- Tags são salvas sempre normalizadas (trim, lowercase, espaços colapsados)
+- Caracteres inválidos rejeitados com mensagem clara
+- Limite de tags mostra erro ao tentar exceder
+- Botão "Enviar" fica desabilitado enquanto houver erro ativo no campo de tags
+- Erro desaparece ao digitar novamente ou após 2.5s
+- Sem regressão: tags vazias continuam permitidas (campo opcional), sugestões continuam funcionando, modo versão segue herdando tags do parent
 
