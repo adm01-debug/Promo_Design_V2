@@ -29,7 +29,32 @@ import { RuleChips } from "../components/RuleChips";
 import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
 import { getAssetSignedUrl } from "../lib/asset-urls";
 import { wcagBoth } from "../lib/color-contrast";
+import { useGoogleFonts } from "../lib/google-fonts-loader";
+import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
+
+function FontLivePreview({ name }: { name: string }) {
+  const debounced = useDebounce(name.trim(), 300);
+  const { loaded } = useGoogleFonts(debounced ? [debounced] : []);
+  if (!debounced) return null;
+  const status = loaded[debounced.toLowerCase()];
+  const notFound = status === false;
+  return (
+    <div className="flex items-center gap-2 pl-1">
+      <span
+        className="text-base text-muted-foreground"
+        style={{ fontFamily: `"${debounced}", sans-serif` }}
+      >
+        Aa Bb Cc 0123 — {debounced}
+      </span>
+      {notFound && (
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+          ⚠ Fonte não encontrada no Google Fonts
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function BrandGuidelinesPage() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -305,19 +330,22 @@ export default function BrandGuidelinesPage() {
         </div>
         <div className="space-y-2">
           {fonts.map((f, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center">
-              <Input className="col-span-4" placeholder="Nome" value={f.name} disabled={!editable}
-                onChange={(e) => { const next = [...fonts]; next[i] = { ...f, name: e.target.value }; setFonts(next); }} />
-              <Input className="col-span-3" placeholder="Uso (ex: Títulos)" value={f.usage ?? ""} disabled={!editable}
-                onChange={(e) => { const next = [...fonts]; next[i] = { ...f, usage: e.target.value }; setFonts(next); }} />
-              <Input className="col-span-4" placeholder="Fonte/link" value={f.source ?? ""} disabled={!editable}
-                onChange={(e) => { const next = [...fonts]; next[i] = { ...f, source: e.target.value }; setFonts(next); }} />
-              {editable && (
-                <Button className="col-span-1" size="icon" variant="ghost"
-                  onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
+            <div key={i} className="space-y-1.5">
+              <div className="grid grid-cols-12 gap-2 items-center">
+                <Input className="col-span-4" placeholder="Nome (ex: Playfair Display)" value={f.name} disabled={!editable}
+                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, name: e.target.value }; setFonts(next); }} />
+                <Input className="col-span-3" placeholder="Uso (ex: Títulos)" value={f.usage ?? ""} disabled={!editable}
+                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, usage: e.target.value }; setFonts(next); }} />
+                <Input className="col-span-4" placeholder="Fonte/link" value={f.source ?? ""} disabled={!editable}
+                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, source: e.target.value }; setFonts(next); }} />
+                {editable && (
+                  <Button className="col-span-1" size="icon" variant="ghost"
+                    onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+              <FontLivePreview name={f.name} />
             </div>
           ))}
           {fonts.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma fonte adicionada.</div>}

@@ -21,7 +21,7 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
   const accentColor = primary[1]?.hex ?? secondary[0]?.hex ?? "#64748b";
   const headingFont = fonts[0]?.name ?? "Inter";
   const bodyFont = fonts[1]?.name ?? fonts[0]?.name ?? "Inter";
-  useGoogleFonts([headingFont, bodyFont]);
+  const { allReady } = useGoogleFonts([headingFont, bodyFont]);
 
   const heroText = bestTextColor(heroColor);
   const accentText = bestTextColor(accentColor);
@@ -59,7 +59,7 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
         <div className="flex-1 min-w-0">
           <div
             className="text-3xl font-bold truncate"
-            style={{ fontFamily: `"${headingFont}", sans-serif` }}
+            style={{ fontFamily: `"${headingFont}", sans-serif`, visibility: allReady ? "visible" : "hidden" }}
           >
             {clientName}
           </div>
