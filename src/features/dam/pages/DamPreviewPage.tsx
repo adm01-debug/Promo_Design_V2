@@ -131,9 +131,24 @@ export default function DamPreviewPage() {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      const inEditable = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
       // When the detail drawer is open, let Radix handle Esc/focus; skip our shortcuts.
       if (detailAsset) return;
+
+      // Esc has special handling — even inside inputs we want to blur first.
+      if (e.key === "Escape") {
+        if (inEditable && target) {
+          e.preventDefault();
+          target.blur();
+          return;
+        }
+        e.preventDefault();
+        navigate(`/dam${queryString}`);
+        return;
+      }
+
+      if (inEditable) return;
+
       if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
         e.preventDefault();
         goPrev();
@@ -146,9 +161,13 @@ export default function DamPreviewPage() {
       } else if (e.key === "End") {
         e.preventDefault();
         if (assets.length > 0) setActiveIndex(assets.length - 1);
-      } else if (e.key === "Escape") {
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        navigate(`/dam${queryString}`);
+        if (activeAsset) {
+          const params = new URLSearchParams(queryString.startsWith("?") ? queryString.slice(1) : queryString);
+          params.set("asset", activeAsset.id);
+          window.open(`/dam/preview?${params.toString()}`, "_blank", "noopener,noreferrer");
+        }
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (activeAsset) setDetailAsset(activeAsset);
