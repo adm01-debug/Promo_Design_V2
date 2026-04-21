@@ -33,6 +33,7 @@ export function AssetListView({ assets, clients, onSelect }: AssetListViewProps)
           {assets.map((a) => (
             <TableRow
               key={a.id}
+              data-asset-id={a.id}
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => onSelect(a)}
             >
