@@ -5,19 +5,32 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Sparkles } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { useOrganizations } from "@/hooks/use-organization";
+import { useClients } from "@/features/clients/hooks/use-clients";
 import { useBrandGuidelines, type ColorEntry, type FontEntry } from "../hooks/use-brand-guidelines";
 import { useAssets, type Asset } from "../hooks/use-assets";
 import { AssetThumbnail } from "../components/AssetThumbnail";
 import { AssetPicker } from "../components/AssetPicker";
+import { BrandPreviewCard } from "../components/BrandPreviewCard";
 import { toast } from "sonner";
 
 export default function BrandGuidelinesPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const { currentOrgId, can } = useOrganizations();
+  const { clients } = useClients(currentOrgId);
   const { guidelines, isLoading, upsert } = useBrandGuidelines(currentOrgId, clientId ?? null);
   const { assets } = useAssets(currentOrgId, { clientId, assetType: "logo" });
+
+  const client = clients.find((c) => c.id === clientId) ?? null;
 
   const [primary, setPrimary] = useState<ColorEntry[]>([]);
   const [secondary, setSecondary] = useState<ColorEntry[]>([]);
@@ -119,13 +132,31 @@ export default function BrandGuidelinesPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild><Link to="/clients">Clientes</Link></BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{client?.name ?? "Cliente"}</BreadcrumbPage>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Brand Guidelines</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <div className="flex items-center justify-between">
         <div>
           <Button variant="ghost" size="sm" asChild className="mb-2">
             <Link to="/clients"><ArrowLeft className="w-4 h-4 mr-1" /> Clientes</Link>
           </Button>
           <h1 className="text-2xl font-bold">Brand Guidelines</h1>
-          <p className="text-sm text-muted-foreground">Identidade visual do cliente</p>
+          <p className="text-sm text-muted-foreground">
+            Identidade visual {client?.name ? `de ${client.name}` : "do cliente"}
+          </p>
         </div>
         {editable && (
           <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
@@ -133,6 +164,16 @@ export default function BrandGuidelinesPage() {
           </Button>
         )}
       </div>
+
+      {!isLoading && !guidelines && (
+        <Card className="p-6 border-dashed text-center text-muted-foreground">
+          <Sparkles className="w-8 h-8 mx-auto mb-2 text-primary" />
+          <p className="text-sm">
+            Nenhuma brand guideline salva ainda. Preencha os campos abaixo e clique em
+            <span className="font-semibold"> Salvar</span> para criar.
+          </p>
+        </Card>
+      )}
 
       <Card className="p-4">
         <h3 className="font-semibold mb-3">Logo principal</h3>
@@ -237,6 +278,19 @@ export default function BrandGuidelinesPage() {
         assetType="logo"
         onSelect={(a: Asset) => setLogoId(a.id)}
       />
+
+      <div className="pt-4">
+        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" /> Brand Preview
+        </h2>
+        <BrandPreviewCard
+          clientName={client?.name ?? "Cliente"}
+          primary={primary}
+          secondary={secondary}
+          fonts={fonts}
+          logo={logoAsset}
+        />
+      </div>
     </div>
   );
 }
