@@ -60,6 +60,8 @@ const AuditLogPage = () => {
       tableName: params.get("table") ?? undefined,
       userId: params.get("user") ?? undefined,
       recordIdQuery: params.get("q") ?? "",
+      valueKey: params.get("vk") ?? "",
+      valueQuery: params.get("vq") ?? "",
     }),
     [params],
   );
@@ -72,6 +74,8 @@ const AuditLogPage = () => {
     if (s.tableName) next.set("table", s.tableName);
     if (s.userId) next.set("user", s.userId);
     if (s.recordIdQuery) next.set("q", s.recordIdQuery);
+    if (s.valueKey) next.set("vk", s.valueKey);
+    if (s.valueQuery) next.set("vq", s.valueQuery);
     setParams(next, { replace: true });
     setPage(0);
   };
@@ -95,13 +99,29 @@ const AuditLogPage = () => {
     tableName: filterState.tableName,
     userId: filterState.userId,
     recordIdQuery: filterState.recordIdQuery,
+    valueKey: filterState.valueKey,
+    valueQuery: filterState.valueQuery,
     page,
     pageSize: PAGE_SIZE,
   };
 
   const { data, isLoading } = useAuditLog(queryFilters);
-  const rows = data?.rows ?? [];
-  const total = data?.count ?? 0;
+  const rawRows = data?.rows ?? [];
+  const serverTotal = data?.count ?? 0;
+
+  // Client-side post-filter: aplicado quando há texto sem chave (impossível server-side em jsonb)
+  const needsClientValueFilter =
+    filterState.valueQuery.trim().length > 0 && filterState.valueKey.trim().length === 0;
+  const rows = useMemo(() => {
+    if (!needsClientValueFilter) return rawRows;
+    const term = filterState.valueQuery.trim().toLowerCase();
+    return rawRows.filter((r) => {
+      const oldStr = r.old_values ? JSON.stringify(r.old_values).toLowerCase() : "";
+      const newStr = r.new_values ? JSON.stringify(r.new_values).toLowerCase() : "";
+      return oldStr.includes(term) || newStr.includes(term);
+    });
+  }, [rawRows, needsClientValueFilter, filterState.valueQuery]);
+  const total = needsClientValueFilter ? rows.length : serverTotal;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {

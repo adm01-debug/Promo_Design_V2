@@ -23,6 +23,8 @@ export interface AuditFilterState {
   tableName?: string;
   userId?: string;
   recordIdQuery: string;
+  valueKey: string;
+  valueQuery: string;
 }
 
 interface MemberOpt {
@@ -59,7 +61,9 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
       state.actions.length > 0 ||
       !!state.tableName ||
       !!state.userId ||
-      state.recordIdQuery.length > 0,
+      state.recordIdQuery.length > 0 ||
+      state.valueKey.length > 0 ||
+      state.valueQuery.length > 0,
     [state],
   );
 
@@ -183,18 +187,51 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
           className="h-9 w-[200px] font-mono text-xs"
         />
 
+        {/* Value search inside old_values/new_values */}
+        <Input
+          placeholder="Chave (ex: status)"
+          value={state.valueKey}
+          onChange={(e) => onChange({ ...state, valueKey: e.target.value })}
+          className="h-9 w-[160px] font-mono text-xs"
+          aria-label="Chave dentro de old_values/new_values"
+        />
+        <Input
+          placeholder="Valor contém…"
+          value={state.valueQuery}
+          onChange={(e) => onChange({ ...state, valueQuery: e.target.value })}
+          className="h-9 w-[200px] font-mono text-xs"
+          aria-label="Texto a procurar nos valores"
+        />
+
         {hasAny && (
           <Button
             size="sm"
             variant="ghost"
             onClick={() =>
-              onChange({ actions: [], recordIdQuery: "", from: undefined, to: undefined, tableName: undefined, userId: undefined })
+              onChange({
+                actions: [],
+                recordIdQuery: "",
+                from: undefined,
+                to: undefined,
+                tableName: undefined,
+                userId: undefined,
+                valueKey: "",
+                valueQuery: "",
+              })
             }
           >
             Limpar
           </Button>
         )}
       </div>
+
+      {/* Hint when only value text is provided without key */}
+      {state.valueQuery.length > 0 && state.valueKey.trim().length === 0 && (
+        <p className="text-xs text-muted-foreground">
+          Sem uma <span className="font-mono">chave</span>, o filtro de valor é aplicado localmente apenas na página atual.
+          Informe uma chave (ex: <span className="font-mono">status</span>) para buscar em todo o histórico.
+        </p>
+      )}
 
       {/* Active chips */}
       {hasAny && (
@@ -219,6 +256,12 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
           )}
           {state.recordIdQuery && (
             <Chip label={`ID: ${state.recordIdQuery}`} onRemove={() => onChange({ ...state, recordIdQuery: "" })} />
+          )}
+          {state.valueKey && (
+            <Chip label={`Chave: ${state.valueKey}`} onRemove={() => onChange({ ...state, valueKey: "" })} />
+          )}
+          {state.valueQuery && (
+            <Chip label={`Valor: ${state.valueQuery}`} onRemove={() => onChange({ ...state, valueQuery: "" })} />
           )}
         </div>
       )}
