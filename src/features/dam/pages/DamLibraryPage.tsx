@@ -486,6 +486,35 @@ export default function DamLibraryPage() {
         </div>
       )}
 
+      {!lastPreviewAsset && lastPreviewAssetId && !isLoading && !fallbackDismissed && (
+        <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground truncate">
+            O último asset visualizado não está nos resultados atuais (pode ter sido arquivado ou removido pelos filtros).
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto h-7"
+            onClick={clearAllFilters}
+          >
+            <FilterX className="w-3.5 h-3.5 mr-1.5" /> Limpar filtros
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={() => {
+              clearLastPreviewAsset();
+              setLastPreviewAssetId(null);
+              setFallbackDismissed(true);
+            }}
+          >
+            Descartar
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex flex-col max-w-xs w-full">
           <Input
