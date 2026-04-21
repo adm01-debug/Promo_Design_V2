@@ -186,8 +186,10 @@ export default function DamPreviewPage() {
     if (assets.length === 0) return;
     if (!assetIdParam) return;
     const idx = assets.findIndex((a) => a.id === assetIdParam);
-    if (idx >= 0 && idx !== activeIndex) {
-      setActiveIndex(idx);
+    if (idx >= 0) {
+      // URL-driven selection counts as user intent — track for localStorage persistence.
+      lastUserSelectedIdRef.current = assetIdParam;
+      if (idx !== activeIndex) setActiveIndex(idx);
     }
   }, [assetIdParam, assets, activeIndex]);
 
