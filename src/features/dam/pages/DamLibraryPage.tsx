@@ -248,6 +248,10 @@ export default function DamLibraryPage() {
 
   // Sync page/pageSize with URL
   useEffect(() => {
+    try {
+      if (page > 1 && paginationMode === "pages") localStorage.setItem(PAGE_KEY, String(page));
+      else localStorage.removeItem(PAGE_KEY);
+    } catch { /* ignore */ }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (page > 1 && paginationMode === "pages") next.set("page", String(page));
