@@ -1,44 +1,56 @@
 
 
-## Atalhos avançados e navegação acessível na preview
+## Modo de Comparação (2–4 assets lado a lado) na pré-visualização
 
-Hoje a preview tem `Enter` (abre drawer), `Esc` (volta à biblioteca) e setas/`j`/`k`/`Home`/`End` para navegar. Faltam dois refinamentos pedidos:
-
-1. **`Ctrl/Cmd+Enter`** → abrir o asset ativo em **nova aba** (deep link `/dam/preview?asset=<id>&...filtros`), útil para comparar dois assets lado a lado.
-2. **`Tab`/`Shift+Tab` + `Esc` acessíveis** → atualmente o handler global usa `e.preventDefault()` em `Esc` mesmo quando o foco está em um elemento focável legítimo (sidebar, botões). Vamos melhorar a hierarquia de Esc e garantir que a ordem natural de Tab funcione bem.
+Adicionar um modo "Compare" em `/dam/preview` para selecionar 2–4 assets e exibi-los lado a lado, com zoom/pan sincronizados — útil para validar variações de logo, cores, versões.
 
 ### Mudanças
 
-**`src/features/dam/pages/DamPreviewPage.tsx`**
+**Novo: `src/features/dam/hooks/use-compare-selection.ts`**
+- Estado de seleção: `selectedIds: string[]` (max 4), persistido em `sessionStorage` (`dam-compare-selection`).
+- API: `toggle(id)`, `clear()`, `remove(id)`, `count`, `canAdd`.
+- Toggle ignora se já tem 4 e o id não está incluso (com toast de aviso).
 
-1. **`Ctrl/Cmd+Enter` → nova aba**:
-   - No handler `onKey`, antes do branch atual de `Enter`, detectar `e.key === "Enter" && (e.ctrlKey || e.metaKey)`.
-   - Construir a URL: `/dam/preview?${queryString sem leading "?"}&asset=${activeAsset.id}` (mesclar com `queryString` atual de `useDamFilters`, garantindo `asset` presente sem duplicar).
-   - `window.open(url, "_blank", "noopener,noreferrer")`.
-   - Continua respeitando guards de input/textarea/contentEditable e drawer aberto.
+**Novo: `src/features/dam/components/CompareGrid.tsx`**
+- Recebe `assets: Asset[]` (2–4 itens).
+- Layout responsivo: 2 itens → grid 2 colunas; 3 → 3 colunas; 4 → 2x2.
+- Cada célula: header compacto (nome + botão `X` para remover) + área de imagem.
+- Zoom/pan **sincronizado**: estado único `{ scale, tx, ty }` no grid, propagado a todas as células.
+  - Wheel/pinch sobre qualquer célula atualiza o estado global.
+  - Drag (mousedown→move) também sincroniza.
+  - Botões "Reset", "Ajustar", "100%" no topo.
+- Cada célula carrega seu próprio signed URL via `getAssetSignedUrl` (cache já existente cobre revisitas).
+- Skeleton enquanto URL carrega; mensagem de erro se não-imagem.
 
-2. **Hierarquia de `Esc` mais inteligente**:
-   - Se o `detailAsset` (drawer) está aberto → não interceptar (Radix Sheet já fecha com Esc).
-   - Se o foco está dentro de um `<input>`/`<textarea>` (ex: campo de busca da sidebar) → não voltar à biblioteca; em vez disso, fazer `target.blur()` para liberar foco (UX comum: 1º Esc tira foco, 2º Esc volta).
-   - Caso contrário, comportamento atual: navegar para `/dam${queryString}`.
+**Novo: `src/features/dam/components/CompareTopBar.tsx`**
+- Barra fixa no topo da stage quando `compareMode` ativo: `N de 4 selecionados · [Adicionar do strip] · [Limpar] · [Sair do modo]`.
 
-3. **Suporte a Tab acessível**:
-   - Remover qualquer `tabIndex={-1}` desnecessário do container raiz (verificar — atualmente não tem, ok).
-   - Garantir que os botões do `PreviewStage` (Copiar/Baixar/Detalhes/Setas) já têm `aria-label` e são focáveis na ordem natural (já estão).
-   - Adicionar `role="region"` + `aria-label="Pré-visualização de assets"` no container principal para melhor leitura por screen readers.
-   - Os atalhos de letra única (`j`/`k`/`c`/`d`/`z`) já ignoram quando o foco está em input — mantém Tab/foco totalmente livre.
+**Editar: `src/features/dam/pages/DamPreviewPage.tsx`**
+1. Importar `useCompareSelection` e estado `compareMode: boolean` (toggle via botão no header e atalho `M`).
+2. Botão no header: `[Compare]` (mostra contador quando há seleção).
+3. Quando `compareMode`:
+   - `PreviewStage` é substituído por `<CompareGrid assets={selectedAssets} ... />` se `count >= 2`, senão um placeholder "Selecione ao menos 2 assets do strip abaixo".
+   - `PreviewThumbStrip` ganha modo "selecionável" (checkbox visual + borda diferente para selecionados).
+4. Atalhos adicionais (apenas em compareMode):
+   - `Espaço` adiciona/remove o asset ativo da seleção.
+   - `M` sai do modo.
+   - Setas continuam navegando o `activeIndex` (cursor para selecionar com Espaço).
+5. Atualizar legenda de atalhos no header e popover mobile incluindo: `M compare · Espaço (no compare) selecionar`.
 
-4. **Atualizar a legenda de atalhos** no header e `PopoverContent` mobile:
-   `← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar`
+**Editar: `src/features/dam/components/PreviewThumbStrip.tsx`**
+- Aceitar props opcionais: `selectionMode?: boolean`, `selectedIds?: string[]`, `onToggleSelect?: (id: string) => void`.
+- Quando `selectionMode`: thumb selecionada ganha borda primária + checkmark no canto; clique chama `onToggleSelect` em vez de `onSelect` (cursor segue separado).
+- Sem regressão no modo normal.
 
 ### Critérios de aceite
 
-- `Ctrl+Enter` (Win/Linux) e `Cmd+Enter` (Mac) abrem `/dam/preview?...&asset=<id-atual>` em nova aba, preservando todos os filtros atuais.
-- `Enter` simples continua abrindo o drawer de detalhes na aba atual.
-- `Esc` com foco em um input da sidebar apenas tira o foco; um segundo `Esc` (ou `Esc` em foco neutro) volta à biblioteca.
-- `Esc` com o drawer aberto fecha o drawer (Radix), sem voltar à biblioteca.
-- `Tab`/`Shift+Tab` percorrem em ordem lógica: busca → filtros da sidebar → botões do overlay (Copiar/Baixar/Detalhes/zoom) → setas de navegação → thumbs do strip.
-- Container principal expõe `role="region"` + `aria-label`.
-- Legenda de atalhos atualizada no header e popover mobile.
-- Sem regressão nos atalhos existentes (setas, j/k, Home/End, c/d/z, Enter simples).
+- Botão "Compare" no header alterna o modo; ícone + contador quando há seleção.
+- Strip permite selecionar 2–4 thumbs (checkmark visível); tentativa de 5ª mostra toast.
+- Grid renderiza lado a lado com zoom/pan sincronizado em todas as células (testar com mouse wheel + drag).
+- Botões Reset/Ajustar/100% afetam todas simultaneamente.
+- Remover via `X` no header da célula ou desmarcar no strip atualiza o grid em tempo real.
+- Atalhos: `M` entra/sai, `Espaço` toggle do asset ativo, demais atalhos seguem funcionando.
+- Seleção persiste em `sessionStorage` durante a sessão (sobrevive a F5).
+- Sair do modo limpa o grid mas mantém a seleção (próximo `M` restaura).
+- Sem regressão em PreviewStage normal, drawer de detalhes, ou navegação.
 
