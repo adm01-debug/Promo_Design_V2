@@ -1,36 +1,35 @@
 
 
-## Edição inline de regras Do/Don't via chips
+## Aba "Aplicação" no preview do brand kit
 
-Os chips com ícone e botão de deletar já existem (`RuleChips.tsx`). Falta tornar a **adição** tão rápida quanto a remoção, eliminando a dependência do textarea como fluxo principal.
+Já existe `BrandApplicationPreview.tsx` (header simulado + 3 cards de produto usando cores primárias/secundárias e fontes carregadas). Falta apenas surfacing: hoje a página de preview mostra só `BrandPreviewCard`. Vamos envolver os dois em `Tabs` para o usuário alternar entre "Identidade" (paleta + fontes) e "Aplicação" (mockup de site).
 
 ### Mudanças
 
-**`src/features/dam/components/RuleChips.tsx`** — estender
-- Nova prop opcional `onAdd?: (rule: string) => void`. Quando presente + `editable`, renderiza um chip-input inline ao final da lista:
-  - `<input>` borderless dentro de um chip outline tracejado (`border-dashed`) com placeholder `"+ Adicionar regra"` (verde para do, vermelho para don't).
-  - Enter ou vírgula → chama `onAdd(value.trim())` e limpa.
-  - Esc → cancela e limpa.
-  - Validação: ignora vazio e duplicatas (case-insensitive); flash visual `border-destructive` por 1s se inválido.
-- Botão `X` de remoção ganha `aria-label="Remover regra: {item}"` para acessibilidade.
-
-**`src/features/dam/pages/BrandGuidelinesPage.tsx`** — refatorar fluxo
-- Substituir os dois Cards Do/Don't por uma versão centrada em chips:
-  - Header: `Label` "✓ Do" / "✗ Don't" + contador `({doList.length})`.
-  - `<RuleChips>` com `onAdd`, `editable`, `onRemove`.
-  - `<Collapsible>` "Editar em massa (texto)" abaixo, fechado por padrão. Ao expandir, mostra o `<Textarea>` atual (uma regra por linha) com botão "Aplicar" que faz parse e substitui a lista.
-- Handlers novos:
-  - `addDo(rule)` → `setDoRules([...doList, rule].join("\n"))` se não duplicar.
-  - `addDont(rule)` idem.
-- Manter `doList`/`dontList` como single source of truth (já são derivados de `doRules`/`dontRules`).
+**`src/features/dam/pages/BrandGuidelinesPage.tsx`** (ou onde o preview é renderizado — confirmar via leitura)
+- Importar `Tabs, TabsList, TabsTrigger, TabsContent` (já usado na página) e `BrandApplicationPreview`.
+- Substituir o render direto de `<BrandPreviewCard ... />` por:
+  ```tsx
+  <Tabs defaultValue="identity">
+    <TabsList>
+      <TabsTrigger value="identity">Identidade</TabsTrigger>
+      <TabsTrigger value="application">Aplicação</TabsTrigger>
+    </TabsList>
+    <TabsContent value="identity">
+      <BrandPreviewCard {...props} />
+    </TabsContent>
+    <TabsContent value="application">
+      <BrandApplicationPreview {...props} />
+    </TabsContent>
+  </Tabs>
+  ```
+- Ambos componentes recebem o mesmo conjunto de props (`clientName`, `primary`, `secondary`, `fonts`, `logo`), então é só repassar.
 
 ### Critérios de aceite
 
-- Adicionar regra: digitar no chip-input + Enter cria novo chip imediatamente, sem tocar no textarea.
-- Remover regra: clicar `X` em qualquer chip remove só aquela, sem afetar as outras.
-- Duplicata (case-insensitive) é rejeitada com flash vermelho de 1s, sem toast (não-bloqueante).
-- "Editar em massa" expande textarea para colar lista grande; botão "Aplicar" substitui chips.
-- Viewer (não-editor): vê chips sem botão `X` e sem chip-input.
-- Salvar persiste corretamente (continua serializando como `string[]` no DB).
-- Sem regressão: contagem, ordem das regras, e exportação no PDF (`doList`/`dontList`) continuam idênticas.
+- Na aba de preview da brand guidelines, aparecem duas tabs: **Identidade** (default, mostra `BrandPreviewCard` atual) e **Aplicação** (mostra `BrandApplicationPreview` com header de site + 3 cards de produto).
+- Trocar de tab é instantâneo, sem recarregar fontes (cache do `useGoogleFonts` reaproveita).
+- Cores primárias dirigem header e botões; cores secundárias aparecem em card promocional e outline; fonte heading nos títulos, body no resto.
+- Logo (se configurado) aparece no header simulado; senão, mostra inicial do nome do cliente.
+- Sem regressão: edição de cores/fontes/regras, salvar, exportar PDF e WCAG continuam funcionando idênticos.
 
