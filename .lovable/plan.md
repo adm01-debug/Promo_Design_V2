@@ -1,34 +1,33 @@
 
 
-## Badges WCAG + copy-hex em todas as paletas
+## Google Fonts dinâmico com cache, dedupe e await de carga
 
-Estender o que já existe (copy + toast + badges parciais) para cobrir **todas** as cores em todos os pontos onde a paleta aparece.
+Blindar `google-fonts-loader.ts` para que a fonte digitada renderize de verdade sem FOUT e sem fallback silencioso, e estender o preview ao vivo para a tela de edição.
 
 ### Mudanças
 
-**`src/features/dam/components/BrandPreviewCard.tsx`**
-- Adicionar nova seção "Paleta completa" abaixo da grid existente, listando **todas** as cores (`primary` + `secondary`) como swatches grandes (40×40px) com:
-  - Nome da cor (se houver) + HEX em mono (clicável → copia + toast existente).
-  - Badge WCAG vs branco (`AAA`/`AA`/`FAIL`) — verde/azul/vermelho.
-  - Badge WCAG vs preto — segundo badge ao lado.
-  - Tooltip mostrando ratio numérico ("4.8:1").
-- Os 5 dots do hero ganham badge WCAG flutuante (canto inferior direito do dot, mini pill 8px).
-- Remover o `slice(0, 8)` da seção "Botão de marca" — manter como está mas a nova seção cobre tudo.
+**`src/features/dam/lib/google-fonts-loader.ts`** — reforço
+- Cache global `Map<string, Promise<boolean>>` por família (lowercase). A promise resolve `true` quando `document.fonts.load("1em 'Family'")` confirma carga, `false` se o link 404/timeout (3s).
+- Antes de injetar, varrer `document.head.querySelectorAll('link[data-google-font]')` e qualquer `<link href*="fonts.googleapis.com">` pré-existente para popular o cache e evitar duplicação com `index.html`.
+- URL encoding correto: `encodeURIComponent(name).replace(/%20/g, "+")` para suportar qualquer nome.
+- Pesos configuráveis: `loadGoogleFont(name, weights = [300, 400, 500, 600, 700, 900])` — default cobre o espectro usado em branding. Exportar também preset `BRAND_WEIGHTS`.
+- `loadGoogleFont` retorna `Promise<boolean>`. Falha marca o cache como `false` e emite `console.warn` (sem toast — não é erro do usuário).
+- `useGoogleFonts(names[])`: guarda `loaded: Record<string, boolean>` em state, aguarda cada promise e força re-render quando resolvem (elimina FOUT no segundo paint). Retorna `{ loaded, allReady }` pros consumidores opcionalmente mostrarem skeleton.
 
-**`src/features/dam/pages/BrandGuidelinesPage.tsx`** — `ColorList` (lista editável)
-- Ao lado de cada input HEX, mostrar:
-  - Mini badge WCAG (vs branco) — usa o mesmo `wcagLevel()`.
-  - Botão `Copy` (ícone `Copy` do lucide) que copia o HEX e dispara toast `"Copiado #XXXXXX"`.
-- Não bloqueia salvar quando `FAIL` — apenas avisa visualmente.
+**`src/features/dam/pages/BrandGuidelinesPage.tsx`** — preview ao vivo na edição
+- Nos inputs de nome de fonte (heading/body na aba de tipografia), usar `useGoogleFonts` com os valores digitados (debounced 300ms para não bombardear Google Fonts enquanto o usuário digita).
+- Abaixo de cada input, mostrar uma linha de preview `"Aa Bb Cc 0123 — {nomeDaFonte}"` com `fontFamily: "{name}", sans-serif`. Se `loaded[name] === false`, mostrar mini badge `⚠ Fonte não encontrada no Google Fonts`.
 
-**`src/features/dam/lib/color-contrast.ts`** — pequena extensão
-- Exportar `wcagBoth(hex)` → `{ vsWhite: WcagLevel; vsBlack: WcagLevel; ratioWhite: number; ratioBlack: number }` para evitar duplicação de cálculo nos dois badges.
+**`BrandPreviewCard.tsx` e `BrandApplicationPreview.tsx`** — ajuste mínimo
+- Consumir `allReady` do hook; quando `false`, aplicar `visibility: hidden` apenas no bloco do heading durante os primeiros ~300ms pra evitar flash de Times New Roman. Fallback continua sendo `sans-serif`.
 
 ### Critérios de aceite
 
-- Toda cor renderizada em `BrandPreviewCard` (hero dots + paleta completa + botões) mostra badge WCAG vs branco e vs preto.
-- Toda cor na lista editável de `BrandGuidelinesPage` (primária e secundária) mostra badge WCAG vs branco e botão de copiar com toast.
-- Clicar em qualquer cor (swatch, badge, ou botão copy) copia o HEX em maiúscula e mostra toast `"Copiado #XXXXXX"`.
-- Tooltip nos badges mostra ratio numérico (ex: "Contraste 7.2:1 vs branco").
-- Sem regressão: hero, fonts preview e botões existentes continuam idênticos.
+- Digitar "Playfair Display" no input de heading em `BrandGuidelinesPage` carrega a fonte em <1s e o preview abaixo renderiza de verdade (não Times/serif genérico).
+- Digitar "Fonte Inexistente XYZ" mostra o aviso `⚠ Fonte não encontrada` em até 3s e não polui o DOM com links duplicados se o usuário corrigir.
+- Reabrir a página de preview de outro cliente com a mesma fonte reaproveita o cache (sem novo `<link>`).
+- Pesos 300 e 900 ficam disponíveis (`font-weight: 300` e `900` renderizam diferente).
+- Pré-carregamentos em `index.html` (se houver) não são duplicados.
+- `BrandPreviewCard` e `BrandApplicationPreview` não piscam fallback serif no primeiro paint.
+- Sem regressão: fontes já em uso (Inter default) continuam renderizando.
 
