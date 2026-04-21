@@ -444,22 +444,60 @@ export default function DamPreviewPage() {
               <TooltipContent>Sincronizado com a URL (?asset=)</TooltipContent>
             </Tooltip>
           )}
-          {assetMissingFromList && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="h-6 gap-1 px-2 text-[11px] border-warning/40 text-warning"
-                  aria-label="Asset fora dos filtros atuais"
+          {(assetMissingFromList || assetRemovedByFilter) && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-transparent px-2 h-6 text-[11px] text-warning hover:bg-warning/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Asset removido pelos filtros — ver motivos"
                 >
                   <AlertCircle className="w-3 h-3" />
-                  Fora dos filtros
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                Asset da URL não está nos resultados atuais — exibindo o primeiro disponível.
-              </TooltipContent>
-            </Tooltip>
+                  Asset removido pelos filtros
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 text-xs space-y-3">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">Por que sumiu?</div>
+                  <div className="text-muted-foreground">
+                    {lastKnownAsset
+                      ? <>O asset <span className="font-medium text-foreground">{lastKnownAsset.name}</span> não está mais nos resultados.</>
+                      : "O asset visualizado por último não está mais nos resultados."}
+                  </div>
+                </div>
+                {removalCauses.length > 0 ? (
+                  <ul className="space-y-2">
+                    {removalCauses.map((c) => (
+                      <li key={c.kind} className="space-y-1.5">
+                        <div className="leading-snug">{c.message}</div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => clearCause(c.kind)}
+                        >
+                          {causeActionLabel(c.kind)}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-muted-foreground">
+                    Não foi possível identificar o motivo exato — pode ter sido arquivado ou excluído.
+                  </div>
+                )}
+                <div className="pt-1 border-t border-border">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full h-7 text-[11px]"
+                    onClick={() => resetFilters()}
+                  >
+                    Limpar todos os filtros
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
         </TooltipProvider>
         <Button
