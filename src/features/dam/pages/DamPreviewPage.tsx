@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderArchive } from "lucide-react";
+import { ArrowLeft, FolderArchive, Keyboard } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, type Asset } from "../hooks/use-assets";
@@ -107,13 +108,20 @@ export default function DamPreviewPage() {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      // When the detail drawer is open, let Radix handle Esc/focus; skip our shortcuts.
       if (detailAsset) return;
-      if (e.key === "ArrowLeft") {
+      if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
         e.preventDefault();
         goPrev();
-      } else if (e.key === "ArrowRight") {
+      } else if (e.key === "ArrowRight" || e.key === "j" || e.key === "J") {
         e.preventDefault();
         goNext();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        if (assets.length > 0) setActiveIndex(0);
+      } else if (e.key === "End") {
+        e.preventDefault();
+        if (assets.length > 0) setActiveIndex(assets.length - 1);
       } else if (e.key === "Escape") {
         e.preventDefault();
         navigate(`/dam${queryString}`);
