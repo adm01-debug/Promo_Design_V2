@@ -93,6 +93,7 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Lixeira (assets arquivados) | `/dam/trash` | *(parcial via filtro `archived` em `DamLibraryPage.tsx`)* | 🟡 | Filtro `is_archived` existe; falta view dedicada com restore em lote. |
 | Busca avançada (saved searches) | `/dam` | `src/features/dam/components/SavedSearchesMenu.tsx` + `src/features/dam/hooks/use-saved-searches.ts` | ✅ | Filtros nomeados, fixáveis e reaplicáveis em 1 clique; persistidos por usuário/organização na tabela `dam_saved_searches`. |
 | Prévia rápida (quick preview) | `/dam` | `src/features/dam/components/QuickPreviewPanel.tsx` + `src/features/dam/hooks/use-quick-preview.ts` | ✅ | Painel lateral sticky com thumbnail ampliado, metadados, versão e ações; hover (debounce 150ms) ou clique para fixar. Estado persistido em `localStorage`. |
+| Busca por OCR (texto em imagens) | `/dam` | `supabase/functions/asset-ocr/index.ts` + `src/features/dam/hooks/use-asset-upload.ts` | ✅ | Extrai texto de imagens no upload via Lovable AI (Gemini 3 Flash). Busca em `/dam` e `AssetPicker` encontra pelo conteúdo interno; cards/lista mostram badge "OCR". Reprocesso manual no drawer e ação "DAM: Indexar OCR de imagens pendentes" no Command Palette. |
 
 ## 7. Magic Up (AI)
 

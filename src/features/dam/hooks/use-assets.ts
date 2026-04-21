@@ -27,6 +27,10 @@ export interface Asset {
   created_by: string;
   created_at: string;
   updated_at: string;
+  ocr_text?: string | null;
+  ocr_status?: string;
+  /** Populated only by search_assets_ranked RPC when match came from OCR text. */
+  ocr_match?: boolean;
 }
 
 export interface AssetFilters {

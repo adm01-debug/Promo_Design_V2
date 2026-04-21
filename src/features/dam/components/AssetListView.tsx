@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
+import { ScanText } from "lucide-react";
 
 interface AssetListViewProps {
   assets: Asset[];
@@ -42,9 +43,20 @@ export function AssetListView({ assets, clients, onSelect }: AssetListViewProps)
               </TableCell>
               <TableCell>
                 <div className="font-medium text-sm truncate max-w-xs" title={a.name}>{a.name}</div>
-                {a.is_archived && (
-                  <Badge variant="outline" className="mt-1 text-[10px]">Arquivado</Badge>
-                )}
+                <div className="flex items-center gap-1 mt-1">
+                  {a.is_archived && (
+                    <Badge variant="outline" className="text-[10px]">Arquivado</Badge>
+                  )}
+                  {a.ocr_match && (
+                    <Badge
+                      variant="default"
+                      className="text-[10px] gap-1 px-1.5 py-0"
+                      title="Encontrado pelo texto interno (OCR)"
+                    >
+                      <ScanText className="w-3 h-3" /> OCR
+                    </Badge>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant="secondary" className="capitalize">{a.asset_type}</Badge>

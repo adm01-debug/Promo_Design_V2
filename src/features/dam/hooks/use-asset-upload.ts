@@ -179,6 +179,20 @@ export function useAssetUpload(organizationId: string | null) {
         version: nextVersion,
       });
       setProgress(100);
+
+      // Fire-and-forget OCR for images <= 10MB
+      const OCR_MAX_BYTES = 10 * 1024 * 1024;
+      if (file.type.startsWith("image/") && file.size <= OCR_MAX_BYTES) {
+        supabase.functions
+          .invoke("asset-ocr", {
+            body: { assetId: asset.id, filePath, mimeType: file.type },
+          })
+          .catch((err) => {
+            // Silent failure — ocr_status field reflects state.
+            console.warn("OCR background invoke failed:", err);
+          });
+      }
+
       return asset;
     } finally {
       setIsUploading(false);

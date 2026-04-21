@@ -429,7 +429,7 @@ export default function DamLibraryPage() {
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex flex-col max-w-xs w-full">
           <Input
-            placeholder="Buscar por nome, descrição ou tag..."
+            placeholder="Buscar por nome, descrição, tag ou texto da imagem (OCR)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

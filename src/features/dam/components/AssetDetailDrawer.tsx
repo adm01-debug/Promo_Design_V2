@@ -3,13 +3,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, Trash2, GitBranch } from "lucide-react";
+import { Download, Copy, Archive, Trash2, GitBranch, ScanText, Loader2 } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AssetVersionHistory } from "./AssetVersionHistory";
 import { AssetUploadDialog } from "./AssetUploadDialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   asset: Asset | null;
@@ -22,11 +24,36 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
   const { currentOrgId, can } = useOrganizations();
   const { archive, remove } = useAssets(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+  const [ocrText, setOcrText] = useState<string | null>(null);
+  const [ocrStatus, setOcrStatus] = useState<string>("none");
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
 
   useEffect(() => {
     if (!asset) return;
     getAssetSignedUrl(asset.file_path, 3600).then(setUrl);
+    setOcrText(asset.ocr_text ?? null);
+    setOcrStatus(asset.ocr_status ?? "none");
+    setOcrOpen(false);
   }, [asset]);
+
+  // Poll once if OCR is pending
+  useEffect(() => {
+    if (!asset || ocrStatus !== "pending") return;
+    const t = setInterval(async () => {
+      const { data } = await supabase
+        .from("assets")
+        .select("ocr_text, ocr_status")
+        .eq("id", asset.id)
+        .maybeSingle();
+      if (data) {
+        setOcrText((data as { ocr_text: string | null }).ocr_text);
+        setOcrStatus((data as { ocr_status: string }).ocr_status);
+        if ((data as { ocr_status: string }).ocr_status !== "pending") clearInterval(t);
+      }
+    }, 3000);
+    return () => clearInterval(t);
+  }, [asset, ocrStatus]);
 
   if (!asset) return null;
 
@@ -38,6 +65,50 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
     await navigator.clipboard.writeText(url);
     toast.success("URL copiada");
   };
+
+  const runOcr = async () => {
+    if (!asset) return;
+    setOcrLoading(true);
+    setOcrStatus("pending");
+    try {
+      const { data, error } = await supabase.functions.invoke("asset-ocr", {
+        body: { assetId: asset.id, filePath: asset.file_path, mimeType: asset.mime_type ?? "" },
+      });
+      if (error) throw error;
+      const result = data as { ok?: boolean; length?: number; hasText?: boolean; skipped?: boolean; error?: string };
+      if (result?.error) throw new Error(result.error);
+      // Fetch updated row
+      const { data: row } = await supabase
+        .from("assets")
+        .select("ocr_text, ocr_status")
+        .eq("id", asset.id)
+        .maybeSingle();
+      if (row) {
+        setOcrText((row as { ocr_text: string | null }).ocr_text);
+        setOcrStatus((row as { ocr_status: string }).ocr_status);
+      }
+      if (result?.skipped) {
+        toast.info("Tipo de arquivo não suporta OCR");
+      } else if (result?.hasText) {
+        toast.success(`Texto extraído (${result.length} caracteres)`);
+        setOcrOpen(true);
+      } else {
+        toast.info("Nenhum texto detectado na imagem");
+      }
+    } catch (e) {
+      setOcrStatus("failed");
+      toast.error(e instanceof Error ? e.message : "Falha ao extrair texto");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const ocrButtonLabel =
+    ocrLoading || ocrStatus === "pending"
+      ? "Processando…"
+      : ocrStatus === "done" || ocrStatus === "failed"
+        ? "Reprocessar OCR"
+        : "Extrair texto (OCR)";
 
   return (
     <Sheet open={!!asset} onOpenChange={(o) => !o && onClose()}>
@@ -100,6 +171,66 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {isImage && (
+            <div className="space-y-2 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <ScanText className="w-4 h-4" />
+                  Texto na imagem (OCR)
+                  <Badge
+                    variant={
+                      ocrStatus === "done"
+                        ? "default"
+                        : ocrStatus === "failed"
+                          ? "destructive"
+                          : "secondary"
+                    }
+                    className="text-[10px] capitalize"
+                  >
+                    {ocrStatus === "none" ? "não extraído" : ocrStatus}
+                  </Badge>
+                </div>
+                {can(["owner", "admin", "designer"]) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={runOcr}
+                    disabled={ocrLoading || ocrStatus === "pending"}
+                  >
+                    {ocrLoading || ocrStatus === "pending" ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <ScanText className="w-4 h-4 mr-2" />
+                    )}
+                    {ocrButtonLabel}
+                  </Button>
+                )}
+              </div>
+              {ocrText && ocrText.trim().length > 0 ? (
+                <Collapsible open={ocrOpen} onOpenChange={setOcrOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs px-2">
+                      {ocrOpen ? "Ocultar" : "Mostrar"} texto extraído ({ocrText.length} caracteres)
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <pre className="text-xs whitespace-pre-wrap bg-muted rounded p-2 max-h-40 overflow-y-auto font-mono">
+                      {ocrText}
+                    </pre>
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : ocrStatus === "done" ? (
+                <p className="text-xs text-muted-foreground">Nenhum texto detectado.</p>
+              ) : ocrStatus === "skipped" ? (
+                <p className="text-xs text-muted-foreground">Tipo de arquivo não suportado.</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Extraia o texto desta imagem para encontrá-la pela busca.
+                </p>
+              )}
             </div>
           )}
 

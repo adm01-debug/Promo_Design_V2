@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import { cn } from "@/lib/utils";
+import { ScanText } from "lucide-react";
 
 interface AssetCardProps {
   asset: Asset;
@@ -32,6 +33,16 @@ export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }
         {asset.version > 1 && (
           <Badge variant="outline" className="absolute top-2 right-2 bg-background/80">
             v{asset.version}
+          </Badge>
+        )}
+        {asset.ocr_match && (
+          <Badge
+            variant="default"
+            className="absolute bottom-2 left-2 gap-1 px-1.5 py-0 text-[10px] bg-primary/90 backdrop-blur-sm"
+            title="Encontrado pelo texto interno (OCR)"
+          >
+            <ScanText className="w-3 h-3" />
+            OCR
           </Badge>
         )}
       </div>

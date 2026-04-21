@@ -30,6 +30,8 @@ export type Database = {
           metadata: Json | null
           mime_type: string | null
           name: string
+          ocr_status: string
+          ocr_text: string | null
           organization_id: string
           parent_asset_id: string | null
           tags: string[] | null
@@ -53,6 +55,8 @@ export type Database = {
           metadata?: Json | null
           mime_type?: string | null
           name: string
+          ocr_status?: string
+          ocr_text?: string | null
           organization_id: string
           parent_asset_id?: string | null
           tags?: string[] | null
@@ -76,6 +80,8 @@ export type Database = {
           metadata?: Json | null
           mime_type?: string | null
           name?: string
+          ocr_status?: string
+          ocr_text?: string | null
           organization_id?: string
           parent_asset_id?: string | null
           tags?: string[] | null
@@ -843,6 +849,9 @@ export type Database = {
           metadata: Json
           mime_type: string
           name: string
+          ocr_match: boolean
+          ocr_status: string
+          ocr_text: string
           organization_id: string
           parent_asset_id: string
           rank: number
