@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,6 +40,8 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [zoom, setZoom] = useState<"fit" | "actual">("fit");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (!asset) {
@@ -83,6 +85,55 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
     document.body.removeChild(a);
   };
 
+  const isImage = asset ? (asset.mime_type ?? "").startsWith("image/") : false;
+
+  // Keyboard shortcut: Z toggles zoom
+  useEffect(() => {
+    if (!isImage || !url) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || t?.isContentEditable) return;
+      if (e.key.toLowerCase() !== "z") return;
+      e.preventDefault();
+      setZoom((z) => (z === "fit" ? "actual" : "fit"));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isImage, url]);
+
+  // After switching to actual, center scroll on container
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (zoom === "fit") {
+      el.scrollTo({ left: 0, top: 0 });
+    }
+  }, [zoom]);
+
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (zoom === "actual") {
+      setZoom("fit");
+      return;
+    }
+    // Compute click position ratio relative to displayed image
+    const img = e.currentTarget;
+    const rect = img.getBoundingClientRect();
+    const rx = (e.clientX - rect.left) / rect.width;
+    const ry = (e.clientY - rect.top) / rect.height;
+    setZoom("actual");
+    // After re-render, center scroll on the clicked point
+    requestAnimationFrame(() => {
+      const scroller = scrollRef.current;
+      const newImg = imgRef.current;
+      if (!scroller || !newImg) return;
+      const targetX = rx * newImg.naturalWidth - scroller.clientWidth / 2;
+      const targetY = ry * newImg.naturalHeight - scroller.clientHeight / 2;
+      scroller.scrollTo({ left: Math.max(0, targetX), top: Math.max(0, targetY) });
+    });
+  };
+
   if (!asset) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground bg-muted/20">
@@ -90,8 +141,6 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
       </div>
     );
   }
-
-  const isImage = (asset.mime_type ?? "").startsWith("image/");
 
   return (
     <div className="flex-1 flex flex-col bg-muted/10 relative min-w-0">
@@ -119,14 +168,30 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
 
         <div className="flex items-center gap-1.5 bg-background/90 backdrop-blur-sm border border-border rounded-lg p-1 pointer-events-auto shadow-md">
           {isImage && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoom((z) => (z === "fit" ? "actual" : "fit"))}
-              title={zoom === "fit" ? "Tamanho real (100%)" : "Ajustar à tela"}
-            >
-              {zoom === "fit" ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-            </Button>
+            <div className="flex items-center gap-0.5 mr-1" role="group" aria-label="Zoom">
+              <Button
+                variant={zoom === "fit" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setZoom("fit")}
+                aria-pressed={zoom === "fit"}
+                title="Ajustar à tela (Z)"
+                className="h-8 px-2 text-xs gap-1"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+                Ajustar
+              </Button>
+              <Button
+                variant={zoom === "actual" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setZoom("actual")}
+                aria-pressed={zoom === "actual"}
+                title="Tamanho real 100% (Z)"
+                className="h-8 px-2 text-xs gap-1"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                100%
+              </Button>
+            </div>
           )}
           <Button variant="ghost" size="sm" onClick={handleCopy} disabled={!url} title="Copiar URL">
             <LinkIcon className="w-4 h-4" />
@@ -141,7 +206,7 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
       </div>
 
       {/* Preview area */}
-      <div className="flex-1 overflow-auto flex items-center justify-center p-12">
+      <div ref={scrollRef} className="flex-1 overflow-auto flex items-center justify-center p-12">
         {loading ? (
           <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
         ) : !isImage ? (
@@ -151,12 +216,14 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
           </div>
         ) : url ? (
           <img
+            ref={imgRef}
             src={url}
             alt={asset.name}
+            onClick={handleImageClick}
             className={
               zoom === "fit"
-                ? "max-w-full max-h-full object-contain"
-                : "max-w-none"
+                ? "max-w-full max-h-full object-contain cursor-zoom-in"
+                : "max-w-none cursor-zoom-out active:cursor-grabbing"
             }
             style={zoom === "actual" ? { width: "auto", height: "auto" } : undefined}
           />
