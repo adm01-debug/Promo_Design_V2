@@ -24,6 +24,8 @@ export interface AuditFilters {
   recordIdQuery?: string;
   valueKey?: string;       // chave dentro de old_values/new_values (ex: "status")
   valueQuery?: string;     // texto a procurar
+  ipQuery?: string;        // substring do ip_address
+  userAgentQuery?: string; // substring do user_agent
   page: number;
   pageSize: number;
 }
@@ -39,6 +41,14 @@ function applyFilters(query: any, f: AuditFilters) {
   if (f.userId) query = query.eq("user_id", f.userId);
   if (f.recordIdQuery && f.recordIdQuery.length >= 4) {
     query = query.ilike("record_id", `%${f.recordIdQuery}%`);
+  }
+  if (f.ipQuery && f.ipQuery.trim().length > 0) {
+    const term = f.ipQuery.trim().replace(/[,()%]/g, "");
+    query = query.ilike("ip_address", `%${term}%`);
+  }
+  if (f.userAgentQuery && f.userAgentQuery.trim().length > 0) {
+    const term = f.userAgentQuery.trim().replace(/[,()%]/g, "");
+    query = query.ilike("user_agent", `%${term}%`);
   }
   // Filtro por valor dentro de old_values / new_values
   // Server-side só funciona quando temos uma CHAVE (PostgREST suporta column->>key=ilike.*x*)
