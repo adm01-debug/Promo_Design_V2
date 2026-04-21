@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Upload, Eye, EyeOff, Trash2, Sparkles, ImageOff, Wand2,
-  Maximize, FileText, Download, Layers, Loader2,
+  Maximize, FileText, Download, Layers, Loader2, Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -10,6 +10,9 @@ import { PERSPECTIVE_PRESETS } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
 import type { Placement, BlendMode, ExportFormat } from "@/features/mockup/hooks/use-mockup-editor";
 import { BLEND_MODES } from "@/features/mockup/hooks/use-mockup-editor";
+import { AssetPicker } from "@/features/dam/components/AssetPicker";
+import { downloadAssetAsFile } from "@/features/dam/lib/asset-urls";
+import { toast } from "sonner";
 
 interface MockupRightPanelProps {
   selectedProduct: DbProduct;
@@ -55,6 +58,7 @@ interface MockupRightPanelProps {
 
 const MockupRightPanel = (props: MockupRightPanelProps) => {
   const navigate = useNavigate();
+  const [damPickerOpen, setDamPickerOpen] = useState(false);
   const {
     selectedProduct, selectedProductImage, selectedArea, colorVariants, selectedVariant, setSelectedVariant,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo, clearLogo,
@@ -106,9 +110,15 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
       <div className="p-4 border-b border-border">
         <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Logo</h3>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
-        <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="w-3.5 h-3.5 mr-1.5" /> {logoFile ? logoFile.name.slice(0, 18) : "Upload Logo"}
-        </Button>
+        <div className="grid grid-cols-2 gap-1.5">
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-3.5 h-3.5 mr-1" /> Upload
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)}>
+            <Library className="w-3.5 h-3.5 mr-1" /> DAM
+          </Button>
+        </div>
+        {logoFile && <p className="text-[10px] text-muted-foreground truncate mt-1.5">{logoFile.name}</p>}
         {logoPreview && (
           <div className="flex items-center gap-1 mt-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => setShowLogo(!showLogo)}>
@@ -301,6 +311,19 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Alta Resolução
         </Button>
       </div>
+
+      <AssetPicker
+        open={damPickerOpen}
+        onOpenChange={setDamPickerOpen}
+        defaultAssetType="logo"
+        title="Escolher logo da biblioteca"
+        onSelect={async (asset) => {
+          const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
+          if (!file) { toast.error("Não foi possível carregar o logo."); return; }
+          handleLogoUpload(file);
+          toast.success("Logo carregado da biblioteca");
+        }}
+      />
     </div>
   );
 };

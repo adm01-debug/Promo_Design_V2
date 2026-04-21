@@ -39,6 +39,7 @@ export const serviceOrderSchema = z.object({
   qtdLiberada: z.string(),
   fazParteKit: z.boolean(),
   gravacaoDetalhe: z.string(),
+  artAssetId: z.string().nullable().optional(),
 });
 
 // ─── Types (derived from Zod) ──────────────────────────────

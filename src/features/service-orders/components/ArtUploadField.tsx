@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Upload, X, FileImage, Loader2 } from "lucide-react";
+import { Upload, X, FileImage, Loader2, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -10,11 +10,12 @@ interface ArtUploadFieldProps {
   onUpload: (file: File) => void;
   onRemove: () => void;
   uploading?: boolean;
+  onPickFromDam?: () => void;
 }
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading }: ArtUploadFieldProps) => {
+const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading, onPickFromDam }: ArtUploadFieldProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +44,14 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
 
   return (
     <div className="col-span-2">
-      <Label className="text-xs text-muted-foreground mb-2 block">Arquivo da Arte</Label>
+      <div className="flex items-center justify-between mb-2">
+        <Label className="text-xs text-muted-foreground">Arquivo da Arte</Label>
+        {onPickFromDam && !artFileDataUrl && !artFile && (
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={onPickFromDam}>
+            <Library className="w-3 h-3" /> Escolher do DAM
+          </Button>
+        )}
+      </div>
       <input
         ref={inputRef}
         type="file"

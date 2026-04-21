@@ -55,6 +55,7 @@ export interface StoredServiceOrder {
   qtdLiberada: string;
   fazParteKit: boolean;
   gravacaoDetalhe: string;
+  artAssetId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,6 +94,7 @@ function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
     qtdLiberada: row.qtd_liberada ?? "",
     fazParteKit: row.faz_parte_kit ?? false,
     gravacaoDetalhe: row.gravacao_detalhe ?? "",
+    artAssetId: (row as unknown as { art_asset_id?: string | null }).art_asset_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -188,6 +190,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
           qtd_liberada: order.qtdLiberada || null,
           faz_parte_kit: order.fazParteKit,
           gravacao_detalhe: order.gravacaoDetalhe || null,
+          art_asset_id: order.artAssetId ?? null,
         })
         .select()
         .single();
@@ -229,6 +232,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       if (updates.qtdLiberada !== undefined) dbUpdates.qtd_liberada = updates.qtdLiberada || null;
       if (updates.fazParteKit !== undefined) dbUpdates.faz_parte_kit = updates.fazParteKit;
       if (updates.gravacaoDetalhe !== undefined) dbUpdates.gravacao_detalhe = updates.gravacaoDetalhe || null;
+      if (updates.artAssetId !== undefined) dbUpdates.art_asset_id = updates.artAssetId ?? null;
 
       if (Object.keys(dbUpdates).length === 0) return;
       const { error } = await supabase.from("service_orders").update(dbUpdates).eq("id", id);

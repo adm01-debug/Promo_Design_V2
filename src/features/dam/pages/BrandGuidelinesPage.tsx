@@ -275,7 +275,8 @@ export default function BrandGuidelinesPage() {
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         clientId={clientId}
-        assetType="logo"
+        defaultAssetType="logo"
+        lockClient
         onSelect={(a: Asset) => setLogoId(a.id)}
       />
 
