@@ -55,6 +55,7 @@ export interface StoredServiceOrder {
   qtdLiberada: string;
   fazParteKit: boolean;
   gravacaoDetalhe: string;
+  artAssetId: string | null;
   createdAt: string;
   updatedAt: string;
 }
