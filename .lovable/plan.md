@@ -1,40 +1,34 @@
 
 
-## Botão "Atualizar para versão mais recente" na OS
+## Badges WCAG + copy-hex em todas as paletas
 
-Quando uma OS tem `artAssetId` vinculado ao DAM, detectar se existe versão mais nova na cadeia do asset e oferecer um botão para sincronizar a arte automaticamente. O vínculo `art_asset_id` é atualizado para apontar à nova versão; o histórico do DAM (`AssetVersionHistory` + `audit_log`) preserva tudo.
-
-### Como funciona
-
-1. Em `ServiceOrder.tsx`, quando `form.artAssetId` existir, buscar a versão atual do asset (`assets` por id) e a versão mais nova da cadeia (root = `parent_asset_id ?? id`, ordenar `version desc`, pegar primeiro).
-2. Se `latest.id !== form.artAssetId` → mostrar banner discreto acima do `ArtUploadField`:
-   > "Nova versão disponível: **v3** (subida há 2h por João). [Atualizar arte]"
-3. Clicar em **Atualizar arte** → `downloadAssetAsFile(latest.file_path, ...)` → `handleArtUpload(file)` → `setForm({ artAssetId: latest.id })` → toast "Arte atualizada para v3".
-4. O usuário ainda precisa clicar **Salvar** na top bar para persistir (mantém o fluxo atual de saved/dirty).
+Estender o que já existe (copy + toast + badges parciais) para cobrir **todas** as cores em todos os pontos onde a paleta aparece.
 
 ### Mudanças
 
-**`src/features/dam/hooks/use-assets.ts`** — exportar/criar hook leve:
-- `useLatestAssetVersion(assetId: string | null)` → reutiliza `useAssetVersions` se possível, ou faz query nova: busca o asset por id, calcula `rootId = parent_asset_id ?? id`, retorna `{ current, latest, hasUpdate }` (todos `Asset | null`). Cache por `["asset-latest", rootId]`.
+**`src/features/dam/components/BrandPreviewCard.tsx`**
+- Adicionar nova seção "Paleta completa" abaixo da grid existente, listando **todas** as cores (`primary` + `secondary`) como swatches grandes (40×40px) com:
+  - Nome da cor (se houver) + HEX em mono (clicável → copia + toast existente).
+  - Badge WCAG vs branco (`AAA`/`AA`/`FAIL`) — verde/azul/vermelho.
+  - Badge WCAG vs preto — segundo badge ao lado.
+  - Tooltip mostrando ratio numérico ("4.8:1").
+- Os 5 dots do hero ganham badge WCAG flutuante (canto inferior direito do dot, mini pill 8px).
+- Remover o `slice(0, 8)` da seção "Botão de marca" — manter como está mas a nova seção cobre tudo.
 
-**Novo `src/features/service-orders/components/AssetVersionUpdateBanner.tsx`**
-- Props: `currentAssetId: string | null`, `onUpdate: (file: File, newAssetId: string) => Promise<void>`.
-- Usa `useLatestAssetVersion`. Se `!hasUpdate` ou sem permissão para editar → renderiza `null`.
-- Mostra card com: ícone `RefreshCw`, "Nova versão **vN** disponível", autor (`shortId(created_by)`) + data relativa (`date-fns/formatDistanceToNow`), botão **"Atualizar arte"** (loading state durante download).
-- Em erro, toast com mensagem do `downloadAssetAsFile`; estado anterior preservado.
+**`src/features/dam/pages/BrandGuidelinesPage.tsx`** — `ColorList` (lista editável)
+- Ao lado de cada input HEX, mostrar:
+  - Mini badge WCAG (vs branco) — usa o mesmo `wcagLevel()`.
+  - Botão `Copy` (ícone `Copy` do lucide) que copia o HEX e dispara toast `"Copiado #XXXXXX"`.
+- Não bloqueia salvar quando `FAIL` — apenas avisa visualmente.
 
-**`src/features/service-orders/pages/ServiceOrder.tsx`**
-- Renderizar `<AssetVersionUpdateBanner currentAssetId={form.artAssetId} onUpdate={handleVersionUpdate} />` logo acima do `ArtUploadField`.
-- `handleVersionUpdate(file, newId)` → `await handleArtUpload(file); setForm(prev => ({ ...prev, artAssetId: newId })); setSaved(false);`.
-
-**`src/features/dam/index.ts`** — exportar `useLatestAssetVersion`.
+**`src/features/dam/lib/color-contrast.ts`** — pequena extensão
+- Exportar `wcagBoth(hex)` → `{ vsWhite: WcagLevel; vsBlack: WcagLevel; ratioWhite: number; ratioBlack: number }` para evitar duplicação de cálculo nos dois badges.
 
 ### Critérios de aceite
 
-- Abrir OS com `artAssetId` apontando à v1 quando v2 existe → banner aparece com label "Nova versão v2 disponível".
-- Clicar "Atualizar arte" → arte da OS é substituída pelo arquivo da v2, `artAssetId` aponta à v2, badge `saved` vira `false`.
-- Salvar a OS → `art_asset_id` no DB atualiza para v2; reabrir a OS confirma persistência.
-- OS sem `artAssetId` ou já na versão mais nova → banner não aparece.
-- Erro de download (rede/permissão) → toast claro, OS continua na versão antiga sem corromper estado.
-- Histórico do DAM (`AssetVersionHistory`, audit log) não é afetado — só o ponteiro da OS muda.
+- Toda cor renderizada em `BrandPreviewCard` (hero dots + paleta completa + botões) mostra badge WCAG vs branco e vs preto.
+- Toda cor na lista editável de `BrandGuidelinesPage` (primária e secundária) mostra badge WCAG vs branco e botão de copiar com toast.
+- Clicar em qualquer cor (swatch, badge, ou botão copy) copia o HEX em maiúscula e mostra toast `"Copiado #XXXXXX"`.
+- Tooltip nos badges mostra ratio numérico (ex: "Contraste 7.2:1 vs branco").
+- Sem regressão: hero, fonts preview e botões existentes continuam idênticos.
 
