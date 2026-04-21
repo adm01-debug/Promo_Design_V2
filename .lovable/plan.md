@@ -1,31 +1,43 @@
 
 
-## Ordenação por Relevância na pré-visualização rápida
+## Polir botões de ação do overlay da preview
 
-A biblioteca (`/dam`) já oferece "Relevância" como opção de ordenação (via `SORT_OPTIONS` em `useDamFilters` + RPC `search_assets_ranked`). A pré-visualização (`/dam/preview`) usa o mesmo hook `useDamFilters` e o mesmo `useAssets`, então o backend já suporta — falta apenas:
-
-1. Garantir que a opção apareça no select de ordenação do `PreviewSidebar` quando há busca ativa.
-2. Tornar "Relevância" o default automático ao começar a digitar (≥3 chars) na sidebar de preview, voltando ao último sort escolhido quando a busca esvaziar — assim o usuário vê os melhores resultados primeiro sem precisar trocar manualmente o select.
-3. Indicação visual leve de que os resultados estão ordenados por relevância (badge "por relevância" próximo ao contador).
+Os botões **Copiar URL**, **Download** e **Detalhes** já existem no canto superior direito do `PreviewStage` (linhas 196-204), mas estão apenas como ícones sem rótulos, sem atalhos de teclado e sem feedback de estado. Vamos elevá-los ao mesmo nível de polimento do toggle de zoom.
 
 ### Mudanças
 
-**`src/features/dam/components/PreviewSidebar.tsx`**
-- O `Select` de ordenação já filtra `relevance` quando `search.length < MIN_SEARCH_LENGTH` (linhas ~107-115). Manter.
-- Adicionar pequeno badge `por relevância` ao lado do contador de assets no rodapé quando `state.sort === "relevance"` e há busca ativa (≥3 chars).
+**`src/features/dam/components/PreviewStage.tsx`**
+
+1. **Rótulos visíveis nos botões** (consistente com "Ajustar"/"100%"):
+   - Copiar URL → ícone + label "Copiar"
+   - Download → ícone + label "Baixar"
+   - Detalhes → ícone + label "Detalhes"
+   - Mesmo estilo `h-8 px-2 text-xs gap-1` do grupo de zoom.
+
+2. **Feedback visual no Copiar**: após sucesso, trocar o ícone `LinkIcon` por `Check` (lucide) por ~1.5s e mostrar texto "Copiado". Estado local `copied: boolean` com `setTimeout`.
+
+3. **Atalhos de teclado** no `useEffect` já existente (que cuida do `Z`):
+   - `C` → copiar URL (chama `handleCopy`)
+   - `D` → download (chama `handleDownload`)
+   - `Enter` continua abrindo detalhes (já tratado em `DamPreviewPage`)
+   - Mesmas guards: ignorar quando há modificadores, inputs/textarea/contentEditable focados, ou quando `!url`.
+   - Atualizar `title` dos botões: `Copiar URL (C)`, `Download (D)`, `Detalhes (Enter)`.
+
+4. **Acessibilidade**: adicionar `aria-label` explícito em cada botão (já que o label de texto pode sumir em telas menores no futuro) e `aria-live="polite"` no estado "Copiado" via `sr-only` para leitores de tela.
+
+5. **Estado `disabled` mais claro**: `Copiar` e `Baixar` continuam desabilitados enquanto `url` carrega. `Detalhes` pode habilitar imediatamente (não depende da URL assinada).
 
 **`src/features/dam/pages/DamPreviewPage.tsx`**
-- Adicionar `useEffect` que observa `debouncedSearch` e o sort atual:
-  - Quando `debouncedSearch.length >= MIN_SEARCH_LENGTH` e `state.sort !== "relevance"`: salvar o sort anterior em `useRef` e chamar `filters.setSort("relevance")`.
-  - Quando a busca cair abaixo de `MIN_SEARCH_LENGTH` e `state.sort === "relevance"`: restaurar o sort salvo no ref (fallback para `"created_desc"` se ausente).
-  - Não interferir se o usuário trocar manualmente para outro sort durante uma busca ativa (detectado comparando contra o último valor "auto-aplicado").
+- Atualizar a legenda de atalhos no header para incluir os novos:
+  `← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar`
+- Mesma atualização no `PopoverContent` mobile.
 
 ### Critérios de aceite
 
-- Ao digitar uma busca ≥3 chars na sidebar do preview, a ordenação muda automaticamente para "Relevância" e os resultados refletem o ranking do RPC `search_assets_ranked`.
-- Ao apagar a busca (ou cair abaixo de 3 chars), o sort volta ao valor anterior (ex: "Mais recentes").
-- Se o usuário escolher manualmente outro sort durante uma busca, a escolha é respeitada (sem auto-override em loop).
-- Um badge discreto `por relevância` aparece junto ao contador no rodapé enquanto a ordenação ativa for relevância com busca válida.
-- A URL continua refletindo `sort=relevance` (já tratado por `useDamFilters`), mantendo a sessão compartilhável.
-- Sem regressão na biblioteca `/dam` nem nos testes existentes de `useAssets`.
+- Os três botões (Copiar, Baixar, Detalhes) mostram ícone + texto e têm tooltip com o atalho.
+- Pressionar `C` copia a URL e mostra "Copiado" com `Check` por ~1.5s; `D` dispara download; `Enter` abre o drawer de detalhes (já existente).
+- Atalhos respeitam inputs focados, modificadores e drawer aberto.
+- Botão "Detalhes" funciona mesmo enquanto o signed URL ainda carrega.
+- Linha de atalhos no header e popover mobile listam `C` e `D`.
+- Sem regressão no toggle de zoom, navegação ou outras teclas.
 
