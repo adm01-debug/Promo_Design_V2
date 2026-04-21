@@ -24,6 +24,8 @@ interface Props {
   defaultAssetType?: AssetType;
   /** When provided, the dialog operates in "new version" mode for this asset. */
   parentAsset?: Asset | null;
+  /** Called once a successful upload completes. Receives the newly created asset. */
+  onUploaded?: (asset: Asset) => void;
 }
 
 interface FileEntry {
@@ -42,6 +44,7 @@ export function AssetUploadDialog({
   defaultClientId = null,
   defaultAssetType = "art",
   parentAsset = null,
+  onUploaded,
 }: Props) {
   const isVersionMode = !!parentAsset;
   const { uploadFile } = useAssetUpload(organizationId);
@@ -130,17 +133,19 @@ export function AssetUploadDialog({
     if (entries.length === 0) return;
     setIsUploading(true);
     let okCount = 0;
+    let lastUploaded: Asset | null = null;
     for (const entry of entries) {
       if (entry.status === "done") { okCount++; continue; }
       setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10 } : e));
       try {
-        await uploadFile(entry.file, {
+        const created = await uploadFile(entry.file, {
           organizationId,
           clientId,
           assetType,
           tags,
           parentAsset: parentAsset ?? undefined,
         });
+        lastUploaded = created ?? null;
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100 } : e));
         okCount++;
       } catch (err) {
@@ -156,6 +161,7 @@ export function AssetUploadDialog({
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
           : `${okCount} asset(s) enviado(s)`
       );
+      if (lastUploaded) onUploaded?.(lastUploaded);
       onOpenChange(false);
     }
   };
