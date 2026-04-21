@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderArchive, Keyboard } from "lucide-react";
+import { ArrowLeft, FolderArchive, Keyboard, Layers } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
@@ -13,6 +14,9 @@ import { PreviewSidebar } from "../components/PreviewSidebar";
 import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
+import { CompareGrid } from "../components/CompareGrid";
+import { CompareTopBar } from "../components/CompareTopBar";
+import { useCompareSelection } from "../hooks/use-compare-selection";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
@@ -54,6 +58,8 @@ export default function DamPreviewPage() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const compare = useCompareSelection();
 
   const queryFilters = useMemo(() => {
     const opt = SORT_OPTIONS.find((s) => s.value === state.sort) ?? SORT_OPTIONS[1];
@@ -73,6 +79,15 @@ export default function DamPreviewPage() {
   }, [state, debouncedSearch]);
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
+
+  // Resolve selected assets into Asset[] (maintain selection order).
+  const selectedAssets = useMemo(() => {
+    if (compare.selectedIds.length === 0) return [];
+    const map = new Map(assets.map((a) => [a.id, a]));
+    return compare.selectedIds
+      .map((id) => map.get(id))
+      .filter((a): a is Asset => Boolean(a));
+  }, [assets, compare.selectedIds]);
 
   // Restore activeIndex from ?asset=<id> when assets load / filters change.
   // If id is missing or not in the current list, fall back to index 0.
@@ -149,6 +164,16 @@ export default function DamPreviewPage() {
 
       if (inEditable) return;
 
+      if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        setCompareMode((v) => !v);
+        return;
+      }
+      if (compareMode && e.key === " ") {
+        e.preventDefault();
+        if (activeAsset) compare.toggle(activeAsset.id);
+        return;
+      }
       if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
         e.preventDefault();
         goPrev();
@@ -209,22 +234,38 @@ export default function DamPreviewPage() {
           <FolderArchive className="w-4 h-4" />
           Pré-visualização rápida
         </div>
-        <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
+        <Button
+          variant={compareMode ? "default" : "outline"}
+          size="sm"
+          onClick={() => setCompareMode((v) => !v)}
+          className="ml-auto h-8 gap-1.5"
+          aria-pressed={compareMode}
+          title="Modo comparação (M)"
+        >
+          <Layers className="w-3.5 h-3.5" />
+          Compare
+          {compare.count > 0 && (
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px] ml-0.5">
+              {compare.count}
+            </Badge>
+          )}
+        </Button>
+        <div className="text-xs text-muted-foreground hidden md:block">
+          ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto md:hidden h-8 w-8"
+              className="md:hidden h-8 w-8"
               aria-label="Atalhos de teclado"
             >
               <Keyboard className="w-4 h-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar (no compare) · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
@@ -239,15 +280,40 @@ export default function DamPreviewPage() {
         />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <PreviewStage
-            asset={activeAsset}
-            index={activeIndex}
-            total={assets.length}
-            onPrev={goPrev}
-            onNext={goNext}
-            onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)}
+          {compareMode ? (
+            <>
+              <CompareTopBar
+                count={compare.count}
+                max={compare.max}
+                onClear={compare.clear}
+                onExit={() => setCompareMode(false)}
+              />
+              {selectedAssets.length >= 2 ? (
+                <CompareGrid assets={selectedAssets} onRemove={compare.remove} />
+              ) : (
+                <div className="flex-1 flex items-center justify-center bg-muted/10 text-sm text-muted-foreground p-6 text-center">
+                  Selecione ao menos 2 assets do strip abaixo (até {compare.max}) para comparar lado a lado.
+                </div>
+              )}
+            </>
+          ) : (
+            <PreviewStage
+              asset={activeAsset}
+              index={activeIndex}
+              total={assets.length}
+              onPrev={goPrev}
+              onNext={goNext}
+              onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)}
+            />
+          )}
+          <PreviewThumbStrip
+            assets={assets}
+            activeIndex={activeIndex}
+            onSelect={setActiveIndex}
+            selectionMode={compareMode}
+            selectedIds={compare.selectedIds}
+            onToggleSelect={compare.toggle}
           />
-          <PreviewThumbStrip assets={assets} activeIndex={activeIndex} onSelect={setActiveIndex} />
         </div>
       </div>
 
