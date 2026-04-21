@@ -612,6 +612,7 @@ export type Database = {
           area_name: string | null
           area_shape: string | null
           area_width: string | null
+          art_asset_id: string | null
           art_colors: string | null
           art_dpi: string | null
           art_file: string | null
@@ -649,6 +650,7 @@ export type Database = {
           area_name?: string | null
           area_shape?: string | null
           area_width?: string | null
+          art_asset_id?: string | null
           art_colors?: string | null
           art_dpi?: string | null
           art_file?: string | null
@@ -686,6 +688,7 @@ export type Database = {
           area_name?: string | null
           area_shape?: string | null
           area_width?: string | null
+          art_asset_id?: string | null
           art_colors?: string | null
           art_dpi?: string | null
           art_file?: string | null
