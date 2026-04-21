@@ -193,16 +193,35 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
 
+  // Accumulate results in load-more mode
+  useEffect(() => {
+    if (paginationMode !== "loadmore") return;
+    if (isLoading) return;
+    if (page === 1) {
+      setAccumulated(assets);
+    } else {
+      setAccumulated((prev) => {
+        const seen = new Set(prev.map((a) => a.id));
+        const merged = [...prev];
+        for (const a of assets) if (!seen.has(a.id)) merged.push(a);
+        return merged;
+      });
+    }
+  }, [assets, page, paginationMode, isLoading]);
+
+  const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
+  const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
+
   const archivedCount = useMemo(
-    () => assets.filter((a) => a.is_archived).length,
-    [assets],
+    () => displayedAssets.filter((a) => a.is_archived).length,
+    [displayedAssets],
   );
 
   const availableTags = useMemo(() => {
     const set = new Set<string>();
-    assets.forEach((a) => a.tags.forEach((t) => set.add(t)));
+    displayedAssets.forEach((a) => a.tags.forEach((t) => set.add(t)));
     return Array.from(set);
-  }, [assets]);
+  }, [displayedAssets]);
 
   if (!currentOrgId) {
     return (
