@@ -1,43 +1,36 @@
 
 
-## Polir botões de ação do overlay da preview
+## Lazy-load de signed URLs nas thumbs do strip
 
-Os botões **Copiar URL**, **Download** e **Detalhes** já existem no canto superior direito do `PreviewStage` (linhas 196-204), mas estão apenas como ícones sem rótulos, sem atalhos de teclado e sem feedback de estado. Vamos elevá-los ao mesmo nível de polimento do toggle de zoom.
+Hoje `PreviewThumbStrip` renderiza um `AssetThumbnail` para **cada** asset retornado (até 50 por página). Cada `AssetThumbnail` chama `getAssetSignedUrl` no `useEffect` de montagem — ou seja, ao abrir a preview com 50 resultados, disparamos 50 requisições `createSignedUrl` mesmo que só ~6-8 thumbs estejam visíveis no strip horizontal.
+
+O cache em `asset-urls.ts` ajuda em re-aberturas, mas a **primeira** carga ainda paga o custo. Vamos carregar a URL apenas quando a thumb entrar no viewport (ou for a ativa).
 
 ### Mudanças
 
-**`src/features/dam/components/PreviewStage.tsx`**
+**`src/features/dam/components/AssetThumbnail.tsx`**
+- Adicionar prop opcional `eager?: boolean` (default `false`).
+- Quando `eager === false`: usar `IntersectionObserver` num `ref` do container; só chamar `getAssetSignedUrl` quando `isIntersecting` virar `true` pela primeira vez. Depois disso, manter a URL (não recarregar ao sair do viewport).
+- Quando `eager === true`: comportamento atual (carrega no mount) — usado para o asset ativo da stage e qualquer caso onde queremos pré-carregar.
+- Fallback gracioso: se `IntersectionObserver` indisponível (SSR/jsdom), tratar como `eager`.
+- Manter o placeholder `ImageIcon animate-pulse` enquanto não há URL (vale tanto para "ainda não visível" quanto "visível, carregando").
+- Cleanup do observer no unmount.
 
-1. **Rótulos visíveis nos botões** (consistente com "Ajustar"/"100%"):
-   - Copiar URL → ícone + label "Copiar"
-   - Download → ícone + label "Baixar"
-   - Detalhes → ícone + label "Detalhes"
-   - Mesmo estilo `h-8 px-2 text-xs gap-1` do grupo de zoom.
+**`src/features/dam/components/PreviewThumbStrip.tsx`**
+- Passar `eager={i === activeIndex}` para `AssetThumbnail`, garantindo que a thumb ativa carrega imediatamente mesmo se estiver fora do viewport inicial (raro, mas possível após `scrollIntoView`).
+- Nenhuma mudança na lógica de scroll.
 
-2. **Feedback visual no Copiar**: após sucesso, trocar o ícone `LinkIcon` por `Check` (lucide) por ~1.5s e mostrar texto "Copiado". Estado local `copied: boolean` com `setTimeout`.
+**Onde mais `AssetThumbnail` é usado**: rg pelo projeto para verificar; a princípio só `PreviewThumbStrip`. Se houver outros consumidores (ex: grids da biblioteca), eles continuam funcionando — o default `eager=false` ativa o lazy automaticamente, o que é desejável e seguro graças ao placeholder.
 
-3. **Atalhos de teclado** no `useEffect` já existente (que cuida do `Z`):
-   - `C` → copiar URL (chama `handleCopy`)
-   - `D` → download (chama `handleDownload`)
-   - `Enter` continua abrindo detalhes (já tratado em `DamPreviewPage`)
-   - Mesmas guards: ignorar quando há modificadores, inputs/textarea/contentEditable focados, ou quando `!url`.
-   - Atualizar `title` dos botões: `Copiar URL (C)`, `Download (D)`, `Detalhes (Enter)`.
+### Por que não mexer em `PreviewStage`
 
-4. **Acessibilidade**: adicionar `aria-label` explícito em cada botão (já que o label de texto pode sumir em telas menores no futuro) e `aria-live="polite"` no estado "Copiado" via `sr-only` para leitores de tela.
-
-5. **Estado `disabled` mais claro**: `Copiar` e `Baixar` continuam desabilitados enquanto `url` carrega. `Detalhes` pode habilitar imediatamente (não depende da URL assinada).
-
-**`src/features/dam/pages/DamPreviewPage.tsx`**
-- Atualizar a legenda de atalhos no header para incluir os novos:
-  `← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar`
-- Mesma atualização no `PopoverContent` mobile.
+A stage já carrega URL apenas para o `asset` ativo (um `useEffect` com `[asset]`), então só faz **1** chamada por troca de asset. O cache de 5 min em `asset-urls.ts` cobre voltas (`←`/`→`) sem novas requisições. Sem otimização adicional necessária.
 
 ### Critérios de aceite
 
-- Os três botões (Copiar, Baixar, Detalhes) mostram ícone + texto e têm tooltip com o atalho.
-- Pressionar `C` copia a URL e mostra "Copiado" com `Check` por ~1.5s; `D` dispara download; `Enter` abre o drawer de detalhes (já existente).
-- Atalhos respeitam inputs focados, modificadores e drawer aberto.
-- Botão "Detalhes" funciona mesmo enquanto o signed URL ainda carrega.
-- Linha de atalhos no header e popover mobile listam `C` e `D`.
-- Sem regressão no toggle de zoom, navegação ou outras teclas.
+- Abrir `/dam/preview` com ≥30 resultados dispara apenas as chamadas `createSignedUrl` das thumbs visíveis no strip horizontal + a do asset ativo (verificável na aba Network).
+- Rolar o strip horizontalmente carrega as thumbs adicionais sob demanda, sem flicker da thumb ativa.
+- Navegação por `←`/`→`/`j`/`k`/`Home`/`End` continua instantânea (cache + eager para a ativa).
+- Sem regressão em outros componentes que usem `AssetThumbnail` (default lazy é seguro pelo placeholder).
+- Sem warnings TS estritos; observer é limpo no unmount.
 
