@@ -1,119 +1,94 @@
 
 
-## Tela de detalhes do evento de Audit Trail por record_id
+## Testes E2E para alertas de auditoria
 
-Hoje o `AuditDiffDialog` já mostra os valores `old/new` lado a lado, mas só dentro de um modal a partir da listagem — não há rota dedicada nem forma de compartilhar/abrir um evento específico por URL. Vamos criar uma página de detalhes acessível por `record_id` (com fallback para `id` do evento) que mostra tudo: metadados completos, diff visual, e contexto histórico do mesmo registro.
+Vamos adicionar uma suíte Playwright que valida o fluxo completo: login → criar regra de alerta no Audit Trail → disparar um evento que case com a regra → confirmar que a notificação `audit_alert` aparece no `NotificationPanel`.
 
-### Mudanças
+### Pré-requisito (bloqueante)
 
-**1. Nova rota: `/audit/event/:eventId`**
+A funcionalidade de **regras de alerta** ainda não foi implementada (o plano anterior foi apresentado mas não aprovado/codificado). Para os testes terem o que validar, precisamos primeiro implementar:
 
-Em `src/App.tsx`, adicionar:
-```tsx
-<Route path="audit/event/:eventId" element={<AuditEventDetailPage />} />
-```
-Lazy-load a página, igual ao `AuditLogPage`.
+1. Migração: tabela `audit_alert_rules` + função/trigger `notify_audit_alert` + RLS.
+2. Frontend: `useAuditAlerts`, `AuditAlertsManager` (Sheet), `AuditAlertRuleForm` (Dialog), botão "Alertas" no header de `/audit`.
+3. `NotificationPanel`: tratamento visual do `event_type='audit_alert'`.
 
-**2. Nova página: `src/features/audit/pages/AuditEventDetailPage.tsx`**
+Esta etapa é coberta pelo plano anterior — vamos executá-la junto deste, num único loop.
 
-Estrutura:
-- **Header**: botão "Voltar para auditoria" (link para `/audit` preservando filtros via `document.referrer` ou fallback), título com badge da ação (INSERT/UPDATE/DELETE colorido), nome da tabela em monospace, timestamp formatado + relativo.
-- **Card de metadados** (grid 2 colunas):
-  - ID do evento (com botão copiar)
-  - Record ID (com botão copiar e link "Ver outros eventos deste registro" → filtra `/audit?q=<record_id>`)
-  - Tabela
-  - Usuário (label do `useOrgMembers` + uuid completo)
-  - Organização ID
-  - IP address (`ip_address`)
-  - User agent (`user_agent`, truncado com tooltip)
-  - Data/hora ISO completa
-- **Card de diff**: reusa exatamente a lógica visual do `AuditDiffDialog` (Antes/Depois lado a lado, highlight de chaves alteradas em âmbar), mas inline na página (não em modal), expandido por padrão. Adicionar toggle "Mostrar apenas campos alterados" (filtra chaves não-modificadas em UPDATE).
-- **Card de JSON cru**: dois `<pre>` colapsáveis (`Collapsible`) com `old_values` e `new_values` em JSON formatado, com botão "Copiar JSON".
-- **Card "Histórico do registro"**: lista os outros eventos do mesmo `record_id` (mesma tabela + mesmo record_id, ordenado por `created_at desc`, máximo 20), cada item clicável navega para `/audit/event/<id>`. Destaca o evento atual.
+### Estrutura dos testes E2E
 
-**3. Refatorar `AuditDiffDialog.tsx` em componente compartilhado**
+**Arquivo novo: `e2e/audit-alerts.spec.ts`**
 
-Extrair a lógica de diff (`changedKeys`, `renderJson`, layout Antes/Depois) para `src/features/audit/components/AuditDiffView.tsx`. O `AuditDiffDialog` passa a ser um wrapper fino que usa `AuditDiffView` dentro do `Dialog`. A `AuditEventDetailPage` consome `AuditDiffView` diretamente.
+Premissas (alinhadas com `e2e/auth.spec.ts` / `e2e/service-orders.spec.ts` existentes):
+- Usuário de teste já autenticado por helper compartilhado (reutilizar padrão atual de login).
+- Organização ativa com pelo menos 1 membro (o próprio usuário).
+- Fixture: `playwright-fixture.ts` exporta `test/expect`.
 
-Props de `AuditDiffView`:
-```ts
-interface AuditDiffViewProps {
-  oldValues: unknown;
-  newValues: unknown;
-  action: AuditAction;
-  showOnlyChanged?: boolean;
-}
-```
+**Cenário 1 — Criar regra de alerta a partir de filtros atuais**
+1. `goto('/audit')`.
+2. Aplicar filtro: ação `INSERT`, tabela `service_orders` (via `AuditFilters`).
+3. Clicar botão `Alertas` no header → abre `Sheet`.
+4. Clicar `Nova regra` → abre `Dialog` com filtros pré-preenchidos.
+5. Preencher nome `E2E - INSERT em service_orders`.
+6. Salvar → confirmar toast de sucesso e regra na lista do Sheet com chips corretos (`INSERT`, `service_orders`).
 
-**4. Hook novo em `use-audit-log.ts`**
+**Cenário 2 — Disparar evento e validar notificação**
+1. Garantir que a regra do cenário 1 está ativa (toggle on).
+2. Em outra aba/contexto, navegar para `/service-orders/new` e criar uma OS mínima → submeter.
+3. Voltar à primeira aba, abrir `NotificationPanel` (clicar sino no header).
+4. Aguardar até 20s (cobre os 15s de polling) → asserir presença de item com:
+   - badge/ícone âmbar de `audit_alert`
+   - texto contendo `INSERT em service_orders`
+   - rótulo da regra `E2E - INSERT em service_orders`
+5. Clicar no item → asserir navegação para `/audit?...` com filtros aplicados.
 
-```ts
-export function useAuditEvent(eventId: string | undefined) {
-  return useQuery({
-    queryKey: ["audit-event", eventId],
-    enabled: !!eventId,
-    queryFn: async (): Promise<AuditEntry & { ip_address: string | null; user_agent: string | null; organization_id: string | null }> => {
-      const { data, error } = await supabase
-        .from("audit_log")
-        .select("id, organization_id, user_id, table_name, record_id, action, created_at, old_values, new_values, ip_address, user_agent")
-        .eq("id", eventId!)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) throw new Error("Evento não encontrado");
-      return data as any;
-    },
-  });
-}
+**Cenário 3 — Toggle desliga sem perder a regra**
+1. Em `/audit`, abrir Sheet de alertas, desativar toggle da regra E2E.
+2. Criar nova OS.
+3. Após 20s, asserir que **nenhuma** notificação nova de `audit_alert` para essa regra apareceu (contador permanece igual ao snapshot inicial).
 
-export function useAuditRecordHistory(tableName: string | undefined, recordId: string | null | undefined, excludeEventId?: string) {
-  return useQuery({
-    queryKey: ["audit-record-history", tableName, recordId],
-    enabled: !!tableName && !!recordId,
-    queryFn: async (): Promise<AuditEntry[]> => {
-      const { data, error } = await supabase
-        .from("audit_log")
-        .select("id, user_id, table_name, record_id, action, created_at, old_values, new_values")
-        .eq("table_name", tableName!)
-        .eq("record_id", recordId!)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return (data ?? []) as AuditEntry[];
-    },
-  });
-}
-```
+**Cenário 4 — Cleanup**
+1. `afterAll`: deletar a regra E2E e qualquer notificação `audit_alert` criada (via `supabase` client direto com chave de teste, padrão usado em `service-orders.spec.ts`).
+2. Deletar a OS de teste criada.
 
-**5. Tornar a linha clicável + botão "Abrir página" no `AuditLogPage.tsx`**
+### Helpers/utilitários
 
-No `Eye` button da tabela, manter o comportamento atual (abrir modal rápido) mas adicionar segundo botão `ExternalLink` que navega para `/audit/event/<entry.id>` em nova aba (ou mesma, decidir por padrão = mesma aba). Isso mantém o fluxo rápido (modal) e habilita o fluxo profundo (página dedicada compartilhável).
+Adicionar `e2e/helpers/audit-alerts.ts` com:
+- `createTestAlertRule(page, { name, actions, tables })` — abstrai cliques.
+- `waitForAuditAlertNotification(page, ruleName, timeout = 20_000)` — polling do painel.
+- `cleanupAuditTestData(supabase, ruleName)` — usa service-role no Node test runner para garantir limpeza determinística.
 
-No `AuditDiffDialog`, adicionar link "Abrir página completa" no header do dialog que navega para a página de detalhes e fecha o modal.
+Garantir IDs/data-testids estáveis nos componentes novos para os testes não dependerem de texto:
+- Botão "Alertas": `data-testid="audit-alerts-button"`
+- Sheet: `data-testid="audit-alerts-sheet"`
+- Item da lista: `data-testid="audit-alert-rule-{id}"` + `data-testid="audit-alert-rule-toggle-{id}"`
+- Notificação: `data-testid="notification-item-{id}"` com `data-event-type="audit_alert"`
 
-**6. Estados de erro/loading**
+### Configuração de teste
 
-- Loading: skeleton dos 3 cards.
-- Erro / não encontrado: card centrado com ícone, mensagem "Evento não encontrado ou você não tem permissão" e botão "Voltar para auditoria".
-- RLS: a policy `Org members can view audit log` já cobre — se o usuário não for membro da org do evento, o `maybeSingle()` retorna `null` e cai no estado de erro.
+- Usar `test.describe.serial` para os 3 cenários (compartilham regra + OS).
+- Polling no painel: `expect.poll(...).toBeTruthy()` com timeout `20_000` e intervalo `1500ms` para encaixar com o `useVisibilityPolling` (15s).
+- `playwright.config.ts`: aumentar `timeout` global do arquivo para `60_000` apenas para esta suíte via `test.setTimeout(60_000)` no `describe`.
 
 ### Arquivos tocados
 
-- `src/App.tsx` (nova rota)
-- `src/features/audit/pages/AuditEventDetailPage.tsx` (novo)
-- `src/features/audit/components/AuditDiffView.tsx` (novo, extraído do dialog)
-- `src/features/audit/components/AuditDiffDialog.tsx` (refatorado para usar `AuditDiffView`, +link "página completa")
-- `src/features/audit/hooks/use-audit-log.ts` (+`useAuditEvent`, +`useAuditRecordHistory`)
-- `src/features/audit/pages/AuditLogPage.tsx` (botão `ExternalLink` por linha)
+**Implementação base (pré-requisito do plano anterior — a executar junto):**
+- Migração nova: `audit_alert_rules` + trigger `notify_audit_alert`.
+- `src/features/audit/hooks/use-audit-alerts.ts` (novo)
+- `src/features/audit/components/AuditAlertsManager.tsx` (novo)
+- `src/features/audit/components/AuditAlertRuleForm.tsx` (novo)
+- `src/features/audit/pages/AuditLogPage.tsx` (botão Alertas + data-testids)
+- `src/components/NotificationPanel.tsx` (render `audit_alert` + data-testids)
+
+**Testes E2E (foco deste plano):**
+- `e2e/audit-alerts.spec.ts` (novo, 3 cenários + cleanup)
+- `e2e/helpers/audit-alerts.ts` (novo)
 
 ### Critérios de aceite
 
-- URL `/audit/event/:eventId` carrega evento isolado com todos os metadados (incluindo `ip_address`, `user_agent`, `organization_id`).
-- Diff visual idêntico ao do modal, com toggle "apenas campos alterados".
-- JSON cru copiável de ambos `old_values` e `new_values`.
-- Card "Histórico do registro" lista até 20 eventos do mesmo `record_id`, evento atual destacado, demais clicáveis.
-- Botão "Voltar" retorna para `/audit` (preserva filtros se vier de lá via histórico do navegador).
-- Modal rápido continua funcionando + ganha link "Abrir página completa".
-- Listagem ganha botão `ExternalLink` por linha que abre a página dedicada.
-- Acessibilidade: foco visível, `aria-label` nos botões de copiar, badges com `role="status"`.
-- Sem regressão: filtros, paginação, exportação CSV, busca por valor JSON continuam intactos.
+- `bunx playwright test e2e/audit-alerts.spec.ts` passa em CI local.
+- Cenário 2 confirma notificação `audit_alert` no painel após criação de OS, dentro de 20s.
+- Cenário 3 confirma que toggle desativado bloqueia novas notificações.
+- Cleanup remove 100% dos dados criados (regra, notificações, OS).
+- Sem regressão em `e2e/auth.spec.ts`, `e2e/navigation.spec.ts`, `e2e/service-orders.spec.ts`.
+- Componentes novos expõem `data-testid` estáveis para os testes não dependerem de texto traduzido.
 
