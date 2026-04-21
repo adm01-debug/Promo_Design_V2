@@ -2,7 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ScrollText, Download, Eye, Copy, ExternalLink, Bell, Keyboard } from "lucide-react";
+import {
+  ScrollText,
+  Download,
+  Eye,
+  Copy,
+  ExternalLink,
+  Bell,
+  Keyboard,
+  Loader2,
+  SearchX,
+  Inbox,
+  RotateCcw,
+} from "lucide-react";
 import { useOrganizations, useOrgMembers } from "@/hooks/use-organization";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +34,7 @@ import { AuditFilters, type AuditFilterState } from "../components/AuditFilters"
 import { AuditDiffDialog } from "../components/AuditDiffDialog";
 import { AuditAlertsManager } from "../components/AuditAlertsManager";
 import { AuditSavedViewsMenu } from "../components/AuditSavedViewsMenu";
+import { AuditTableSkeleton } from "../components/AuditTableSkeleton";
 import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
