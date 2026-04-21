@@ -41,6 +41,7 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
+const TAGS_MODE_KEY = "dam-tags-mode";
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -54,8 +55,9 @@ function buildPageList(current: number, total: number): (number | "ellipsis")[] 
   return pages;
 }
 
-type SortValue = "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
-const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version"; sortDir: "asc" | "desc" }[] = [
+type SortValue = "relevance" | "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
+const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version" | "relevance"; sortDir: "asc" | "desc" }[] = [
+  { value: "relevance", label: "Relevância", sortBy: "relevance", sortDir: "desc" },
   { value: "created_desc", label: "Mais recentes", sortBy: "created_at", sortDir: "desc" },
   { value: "created_asc", label: "Mais antigos", sortBy: "created_at", sortDir: "asc" },
   { value: "name_asc", label: "Nome A→Z", sortBy: "name", sortDir: "asc" },
