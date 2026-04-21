@@ -146,8 +146,15 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
       </div>
 
       <div className="border-t border-border p-3 space-y-2">
-        <div className="text-xs text-muted-foreground">
-          {isLoading ? "Carregando..." : `${total} ${total === 1 ? "asset" : "assets"}`}
+        <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+          <span>
+            {isLoading ? "Carregando..." : `${total} ${total === 1 ? "asset" : "assets"}`}
+          </span>
+          {state.sort === "relevance" && state.search.trim().length >= MIN_SEARCH_LENGTH && (
+            <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal">
+              por relevância
+            </Badge>
+          )}
         </div>
         <Button variant="outline" size="sm" className="w-full" onClick={reset}>
           Limpar filtros

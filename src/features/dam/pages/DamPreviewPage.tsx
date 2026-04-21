@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FolderArchive, Keyboard } from "lucide-react";
@@ -6,9 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { useAssets, type Asset } from "../hooks/use-assets";
+import { useAssets, MIN_SEARCH_LENGTH, type Asset } from "../hooks/use-assets";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useDamFilters, SORT_OPTIONS } from "../hooks/use-dam-filters";
+import { useDamFilters, SORT_OPTIONS, type SortValue } from "../hooks/use-dam-filters";
 import { PreviewSidebar } from "../components/PreviewSidebar";
 import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
@@ -22,11 +22,35 @@ export default function DamPreviewPage() {
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const { state, queryString } = filters;
+  const { state, queryString, setSort } = filters;
   const [searchParams, setSearchParams] = useSearchParams();
   const assetIdParam = searchParams.get("asset");
 
   const debouncedSearch = useDebounce(state.search, 300);
+
+  // Auto-switch to "relevance" sort when user types a valid search; restore previous sort when search clears.
+  // We track the last value we auto-applied so manual user changes during an active search are respected.
+  const previousSortRef = useRef<SortValue | null>(null);
+  const lastAutoSortRef = useRef<SortValue | null>(null);
+  useEffect(() => {
+    const hasSearch = debouncedSearch.trim().length >= MIN_SEARCH_LENGTH;
+    if (hasSearch) {
+      if (state.sort !== "relevance" && lastAutoSortRef.current !== state.sort) {
+        previousSortRef.current = state.sort;
+        lastAutoSortRef.current = "relevance";
+        setSort("relevance");
+      }
+    } else {
+      if (state.sort === "relevance") {
+        const restore = previousSortRef.current ?? "created_desc";
+        lastAutoSortRef.current = restore;
+        previousSortRef.current = null;
+        setSort(restore);
+      } else {
+        lastAutoSortRef.current = null;
+      }
+    }
+  }, [debouncedSearch, state.sort, setSort]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
