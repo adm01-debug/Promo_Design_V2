@@ -621,7 +621,7 @@ export default function DamPreviewPage() {
           compareMode={compareMode}
         />
         <div className="text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar · Esc voltar
+          ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Shift+C link · M compare · Espaço selecionar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -635,7 +635,7 @@ export default function DamPreviewPage() {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar (no compare) · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Shift+C link · M compare · Espaço selecionar (no compare) · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
