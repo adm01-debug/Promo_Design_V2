@@ -308,7 +308,7 @@ export default function DamLibraryPage() {
     [assetTypes, clientId, selectedTags, tagsMode, includeArchived, debouncedSearch, sort, page, pageSize],
   );
 
-  const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
+  const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
 
   // Accumulate results in load-more mode
   useEffect(() => {
@@ -726,6 +726,16 @@ export default function DamLibraryPage() {
             {hasActiveFilters && (
               <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
             )}
+            {isFetching && !isLoading && (
+              <span
+                className="inline-flex items-center gap-1 text-muted-foreground"
+                data-testid="dam-paginating-indicator"
+                aria-live="polite"
+              >
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Atualizando…
+              </span>
+            )}
           </>
         )}
       </div>
@@ -787,7 +797,19 @@ export default function DamLibraryPage() {
         </motion.div>
       ) : (
         <div className={quickPreview.enabled ? "flex gap-4 items-start" : undefined}>
-          <div className="flex-1 min-w-0">
+          <div
+            className={cn(
+              "flex-1 min-w-0 relative transition-opacity duration-200",
+              isFetching && !isLoading && "opacity-60 pointer-events-none",
+            )}
+            aria-busy={isFetching && !isLoading}
+          >
+            {isFetching && !isLoading && (
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Carregando…
+              </div>
+            )}
             {viewMode === "list" ? (
               <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
             ) : (
