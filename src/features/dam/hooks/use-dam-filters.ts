@@ -111,7 +111,8 @@ export function useDamFilters() {
 
   // Sync state -> URL
   useEffect(() => {
-    const next = new URLSearchParams();
+    const next = new URLSearchParams(params);
+    OWNED_KEYS.forEach((k) => next.delete(k));
     if (state.search.trim()) next.set("q", state.search.trim());
     if (state.assetTypes.length > 0) next.set("type", state.assetTypes.join(","));
     if (state.clientId && state.clientId !== "all") next.set("client", state.clientId);
@@ -120,6 +121,7 @@ export function useDamFilters() {
     if (state.includeArchived) next.set("archived", "1");
     if (state.sort !== "created_desc") next.set("sort", state.sort);
     setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, setParams]);
 
   // Persist tagsMode
