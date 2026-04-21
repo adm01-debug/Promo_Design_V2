@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ScrollText, Download, Eye, Copy, ExternalLink } from "lucide-react";
+import { ScrollText, Download, Eye, Copy, ExternalLink, Bell } from "lucide-react";
 import { useOrganizations, useOrgMembers } from "@/hooks/use-organization";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 } from "../hooks/use-audit-log";
 import { AuditFilters, type AuditFilterState } from "../components/AuditFilters";
 import { AuditDiffDialog } from "../components/AuditDiffDialog";
+import { AuditAlertsManager } from "../components/AuditAlertsManager";
 import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
@@ -78,6 +80,7 @@ function writePersisted(p: PersistedFilters) {
 
 const AuditLogPage = () => {
   const { currentOrgId } = useOrganizations();
+  const { user } = useAuth();
   const { members } = useOrgMembers(currentOrgId);
   const { data: tables = [] } = useAuditDistinctTables(currentOrgId);
   const { toast } = useToast();
@@ -85,6 +88,7 @@ const AuditLogPage = () => {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<AuditEntry | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   // Hidrata da URL ou, se URL vazia, do localStorage (uma única vez na montagem).
   useEffect(() => {
@@ -250,10 +254,21 @@ const AuditLogPage = () => {
           </h1>
           <p className="text-muted-foreground">Consulte todas as ações da sua organização com filtros avançados.</p>
         </div>
-        <Button onClick={handleExport} disabled={exporting || !currentOrgId || total === 0} variant="outline">
-          <Download className="h-4 w-4" />
-          {exporting ? "Exportando…" : "Exportar CSV"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setAlertsOpen(true)}
+            disabled={!currentOrgId}
+            variant="outline"
+            data-testid="audit-alerts-button"
+          >
+            <Bell className="h-4 w-4" />
+            Alertas
+          </Button>
+          <Button onClick={handleExport} disabled={exporting || !currentOrgId || total === 0} variant="outline">
+            <Download className="h-4 w-4" />
+            {exporting ? "Exportando…" : "Exportar CSV"}
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -354,6 +369,18 @@ const AuditLogPage = () => {
         userLabel={selected ? userLabel(selected.user_id) : undefined}
         onClose={() => setSelected(null)}
       />
+
+      {currentOrgId && (
+        <AuditAlertsManager
+          open={alertsOpen}
+          onOpenChange={setAlertsOpen}
+          organizationId={currentOrgId}
+          currentUserId={user?.id}
+          tables={tables}
+          members={memberOpts}
+          prefill={filterState}
+        />
+      )}
     </div>
   );
 };
