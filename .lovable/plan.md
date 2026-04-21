@@ -1,40 +1,56 @@
 
 
-## Persistir filtros da DAM ao sair e voltar
+## Contador, empty state com CTA e skeleton melhorado
 
-Hoje `pageSize`, `tagsMode`, `includeArchived`, `viewMode` e `paginationMode` já sobrevivem em localStorage. Mas **busca, tipos, cliente, tags e ordenação só vivem na URL** — ao clicar em "DAM" na sidebar (que vai para `/dam` sem querystring), tudo zera. Vou estender a persistência para esses cinco filtros.
+O contador "Mostrando X–Y de Z" já existe (linhas 519–535) e está correto. Falta polir três coisas: **(1)** distinguir "vazio porque filtros ativos" de "vazio porque biblioteca zerada", **(2)** dar CTA "Limpar filtros" no primeiro caso e "Fazer upload" no segundo, **(3)** skeleton respeitando `viewMode` (lista vs grid) e `pageSize` (em vez de 10 fixos).
 
 ### Mudanças
 
-**`src/features/dam/pages/DamLibraryPage.tsx`** — adicionar chaves localStorage e fallback no estado inicial:
+**`src/features/dam/pages/DamLibraryPage.tsx`**
 
-- Novas constantes:
-  - `SEARCH_KEY = "dam-search"`
-  - `ASSET_TYPES_KEY = "dam-asset-types"`
-  - `CLIENT_ID_KEY = "dam-client-id"`
-  - `TAGS_KEY = "dam-tags"`
-  - `SORT_KEY = "dam-sort"`
+- Computar `hasActiveFilters` (true se houver `debouncedSearch≥3`, `assetTypes.length`, `clientId !== "all"`, `selectedTags.length` ou `includeArchived`).
 
-- **Inicialização**: cada `useState` lê primeiro da URL; se ausente, lê do localStorage; se ausente, default. Mesmo padrão já usado em `tagsMode`/`includeArchived`.
+- Computar `clearAllFilters()` reaproveitando o handler já existente em `ActiveFiltersBar.onClearAll` — extrair para função local.
 
-- **Persistência**: novo `useEffect` por filtro escrevendo no localStorage quando muda. Strings vazias → `removeItem` para não vazar lixo.
+- **Contador**: melhorar com `Badge`/separadores e ícone sutil. Manter formato `"Mostrando X–Y de Z assets"` com pluralização correta. Quando há filtros ativos, mostrar `"Filtrado de Z assets"` ou similar para deixar claro que é resultado de filtro.
 
-- **Hidratação na URL**: quando o estado é restaurado do localStorage (e a URL está vazia), o `useEffect` que sincroniza com a URL já popula os params automaticamente — comportamento desejado para que a URL fique compartilhável imediatamente.
+- **Skeleton aprimorado** — substituir o atual:
+  ```tsx
+  {isLoading && displayedAssets.length === 0 ? (
+    viewMode === "list" ? (
+      <div className="space-y-2">
+        {Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full" />
+        ))}
+      </div>
+    ) : (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {Array.from({ length: Math.min(pageSize, 10) }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="aspect-square w-full" />
+            <Skeleton className="h-3 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        ))}
+      </div>
+    )
+  ) : ...}
+  ```
 
-- **Reset**: o botão "Limpar tudo" do `ActiveFiltersBar` deve agora **também** apagar as chaves de localStorage dos filtros (não da `pageSize`/`viewMode`/`paginationMode`, que são preferências de UI, não filtros). Implementar `clearAllFilters()` que zera estado E remove as 5 chaves.
+- **Empty state com CTA** — substituir o `<Card>` de "Nenhum asset encontrado" por um `EmptyState` rico (usar componente `EmptyState` já existente em `src/components/EmptyState.tsx` ou inlinar):
+  - Se `hasActiveFilters`: ícone `FilterX` (lucide), título "Nenhum asset corresponde aos filtros", descrição "Tente remover algum filtro ou ajustar a busca.", botão **"Limpar filtros"** que chama `clearAllFilters()`.
+  - Se `!hasActiveFilters` e `total === 0`: ícone `FolderArchive`, título "Sua biblioteca está vazia", descrição "Faça upload do seu primeiro asset para começar.", botão **"Fazer upload"** que abre o `AssetUploadDialog` (apenas se `can(["owner","admin","designer"])`).
+  - Animação sutil com `motion.div` (fade + lift) para combinar com o restante da app.
 
-**`src/features/dam/hooks/use-dam-filters.ts`** (usado por `DamPreviewPage` e `PreviewSidebar`):
-
-- Mesma estratégia: ler do localStorage (mesmas chaves) como fallback quando a URL não tem o parâmetro. Assim a Preview também herda os filtros que estavam na biblioteca, e vice-versa.
-
-- O `reset()` também limpa as chaves de localStorage.
+- Importar `FilterX` de `lucide-react`.
 
 ### Critérios de aceite
 
-- Filtrar por cliente "ACME", busca "logo azul", tipo "Logos", tag "verão" e sort "Nome A→Z" na DAM → navegar para `/catalog` → clicar em "DAM" na sidebar → todos os 5 filtros voltam exatamente como estavam, mesmo sem querystring na URL.
-- `pageSize` selecionado (ex.: 96) também sobrevive — já funciona, mantido.
-- Compartilhar URL com `?q=&type=&...` continua tendo prioridade sobre localStorage (URL ganha do storage).
-- Limpar filtros ("Limpar tudo") apaga tanto o estado quanto as chaves no localStorage — recarregar a página NÃO traz os filtros antigos de volta.
-- Preview (`/dam/preview`) e biblioteca (`/dam`) compartilham as mesmas chaves de localStorage, então os filtros se mantêm consistentes ao alternar entre as telas.
-- Sem regressão: paginação, busca server-side com mínimo de 3 chars, índices trigram, auditoria por versão, retry de upload continuam funcionando.
+- Contador "Mostrando X–Y de Z assets" continua correto em modo paginado e modo "carregar mais"; pluralização funciona (`asset` / `assets`).
+- Loading inicial mostra skeleton com **número de placeholders próximo do `pageSize`** (capped em 10/8) e respeitando `viewMode` (linhas horizontais em lista, cards quadrados em grid com placeholder de título).
+- Loading durante "carregar mais" não troca o conteúdo já visível pelo skeleton — apenas o spinner do botão (já implementado).
+- Empty state com filtros ativos mostra ícone `FilterX` + texto + botão **"Limpar filtros"** que zera estado E localStorage (reusa `clearAllFilters`).
+- Empty state sem filtros (biblioteca vazia) mostra `FolderArchive` + texto + botão **"Fazer upload"** que abre o `AssetUploadDialog` (oculto para `viewer`/`approver`).
+- `PreviewSidebar` (DAM Preview) NÃO precisa mudar — já tem contador próprio e botão "Limpar filtros".
+- Sem regressão: paginação, sort, busca trigram, persistência de filtros, auditoria por versão continuam funcionando.
 
