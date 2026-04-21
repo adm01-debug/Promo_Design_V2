@@ -3,6 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import type { ColorEntry, FontEntry } from "../hooks/use-brand-guidelines";
+import { useGoogleFonts } from "../lib/google-fonts-loader";
+import { wcagLevel, bestTextColor } from "../lib/color-contrast";
+import { toast } from "sonner";
 
 interface BrandPreviewCardProps {
   clientName: string;
@@ -17,12 +20,25 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
   const accentColor = primary[1]?.hex ?? secondary[0]?.hex ?? "#64748b";
   const headingFont = fonts[0]?.name ?? "Inter";
   const bodyFont = fonts[1]?.name ?? fonts[0]?.name ?? "Inter";
+  useGoogleFonts([headingFont, bodyFont]);
+
+  const heroText = bestTextColor(heroColor);
+  const accentText = bestTextColor(accentColor);
+
+  const copyHex = async (hex: string) => {
+    try {
+      await navigator.clipboard.writeText(hex.toUpperCase());
+      toast.success(`Copiado ${hex.toUpperCase()}`);
+    } catch {
+      toast.error("Falha ao copiar");
+    }
+  };
 
   return (
     <Card className="overflow-hidden border-border">
       <div
         className="p-8 flex items-center gap-6"
-        style={{ backgroundColor: heroColor, color: "#fff" }}
+        style={{ backgroundColor: heroColor, color: heroText }}
       >
         {logo ? (
           <div className="w-20 h-20 rounded-lg bg-white/10 backdrop-blur overflow-hidden flex-shrink-0">
@@ -48,11 +64,14 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
           </div>
           <div className="flex gap-2 mt-3">
             {primary.slice(0, 5).map((c, i) => (
-              <div
+              <button
+                type="button"
                 key={i}
-                className="w-6 h-6 rounded-full border-2 border-white/30"
+                onClick={() => copyHex(c.hex)}
+                className="w-6 h-6 rounded-full border-2 border-white/30 hover:scale-110 transition-transform cursor-pointer"
                 style={{ backgroundColor: c.hex }}
-                title={c.name || c.hex}
+                title={`${c.name || c.hex} · clique para copiar`}
+                aria-label={`Copiar ${c.hex}`}
               />
             ))}
           </div>
@@ -79,33 +98,39 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
           <div className="flex gap-2 flex-wrap">
             <button
               type="button"
-              className="px-4 py-2 rounded-md text-sm font-medium text-white"
-              style={{ backgroundColor: heroColor, fontFamily: `"${bodyFont}", sans-serif` }}
+              className="px-4 py-2 rounded-md text-sm font-medium"
+              style={{ backgroundColor: heroColor, color: heroText, fontFamily: `"${bodyFont}", sans-serif` }}
             >
               Primária
             </button>
             <button
               type="button"
-              className="px-4 py-2 rounded-md text-sm font-medium text-white"
-              style={{ backgroundColor: accentColor, fontFamily: `"${bodyFont}", sans-serif` }}
+              className="px-4 py-2 rounded-md text-sm font-medium"
+              style={{ backgroundColor: accentColor, color: accentText, fontFamily: `"${bodyFont}", sans-serif` }}
             >
               Secundária
             </button>
           </div>
-          {secondary.length > 0 && (
-            <div className="flex gap-2 mt-3">
-              {secondary.slice(0, 6).map((c, i) => (
-                <Badge
+          <div className="flex gap-2 mt-3 flex-wrap">
+            {[...primary, ...secondary].slice(0, 8).map((c, i) => {
+              const level = wcagLevel(c.hex, "#ffffff");
+              const variant = level === "FAIL" ? "destructive" : "outline";
+              return (
+                <button
+                  type="button"
                   key={i}
-                  variant="outline"
-                  className="font-mono text-[10px]"
-                  style={{ borderColor: c.hex, color: c.hex }}
+                  onClick={() => copyHex(c.hex)}
+                  className="flex items-center gap-1.5 group"
+                  title={`${c.hex} · contraste vs branco: ${level}`}
                 >
-                  {c.hex.toUpperCase()}
-                </Badge>
-              ))}
-            </div>
-          )}
+                  <span className="w-4 h-4 rounded border border-border" style={{ backgroundColor: c.hex }} />
+                  <Badge variant={variant} className="font-mono text-[9px] px-1 py-0 group-hover:opacity-80">
+                    {level}
+                  </Badge>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </Card>
