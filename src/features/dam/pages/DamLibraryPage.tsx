@@ -17,6 +17,7 @@ import { AssetUploadDialog } from "../components/AssetUploadDialog";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
+import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
   Pagination,
@@ -40,6 +41,7 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
+const TAGS_MODE_KEY = "dam-tags-mode";
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -53,8 +55,9 @@ function buildPageList(current: number, total: number): (number | "ellipsis")[] 
   return pages;
 }
 
-type SortValue = "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
-const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version"; sortDir: "asc" | "desc" }[] = [
+type SortValue = "relevance" | "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
+const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version" | "relevance"; sortDir: "asc" | "desc" }[] = [
+  { value: "relevance", label: "Relevância", sortBy: "relevance", sortDir: "desc" },
   { value: "created_desc", label: "Mais recentes", sortBy: "created_at", sortDir: "desc" },
   { value: "created_asc", label: "Mais antigos", sortBy: "created_at", sortDir: "asc" },
   { value: "name_asc", label: "Nome A→Z", sortBy: "name", sortDir: "asc" },
@@ -68,9 +71,13 @@ export default function DamLibraryPage() {
   const { clients } = useClients(currentOrgId);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-  const [assetType, setAssetType] = useState<AssetType | "all">("all");
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
   const [clientId, setClientId] = useState<string | "all" | "none">("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagsMode, setTagsMode] = useState<"all" | "any">(() => {
+    if (typeof window === "undefined") return "all";
+    return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
+  });
   const [includeArchived, setIncludeArchived] = useState(false);
   const [sort, setSort] = useState<SortValue>("created_desc");
   const [page, setPage] = useState(1);
@@ -94,18 +101,28 @@ export default function DamLibraryPage() {
     try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
   }, [pageSize]);
 
+  useEffect(() => {
+    try { localStorage.setItem(TAGS_MODE_KEY, tagsMode); } catch { /* ignore */ }
+  }, [tagsMode]);
+
+  // If user clears search while sorting by relevance, fall back to "Mais recentes"
+  useEffect(() => {
+    if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
+  }, [debouncedSearch, sort]);
+
   // Reset to page 1 when filters/search/sort/pageSize change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, assetType, clientId, selectedTags, includeArchived, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort, pageSize]);
 
   const filters = useMemo(
     () => {
-      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[0];
+      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
       return {
-        assetType,
+        assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
+        tagsMode,
         includeArchived,
         search: debouncedSearch.trim() || undefined,
         sortBy: opt.sortBy,
@@ -114,7 +131,7 @@ export default function DamLibraryPage() {
         pageSize,
       };
     },
-    [assetType, clientId, selectedTags, includeArchived, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, debouncedSearch, sort, page, pageSize],
   );
 
   const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
@@ -183,7 +200,7 @@ export default function DamLibraryPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.map((o) => (
+              {SORT_OPTIONS.filter((o) => o.value !== "relevance" || debouncedSearch.trim().length > 0).map((o) => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
               ))}
             </SelectContent>
@@ -225,16 +242,29 @@ export default function DamLibraryPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {TYPES.map((t) => (
-          <Badge
-            key={t.value}
-            variant={assetType === t.value ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setAssetType(t.value)}
-          >
-            {t.label}
-          </Badge>
-        ))}
+        {TYPES.map((t) => {
+          const isAll = t.value === "all";
+          const active = isAll ? assetTypes.length === 0 : assetTypes.includes(t.value as AssetType);
+          return (
+            <Badge
+              key={t.value}
+              variant={active ? "default" : "outline"}
+              className="cursor-pointer select-none"
+              onClick={() => {
+                if (isAll) {
+                  setAssetTypes([]);
+                } else {
+                  const v = t.value as AssetType;
+                  setAssetTypes((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]));
+                }
+              }}
+              role="button"
+              aria-pressed={active}
+            >
+              {t.label}
+            </Badge>
+          );
+        })}
       </div>
 
       {availableTags.length > 0 && (
@@ -242,8 +272,32 @@ export default function DamLibraryPage() {
           availableTags={availableTags}
           selected={selectedTags}
           onChange={setSelectedTags}
+          mode={tagsMode}
+          onModeChange={setTagsMode}
         />
       )}
+
+      <ActiveFiltersBar
+        search={debouncedSearch.trim() || undefined}
+        onClearSearch={() => setSearch("")}
+        assetTypes={assetTypes}
+        onRemoveType={(t) => setAssetTypes((prev) => prev.filter((x) => x !== t))}
+        clientId={clientId}
+        clientLabel={clients.find((c) => c.id === clientId)?.name}
+        onClearClient={() => setClientId("all")}
+        tags={selectedTags}
+        tagsMode={tagsMode}
+        onRemoveTag={(t) => setSelectedTags((prev) => prev.filter((x) => x !== t))}
+        includeArchived={includeArchived}
+        onClearArchived={() => setIncludeArchived(false)}
+        onClearAll={() => {
+          setSearch("");
+          setAssetTypes([]);
+          setClientId("all");
+          setSelectedTags([]);
+          setIncludeArchived(false);
+        }}
+      />
 
       <div className="text-xs text-muted-foreground">
         {isLoading

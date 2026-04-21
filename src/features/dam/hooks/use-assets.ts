@@ -32,10 +32,12 @@ export interface Asset {
 export interface AssetFilters {
   clientId?: string | null;
   assetType?: AssetType | "all";
+  assetTypes?: AssetType[];
   tags?: string[];
+  tagsMode?: "all" | "any";
   search?: string;
   includeArchived?: boolean;
-  sortBy?: "created_at" | "name" | "file_size" | "version";
+  sortBy?: "created_at" | "name" | "file_size" | "version" | "relevance";
   sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
@@ -73,17 +75,59 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       const hasPagination = typeof filters.pageSize === "number" && filters.pageSize > 0;
       const page = Math.max(1, filters.page ?? 1);
       const pageSize = filters.pageSize ?? 0;
+      const searchTerm = filters.search?.trim() ?? "";
+      const useRelevance = sortBy === "relevance" && searchTerm.length > 0;
+
+      if (useRelevance) {
+        const limit = hasPagination ? pageSize : 1000;
+        const offset = hasPagination ? (page - 1) * pageSize : 0;
+        const rpcArgs: Record<string, unknown> = {
+          _org_id: organizationId!,
+          _query: searchTerm,
+          _tags_mode: filters.tagsMode ?? "all",
+          _include_archived: filters.includeArchived ?? false,
+          _limit: limit,
+          _offset: offset,
+        };
+        if (filters.clientId) rpcArgs._client_id = filters.clientId;
+        const types =
+          filters.assetTypes && filters.assetTypes.length > 0
+            ? filters.assetTypes
+            : filters.assetType && filters.assetType !== "all"
+              ? [filters.assetType]
+              : null;
+        if (types) rpcArgs._asset_types = types;
+        if (filters.tags && filters.tags.length > 0) rpcArgs._tags = filters.tags;
+        const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
+        return {
+          rows: rows as unknown as Asset[],
+          total: rows[0]?.total_count ?? 0,
+        };
+      }
+
       let q = supabase
         .from("assets")
         .select("*", hasPagination ? { count: "exact" } : {})
         .eq("organization_id", organizationId!)
-        .order(sortBy, { ascending: sortDir === "asc" });
+        .order(sortBy === "relevance" ? "created_at" : sortBy, { ascending: sortDir === "asc" });
       if (!filters.includeArchived) q = q.eq("is_archived", false);
       if (filters.clientId) q = q.eq("client_id", filters.clientId);
-      if (filters.assetType && filters.assetType !== "all") q = q.eq("asset_type", filters.assetType);
-      if (filters.tags && filters.tags.length > 0) q = q.contains("tags", filters.tags);
-      if (filters.search && filters.search.trim()) {
-        const term = filters.search.trim().replace(/[%,]/g, " ");
+      if (filters.assetTypes && filters.assetTypes.length > 0) {
+        q = q.in("asset_type", filters.assetTypes);
+      } else if (filters.assetType && filters.assetType !== "all") {
+        q = q.eq("asset_type", filters.assetType);
+      }
+      if (filters.tags && filters.tags.length > 0) {
+        if ((filters.tagsMode ?? "all") === "any") {
+          q = q.overlaps("tags", filters.tags);
+        } else {
+          q = q.contains("tags", filters.tags);
+        }
+      }
+      if (searchTerm) {
+        const term = searchTerm.replace(/[%,]/g, " ");
         q = q.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
       }
       if (hasPagination) {

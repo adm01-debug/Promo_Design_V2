@@ -4,15 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 interface TagFilterProps {
   availableTags: string[];
   selected: string[];
   onChange: (next: string[]) => void;
+  mode?: "all" | "any";
+  onModeChange?: (mode: "all" | "any") => void;
 }
 
-export function TagFilter({ availableTags, selected, onChange }: TagFilterProps) {
+export function TagFilter({ availableTags, selected, onChange, mode = "all", onModeChange }: TagFilterProps) {
   const [open, setOpen] = useState(false);
   const sorted = useMemo(() => [...availableTags].sort((a, b) => a.localeCompare(b)), [availableTags]);
 
@@ -26,10 +29,32 @@ export function TagFilter({ availableTags, selected, onChange }: TagFilterProps)
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-9 gap-2">
             <TagIcon className="w-3.5 h-3.5" />
-            Tags {selected.length > 0 && <Badge variant="secondary" className="ml-1 px-1.5">{selected.length}</Badge>}
+            Tags {selected.length > 0 && (
+              <Badge variant="secondary" className="ml-1 px-1.5">
+                {selected.length} · {mode === "all" ? "Todas" : "Qualquer"}
+              </Badge>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-0" align="start">
+          {onModeChange && selected.length > 1 && (
+            <div className="p-2 border-b" role="radiogroup" aria-label="Modo de combinação de tags">
+              <ToggleGroup
+                type="single"
+                size="sm"
+                value={mode}
+                onValueChange={(v) => v && onModeChange(v as "all" | "any")}
+                className="w-full justify-stretch"
+              >
+                <ToggleGroupItem value="all" className="flex-1 text-xs" aria-label="Todas as tags">
+                  Todas
+                </ToggleGroupItem>
+                <ToggleGroupItem value="any" className="flex-1 text-xs" aria-label="Qualquer tag">
+                  Qualquer
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          )}
           <Command>
             <CommandInput placeholder="Buscar tag..." />
             <CommandList>
