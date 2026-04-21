@@ -1,51 +1,34 @@
 
 
-## Log de auditoria por versão de asset
+## Ordenação na DAM — já implementada
 
-Cada upload de versão hoje cria uma linha em `assets` (que dispara `write_audit_log` via trigger). Os INSERTs ficam em `audit_log` mas não são expostos no drawer. Vou adicionar uma seção "Auditoria" dentro da aba "Versões" mostrando quem criou cada versão e o que mudou em relação à anterior.
+Verifiquei o código e essa feature **já está 100% implementada**, com todas as opções pedidas e aplicação no servidor.
 
-### Mudanças
+### O que já existe hoje
 
-**`src/features/dam/hooks/use-asset-audit.ts`** (novo)
-- Hook `useAssetAudit(asset: Asset | null)`:
-  - Busca o chain completo de versões (root + descendants) por id
-  - Faz `select * from audit_log where table_name='assets' and record_id in (chain_ids) order by created_at asc`
-  - Retorna entradas tipadas `AssetAuditEntry { id, version, action, user_id, created_at, old_values, new_values, changed_fields }`
-  - Computa `changed_fields` no cliente comparando `new_values` da versão N com `new_values` da versão N-1 (chain anterior), focando em campos relevantes: `name`, `tags`, `description`, `dominant_colors`, `asset_type`, `client_id`, `metadata`
-  - Cache key: `["asset-audit", rootId]`
+**Dropdown visível** em duas telas:
+- `DamLibraryPage` (linha 343): `<Select value={sort} onValueChange={setSort}>` no header de filtros
+- `PreviewSidebar` (DAM Preview): mesmo dropdown na sidebar lateral
 
-**`src/features/dam/components/AssetAuditTrail.tsx`** (novo)
-- Renderiza dentro de um `<Collapsible>` "Histórico de auditoria" abaixo da lista de versões
-- Cada entrada mostra:
-  - Badge da versão (`v3`)
-  - Autor (UUID truncado, mesma estratégia de `AssetVersionHistory`)
-  - Timestamp relativo (`format(date, "dd/MM/yyyy HH:mm")`)
-  - Lista compacta de campos alterados com chips coloridos: `tags`, `nome`, `descrição`, etc.
-  - Botão "Comparar" que abre `AssetMetadataDiffDialog`
-- Empty state: "Sem registros de auditoria para esta versão"
+**Opções disponíveis** (`SORT_OPTIONS`):
+1. Relevância (só aparece quando há busca ativa)
+2. **Mais recentes** (`created_at desc`) — default
+3. **Mais antigos** (`created_at asc`)
+4. **Nome A→Z** (`name asc`)
+5. **Nome Z→A** (`name desc`)
+6. **Maior arquivo** (`file_size desc`)
+7. **Versão** (`version desc`)
 
-**`src/features/dam/components/AssetMetadataDiffDialog.tsx`** (novo)
-- Dialog que recebe `previousValues` e `currentValues` (subset de campos relevantes)
-- Layout 2 colunas (Antes/Depois) reutilizando o padrão visual do `AuditDiffDialog`:
-  - Coluna esquerda: borda destrutiva, fundo `destructive/5`
-  - Coluna direita: borda emerald, fundo `emerald/5`
-  - Campos alterados com `bg-amber-500/15` e borda âmbar
-- Renderiza tags como `<Badge>` lado a lado para comparação visual rápida
-- Renderiza `dominant_colors` como swatches
-- Demais campos como JSON inline
+**Aplicação no back-end** em `use-assets.ts`:
+- Para ordenações normais: `supabase.from("assets").order(sortBy, { ascending: sortDir === "asc" })` — Postgres faz a ordenação antes de aplicar `range(from, to)`, então a paginação respeita o sort.
+- Para relevância: chama o RPC `search_assets_ranked` que ordena por `rank DESC, created_at DESC` no servidor.
 
-**`src/features/dam/components/AssetVersionHistory.tsx`** (modificar)
-- Após a `<ul>` de versões, renderizar `<AssetAuditTrail asset={asset} />`
-- Sem alterações nos filtros/persistência existentes
+**Persistência**:
+- Estado sincronizado com `?sort=` na URL (compartilhável)
+- Reset automático para página 1 ao trocar ordenação
+- Fallback: se "relevância" estiver selecionado e o usuário limpar a busca, volta para "Mais recentes"
 
-### Critérios de aceite
+### Conclusão
 
-- Aba "Versões" mostra seção colapsável "Histórico de auditoria" abaixo da lista
-- Cada entrada lista versão, autor, data e campos alterados (chips de "tags", "nome" etc.)
-- Clicar em "Comparar" abre dialog com diff lado a lado destacando os campos modificados em âmbar
-- Tags aparecem como badges comparáveis visualmente; cores dominantes como swatches
-- INSERT (criação da versão) mostra "Criado" em vez de comparação; UPDATEs mostram diff vs estado anterior
-- Empty state quando o asset ainda não tem auditoria ou só tem 1 versão sem updates
-- Sem migração: usa `audit_log` existente; RLS já permite leitura para membros da org
-- Sem regressão: filtros, persistência localStorage e seleção de versão continuam funcionando
+Nenhuma mudança de código é necessária. Se você está vendo algum comportamento estranho (ex.: o dropdown não aparece, ou a ordenação não muda os resultados), me diga qual tela e qual opção, que eu investigo o caso específico.
 
