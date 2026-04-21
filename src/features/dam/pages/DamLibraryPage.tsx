@@ -325,6 +325,29 @@ export default function DamLibraryPage() {
     return Array.from(set);
   }, [displayedAssets]);
 
+  const currentSavedFilters: SavedFiltersPayload = useMemo(() => ({
+    _v: 1,
+    search: debouncedSearch.trim(),
+    assetTypes,
+    clientId,
+    tags: selectedTags,
+    tagsMode,
+    includeArchived,
+    sort,
+  }), [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort]);
+
+  const applySavedFilters = (snap: SavedFiltersPayload) => {
+    setSearch(snap.search ?? "");
+    setAssetTypes(snap.assetTypes ?? []);
+    setClientId((snap.clientId as typeof clientId) ?? "all");
+    setSelectedTags(snap.tags ?? []);
+    setTagsMode(snap.tagsMode ?? "all");
+    setIncludeArchived(Boolean(snap.includeArchived));
+    setSort((snap.sort as SortValue) ?? "created_desc");
+    setPage(1);
+    setAccumulated([]);
+  };
+
   if (!currentOrgId) {
     return (
       <div className="p-6">
