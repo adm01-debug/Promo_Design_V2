@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2,
+  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
+import { AssetPicker } from "@/features/dam/components/AssetPicker";
+import { downloadAssetAsFile } from "@/features/dam/lib/asset-urls";
+import { toast } from "sonner";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
@@ -65,6 +68,7 @@ interface EditorRightPanelProps {
 }
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
+  const [damPickerOpen, setDamPickerOpen] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
@@ -98,9 +102,14 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
       <div className="p-4 border-b border-border">
         <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Logo</h3>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
-        <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="w-3.5 h-3.5 mr-1.5" /> {logoFile ? logoFile.name.slice(0, 18) : "Upload Logo"}
-        </Button>
+        <div className="grid grid-cols-2 gap-1.5">
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-3.5 h-3.5 mr-1" /> {logoFile ? logoFile.name.slice(0, 10) : "Upload"}
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)}>
+            <Library className="w-3.5 h-3.5 mr-1" /> DAM
+          </Button>
+        </div>
         {logoPreview && (
           <div className="flex items-center gap-1 mt-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => setShowLogo(!showLogo)}>
@@ -239,6 +248,21 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
         </Button>
       </div>
+
+      <AssetPicker
+        open={damPickerOpen}
+        onOpenChange={setDamPickerOpen}
+        defaultAssetType="logo"
+        title="Escolher logo da biblioteca"
+        onSelect={async (asset) => {
+          const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
+          if (!file) {
+            toast.error("Não foi possível carregar o asset");
+            return;
+          }
+          handleLogoUpload(file);
+        }}
+      />
     </div>
   );
 };
