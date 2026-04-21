@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import type { Json } from "@/integrations/supabase/types";
 
 export type AssetType = "logo" | "art" | "photo" | "mockup" | "document" | "other";
 
@@ -50,7 +51,7 @@ export interface AssetInsert {
   dominant_colors?: string[];
   thumbnail_path?: string | null;
   tags?: string[];
-  metadata?: Record<string, unknown>;
+  metadata?: Json;
   parent_asset_id?: string | null;
   version?: number;
 }
