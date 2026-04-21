@@ -20,6 +20,7 @@ import { CompareGrid } from "../components/CompareGrid";
 import { CompareTopBar } from "../components/CompareTopBar";
 import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
+import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnosis";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
