@@ -152,26 +152,6 @@ export default function DamPreviewPage() {
   }, [compareMode]);
   const compare = useCompareSelection();
 
-  // Hydrate compare selection from ?compare=id1,id2,... on first load when assets are available.
-  useEffect(() => {
-    if (didHydrateCompareRef.current) return;
-    if (assets.length === 0) return;
-    const raw = searchParams.get("compare");
-    if (!raw) {
-      didHydrateCompareRef.current = true;
-      return;
-    }
-    const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
-    const valid = ids.filter((id) => assets.some((a) => a.id === id)).slice(0, compare.max);
-    if (valid.length >= 2) {
-      compare.clear();
-      valid.forEach((id) => compare.toggle(id));
-      setCompareMode(true);
-    }
-    didHydrateCompareRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assets]);
-
   // Last asset that was actually visible in results — used to diagnose why it
   // disappeared after a filter change, and to restore selection when filters clear.
   const [lastKnownAsset, setLastKnownAsset] = useState<Asset | null>(null);
