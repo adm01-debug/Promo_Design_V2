@@ -284,6 +284,40 @@ export default function DamPreviewPage() {
           <FolderArchive className="w-4 h-4" />
           Pré-visualização rápida
         </div>
+        <TooltipProvider delayDuration={200}>
+          {assets.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="secondary"
+                  className="h-6 gap-1 px-2 text-[11px] font-mono"
+                  aria-label="Posição sincronizada com a URL"
+                >
+                  <Link2 className="w-3 h-3" />
+                  {activeIndex + 1} / {assets.length}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>Sincronizado com a URL (?asset=)</TooltipContent>
+            </Tooltip>
+          )}
+          {assetMissingFromList && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className="h-6 gap-1 px-2 text-[11px] border-warning/40 text-warning"
+                  aria-label="Asset fora dos filtros atuais"
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  Fora dos filtros
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                Asset da URL não está nos resultados atuais — exibindo o primeiro disponível.
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </TooltipProvider>
         <Button
           variant={compareMode ? "default" : "outline"}
           size="sm"
@@ -365,7 +399,7 @@ export default function DamPreviewPage() {
           <PreviewThumbStrip
             assets={assets}
             activeIndex={activeIndex}
-            onSelect={setActiveIndex}
+            onSelect={(i) => selectAssetAt(i, { pushHistory: true })}
             selectionMode={compareMode}
             selectedIds={compare.selectedIds}
             onToggleSelect={compare.toggle}
