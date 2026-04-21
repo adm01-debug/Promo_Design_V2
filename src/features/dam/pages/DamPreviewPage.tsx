@@ -192,14 +192,19 @@ export default function DamPreviewPage() {
   }, [assetIdParam, assets, activeIndex]);
 
   // First-load fallback: when no ?asset= and assets just arrived, default to index 0 once.
+  // Guard: never overwrite when ?asset= is present and points to a valid asset in the list.
   useEffect(() => {
     if (didInitRef.current) return;
     if (assets.length === 0) return;
     didInitRef.current = true;
     if (!assetIdParam) {
       setActiveIndex(0);
+      return;
     }
-  }, [assets.length, assetIdParam]);
+    // If the URL asset is in the list, the other effect handles positioning — do not reset.
+    const idx = assets.findIndex((a) => a.id === assetIdParam);
+    if (idx < 0) setActiveIndex(0);
+  }, [assets.length, assetIdParam, assets]);
 
   // Clamp activeIndex if list shrinks
   useEffect(() => {
@@ -212,6 +217,60 @@ export default function DamPreviewPage() {
   const assetMissingFromList =
     Boolean(assetIdParam) && assets.length > 0 && !assets.some((a) => a.id === assetIdParam);
 
+  // Build clientId -> name map for diagnosis messages.
+  const clientNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const c of clients ?? []) map[c.id] = c.name;
+    return map;
+  }, [clients]);
+
+  // Track last known asset (the last one actually present in results).
+  useEffect(() => {
+    if (activeAsset) setLastKnownAsset(activeAsset);
+  }, [activeAsset]);
+
+  // If the lastKnownAsset reappears in the list (e.g. after clearing filters),
+  // restore it as active instead of staying on index 0.
+  useEffect(() => {
+    if (!lastKnownAsset) return;
+    if (assets.length === 0) return;
+    if (activeAsset?.id === lastKnownAsset.id) return;
+    const idx = assets.findIndex((a) => a.id === lastKnownAsset.id);
+    if (idx >= 0 && idx !== activeIndex) {
+      setActiveIndex(idx);
+    }
+  }, [assets, lastKnownAsset, activeAsset, activeIndex]);
+
+  // Diagnose why the last known asset is no longer in the results.
+  const removalCauses: DiagnosisCause[] = useMemo(() => {
+    if (!lastKnownAsset) return [];
+    if (assets.some((a) => a.id === lastKnownAsset.id)) return [];
+    return diagnoseAssetRemoval(lastKnownAsset, state, { clientNameById });
+  }, [lastKnownAsset, assets, state, clientNameById]);
+
+  const assetRemovedByFilter = removalCauses.length > 0;
+
+  // Helper: clear a single cause.
+  const clearCause = (kind: DiagnosisCause["kind"]) => {
+    switch (kind) {
+      case "assetTypes": setAssetTypes([]); break;
+      case "clientId": setClientId("all"); break;
+      case "tags": setTags([]); break;
+      case "search": setSearch(""); break;
+      case "includeArchived": setIncludeArchived(true); break;
+    }
+  };
+
+  const causeActionLabel = (kind: DiagnosisCause["kind"]): string => {
+    switch (kind) {
+      case "assetTypes": return "Remover filtro de tipo";
+      case "clientId": return "Remover filtro de cliente";
+      case "tags": return "Remover filtro de tags";
+      case "search": return "Limpar busca";
+      case "includeArchived": return "Incluir arquivados";
+    }
+  };
+
   // When the URL/localStorage points to an asset that's not in the current results,
   // show a one-time toast offering to clear filters. The localStorage entry is kept
   // (filters may be temporary) — only cleared when the user explicitly chooses to clear filters.
@@ -219,9 +278,11 @@ export default function DamPreviewPage() {
     if (!assetMissingFromList) return;
     if (didShowFallbackToastRef.current) return;
     didShowFallbackToastRef.current = true;
+    const primary = removalCauses[0]?.message;
     toast("Asset fora dos filtros atuais", {
-      description:
-        "O asset visualizado por último não está disponível nos filtros atuais. Mostrando o primeiro disponível.",
+      description: primary
+        ? `${primary} Mostrando o primeiro disponível.`
+        : "O asset visualizado por último não está disponível nos filtros atuais. Mostrando o primeiro disponível.",
       duration: 5000,
       action: {
         label: "Limpar filtros",
@@ -231,7 +292,7 @@ export default function DamPreviewPage() {
         },
       },
     });
-  }, [assetMissingFromList, resetFilters]);
+  }, [assetMissingFromList, resetFilters, removalCauses]);
 
   // Sync URL ?asset=<id> with current activeAsset.
   // Use push when the change came from a deliberate user action (arrows/thumbs),
@@ -246,9 +307,13 @@ export default function DamPreviewPage() {
     setSearchParams(next, { replace });
   }, [activeAsset, searchParams, setSearchParams]);
 
-  // Persist last viewed asset to localStorage (for re-entry from library).
+  // Persist last viewed asset to localStorage — only when the user explicitly
+  // selected it (arrows/thumbs/URL nav). This prevents a filter-induced fallback
+  // (e.g. asset disappeared, fell back to index 0) from overwriting the user's
+  // intent in localStorage. The URL change effect updates the ref on user nav.
   useEffect(() => {
     if (!activeAsset) return;
+    if (lastUserSelectedIdRef.current !== activeAsset.id) return;
     try {
       localStorage.setItem(
         LAST_ASSET_KEY,
