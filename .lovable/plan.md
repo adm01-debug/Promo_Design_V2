@@ -1,57 +1,77 @@
 
 
-## Exportação PDF — OS individual já existe, faltam exports compartilháveis
+## Audit Trail — filtros avançados e UX completa
 
-Hoje `generateServiceOrderPdf` gera o PDF de **uma OS** (botão Download na tela de edição). Vou adicionar **dois exports novos** focados em compartilhamento com cliente:
+A tela `/audit` já existe (`AuditLogPage.tsx`) mas é minimalista: lista as últimas 200 ações sem filtros nem paginação. Vou transformá-la em uma ferramenta de consulta completa, aproveitando 100% da infra existente (`audit_log` + `current_user_orgs` + RLS por organização).
 
-### 1. PDF de lote de OSs (lista filtrada)
+### Filtros (header da página)
 
-Na tela `/mockup/service-orders` (ServiceOrderList), botão **"Exportar PDF"** no header gera um PDF consolidado com:
-- Capa com logo Promo Brindes, contagem de OSs, filtros aplicados (status, busca), data de geração
-- Tabela resumo: nº OS · cliente · produto · técnica · qtd · status · entrega
-- Uma página por OS expandida (reusa layout simplificado do `generateServiceOrderPdf`, sem o verso de produção)
-- Footer com paginação
+- **Período**: presets (hoje · 7 dias · 30 dias · 90 dias) + custom range com 2 calendários (date pickers shadcn)
+- **Tipo de ação**: multi-select (INSERT / UPDATE / DELETE / todos)
+- **Tabela**: dropdown populado dinamicamente com `DISTINCT table_name` da org corrente (service_orders, assets, clients, brand_guidelines, etc.)
+- **Usuário**: dropdown com membros da organização (usa `useOrgMembers(currentOrgId)` — já existe)
+- **Busca textual**: por `record_id` (UUID parcial, mín. 4 chars)
+- **Botão "Limpar filtros"** + chips de filtros ativos no topo
 
-Útil para enviar ao cliente um pacote de OSs em produção/aprovação.
+Todos os filtros sincronizam com querystring (`?from=...&to=...&action=UPDATE,DELETE&table=service_orders&user=<uuid>&q=`).
 
-### 2. PDF "Resumo do Projeto" por cliente
+### Lista (corpo)
 
-Na `ClientsPage` (e na ficha do cliente), botão **"Resumo PDF"** gera um relatório executivo do cliente:
-- Capa com nome/empresa do cliente e período (últimos 90 dias, configurável)
-- KPIs: total de OSs, qtd total de peças, OSs por status (donut), técnicas mais usadas (barras top 5)
-- Timeline cronológica de OSs (data · nº · produto · técnica · status)
-- Galeria de mockups (até 12 thumbnails das OSs com `mockup_image_url`)
-- Footer com branding
+Substitui a lista atual por uma **tabela** (`@/components/ui/table`) com colunas:
 
-Compartilhável como "fechamento" ou "status report" do cliente.
+| Quando | Usuário | Ação | Tabela | Registro | Detalhes |
+|---|---|---|---|---|---|
+
+- **Quando**: timestamp absoluto + relativo no tooltip ("há 2h")
+- **Usuário**: iniciais em avatar + email (lookup via `organization_members` → join com user_id; fallback para UUID truncado se não for membro atual)
+- **Ação**: badge colorido (INSERT verde, UPDATE âmbar, DELETE vermelho)
+- **Tabela**: nome em fonte mono
+- **Registro**: UUID truncado clicável → copia completo
+- **Detalhes**: botão "Ver" abre **dialog** com diff JSON de `old_values` vs `new_values` (lado a lado, com keys alteradas destacadas)
+
+### Paginação + export
+
+- Paginação server-side: 50 por página, `range(offset, offset+49)`, contagem total via `{ count: "exact" }`
+- Botão **"Exportar CSV"** no header gera CSV com filtros atuais (até 5000 linhas) — `Blob` + download
+- Indicador "X eventos · página Y de Z"
+
+### Diff viewer (dialog)
+
+- 2 colunas: "Antes" (vermelho suave) / "Depois" (verde suave)
+- Para INSERT: só mostra "Depois"; para DELETE: só "Antes"
+- Para UPDATE: highlight nas chaves cujo valor mudou (compara `old_values[k] !== new_values[k]`)
+- JSON renderizado em `<pre>` com `JSON.stringify(..., null, 2)`
+- Header do dialog mostra: ação · tabela · timestamp · user_id
 
 ### Arquivos
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/service-orders/lib/ServiceOrderBatchPdf.ts` | Criar — `generateBatchPdf(orders, filters, logoDataUrl)` |
-| `src/features/service-orders/lib/ClientSummaryPdf.ts` | Criar — `generateClientSummaryPdf(client, orders, logoDataUrl, periodDays)` |
-| `src/features/service-orders/pages/ServiceOrderList.tsx` | Editar — botão "Exportar PDF" no header (usa orders já filtradas, busca todos via `pageSize: 1000` quando exporta) |
-| `src/features/clients/pages/ClientsPage.tsx` | Editar — botão "Resumo PDF" por linha + dialog de seleção de período (30/90/365 dias) |
-| `src/features/clients/hooks/use-clients.ts` | Editar (se necessário) — helper para puxar OSs do cliente filtradas por período |
+| `src/features/audit/pages/AuditLogPage.tsx` | Reescrever — header com filtros, tabela paginada, integração com hook |
+| `src/features/audit/hooks/use-audit-log.ts` | Criar — query React Query com filtros, paginação, count exact, distinct tables |
+| `src/features/audit/components/AuditFilters.tsx` | Criar — barra de filtros (período/ação/tabela/usuário/busca) |
+| `src/features/audit/components/AuditDiffDialog.tsx` | Criar — dialog com diff old vs new |
+| `src/features/audit/lib/audit-csv.ts` | Criar — helper para gerar CSV |
 
 ### Detalhes técnicos
 
-- **Stack**: `jspdf` + `jspdf-autotable` (já no projeto)
-- **Logo**: reusa `getLogoDataUrl()` do `logo-loader.ts`
-- **Imagens**: `mockup_image_url` é URL pública; carregar via `fetch` → blob → dataURL antes de `addImage` (em paralelo com `Promise.all`, com cap de 12)
-- **Performance**: para batch grande, `pageSize: 1000` num `useServiceOrders` chamado on-demand (não no render); loading state durante geração
-- **Filtros no PDF**: serializar status/busca atuais no header da capa ("Status: Em produção · Busca: ‘capacete’")
-- **Donut/barras**: desenhar manualmente no canvas (`doc.circle`/`doc.rect`) — sem dependências novas
-- **Validação**: se cliente não tem OSs no período, dialog informa e não gera
-- **Naming**: `ordens-servico-{YYYYMMDD}.pdf` e `resumo-{cliente-slug}-{YYYYMMDD}.pdf`
+- **Query Supabase**: `.from("audit_log").select("*", { count: "exact" }).eq("organization_id", currentOrgId).gte("created_at", from).lte("created_at", to).in("action", [...]).eq("table_name", ...).eq("user_id", ...).ilike("record_id::text", "%q%").order("created_at", { ascending: false }).range(offset, offset+49)`
+- **Distinct tables** via segunda query leve com `.select("table_name")` e dedup no client (audit_log não tem RPC de distinct, mas o volume já filtrado por org é manejável; cache com `staleTime: 5min`)
+- **Members lookup**: `useOrgMembers(currentOrgId)` para mapear `user_id → email/iniciais`
+- **CSV**: header `Quando,Usuario,Acao,Tabela,RecordId` + escape de aspas
+- **RLS**: já garante que só vê audit da org atual — sem mudanças no banco
+- **Performance**: índice por `organization_id + created_at` provavelmente já existe; se queries ficarem lentas, plano fala em adicionar via migration (não necessário no MVP)
+- **Vazio**: estados claros — "Sem eventos" / "Nenhum resultado para os filtros aplicados"
 
 ### Critérios de aceite
 
-- Botão "Exportar PDF" em `/mockup/service-orders` gera PDF com capa + tabela + página por OS, respeitando filtros ativos
-- Botão "Resumo PDF" em `/clients` (por linha) abre dialog com seletor de período e gera relatório executivo
-- Ambos os PDFs incluem logo Promo Brindes, paginação e branding consistente
-- Mockups embarcados nas thumbnails do resumo
-- Loading state visível durante geração (>1s para batch grande)
-- Sem regressão no PDF individual existente
+- Filtros de período (presets + custom) reduzem a lista server-side
+- Multi-select de ação (INSERT/UPDATE/DELETE) funciona combinado
+- Filtro de tabela só lista tabelas com eventos na org atual
+- Filtro de usuário lista membros da org corrente
+- Paginação 50/página com total visível
+- Click em "Ver" abre dialog com diff antes/depois (chaves alteradas destacadas em UPDATE)
+- "Exportar CSV" baixa arquivo respeitando filtros
+- URL reflete filtros (compartilhável)
+- Sem regressão na rota `/audit` existente
 
