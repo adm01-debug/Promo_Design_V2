@@ -23,6 +23,7 @@ import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
 const PAGE_SIZE = 50;
+const LS_KEY = "audit-filters-v1";
 
 const ACTION_VARIANT: Record<AuditAction, "default" | "secondary" | "destructive"> = {
   INSERT: "default",
@@ -41,6 +42,40 @@ function parseDate(s: string | null): Date | undefined {
   return isNaN(d.getTime()) ? undefined : d;
 }
 
+interface PersistedFilters {
+  from?: string;
+  to?: string;
+  action?: string;
+  table?: string;
+  user?: string;
+  q?: string;
+  vk?: string;
+  vq?: string;
+  ip?: string;
+  ua?: string;
+}
+
+function readPersisted(): PersistedFilters | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LS_KEY);
+    return raw ? (JSON.parse(raw) as PersistedFilters) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePersisted(p: PersistedFilters) {
+  if (typeof window === "undefined") return;
+  try {
+    const hasAny = Object.values(p).some((v) => v && v.length > 0);
+    if (hasAny) window.localStorage.setItem(LS_KEY, JSON.stringify(p));
+    else window.localStorage.removeItem(LS_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
 const AuditLogPage = () => {
   const { currentOrgId } = useOrganizations();
   const { members } = useOrgMembers(currentOrgId);
@@ -50,6 +85,27 @@ const AuditLogPage = () => {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<AuditEntry | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  // Hidrata da URL ou, se URL vazia, do localStorage (uma única vez na montagem).
+  useEffect(() => {
+    const hasAnyParam = Array.from(params.keys()).length > 0;
+    if (hasAnyParam) return;
+    const persisted = readPersisted();
+    if (!persisted) return;
+    const next = new URLSearchParams();
+    if (persisted.from) next.set("from", persisted.from);
+    if (persisted.to) next.set("to", persisted.to);
+    if (persisted.action) next.set("action", persisted.action);
+    if (persisted.table) next.set("table", persisted.table);
+    if (persisted.user) next.set("user", persisted.user);
+    if (persisted.q) next.set("q", persisted.q);
+    if (persisted.vk) next.set("vk", persisted.vk);
+    if (persisted.vq) next.set("vq", persisted.vq);
+    if (persisted.ip) next.set("ip", persisted.ip);
+    if (persisted.ua) next.set("ua", persisted.ua);
+    if (Array.from(next.keys()).length > 0) setParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Initialize from querystring (once per param change)
   const filterState: AuditFilterState = useMemo(
@@ -62,6 +118,8 @@ const AuditLogPage = () => {
       recordIdQuery: params.get("q") ?? "",
       valueKey: params.get("vk") ?? "",
       valueQuery: params.get("vq") ?? "",
+      ipQuery: params.get("ip") ?? "",
+      userAgentQuery: params.get("ua") ?? "",
     }),
     [params],
   );
@@ -76,9 +134,27 @@ const AuditLogPage = () => {
     if (s.recordIdQuery) next.set("q", s.recordIdQuery);
     if (s.valueKey) next.set("vk", s.valueKey);
     if (s.valueQuery) next.set("vq", s.valueQuery);
+    if (s.ipQuery) next.set("ip", s.ipQuery);
+    if (s.userAgentQuery) next.set("ua", s.userAgentQuery);
     setParams(next, { replace: true });
     setPage(0);
   };
+
+  // Persiste filtros ativos em localStorage para restaurar em navegações internas.
+  useEffect(() => {
+    writePersisted({
+      from: filterState.from?.toISOString(),
+      to: filterState.to?.toISOString(),
+      action: filterState.actions.length ? filterState.actions.join(",") : undefined,
+      table: filterState.tableName,
+      user: filterState.userId,
+      q: filterState.recordIdQuery || undefined,
+      vk: filterState.valueKey || undefined,
+      vq: filterState.valueQuery || undefined,
+      ip: filterState.ipQuery || undefined,
+      ua: filterState.userAgentQuery || undefined,
+    });
+  }, [filterState]);
 
   const memberOpts = useMemo(
     () => members.map((m) => ({ user_id: m.user_id, label: `${m.user_id.slice(0, 8)}… (${m.role})` })),
@@ -101,6 +177,8 @@ const AuditLogPage = () => {
     recordIdQuery: filterState.recordIdQuery,
     valueKey: filterState.valueKey,
     valueQuery: filterState.valueQuery,
+    ipQuery: filterState.ipQuery,
+    userAgentQuery: filterState.userAgentQuery,
     page,
     pageSize: PAGE_SIZE,
   };
