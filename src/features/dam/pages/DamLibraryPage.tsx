@@ -310,6 +310,20 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
 
+  // Cache last-known totals so the counter stays stable during refetches and never
+  // flickers back to "Carregando..." when paginating or filtering.
+  const lastTotalsRef = useRef<{ total: number; totalPages: number; page: number; pageSize: number; displayedLen: number } | null>(null);
+  if (!isLoading) {
+    lastTotalsRef.current = {
+      total,
+      totalPages,
+      page,
+      pageSize,
+      displayedLen: assets.length,
+    };
+  }
+  const stable = lastTotalsRef.current;
+
   // Keyboard shortcuts for pagination: ← / → (or J/K) navigate pages,
   // Home / End jump to first/last page. Disabled in load-more mode and while typing.
   useEffect(() => {
@@ -753,41 +767,51 @@ export default function DamLibraryPage() {
       />
 
       <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-        {isLoading && displayedAssets.length === 0 ? (
-          <span>Carregando...</span>
-        ) : total === 0 ? (
-          <span>Nenhum asset encontrado</span>
-        ) : (
-          <>
-            <span data-testid="dam-results-counter">
-              {paginationMode === "loadmore"
-                ? `Mostrando ${displayedAssets.length} de ${total} ${total === 1 ? "asset" : "assets"}`
-                : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
-              {includeArchived && archivedCount > 0 && (
-                <>
-                  {" · "}
-                  <span data-testid="dam-archived-counter">
-                    {archivedCount} arquivado{archivedCount > 1 ? "s" : ""}
-                    {paginationMode === "pages" ? " nesta página" : ""}
-                  </span>
-                </>
-              )}
-            </span>
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
-            )}
-            {isFetching && !isLoading && (
-              <span
-                className="inline-flex items-center gap-1 text-muted-foreground"
-                data-testid="dam-paginating-indicator"
-                aria-live="polite"
-              >
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Atualizando…
+        {(() => {
+          // Prefer last-known stable totals so the counter doesn't flicker on refetch.
+          const src = !isLoading
+            ? { total, page, pageSize, displayedLen: assets.length }
+            : stable
+              ? { total: stable.total, page: stable.page, pageSize: stable.pageSize, displayedLen: stable.displayedLen }
+              : null;
+          if (!src) return <span>Carregando...</span>;
+          if (src.total === 0) return <span>Nenhum asset encontrado</span>;
+          const fmt = (n: number) => n.toLocaleString("pt-BR");
+          const from = (src.page - 1) * src.pageSize + 1;
+          const to = Math.min(src.page * src.pageSize, src.total);
+          const noun = src.total === 1 ? "asset" : "assets";
+          return (
+            <>
+              <span data-testid="dam-results-counter" aria-live="polite">
+                {paginationMode === "loadmore"
+                  ? `Mostrando ${fmt(displayedAssets.length)} de ${fmt(src.total)} ${noun}`
+                  : `Mostrando ${fmt(from)}–${fmt(to)} de ${fmt(src.total)} ${noun}`}
+                {includeArchived && archivedCount > 0 && (
+                  <>
+                    {" · "}
+                    <span data-testid="dam-archived-counter">
+                      {archivedCount} arquivado{archivedCount > 1 ? "s" : ""}
+                      {paginationMode === "pages" ? " nesta página" : ""}
+                    </span>
+                  </>
+                )}
               </span>
-            )}
-          </>
-        )}
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
+              )}
+              {isFetching && !isLoading && (
+                <span
+                  className="inline-flex items-center gap-1 text-muted-foreground"
+                  data-testid="dam-paginating-indicator"
+                  aria-live="polite"
+                >
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Atualizando…
+                </span>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {isLoading && displayedAssets.length === 0 ? (
