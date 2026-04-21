@@ -17,6 +17,16 @@ import { AssetUploadDialog } from "../components/AssetUploadDialog";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
+import { useDebounce } from "@/hooks/use-debounce";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -29,6 +39,17 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 ];
 
 const VIEW_MODE_KEY = "dam-view-mode";
+const PAGE_SIZE_KEY = "dam-page-size";
+
+type SortValue = "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
+const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version"; sortDir: "asc" | "desc" }[] = [
+  { value: "created_desc", label: "Mais recentes", sortBy: "created_at", sortDir: "desc" },
+  { value: "created_asc", label: "Mais antigos", sortBy: "created_at", sortDir: "asc" },
+  { value: "name_asc", label: "Nome A→Z", sortBy: "name", sortDir: "asc" },
+  { value: "name_desc", label: "Nome Z→A", sortBy: "name", sortDir: "desc" },
+  { value: "size_desc", label: "Maior arquivo", sortBy: "file_size", sortDir: "desc" },
+  { value: "version_desc", label: "Versão", sortBy: "version", sortDir: "desc" },
+];
 
 export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
