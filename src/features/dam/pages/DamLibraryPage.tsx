@@ -41,6 +41,18 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
 
+function buildPageList(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "ellipsis")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) pages.push("ellipsis");
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push("ellipsis");
+  pages.push(total);
+  return pages;
+}
+
 type SortValue = "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
 const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version"; sortDir: "asc" | "desc" }[] = [
   { value: "created_desc", label: "Mais recentes", sortBy: "created_at", sortDir: "desc" },
