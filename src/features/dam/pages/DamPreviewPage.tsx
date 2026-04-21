@@ -580,10 +580,29 @@ export default function DamPreviewPage() {
           )}
         </TooltipProvider>
         <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void handleCopyShareLink()}
+          disabled={!activeAsset || assets.length === 0}
+          className="ml-auto h-8 gap-1.5"
+          aria-label={
+            compareMode && compare.selectedIds.length >= 2
+              ? "Copiar link compartilhável da comparação atual"
+              : "Copiar link compartilhável do asset atual"
+          }
+          title="Copiar link (Shift+C)"
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+          <span className="hidden sm:inline">{copied ? "Copiado" : "Copiar link"}</span>
+        </Button>
+        <span className="sr-only" role="status" aria-live="polite">
+          {copied ? "Link copiado para a área de transferência" : ""}
+        </span>
+        <Button
           variant={compareMode ? "default" : "outline"}
           size="sm"
           onClick={() => setCompareMode((v) => !v)}
-          className="ml-auto h-8 gap-1.5"
+          className="h-8 gap-1.5"
           aria-pressed={compareMode}
           title="Modo comparação (M)"
         >
