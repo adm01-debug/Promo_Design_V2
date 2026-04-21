@@ -33,6 +33,29 @@ import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
 
+function FontLivePreview({ name }: { name: string }) {
+  const debounced = useDebounce(name.trim(), 300);
+  const { loaded } = useGoogleFonts(debounced ? [debounced] : []);
+  if (!debounced) return null;
+  const status = loaded[debounced.toLowerCase()];
+  const notFound = status === false;
+  return (
+    <div className="flex items-center gap-2 pl-1">
+      <span
+        className="text-base text-muted-foreground"
+        style={{ fontFamily: `"${debounced}", sans-serif` }}
+      >
+        Aa Bb Cc 0123 — {debounced}
+      </span>
+      {notFound && (
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/30">
+          ⚠ Fonte não encontrada no Google Fonts
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function BrandGuidelinesPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const { currentOrgId, can } = useOrganizations();
