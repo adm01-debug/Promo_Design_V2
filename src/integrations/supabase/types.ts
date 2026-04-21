@@ -14,6 +14,100 @@ export type Database = {
   }
   public: {
     Tables: {
+      assets: {
+        Row: {
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          client_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          dominant_colors: string[] | null
+          file_path: string
+          file_size: number | null
+          height: number | null
+          id: string
+          is_archived: boolean
+          metadata: Json | null
+          mime_type: string | null
+          name: string
+          organization_id: string
+          parent_asset_id: string | null
+          tags: string[] | null
+          thumbnail_path: string | null
+          updated_at: string
+          version: number
+          width: number | null
+        }
+        Insert: {
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          dominant_colors?: string[] | null
+          file_path: string
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          is_archived?: boolean
+          metadata?: Json | null
+          mime_type?: string | null
+          name: string
+          organization_id: string
+          parent_asset_id?: string | null
+          tags?: string[] | null
+          thumbnail_path?: string | null
+          updated_at?: string
+          version?: number
+          width?: number | null
+        }
+        Update: {
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dominant_colors?: string[] | null
+          file_path?: string
+          file_size?: number | null
+          height?: number | null
+          id?: string
+          is_archived?: boolean
+          metadata?: Json | null
+          mime_type?: string | null
+          name?: string
+          organization_id?: string
+          parent_asset_id?: string | null
+          tags?: string[] | null
+          thumbnail_path?: string | null
+          updated_at?: string
+          version?: number
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_parent_asset_id_fkey"
+            columns: ["parent_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -60,6 +154,73 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_guidelines: {
+        Row: {
+          client_id: string
+          created_at: string
+          do_rules: string[] | null
+          dont_rules: string[] | null
+          fonts: Json
+          id: string
+          logo_asset_id: string | null
+          notes: string | null
+          organization_id: string
+          primary_colors: Json
+          secondary_colors: Json
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          do_rules?: string[] | null
+          dont_rules?: string[] | null
+          fonts?: Json
+          id?: string
+          logo_asset_id?: string | null
+          notes?: string | null
+          organization_id: string
+          primary_colors?: Json
+          secondary_colors?: Json
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          do_rules?: string[] | null
+          dont_rules?: string[] | null
+          fonts?: Json
+          id?: string
+          logo_asset_id?: string | null
+          notes?: string | null
+          organization_id?: string
+          primary_colors?: Json
+          secondary_colors?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_guidelines_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_logo_asset_id_fkey"
+            columns: ["logo_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -622,6 +783,7 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
+      asset_type: "logo" | "art" | "photo" | "mockup" | "document" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -750,6 +912,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "admin", "designer", "approver", "viewer"],
+      asset_type: ["logo", "art", "photo", "mockup", "document", "other"],
     },
   },
 } as const

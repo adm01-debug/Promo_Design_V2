@@ -29,6 +29,7 @@ import {
   Building2,
   Users,
   ScrollText,
+  FolderArchive,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -59,6 +60,7 @@ const modules = [
       { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3 },
       { label: "Catálogo", path: "/catalog", icon: Package },
       { label: "Clientes", path: "/clients", icon: Users },
+      { label: "Biblioteca (DAM)", path: "/dam", icon: FolderArchive },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
   },
