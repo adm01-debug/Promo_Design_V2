@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
@@ -8,7 +8,11 @@ interface Props {
   suggestions?: string[];
   placeholder?: string;
   maxTags?: number;
+  onValidationChange?: (err: string | null) => void;
 }
+
+const TAG_REGEX = /^[a-z0-9\-_ ]{1,30}$/;
+const normalize = (raw: string) => raw.trim().toLowerCase().replace(/\s+/g, " ");
 
 export function TagChipsInput({
   value,
@@ -16,18 +20,51 @@ export function TagChipsInput({
   suggestions = [],
   placeholder = "Adicionar tag (Enter ou ,)",
   maxTags = 20,
+  onValidationChange,
 }: Props) {
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setErr = (msg: string | null) => {
+    setError(msg);
+    onValidationChange?.(msg);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    if (msg) {
+      errorTimerRef.current = setTimeout(() => {
+        setError(null);
+        onValidationChange?.(null);
+      }, 2500);
+    }
+  };
+
+  useEffect(() => () => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+  }, []);
 
   const addTag = (raw: string) => {
-    const tag = raw.trim().toLowerCase();
-    if (!tag) return;
-    if (value.includes(tag)) return;
-    if (value.length >= maxTags) return;
+    const tag = normalize(raw);
+    if (!tag) {
+      setErr("Tag não pode ser vazia");
+      return;
+    }
+    if (!TAG_REGEX.test(tag)) {
+      setErr("Use letras, números, - ou _ (1–30 caracteres)");
+      return;
+    }
+    if (value.includes(tag)) {
+      setErr("Tag já adicionada");
+      return;
+    }
+    if (value.length >= maxTags) {
+      setErr(`Máximo de ${maxTags} tags`);
+      return;
+    }
     onChange([...value, tag]);
     setDraft("");
+    setErr(null);
   };
 
   const removeTag = (tag: string) => onChange(value.filter((t) => t !== tag));
@@ -52,7 +89,9 @@ export function TagChipsInput({
   return (
     <div className="relative">
       <div
-        className="flex flex-wrap gap-1.5 p-2 rounded-md border border-input bg-background min-h-10 cursor-text"
+        className={`flex flex-wrap gap-1.5 p-2 rounded-md border bg-background min-h-10 cursor-text ${
+          error ? "border-destructive" : "border-input"
+        }`}
         onClick={() => inputRef.current?.focus()}
       >
         {value.map((tag) => (
@@ -74,14 +113,21 @@ export function TagChipsInput({
         <input
           ref={inputRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            if (error) setErr(null);
+          }}
           onKeyDown={handleKey}
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           placeholder={value.length === 0 ? placeholder : ""}
           className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+          aria-invalid={!!error}
         />
       </div>
+      {error && (
+        <p className="text-destructive text-xs mt-1" role="alert">{error}</p>
+      )}
       {focused && filteredSuggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover p-1 shadow-md">
           {filteredSuggestions.map((s) => (
