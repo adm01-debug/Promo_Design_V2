@@ -166,6 +166,26 @@ export default function DamLibraryPage() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 ml-auto">
+          <Select value={sort} onValueChange={(v) => setSort(v as SortValue)}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24">24</SelectItem>
+              <SelectItem value="48">48</SelectItem>
+              <SelectItem value="96">96</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-2 mr-2">
             <Switch
               id="archived-toggle"
