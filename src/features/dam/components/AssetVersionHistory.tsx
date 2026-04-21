@@ -251,6 +251,8 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           })}
         </ul>
       )}
+
+      <AssetAuditTrail asset={asset} />
     </div>
   );
 }
