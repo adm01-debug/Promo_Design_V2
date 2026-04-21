@@ -1,66 +1,55 @@
 
 
-## "Nova versão" no Asset Detail — já existe, falta polimento
+## "Mostrar arquivados" — já existe, precisa de polimento
 
-Investiguei o código: o botão **"Nova versão"** já existe no `AssetDetailDrawer.tsx` (linha ~120) e abre o `AssetUploadDialog` em modo versionamento via prop `parentAsset`. O `useAssetUpload` já trata corretamente:
+O toggle **já existe** em `DamLibraryPage.tsx` (Switch "Arquivados" na barra de filtros) e funciona: alimenta `includeArchived` no filtro do `useAssets`, aparece como chip na `ActiveFiltersBar`, e o `AssetCard`/`AssetListView` já marcam visualmente arquivados com badge "Arquivado".
 
-- `parentRootId = parent.parent_asset_id ?? parent.id` (encadeamento correto)
-- `nextVersion = parent.version + 1`
-- Nome auto-versionado (`"... v2"`)
-- Reuso de `client_id`, `asset_type`, `tags` do parent
-- Recálculo de `dominant_colors`, `width`, `height`, `thumbnail_path` via `processImage()`
+O que falta para a feature ficar redonda:
 
-**O que está faltando para a experiência ficar redonda:**
+### Gaps
 
-### Gaps identificados
-
-1. **Sem permissão para "viewer"**: o botão só aparece para `owner/admin/designer`, mas o gating atual está OK — manter.
-2. **UX do dialog em modo versão**: o `AssetUploadDialog` em modo versão ainda mostra **multi-upload** (até 10 arquivos) e seletor de **tipo/cliente**, o que é confuso — versão deveria ser **1 arquivo só** e herdar metadados.
-3. **Sem feedback visual** de que está criando versão: faltam título e descrição contextuais ("Nova versão de X (atual v2 → v3)").
-4. **Após criar versão, drawer não atualiza** para o novo asset — usuário fica vendo a versão antiga e precisa abrir aba "Versões" e clicar manualmente.
-5. **Aba "Versões"** não destaca claramente o asset atualmente aberto (só destaca o `maxVersion`).
+1. **Não persiste** entre sessões (sempre volta para `false` ao recarregar) — os outros toggles (`viewMode`, `pageSize`, `tagsMode`) já persistem em localStorage; este foi esquecido.
+2. **Não sincroniza com URL** — o `Link` para `/dam/preview` já passa `archived=1`, mas o estado inicial em `DamLibraryPage` não lê da URL (filtros não compartilháveis).
+3. **Sem indicador no contador** — quando arquivados estão visíveis, "Mostrando 24 de 87" não distingue ativos vs arquivados; ajudaria mostrar "(inclui X arquivados)".
+4. **Visual do toggle pouco descobrível** — fica espremido entre `pageSize` e o `ToggleGroup`; merece um label mais claro com ícone (Archive).
 
 ### Mudanças
 
-**`AssetUploadDialog.tsx`** — quando `parentAsset` é fornecido:
-- Header: `"Nova versão de {parent.name}"` + subtítulo `"v{parent.version} → v{nextVersion}"`
-- Esconder seletor de **tipo** e **cliente** (herdados); mostrar como info read-only ("Tipo: arte · Cliente: Acme")
-- Limitar a **1 arquivo** (drop/seleção adicional substitui o atual em vez de empilhar)
-- Esconder `TagChipsInput` (herda tags); permitir expandir via "Editar metadados" colapsável (opcional, não bloqueante)
-- Botão muda de "Enviar" para "Criar versão {nextVersion}"
-- Após sucesso: callback `onUploaded(asset)` chamado com o novo asset
+**`DamLibraryPage.tsx`**:
+- Adicionar `INCLUDE_ARCHIVED_KEY = "dam-include-archived"` e ler da URL (`?archived=1`) com fallback para `localStorage`
+- Persistir mudanças em `localStorage` via `useEffect` (mesmo padrão dos outros toggles)
+- Sincronizar com URL via `useSearchParams` (set/delete `archived`)
+- Trocar o Switch por um `Toggle` (shadcn) com ícone `Archive` da lucide e label "Arquivados", visualmente alinhado com o `ToggleGroup` de view mode
+- No contador de resultados, quando `includeArchived` está ativo, anexar "(N arquivados)" baseado em `assets.filter(a => a.is_archived).length` da página atual
 
-**`AssetDetailDrawer.tsx`**:
-- Receber callback `onUploaded` do dialog e chamar `onSelectAsset?.(novoAsset)` para o drawer pular pra nova versão automaticamente
-- Indicador no header: badge `v{asset.version}` ao lado do nome
-- Toast de confirmação: `"Versão {n} criada"`
+**`use-assets.ts`**:
+- Já retorna `is_archived` no row; sem mudanças
 
-**`AssetVersionHistory.tsx`**:
-- Destacar a versão **atualmente aberta** (não só a última) com ring/borda
-- Mostrar diff de `dominant_colors` entre versões consecutivas (3 swatches lado a lado por linha) — opcional, leve
+**`AssetCard.tsx`** / **`AssetListView.tsx`**:
+- Já mostram badge "Arquivado"; sem mudanças
 
 ### Arquivos
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/dam/components/AssetUploadDialog.tsx` | Editar — modo versão (header, single-file, hide selectors, callback `onUploaded`) |
-| `src/features/dam/components/AssetDetailDrawer.tsx` | Editar — badge de versão no header, callback que troca o asset ativo após upload |
-| `src/features/dam/components/AssetVersionHistory.tsx` | Editar — destacar asset atual aberto |
+| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — persistência localStorage + URL sync + Toggle visual + contador enriquecido |
 
 ### Detalhes técnicos
 
-- Single-file mode: `if (parentAsset && entries.length > 0) entries = [newEntry]` ao invés de `[...entries, newEntry]`; input com `multiple={!parentAsset}`
-- Callback: nova prop opcional `onUploaded?: (asset: Asset) => void` no dialog; chamada após `uploadFile()` resolver com sucesso
-- Drawer já tem `onSelectAsset` — reusar
-- Não há mudanças no banco, hook ou RLS
+- Reusa `useSearchParams` (já importado indiretamente via Link) — adicionar import direto
+- `INCLUDE_ARCHIVED_KEY` segue convenção dos outros (`VIEW_MODE_KEY`, `PAGE_SIZE_KEY`, `TAGS_MODE_KEY`)
+- Estado inicial: `urlParams.get("archived") === "1" ?? localStorage ?? false`
+- Toggle component: `<Toggle pressed={includeArchived} onPressedChange={setIncludeArchived}>` com `<Archive className="w-4 h-4 mr-2" /> Arquivados`
+- Contador: `{includeArchived && archivedCount > 0 && ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""}`}`
+- Sem mudanças no banco, RLS, ou hook de query
 
 ### Critérios de aceite
 
-- Clicar "Nova versão" no drawer abre dialog com header contextual ("Nova versão de X · v2 → v3")
-- Dialog em modo versão aceita só 1 arquivo, sem seletores de tipo/cliente/tags
-- Após upload bem-sucedido, drawer pula automaticamente para a nova versão (com nova thumbnail e cores dominantes recalculadas)
-- Header do drawer mostra badge `v{n}`
-- Aba "Versões" destaca o asset atualmente aberto, não só o mais recente
-- Permissões inalteradas (gate por `owner/admin/designer`)
-- Sem regressão no upload normal (multi-arquivo continua funcionando quando não há `parentAsset`)
+- Toggle "Arquivados" persiste entre reloads (localStorage)
+- URL `?archived=1` ativa o toggle ao abrir
+- Mudar o toggle atualiza URL (compartilhável)
+- Contador mostra "Mostrando X de Y · N arquivados" quando ativo
+- Visual do toggle mais descobrível (ícone + label)
+- Chip "Arquivados incluídos" e botão "Limpar filtros" continuam funcionando
+- Sem regressão na lista, paginação, ou filtros existentes
 
