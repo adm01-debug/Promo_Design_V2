@@ -75,12 +75,27 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(search, 300);
-  const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
-  const [clientId, setClientId] = useState<string | "all" | "none">("all");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>(() => {
+    const raw = searchParams.get("type");
+    if (!raw) return [];
+    const valid: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
+    return raw.split(",").filter((t): t is AssetType => valid.includes(t as AssetType));
+  });
+  const [clientId, setClientId] = useState<string | "all" | "none">(() => {
+    const raw = searchParams.get("client");
+    if (!raw) return "all";
+    if (raw === "all" || raw === "none") return raw;
+    return raw;
+  });
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    const raw = searchParams.get("tags");
+    return raw ? raw.split(",").filter(Boolean) : [];
+  });
   const [tagsMode, setTagsMode] = useState<"all" | "any">(() => {
+    const fromUrl = searchParams.get("tagsMode");
+    if (fromUrl === "all" || fromUrl === "any") return fromUrl;
     if (typeof window === "undefined") return "all";
     return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
   });
@@ -91,7 +106,11 @@ export default function DamLibraryPage() {
     if (fromUrl === "0") return false;
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
   });
-  const [sort, setSort] = useState<SortValue>("created_desc");
+  const [sort, setSort] = useState<SortValue>(() => {
+    const fromUrl = searchParams.get("sort") as SortValue | null;
+    if (fromUrl && SORT_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    return "created_desc";
+  });
   const [page, setPage] = useState<number>(() => {
     const fromUrl = Number(searchParams.get("page"));
     return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
@@ -160,6 +179,22 @@ export default function DamLibraryPage() {
       return next;
     }, { replace: true });
   }, [page, pageSize, paginationMode, setSearchParams]);
+
+  // Sync content filters (search, types, client, tags, tagsMode, sort) with URL
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      const q = debouncedSearch.trim();
+      if (q) next.set("q", q); else next.delete("q");
+      if (assetTypes.length > 0) next.set("type", assetTypes.join(",")); else next.delete("type");
+      if (clientId !== "all") next.set("client", clientId); else next.delete("client");
+      if (selectedTags.length > 0) next.set("tags", selectedTags.join(",")); else next.delete("tags");
+      if (selectedTags.length > 1 && tagsMode !== "all") next.set("tagsMode", tagsMode);
+      else next.delete("tagsMode");
+      if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
+      return next;
+    }, { replace: true });
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, setSearchParams]);
 
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
