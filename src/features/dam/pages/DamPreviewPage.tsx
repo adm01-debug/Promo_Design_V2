@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderArchive, Keyboard, Layers, Link2, AlertCircle } from "lucide-react";
+import { ArrowLeft, FolderArchive, Keyboard, Layers, Link2, AlertCircle, Share2, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -92,6 +92,9 @@ export default function DamPreviewPage() {
   const didShowExpiredToastRef = useRef(false);
   const didShowFallbackToastRef = useRef(false);
   const lastUserSelectedIdRef = useRef<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<number | null>(null);
+  const didHydrateCompareRef = useRef(false);
 
   // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
@@ -171,6 +174,26 @@ export default function DamPreviewPage() {
   }, [state, debouncedSearch]);
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
+
+  // Hydrate compare selection from ?compare=id1,id2,... on first load when assets are available.
+  useEffect(() => {
+    if (didHydrateCompareRef.current) return;
+    if (assets.length === 0) return;
+    const raw = searchParams.get("compare");
+    if (!raw) {
+      didHydrateCompareRef.current = true;
+      return;
+    }
+    const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    const valid = ids.filter((id) => assets.some((a) => a.id === id)).slice(0, compare.max);
+    if (valid.length >= 2) {
+      compare.clear();
+      valid.forEach((id) => compare.toggle(id));
+      setCompareMode(true);
+    }
+    didHydrateCompareRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets]);
 
   // Resolve selected assets into Asset[] (maintain selection order).
   const selectedAssets = useMemo(() => {
@@ -335,6 +358,59 @@ export default function DamPreviewPage() {
   const goPrev = () => selectAssetAt(activeIndex - 1, { pushHistory: true });
   const goNext = () => selectAssetAt(activeIndex + 1, { pushHistory: true });
 
+  const buildShareableUrl = (): string | null => {
+    if (typeof window === "undefined") return null;
+    if (!activeAsset) return null;
+    const params = new URLSearchParams(searchParams);
+    params.set("asset", activeAsset.id);
+    if (compareMode && compare.selectedIds.length >= 2) {
+      params.set("compare", compare.selectedIds.join(","));
+    } else {
+      params.delete("compare");
+    }
+    const qs = params.toString();
+    return `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ""}`;
+  };
+
+  const handleCopyShareLink = async () => {
+    const url = buildShareableUrl();
+    if (!url) return;
+    const showSuccess = () => {
+      setCopied(true);
+      if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
+      copiedTimeoutRef.current = window.setTimeout(() => setCopied(false), 1500);
+      toast.success("Link copiado", {
+        description: compareMode && compare.selectedIds.length >= 2
+          ? "Quem abrir verá a mesma comparação e filtros."
+          : "Quem abrir verá o mesmo asset e filtros.",
+        duration: 2500,
+      });
+    };
+    try {
+      await navigator.clipboard.writeText(url);
+      showSuccess();
+      return;
+    } catch { /* fallback below */ }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      if (ok) { showSuccess(); return; }
+      throw new Error("execCommand failed");
+    } catch {
+      toast.error("Não foi possível copiar", { description: url, duration: 6000 });
+    }
+  };
+
+  useEffect(() => () => {
+    if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -390,6 +466,9 @@ export default function DamPreviewPage() {
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (activeAsset) setDetailAsset(activeAsset);
+      } else if ((e.key === "C" || (e.key === "c" && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey) {
+        e.preventDefault();
+        void handleCopyShareLink();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -501,10 +580,29 @@ export default function DamPreviewPage() {
           )}
         </TooltipProvider>
         <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void handleCopyShareLink()}
+          disabled={!activeAsset || assets.length === 0}
+          className="ml-auto h-8 gap-1.5"
+          aria-label={
+            compareMode && compare.selectedIds.length >= 2
+              ? "Copiar link compartilhável da comparação atual"
+              : "Copiar link compartilhável do asset atual"
+          }
+          title="Copiar link (Shift+C)"
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+          <span className="hidden sm:inline">{copied ? "Copiado" : "Copiar link"}</span>
+        </Button>
+        <span className="sr-only" role="status" aria-live="polite">
+          {copied ? "Link copiado para a área de transferência" : ""}
+        </span>
+        <Button
           variant={compareMode ? "default" : "outline"}
           size="sm"
           onClick={() => setCompareMode((v) => !v)}
-          className="ml-auto h-8 gap-1.5"
+          className="h-8 gap-1.5"
           aria-pressed={compareMode}
           title="Modo comparação (M)"
         >
@@ -523,7 +621,7 @@ export default function DamPreviewPage() {
           compareMode={compareMode}
         />
         <div className="text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar · Esc voltar
+          ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Shift+C link · M compare · Espaço selecionar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -537,7 +635,7 @@ export default function DamPreviewPage() {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar (no compare) · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Shift+C link · M compare · Espaço selecionar (no compare) · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
