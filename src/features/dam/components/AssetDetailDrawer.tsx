@@ -43,7 +43,10 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
     <Sheet open={!!asset} onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="truncate">{asset.name}</SheetTitle>
+          <SheetTitle className="truncate flex items-center gap-2">
+            <span className="truncate">{asset.name}</span>
+            <Badge variant="secondary" className="shrink-0 text-[10px]">v{asset.version}</Badge>
+          </SheetTitle>
         </SheetHeader>
         <Tabs defaultValue="details" className="mt-4">
           <TabsList className="grid grid-cols-2 w-full">
@@ -162,6 +165,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
             onOpenChange={setVersionDialogOpen}
             organizationId={currentOrgId}
             parentAsset={asset}
+            onUploaded={(newAsset) => onSelectAsset?.(newAsset)}
           />
         )}
       </SheetContent>

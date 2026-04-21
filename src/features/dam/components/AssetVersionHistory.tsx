@@ -55,7 +55,9 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
               type="button"
               onClick={() => onSelect(v)}
               className={`w-full flex items-center gap-3 p-2 rounded-md border text-left transition-colors hover:bg-accent ${
-                isSelected ? "border-primary bg-accent/50" : "border-border"
+                isSelected
+                  ? "border-primary ring-2 ring-primary/40 bg-accent/50"
+                  : "border-border"
               }`}
             >
               <VersionThumb asset={v} />
@@ -63,6 +65,9 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-sm truncate">{v.name}</span>
                   {isCurrent && <Badge variant="default" className="text-[10px]">atual</Badge>}
+                  {isSelected && !isCurrent && (
+                    <Badge variant="outline" className="text-[10px]">aberta</Badge>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   v{v.version} · {new Date(v.created_at).toLocaleDateString("pt-BR")}

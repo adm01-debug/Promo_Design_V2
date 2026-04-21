@@ -24,6 +24,8 @@ interface Props {
   defaultAssetType?: AssetType;
   /** When provided, the dialog operates in "new version" mode for this asset. */
   parentAsset?: Asset | null;
+  /** Called once a successful upload completes. Receives the newly created asset. */
+  onUploaded?: (asset: Asset) => void;
 }
 
 interface FileEntry {
@@ -42,6 +44,7 @@ export function AssetUploadDialog({
   defaultClientId = null,
   defaultAssetType = "art",
   parentAsset = null,
+  onUploaded,
 }: Props) {
   const isVersionMode = !!parentAsset;
   const { uploadFile } = useAssetUpload(organizationId);
@@ -130,17 +133,19 @@ export function AssetUploadDialog({
     if (entries.length === 0) return;
     setIsUploading(true);
     let okCount = 0;
+    let lastUploaded: Asset | null = null;
     for (const entry of entries) {
       if (entry.status === "done") { okCount++; continue; }
       setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10 } : e));
       try {
-        await uploadFile(entry.file, {
+        const created = await uploadFile(entry.file, {
           organizationId,
           clientId,
           assetType,
           tags,
           parentAsset: parentAsset ?? undefined,
         });
+        lastUploaded = created ?? null;
         setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100 } : e));
         okCount++;
       } catch (err) {
@@ -156,6 +161,7 @@ export function AssetUploadDialog({
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
           : `${okCount} asset(s) enviado(s)`
       );
+      if (lastUploaded) onUploaded?.(lastUploaded);
       onOpenChange(false);
     }
   };
@@ -171,7 +177,7 @@ export function AssetUploadDialog({
             <DialogDescription>
               Versão de <span className="font-medium text-foreground">{parentAsset.name}</span>
               {" — "}
-              v{parentAsset.version + 1} herdará tipo, cliente e tags (editáveis abaixo).
+              v{parentAsset.version} → <span className="font-medium text-foreground">v{parentAsset.version + 1}</span>. Tipo, cliente e tags são herdados.
             </DialogDescription>
           )}
         </DialogHeader>
@@ -253,10 +259,35 @@ export function AssetUploadDialog({
             </ul>
           )}
 
+          {isVersionMode ? (
+            <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+              <div>
+                <span className="text-muted-foreground">Tipo:</span>{" "}
+                <span className="font-medium capitalize">{assetType}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Cliente:</span>{" "}
+                <span className="font-medium">
+                  {clientId
+                    ? (clients.find((c) => c.id === clientId)?.name ?? "—")
+                    : "Geral da organização"}
+                </span>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1 pt-1">
+                  <span className="text-muted-foreground">Tags:</span>
+                  {tags.map((t) => (
+                    <Badge key={t} variant="outline" className="text-[10px]">{t}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Tipo</Label>
-              <Select value={assetType} onValueChange={(v) => setAssetType(v as AssetType)} disabled={isVersionMode}>
+              <Select value={assetType} onValueChange={(v) => setAssetType(v as AssetType)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -290,6 +321,8 @@ export function AssetUploadDialog({
             <Label className="mb-1.5 block">Tags</Label>
             <TagChipsInput value={tags} onChange={setTags} suggestions={tagSuggestions} />
           </div>
+            </>
+          )}
         </div>
 
         <DialogFooter>
@@ -297,7 +330,11 @@ export function AssetUploadDialog({
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0}>
-            {isUploading ? "Enviando..." : isVersionMode ? "Criar versão" : "Enviar"}
+            {isUploading
+              ? "Enviando..."
+              : isVersionMode
+                ? `Criar versão v${(parentAsset?.version ?? 1) + 1}`
+                : "Enviar"}
           </Button>
         </DialogFooter>
       </DialogContent>
