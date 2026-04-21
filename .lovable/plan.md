@@ -1,45 +1,52 @@
 
 
-## Fechar escopo: adicionar rotas pendentes ao `docs/FEATURES.md`
+## Status detalhado das funcionalidades + justificativas
 
-A checklist atual cobre as rotas existentes em `App.tsx`, mas faltam **rotas/páginas planejadas** para fechar o escopo dos 5 módulos prioritários. Em vez de criar páginas vazias (que poluem o app), vamos **estender o `docs/FEATURES.md`** com uma nova seção **"Backlog de rotas planejadas"** marcando cada item como 🔴 Pendente, e adicionar as linhas faltantes nas seções existentes com status correto.
-
-Isso mantém a doc como single source of truth do escopo total (implementado + planejado), sem inflar o bundle com páginas placeholder.
+O `docs/FEATURES.md` já tem a coluna **Status** preenchida em todas as linhas (✅/🟡/🔴) e a seção 10 com justificativas dos itens 🔴/🟡. O que falta é **explicitar por que cada item parcial/pendente está nesse estado dentro das próprias seções 1-9** (hoje a justificativa só aparece consolidada na seção 10), e **alinhar a legenda** com o símbolo ⬜ que o usuário mencionou.
 
 ### Mudanças em `docs/FEATURES.md`
 
-**Atualizar legenda** — manter ✅/🟡/🔴/🔵.
+**1. Atualizar legenda** — adicionar ⬜ como sinônimo aceito de 🔴 para itens nunca iniciados, mantendo 🔴 nas tabelas para consistência visual:
+```
+**Legenda de status:** ✅ Implementado · 🟡 Parcial · 🔴 Pendente (⬜) · 🔵 Refinar
+```
 
-**Seção 1. Dashboard & Navegação** — adicionar linhas 🔴:
-- `Dashboard analytics avançado` — `/dashboard/analytics` — *(planejado)* — 🔴
-- `Widgets customizáveis (config UI)` — `/dashboard/widgets` — *(planejado)* — 🔴
+**2. Adicionar coluna "Observação" nas tabelas das seções 1, 3, 5, 6 e 7** — apenas onde existem linhas 🔴/🟡. Itens ✅ ficam com observação vazia (`—`) para manter o alinhamento das colunas.
 
-**Seção 3. Mockup Studio** — adicionar linhas 🔴:
-- `Templates de mockup salvos` — `/mockup/templates` — *(planejado, hoje só `/templates` genérico)* — 🔴
-- `Comparador de versões` — `/mockup/compare` — *(planejado)* — 🔴
-- `Aprovação de cliente (link público)` — `/mockup/approve/:token` — *(planejado)* — 🔴
+Exemplo (seção 6 DAM):
 
-**Seção 6. DAM** — adicionar linhas 🔴:
-- `Coleções/Pastas` — `/dam/collections` — *(planejado)* — 🔴
-- `Lixeira (assets arquivados)` — `/dam/trash` — *(parcial via filtro `archived`)* — 🟡
-- `Busca avançada (saved searches)` — `/dam/search` — *(planejado)* — 🔴
+| Funcionalidade | Rota | Arquivo principal | Status | Observação |
+|---|---|---|---|---|
+| Biblioteca de assets | `/dam` | `src/features/dam/pages/DamLibraryPage.tsx` | ✅ | — |
+| Lixeira (assets arquivados) | `/dam/trash` | *(parcial via filtro `archived` em `DamLibraryPage.tsx`)* | 🟡 | Filtro existe, falta UI dedicada com restore em lote. |
+| Coleções/Pastas | `/dam/collections` | *(planejado)* | 🔴 | Sem tabela `collections` no schema; requer migração + UI hierárquica. |
 
-**Seção 5. Catálogo & Clientes** — adicionar linha 🔴 para Brand:
-- `Brand Guidelines — versionamento` — `/clients/:clientId/brand/history` — *(planejado)* — 🔴
-- `Brand Guidelines — share público` — `/brand/public/:token` — *(planejado)* — 🔴
+**3. Justificativas a adicionar** (uma frase técnica curta cada):
 
-**Seção 7. Magic Up** — adicionar linhas 🔴:
-- `Favoritos (galeria dedicada)` — `/magicup/favorites` — *(parcial via filtro em `/history`)* — 🟡
-- `Batch jobs (status fila)` — `/magicup/jobs` — *(planejado)* — 🔴
-- `Estilos/presets gerenciáveis` — `/magicup/styles` — *(planejado, hoje hardcoded em `MagicUpGenerate`)* — 🔴
+- **Dashboard analytics avançado** — Widgets atuais mostram contagens; falta agregação temporal e métricas de produtividade.
+- **Widgets customizáveis (config UI)** — `useWidgetLayout` persiste ordem; falta tela para adicionar/remover/configurar widgets.
+- **Templates de mockup salvos** — `/templates` é genérico (mock estático); falta CRUD vinculado a `mockup_drafts` com flag `is_template`.
+- **Comparador de versões** — `MockupHistory` lista mockups; falta UI side-by-side com diff visual.
+- **Aprovação de cliente (link público)** — Requer tabela `approval_tokens`, edge function pública e página sem auth.
+- **Brand Guidelines — versionamento** — Hoje sobrescreve registro único; falta histórico em tabela separada.
+- **Brand Guidelines — share público** — Mesma infra do approval token; ainda não modelado.
+- **Coleções/Pastas DAM** — Sem tabela `collections`; requer migração + UI hierárquica.
+- **Lixeira DAM** — Filtro `archived` existe em `DamLibraryPage`; falta view dedicada com restore.
+- **Busca avançada DAM** — Filtros são transientes; falta tabela `saved_searches`.
+- **Magic Up favoritos** — Filtro `is_favorite` existe em `/magicup/history`; falta galeria com layout dedicado.
+- **Magic Up batch jobs** — Geração é síncrona/simulada; falta fila + status async + edge function worker.
+- **Magic Up estilos/presets** — `SAMPLE_PROMPTS` está hardcoded em `MagicUpGenerate.tsx`; falta CRUD por organização.
 
-**Nova seção 10. Backlog consolidado** — tabela resumo só com itens 🔴/🟡 acima, ordenada por prioridade sugerida (DAM Coleções → Mockup Aprovação → Brand share → Magic Up Jobs → resto), com coluna extra **"Justificativa"** explicando o gap funcional em uma linha cada.
+**4. Atualizar seção 10** — adicionar coluna "Esforço estimado" (P/M/G) ao lado de "Justificativa" para ajudar priorização:
+- P (até 1 dia): Lixeira DAM, Magic Up favoritos, Widgets config UI
+- M (2-4 dias): Templates de mockup, Comparador de versões, Brand versionamento, Magic Up estilos, Dashboard analytics, Busca avançada DAM
+- G (5+ dias): Coleções DAM, Aprovação pública, Brand share público, Magic Up batch jobs
 
 ### Critérios de aceite
 
-- `docs/FEATURES.md` atualizado: 9 seções existentes ganham linhas 🔴/🟡 onde há gap; nova seção 10 lista 12 itens de backlog consolidados.
-- Cada nova linha tem rota proposta (mesmo que ainda não exista em `App.tsx`) e marcador `*(planejado)*` no campo de arquivo.
-- Itens 🟡 (parciais) referenciam a rota/arquivo onde já existe implementação parcial.
-- Nenhum código novo no app — só doc. `App.tsx`, sidebar e páginas ficam intactos.
-- Doc continua navegável (tabelas markdown válidas, ~75 linhas no total).
+- Legenda em `docs/FEATURES.md` lista 4 estados (✅/🟡/🔴⬜/🔵) com descrição.
+- Seções 1, 3, 5, 6 e 7 ganham coluna **Observação** com justificativa técnica em todos os itens 🔴/🟡 (itens ✅ recebem `—`).
+- Seção 10 ganha coluna **Esforço** (P/M/G) ao lado de Justificativa, mantendo a ordem de prioridade atual.
+- Documento permanece markdown válido (~95 linhas), navegável, sem código novo no app.
+- Nenhum arquivo fora de `docs/FEATURES.md` é tocado.
 
