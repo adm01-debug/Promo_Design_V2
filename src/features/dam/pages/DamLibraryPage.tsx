@@ -11,7 +11,7 @@ import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loade
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
+import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
 import { AssetCard } from "../components/AssetCard";
 import { AssetUploadDialog } from "../components/AssetUploadDialog";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
@@ -321,12 +321,18 @@ export default function DamLibraryPage() {
       </header>
 
       <div className="flex flex-wrap gap-3 items-center">
-        <Input
-          placeholder="Buscar por nome, descrição ou tag..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
+        <div className="flex flex-col max-w-xs w-full">
+          <Input
+            placeholder="Buscar por nome, descrição ou tag..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search.trim().length > 0 && search.trim().length < MIN_SEARCH_LENGTH && (
+            <p className="text-[11px] text-muted-foreground pt-0.5">
+              Digite ao menos {MIN_SEARCH_LENGTH} caracteres para buscar
+            </p>
+          )}
+        </div>
         <Select value={clientId} onValueChange={(v) => setClientId(v as typeof clientId)}>
           <SelectTrigger className="w-56">
             <SelectValue placeholder="Cliente" />
@@ -345,7 +351,7 @@ export default function DamLibraryPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_OPTIONS.filter((o) => o.value !== "relevance" || debouncedSearch.trim().length > 0).map((o) => (
+              {SORT_OPTIONS.filter((o) => o.value !== "relevance" || debouncedSearch.trim().length >= MIN_SEARCH_LENGTH).map((o) => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
               ))}
             </SelectContent>
@@ -442,7 +448,7 @@ export default function DamLibraryPage() {
       )}
 
       <ActiveFiltersBar
-        search={debouncedSearch.trim() || undefined}
+        search={debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? debouncedSearch.trim() : undefined}
         onClearSearch={() => setSearch("")}
         assetTypes={assetTypes}
         onRemoveType={(t) => setAssetTypes((prev) => prev.filter((x) => x !== t))}

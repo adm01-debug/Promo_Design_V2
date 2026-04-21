@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { LayoutGrid, List, Search, Image as ImageIcon } from "lucide-react";
-import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
+import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
 import { AssetCard } from "./AssetCard";
 import { AssetThumbnail } from "./AssetThumbnail";
 import { TagFilter } from "./TagFilter";
@@ -102,6 +102,11 @@ export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lo
               className="pl-9"
               autoFocus
             />
+            {search.trim().length > 0 && search.trim().length < MIN_SEARCH_LENGTH && (
+              <p className="text-[11px] text-muted-foreground pt-0.5 pl-1">
+                Digite ao menos {MIN_SEARCH_LENGTH} caracteres para buscar
+              </p>
+            )}
           </div>
           <Select value={assetType} onValueChange={(v) => setAssetType(v as AssetType | "all")}>
             <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>

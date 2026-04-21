@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { TagFilter } from "./TagFilter";
 import { SORT_OPTIONS, type UseDamFiltersReturn } from "../hooks/use-dam-filters";
-import type { Asset, AssetType } from "../hooks/use-assets";
+import { MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
 
 interface Client {
   id: string;
@@ -52,6 +52,11 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
             onChange={(e) => setSearch(e.target.value)}
             className="h-9"
           />
+          {state.search.trim().length > 0 && state.search.trim().length < MIN_SEARCH_LENGTH && (
+            <p className="text-[11px] text-muted-foreground pt-0.5">
+              Digite ao menos {MIN_SEARCH_LENGTH} caracteres para buscar
+            </p>
+          )}
         </div>
 
         <div className="space-y-1">
@@ -105,7 +110,7 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
             </SelectTrigger>
             <SelectContent>
               {SORT_OPTIONS.filter(
-                (o) => o.value !== "relevance" || state.search.trim().length > 0,
+                (o) => o.value !== "relevance" || state.search.trim().length >= MIN_SEARCH_LENGTH,
               ).map((o) => (
                 <SelectItem key={o.value} value={o.value}>
                   {o.label}
