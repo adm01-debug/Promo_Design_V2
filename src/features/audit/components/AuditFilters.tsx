@@ -25,6 +25,8 @@ export interface AuditFilterState {
   recordIdQuery: string;
   valueKey: string;
   valueQuery: string;
+  ipQuery: string;
+  userAgentQuery: string;
 }
 
 interface MemberOpt {
@@ -63,7 +65,9 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
       !!state.userId ||
       state.recordIdQuery.length > 0 ||
       state.valueKey.length > 0 ||
-      state.valueQuery.length > 0,
+      state.valueQuery.length > 0 ||
+      state.ipQuery.length > 0 ||
+      state.userAgentQuery.length > 0,
     [state],
   );
 
