@@ -308,7 +308,9 @@ export default function DamLibraryPage() {
     [assetTypes, clientId, selectedTags, tagsMode, includeArchived, debouncedSearch, sort, page, pageSize],
   );
 
-  const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
+  const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
+  // True when re-fetching due to page/pageSize change while previous data is still on screen
+  const isPaginating = isFetching && !isLoading && (assets.length > 0 || displayedAssetsHasItems(paginationMode, page));
 
   // Accumulate results in load-more mode
   useEffect(() => {
