@@ -83,6 +83,18 @@ const ServiceOrder = () => {
 
   const removeArt = () => { setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "" })); setSaved(false); };
 
+  const handlePickFromDam = useCallback(async (asset: Asset) => {
+    try {
+      const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
+      if (!file) { toast.error("Não foi possível carregar o asset."); return; }
+      await handleArtUpload(file);
+      setForm((prev) => ({ ...prev, artAssetId: asset.id }));
+      toast.success("Arte vinculada à biblioteca");
+    } catch {
+      toast.error("Erro ao carregar arte do DAM.");
+    }
+  }, [handleArtUpload]);
+
   const handleSave = async () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(Object.values(validationErrors)[0]); return; }
@@ -164,7 +176,7 @@ const ServiceOrder = () => {
               <div><Label className="text-xs text-muted-foreground">Altura (cm)</Label><Input type="number" step="0.1" value={form.areaHeight} onChange={(e) => update("areaHeight", e.target.value)} className="font-mono" /></div>
               <div><Label className="text-xs text-muted-foreground">Cores da Arte (Pantone)</Label><Input placeholder="Pantone 186C, Pantone 300C..." value={form.artColors} onChange={(e) => update("artColors", e.target.value)} /></div>
               <div><Label className="text-xs text-muted-foreground">Resolução (DPI)</Label><Input type="number" value={form.artDpi} onChange={(e) => update("artDpi", e.target.value)} className="font-mono" /></div>
-              <ArtUploadField artFile={form.artFile} artFileDataUrl={form.artFileDataUrl} onUpload={handleArtUpload} onRemove={removeArt} uploading={uploading} />
+              <ArtUploadField artFile={form.artFile} artFileDataUrl={form.artFileDataUrl} onUpload={handleArtUpload} onRemove={removeArt} uploading={uploading} onPickFromDam={() => setDamPickerOpen(true)} />
             </div>
           </section>
 
@@ -204,6 +216,7 @@ const ServiceOrder = () => {
       </div>
 
       <PdfPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} pdfBlob={previewBlob} fileName={`${form.osNumber}.pdf`} />
+      <AssetPicker open={damPickerOpen} onOpenChange={setDamPickerOpen} defaultAssetType="art" onSelect={handlePickFromDam} title="Escolher arte da biblioteca" />
     </div>
   );
 };
