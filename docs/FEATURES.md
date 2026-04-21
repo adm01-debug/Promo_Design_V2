@@ -16,6 +16,8 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Notificações (polling 15s) | (global) | `src/components/NotificationPanel.tsx` | ✅ |
 | Onboarding tour | (global) | `src/components/OnboardingTour.tsx` | ✅ |
 | Atalhos de teclado | (global) | `src/components/KeyboardShortcutsDialog.tsx` | ✅ |
+| Dashboard analytics avançado | `/dashboard/analytics` | *(planejado)* | 🔴 |
+| Widgets customizáveis (config UI) | `/dashboard/widgets` | *(planejado)* | 🔴 |
 
 ## 2. Autenticação & Organização
 
@@ -38,6 +40,9 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Editor multi-view | `/mockup/editor` | `src/features/mockup/pages/MockupEditor.tsx` | ✅ |
 | Canvas + mesh warp | (componente) | `src/features/mockup/components/MockupCanvas.tsx` | ✅ |
 | Hook editor (state, AI, draft) | (hook) | `src/features/mockup/hooks/use-mockup-editor.ts` | ✅ |
+| Templates de mockup salvos | `/mockup/templates` | *(planejado, hoje só `/templates` genérico)* | 🔴 |
+| Comparador de versões | `/mockup/compare` | *(planejado)* | 🔴 |
+| Aprovação de cliente (link público) | `/mockup/approve/:token` | *(planejado)* | 🔴 |
 
 ## 4. Service Orders
 
