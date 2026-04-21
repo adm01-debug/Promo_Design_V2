@@ -433,34 +433,56 @@ export default function DamLibraryPage() {
           ? "Carregando..."
           : total === 0
             ? "Nenhum asset encontrado"
-            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
-                includeArchived && archivedCount > 0
-                  ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
-                  : ""
-              }`}
+            : paginationMode === "loadmore"
+              ? `Mostrando ${displayedAssets.length} de ${total} ${total === 1 ? "asset" : "assets"}${
+                  includeArchived && archivedCount > 0
+                    ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""}`
+                    : ""
+                }`
+              : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
+                  includeArchived && archivedCount > 0
+                    ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
+                    : ""
+                }`}
       </div>
 
-      {isLoading ? (
+      {isLoading && displayedAssets.length === 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Array.from({ length: 10 }).map((_, i) => (
             <Skeleton key={i} className="aspect-square w-full" />
           ))}
         </div>
-      ) : assets.length === 0 ? (
+      ) : displayedAssets.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           Nenhum asset encontrado. Faça o upload do primeiro!
         </Card>
       ) : viewMode === "list" ? (
-        <AssetListView assets={assets} clients={clients} onSelect={setSelected} />
+        <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {assets.map((a) => (
+          {displayedAssets.map((a) => (
             <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
           ))}
         </div>
       )}
 
-      {totalPages > 1 && (
+      {paginationMode === "loadmore" && hasMore && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Carregando...</>
+            ) : (
+              <>Carregar mais ({total - displayedAssets.length} restantes)</>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {paginationMode === "pages" && totalPages > 1 && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>
