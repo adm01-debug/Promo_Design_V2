@@ -73,11 +73,27 @@ export default function DamPreviewPage() {
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const { state, queryString, setSort } = filters;
+  const { state, queryString, setSort, reset: resetFilters } = filters;
   const [searchParams, setSearchParams] = useSearchParams();
   const assetIdParam = searchParams.get("asset");
   const didInitRef = useRef(false);
   const userNavRef = useRef(false);
+  const didShowExpiredToastRef = useRef(false);
+  const didShowFallbackToastRef = useRef(false);
+
+  // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
+  useEffect(() => {
+    if (didShowExpiredToastRef.current) return;
+    const { expired } = peekLastPreviewAssetRaw();
+    if (expired) {
+      didShowExpiredToastRef.current = true;
+      clearLastPreviewAsset();
+      toast("Sessão de pré-visualização expirada", {
+        description: "Sua última sessão tem mais de 24h. Começando do início.",
+        duration: 4000,
+      });
+    }
+  }, []);
 
   const debouncedSearch = useDebounce(state.search, 300);
 
