@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ScrollText, Download, Eye, Copy } from "lucide-react";
+import { ScrollText, Download, Eye, Copy, ExternalLink } from "lucide-react";
 import { useOrganizations, useOrgMembers } from "@/hooks/use-organization";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -246,10 +246,22 @@ const AuditLogPage = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" onClick={() => setSelected(e)}>
-                        <Eye className="h-4 w-4" />
-                        Ver
-                      </Button>
+                      <div className="inline-flex items-center gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => setSelected(e)}>
+                          <Eye className="h-4 w-4" />
+                          Ver
+                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button asChild size="icon" variant="ghost" aria-label="Abrir página completa">
+                              <Link to={`/audit/event/${e.id}`}>
+                                <ExternalLink className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Abrir página completa</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

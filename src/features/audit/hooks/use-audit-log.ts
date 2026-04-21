@@ -110,3 +110,49 @@ export async function fetchAuditExport(filters: AuditFilters, max = 5000): Promi
   if (error) throw error;
   return (data ?? []) as AuditEntry[];
 }
+
+export interface AuditEntryFull extends AuditEntry {
+  ip_address: string | null;
+  user_agent: string | null;
+  organization_id: string | null;
+}
+
+export function useAuditEvent(eventId: string | undefined) {
+  return useQuery({
+    queryKey: ["audit-event", eventId],
+    enabled: !!eventId,
+    queryFn: async (): Promise<AuditEntryFull> => {
+      const { data, error } = await supabase
+        .from("audit_log")
+        .select(
+          "id, organization_id, user_id, table_name, record_id, action, created_at, old_values, new_values, ip_address, user_agent",
+        )
+        .eq("id", eventId!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Evento não encontrado");
+      return data as unknown as AuditEntryFull;
+    },
+  });
+}
+
+export function useAuditRecordHistory(
+  tableName: string | undefined,
+  recordId: string | null | undefined,
+) {
+  return useQuery({
+    queryKey: ["audit-record-history", tableName, recordId],
+    enabled: !!tableName && !!recordId,
+    queryFn: async (): Promise<AuditEntry[]> => {
+      const { data, error } = await supabase
+        .from("audit_log")
+        .select("id, user_id, table_name, record_id, action, created_at, old_values, new_values")
+        .eq("table_name", tableName!)
+        .eq("record_id", recordId!)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as AuditEntry[];
+    },
+  });
+}
