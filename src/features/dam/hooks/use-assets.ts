@@ -201,6 +201,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     pageSize: filters.pageSize ?? 0,
     totalPages: filters.pageSize ? Math.max(1, Math.ceil((query.data?.total ?? 0) / filters.pageSize)) : 1,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     create,
     update,
     archive,
