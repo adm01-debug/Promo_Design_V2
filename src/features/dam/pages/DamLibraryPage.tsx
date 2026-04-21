@@ -242,16 +242,25 @@ export default function DamLibraryPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {TYPES.map((t) => (
-          <Badge
-            key={t.value}
-            variant={assetType === t.value ? "default" : "outline"}
-            className="cursor-pointer"
-            onClick={() => setAssetType(t.value)}
-          >
-            {t.label}
-          </Badge>
-        ))}
+        {TYPES.map((t) => {
+          const isAll = t.value === "all";
+          const active = isAll ? assetTypes.length === 0 : assetTypes.includes(t.value);
+          return (
+            <Badge
+              key={t.value}
+              variant={active ? "default" : "outline"}
+              className="cursor-pointer select-none"
+              onClick={() => {
+                if (isAll) setAssetTypes([]);
+                else setAssetTypes((prev) => (prev.includes(t.value as AssetType) ? prev.filter((x) => x !== t.value) : [...prev, t.value as AssetType]));
+              }}
+              role="button"
+              aria-pressed={active}
+            >
+              {t.label}
+            </Badge>
+          );
+        })}
       </div>
 
       {availableTags.length > 0 && (
@@ -259,8 +268,32 @@ export default function DamLibraryPage() {
           availableTags={availableTags}
           selected={selectedTags}
           onChange={setSelectedTags}
+          mode={tagsMode}
+          onModeChange={setTagsMode}
         />
       )}
+
+      <ActiveFiltersBar
+        search={debouncedSearch.trim() || undefined}
+        onClearSearch={() => setSearch("")}
+        assetTypes={assetTypes}
+        onRemoveType={(t) => setAssetTypes((prev) => prev.filter((x) => x !== t))}
+        clientId={clientId}
+        clientLabel={clients.find((c) => c.id === clientId)?.name}
+        onClearClient={() => setClientId("all")}
+        tags={selectedTags}
+        tagsMode={tagsMode}
+        onRemoveTag={(t) => setSelectedTags((prev) => prev.filter((x) => x !== t))}
+        includeArchived={includeArchived}
+        onClearArchived={() => setIncludeArchived(false)}
+        onClearAll={() => {
+          setSearch("");
+          setAssetTypes([]);
+          setClientId("all");
+          setSelectedTags([]);
+          setIncludeArchived(false);
+        }}
+      />
 
       <div className="text-xs text-muted-foreground">
         {isLoading
