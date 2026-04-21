@@ -165,6 +165,7 @@ export default function DamLibraryPage() {
   });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
+  const quickPreview = useQuickPreview();
 
   const hasActiveFilters =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
