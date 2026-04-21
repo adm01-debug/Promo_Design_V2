@@ -42,6 +42,7 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
+const PAGE_KEY = "dam-page";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 const PAGINATION_MODE_KEY = "dam-pagination-mode";
@@ -126,7 +127,10 @@ export default function DamLibraryPage() {
   });
   const [page, setPage] = useState<number>(() => {
     const fromUrl = Number(searchParams.get("page"));
-    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
+    if (Number.isFinite(fromUrl) && fromUrl > 0) return fromUrl;
+    if (typeof window === "undefined") return 1;
+    const saved = Number(localStorage.getItem(PAGE_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : 1;
   });
   const [pageSize, setPageSize] = useState<number>(() => {
     const fromUrl = Number(searchParams.get("pageSize"));
@@ -244,6 +248,10 @@ export default function DamLibraryPage() {
 
   // Sync page/pageSize with URL
   useEffect(() => {
+    try {
+      if (page > 1 && paginationMode === "pages") localStorage.setItem(PAGE_KEY, String(page));
+      else localStorage.removeItem(PAGE_KEY);
+    } catch { /* ignore */ }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (page > 1 && paginationMode === "pages") next.set("page", String(page));
