@@ -234,7 +234,11 @@ export default function DamLibraryPage() {
       )}
 
       <div className="text-xs text-muted-foreground">
-        {isLoading ? "Carregando..." : `${filteredAssets.length} ${filteredAssets.length === 1 ? "asset encontrado" : "assets encontrados"}`}
+        {isLoading
+          ? "Carregando..."
+          : total === 0
+            ? "Nenhum asset encontrado"
+            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
       </div>
 
       {isLoading ? (
@@ -243,18 +247,56 @@ export default function DamLibraryPage() {
             <Skeleton key={i} className="aspect-square w-full" />
           ))}
         </div>
-      ) : filteredAssets.length === 0 ? (
+      ) : assets.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           Nenhum asset encontrado. Faça o upload do primeiro!
         </Card>
       ) : viewMode === "list" ? (
-        <AssetListView assets={filteredAssets} clients={clients} onSelect={setSelected} />
+        <AssetListView assets={assets} clients={clients} onSelect={setSelected} />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filteredAssets.map((a) => (
+          {assets.map((a) => (
             <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
           ))}
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1); }}
+                aria-disabled={page <= 1}
+                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            {buildPageList(page, totalPages).map((p, i) =>
+              p === "ellipsis" ? (
+                <PaginationItem key={`e-${i}`}><PaginationEllipsis /></PaginationItem>
+              ) : (
+                <PaginationItem key={p}>
+                  <PaginationLink
+                    href="#"
+                    isActive={p === page}
+                    onClick={(e) => { e.preventDefault(); setPage(p); }}
+                  >
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            )}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); if (page < totalPages) setPage(page + 1); }}
+                aria-disabled={page >= totalPages}
+                className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       )}
 
       <AssetUploadDialog
