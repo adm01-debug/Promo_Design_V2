@@ -163,8 +163,23 @@ export default function DamPreviewPage() {
           Pré-visualização rápida
         </div>
         <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → navegar · Enter detalhes · Z zoom · Esc voltar
+          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · Esc voltar
         </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto md:hidden h-8 w-8"
+              aria-label="Atalhos de teclado"
+            >
+              <Keyboard className="w-4 h-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-64 text-xs">
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · Esc voltar
+          </PopoverContent>
+        </Popover>
       </header>
 
       <div className="flex-1 flex min-h-0">
