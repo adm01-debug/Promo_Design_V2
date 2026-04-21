@@ -332,7 +332,12 @@ export function AssetUploadDialog({
 
           <div>
             <Label className="mb-1.5 block">Tags</Label>
-            <TagChipsInput value={tags} onChange={setTags} suggestions={tagSuggestions} />
+            <TagChipsInput
+              value={tags}
+              onChange={setTags}
+              suggestions={tagSuggestions}
+              onValidationChange={setTagError}
+            />
           </div>
             </>
           )}
@@ -342,7 +347,7 @@ export function AssetUploadDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0}>
+          <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0 || !!tagError}>
             {isUploading
               ? "Enviando..."
               : isVersionMode
