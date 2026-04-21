@@ -681,19 +681,22 @@ export default function DamLibraryPage() {
           <span>Nenhum asset encontrado</span>
         ) : (
           <>
-            <span>
+            <span data-testid="dam-results-counter">
               {paginationMode === "loadmore"
                 ? `Mostrando ${displayedAssets.length} de ${total} ${total === 1 ? "asset" : "assets"}`
                 : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
+              {includeArchived && archivedCount > 0 && (
+                <>
+                  {" · "}
+                  <span data-testid="dam-archived-counter">
+                    {archivedCount} arquivado{archivedCount > 1 ? "s" : ""}
+                    {paginationMode === "pages" ? " nesta página" : ""}
+                  </span>
+                </>
+              )}
             </span>
             {hasActiveFilters && (
               <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
-            )}
-            {includeArchived && archivedCount > 0 && (
-              <span>
-                · {archivedCount} arquivado{archivedCount > 1 ? "s" : ""}
-                {paginationMode === "pages" ? " nesta página" : ""}
-              </span>
             )}
           </>
         )}
