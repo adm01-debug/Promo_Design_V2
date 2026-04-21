@@ -244,7 +244,7 @@ export default function DamLibraryPage() {
       <div className="flex flex-wrap gap-2">
         {TYPES.map((t) => {
           const isAll = t.value === "all";
-          const active = isAll ? assetTypes.length === 0 : assetTypes.includes(t.value);
+          const active = isAll ? assetTypes.length === 0 : assetTypes.includes(t.value as AssetType);
           return (
             <Badge
               key={t.value}
