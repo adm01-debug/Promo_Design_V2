@@ -273,11 +273,16 @@ export function AssetUploadDialog({
                     <div className="text-sm truncate flex items-center gap-2">
                       {e.file.name}
                       {e.status === "done" && <Badge variant="secondary" className="text-[10px]">ok</Badge>}
-                      {e.status === "error" && <Badge variant="destructive" className="text-[10px]">erro</Badge>}
+                      {e.status === "error" && (
+                        <Badge variant="destructive" className="text-[10px]" title={e.error}>erro</Badge>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {(e.file.size / 1024).toFixed(1)} KB
                     </div>
+                    {e.status === "error" && e.error && (
+                      <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
+                    )}
                     {e.status === "uploading" && <Progress value={e.progress} className="h-1 mt-1" />}
                   </div>
                   {!isUploading && e.status !== "done" && (
