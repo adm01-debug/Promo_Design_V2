@@ -20,6 +20,7 @@ import { useCompareSelection } from "../hooks/use-compare-selection";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
+export const COMPARE_MODE_KEY = "dam-compare-mode";
 
 export default function DamPreviewPage() {
   const navigate = useNavigate();
@@ -58,7 +59,18 @@ export default function DamPreviewPage() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
-  const [compareMode, setCompareMode] = useState(false);
+  const [compareMode, setCompareMode] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(COMPARE_MODE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(COMPARE_MODE_KEY, compareMode ? "1" : "0");
+    } catch { /* ignore */ }
+  }, [compareMode]);
   const compare = useCompareSelection();
 
   const queryFilters = useMemo(() => {
