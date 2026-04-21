@@ -17,6 +17,16 @@ import { AssetUploadDialog } from "../components/AssetUploadDialog";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
+import { useDebounce } from "@/hooks/use-debounce";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -29,15 +39,46 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 ];
 
 const VIEW_MODE_KEY = "dam-view-mode";
+const PAGE_SIZE_KEY = "dam-page-size";
+
+function buildPageList(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "ellipsis")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) pages.push("ellipsis");
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push("ellipsis");
+  pages.push(total);
+  return pages;
+}
+
+type SortValue = "created_desc" | "created_asc" | "name_asc" | "name_desc" | "size_desc" | "version_desc";
+const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "name" | "file_size" | "version"; sortDir: "asc" | "desc" }[] = [
+  { value: "created_desc", label: "Mais recentes", sortBy: "created_at", sortDir: "desc" },
+  { value: "created_asc", label: "Mais antigos", sortBy: "created_at", sortDir: "asc" },
+  { value: "name_asc", label: "Nome A→Z", sortBy: "name", sortDir: "asc" },
+  { value: "name_desc", label: "Nome Z→A", sortBy: "name", sortDir: "desc" },
+  { value: "size_desc", label: "Maior arquivo", sortBy: "file_size", sortDir: "desc" },
+  { value: "version_desc", label: "Versão", sortBy: "version", sortDir: "desc" },
+];
 
 export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [assetType, setAssetType] = useState<AssetType | "all">("all");
   const [clientId, setClientId] = useState<string | "all" | "none">("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [sort, setSort] = useState<SortValue>("created_desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return 24;
+    const saved = Number(localStorage.getItem(PAGE_SIZE_KEY));
+    return [24, 48, 96].includes(saved) ? saved : 24;
+  });
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
@@ -49,29 +90,34 @@ export default function DamLibraryPage() {
     try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* ignore */ }
   }, [viewMode]);
 
+  useEffect(() => {
+    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
+  }, [pageSize]);
+
+  // Reset to page 1 when filters/search/sort/pageSize change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, assetType, clientId, selectedTags, includeArchived, sort, pageSize]);
+
   const filters = useMemo(
-    () => ({
-      assetType,
-      clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
-      tags: selectedTags.length > 0 ? selectedTags : undefined,
-      includeArchived,
-    }),
-    [assetType, clientId, selectedTags, includeArchived],
+    () => {
+      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[0];
+      return {
+        assetType,
+        clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        includeArchived,
+        search: debouncedSearch.trim() || undefined,
+        sortBy: opt.sortBy,
+        sortDir: opt.sortDir,
+        page,
+        pageSize,
+      };
+    },
+    [assetType, clientId, selectedTags, includeArchived, debouncedSearch, sort, page, pageSize],
   );
 
-  const { assets, isLoading } = useAssets(currentOrgId, filters);
-
-  // Client-side search across name/description/tags
-  const filteredAssets = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return assets;
-    return assets.filter((a) => {
-      if (a.name.toLowerCase().includes(q)) return true;
-      if (a.description?.toLowerCase().includes(q)) return true;
-      if (a.tags.some((t) => t.toLowerCase().includes(q))) return true;
-      return false;
-    });
-  }, [assets, search]);
+  const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
 
   const availableTags = useMemo(() => {
     const set = new Set<string>();
@@ -132,6 +178,26 @@ export default function DamLibraryPage() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 ml-auto">
+          <Select value={sort} onValueChange={(v) => setSort(v as SortValue)}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24">24</SelectItem>
+              <SelectItem value="48">48</SelectItem>
+              <SelectItem value="96">96</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-2 mr-2">
             <Switch
               id="archived-toggle"
@@ -180,7 +246,11 @@ export default function DamLibraryPage() {
       )}
 
       <div className="text-xs text-muted-foreground">
-        {isLoading ? "Carregando..." : `${filteredAssets.length} ${filteredAssets.length === 1 ? "asset encontrado" : "assets encontrados"}`}
+        {isLoading
+          ? "Carregando..."
+          : total === 0
+            ? "Nenhum asset encontrado"
+            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
       </div>
 
       {isLoading ? (
@@ -189,18 +259,56 @@ export default function DamLibraryPage() {
             <Skeleton key={i} className="aspect-square w-full" />
           ))}
         </div>
-      ) : filteredAssets.length === 0 ? (
+      ) : assets.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           Nenhum asset encontrado. Faça o upload do primeiro!
         </Card>
       ) : viewMode === "list" ? (
-        <AssetListView assets={filteredAssets} clients={clients} onSelect={setSelected} />
+        <AssetListView assets={assets} clients={clients} onSelect={setSelected} />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filteredAssets.map((a) => (
+          {assets.map((a) => (
             <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
           ))}
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1); }}
+                aria-disabled={page <= 1}
+                className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            {buildPageList(page, totalPages).map((p, i) =>
+              p === "ellipsis" ? (
+                <PaginationItem key={`e-${i}`}><PaginationEllipsis /></PaginationItem>
+              ) : (
+                <PaginationItem key={p}>
+                  <PaginationLink
+                    href="#"
+                    isActive={p === page}
+                    onClick={(e) => { e.preventDefault(); setPage(p); }}
+                  >
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            )}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={(e) => { e.preventDefault(); if (page < totalPages) setPage(page + 1); }}
+                aria-disabled={page >= totalPages}
+                className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       )}
 
       <AssetUploadDialog

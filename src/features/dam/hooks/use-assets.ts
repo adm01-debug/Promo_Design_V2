@@ -35,6 +35,10 @@ export interface AssetFilters {
   tags?: string[];
   search?: string;
   includeArchived?: boolean;
+  sortBy?: "created_at" | "name" | "file_size" | "version";
+  sortDir?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
 }
 
 export interface AssetInsert {
@@ -64,19 +68,35 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     queryKey: ["assets", organizationId, filters],
     enabled: !!organizationId,
     queryFn: async () => {
+      const sortBy = filters.sortBy ?? "created_at";
+      const sortDir = filters.sortDir ?? "desc";
+      const hasPagination = typeof filters.pageSize === "number" && filters.pageSize > 0;
+      const page = Math.max(1, filters.page ?? 1);
+      const pageSize = filters.pageSize ?? 0;
       let q = supabase
         .from("assets")
-        .select("*")
+        .select("*", hasPagination ? { count: "exact" } : {})
         .eq("organization_id", organizationId!)
-        .order("created_at", { ascending: false });
+        .order(sortBy, { ascending: sortDir === "asc" });
       if (!filters.includeArchived) q = q.eq("is_archived", false);
       if (filters.clientId) q = q.eq("client_id", filters.clientId);
       if (filters.assetType && filters.assetType !== "all") q = q.eq("asset_type", filters.assetType);
       if (filters.tags && filters.tags.length > 0) q = q.contains("tags", filters.tags);
-      if (filters.search) q = q.ilike("name", `%${filters.search}%`);
-      const { data, error } = await q;
+      if (filters.search && filters.search.trim()) {
+        const term = filters.search.trim().replace(/[%,]/g, " ");
+        q = q.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
+      }
+      if (hasPagination) {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        q = q.range(from, to);
+      }
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []) as unknown as Asset[];
+      return {
+        rows: (data ?? []) as unknown as Asset[],
+        total: count ?? (data?.length ?? 0),
+      };
     },
   });
 
@@ -121,7 +141,11 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
   });
 
   return {
-    assets: query.data ?? [],
+    assets: query.data?.rows ?? [],
+    total: query.data?.total ?? 0,
+    page: filters.page ?? 1,
+    pageSize: filters.pageSize ?? 0,
+    totalPages: filters.pageSize ? Math.max(1, Math.ceil((query.data?.total ?? 0) / filters.pageSize)) : 1,
     isLoading: query.isLoading,
     create,
     update,
