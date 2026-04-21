@@ -55,6 +55,8 @@ export const SORT_OPTIONS: {
 const VALID_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 const VALID_SORTS: SortValue[] = SORT_OPTIONS.map((o) => o.value);
 
+const OWNED_KEYS = ["q", "type", "client", "tags", "tagsMode", "archived", "sort"] as const;
+
 export interface DamFiltersState {
   search: string;
   assetTypes: AssetType[];
