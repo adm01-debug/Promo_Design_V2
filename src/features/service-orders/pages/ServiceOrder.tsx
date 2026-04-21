@@ -20,6 +20,9 @@ import {
   ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm,
 } from "@/features/service-orders";
 import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrderTopBar";
+import { AssetPicker } from "@/features/dam/components/AssetPicker";
+import { downloadAssetAsFile } from "@/features/dam/lib/asset-urls";
+import type { Asset } from "@/features/dam/hooks/use-assets";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
@@ -33,6 +36,7 @@ const ServiceOrder = () => {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [damPickerOpen, setDamPickerOpen] = useState(false);
   const logoRef = useRef<string | undefined>(undefined);
 
   useEffect(() => { getLogoDataUrl().then((url) => { logoRef.current = url; }).catch(() => {}); }, []);
