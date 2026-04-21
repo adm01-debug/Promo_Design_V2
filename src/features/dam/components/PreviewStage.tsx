@@ -11,6 +11,7 @@ import {
   Info,
   FileText,
   Loader2,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAssetSignedUrl, type Asset } from "../hooks/use-assets";
@@ -40,6 +41,7 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [zoom, setZoom] = useState<"fit" | "actual">("fit");
+  const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -67,6 +69,8 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
     if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
       toast.success("URL copiada");
     } catch {
       toast.error("Falha ao copiar");
@@ -87,20 +91,31 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
 
   const isImage = asset ? (asset.mime_type ?? "").startsWith("image/") : false;
 
-  // Keyboard shortcut: Z toggles zoom
+  // Keyboard shortcuts: Z toggles zoom · C copy URL · D download
   useEffect(() => {
-    if (!isImage || !url) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
       const t = e.target as HTMLElement | null;
       const tag = t?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || t?.isContentEditable) return;
-      if (e.key.toLowerCase() !== "z") return;
-      e.preventDefault();
-      setZoom((z) => (z === "fit" ? "actual" : "fit"));
+      const k = e.key.toLowerCase();
+      if (k === "z") {
+        if (!isImage || !url) return;
+        e.preventDefault();
+        setZoom((z) => (z === "fit" ? "actual" : "fit"));
+      } else if (k === "c") {
+        if (!url) return;
+        e.preventDefault();
+        void handleCopy();
+      } else if (k === "d") {
+        if (!url) return;
+        e.preventDefault();
+        handleDownload();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isImage, url]);
 
   // After switching to actual, center scroll on container
