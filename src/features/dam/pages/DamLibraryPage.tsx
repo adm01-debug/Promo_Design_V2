@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
@@ -44,6 +44,9 @@ const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
+const PAGINATION_MODE_KEY = "dam-pagination-mode";
+
+type PaginationMode = "pages" | "loadmore";
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -89,12 +92,24 @@ export default function DamLibraryPage() {
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
   });
   const [sort, setSort] = useState<SortValue>("created_desc");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(() => {
+    const fromUrl = Number(searchParams.get("page"));
+    return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
+  });
   const [pageSize, setPageSize] = useState<number>(() => {
+    const fromUrl = Number(searchParams.get("pageSize"));
+    if ([24, 48, 96].includes(fromUrl)) return fromUrl;
     if (typeof window === "undefined") return 24;
     const saved = Number(localStorage.getItem(PAGE_SIZE_KEY));
     return [24, 48, 96].includes(saved) ? saved : 24;
   });
+  const [paginationMode, setPaginationMode] = useState<PaginationMode>(() => {
+    const fromUrl = searchParams.get("mode");
+    if (fromUrl === "loadmore" || fromUrl === "pages") return fromUrl;
+    if (typeof window === "undefined") return "pages";
+    return (localStorage.getItem(PAGINATION_MODE_KEY) as PaginationMode) || "pages";
+  });
+  const [accumulated, setAccumulated] = useState<Asset[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
@@ -124,6 +139,28 @@ export default function DamLibraryPage() {
     }, { replace: true });
   }, [includeArchived, setSearchParams]);
 
+  useEffect(() => {
+    try { localStorage.setItem(PAGINATION_MODE_KEY, paginationMode); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (paginationMode === "loadmore") next.set("mode", "loadmore");
+      else next.delete("mode");
+      return next;
+    }, { replace: true });
+  }, [paginationMode, setSearchParams]);
+
+  // Sync page/pageSize with URL
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (page > 1 && paginationMode === "pages") next.set("page", String(page));
+      else next.delete("page");
+      if (pageSize !== 24) next.set("pageSize", String(pageSize));
+      else next.delete("pageSize");
+      return next;
+    }, { replace: true });
+  }, [page, pageSize, paginationMode, setSearchParams]);
+
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
     if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
@@ -132,6 +169,7 @@ export default function DamLibraryPage() {
   // Reset to page 1 when filters/search/sort/pageSize change
   useEffect(() => {
     setPage(1);
+    setAccumulated([]);
   }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort, pageSize]);
 
   const filters = useMemo(
@@ -155,16 +193,35 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
 
+  // Accumulate results in load-more mode
+  useEffect(() => {
+    if (paginationMode !== "loadmore") return;
+    if (isLoading) return;
+    if (page === 1) {
+      setAccumulated(assets);
+    } else {
+      setAccumulated((prev) => {
+        const seen = new Set(prev.map((a) => a.id));
+        const merged = [...prev];
+        for (const a of assets) if (!seen.has(a.id)) merged.push(a);
+        return merged;
+      });
+    }
+  }, [assets, page, paginationMode, isLoading]);
+
+  const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
+  const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
+
   const archivedCount = useMemo(
-    () => assets.filter((a) => a.is_archived).length,
-    [assets],
+    () => displayedAssets.filter((a) => a.is_archived).length,
+    [displayedAssets],
   );
 
   const availableTags = useMemo(() => {
     const set = new Set<string>();
-    assets.forEach((a) => a.tags.forEach((t) => set.add(t)));
+    displayedAssets.forEach((a) => a.tags.forEach((t) => set.add(t)));
     return Array.from(set);
-  }, [assets]);
+  }, [displayedAssets]);
 
   if (!currentOrgId) {
     return (
@@ -292,6 +349,24 @@ export default function DamLibraryPage() {
               <List className="w-4 h-4" />
             </ToggleGroupItem>
           </ToggleGroup>
+          <ToggleGroup
+            type="single"
+            value={paginationMode}
+            onValueChange={(v) => {
+              if (!v) return;
+              setPaginationMode(v as PaginationMode);
+              setPage(1);
+              setAccumulated([]);
+            }}
+            size="sm"
+          >
+            <ToggleGroupItem value="pages" aria-label="Páginas" title="Paginação numerada">
+              1·2·3
+            </ToggleGroupItem>
+            <ToggleGroupItem value="loadmore" aria-label="Carregar mais" title="Carregar mais">
+              <ChevronDown className="w-4 h-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
@@ -358,34 +433,56 @@ export default function DamLibraryPage() {
           ? "Carregando..."
           : total === 0
             ? "Nenhum asset encontrado"
-            : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
-                includeArchived && archivedCount > 0
-                  ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
-                  : ""
-              }`}
+            : paginationMode === "loadmore"
+              ? `Mostrando ${displayedAssets.length} de ${total} ${total === 1 ? "asset" : "assets"}${
+                  includeArchived && archivedCount > 0
+                    ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""}`
+                    : ""
+                }`
+              : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
+                  includeArchived && archivedCount > 0
+                    ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
+                    : ""
+                }`}
       </div>
 
-      {isLoading ? (
+      {isLoading && displayedAssets.length === 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {Array.from({ length: 10 }).map((_, i) => (
             <Skeleton key={i} className="aspect-square w-full" />
           ))}
         </div>
-      ) : assets.length === 0 ? (
+      ) : displayedAssets.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           Nenhum asset encontrado. Faça o upload do primeiro!
         </Card>
       ) : viewMode === "list" ? (
-        <AssetListView assets={assets} clients={clients} onSelect={setSelected} />
+        <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {assets.map((a) => (
+          {displayedAssets.map((a) => (
             <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
           ))}
         </div>
       )}
 
-      {totalPages > 1 && (
+      {paginationMode === "loadmore" && hasMore && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Carregando...</>
+            ) : (
+              <>Carregar mais ({total - displayedAssets.length} restantes)</>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {paginationMode === "pages" && totalPages > 1 && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>
