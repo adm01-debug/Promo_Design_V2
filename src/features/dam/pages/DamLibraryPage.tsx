@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -21,6 +21,8 @@ import { AssetListView } from "../components/AssetListView";
 import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
 import { SavedSearchesMenu } from "../components/SavedSearchesMenu";
 import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
+import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
+import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LAST_ASSET_KEY, LAST_ASSET_TTL_MS } from "./DamPreviewPage";
 import {
@@ -163,6 +165,7 @@ export default function DamLibraryPage() {
   });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
+  const quickPreview = useQuickPreview();
 
   const hasActiveFilters =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
@@ -376,6 +379,18 @@ export default function DamLibraryPage() {
         </div>
         <div className="flex items-center gap-2">
           <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
+          <Toggle
+            pressed={quickPreview.enabled}
+            onPressedChange={quickPreview.toggleEnabled}
+            size="sm"
+            variant="outline"
+            aria-label="Prévia rápida"
+            aria-pressed={quickPreview.enabled}
+            title="Prévia rápida"
+          >
+            <PanelRight className="w-4 h-4 mr-2" />
+            Prévia
+          </Toggle>
           <Button variant="outline" asChild>
             <Link
               to={(() => {
@@ -634,13 +649,45 @@ export default function DamLibraryPage() {
             ) : null}
           </Card>
         </motion.div>
-      ) : viewMode === "list" ? (
-        <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {displayedAssets.map((a) => (
-            <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
-          ))}
+        <div className={quickPreview.enabled ? "flex gap-4 items-start" : undefined}>
+          <div className="flex-1 min-w-0">
+            {viewMode === "list" ? (
+              <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {displayedAssets.map((a) => (
+                  <AssetCard
+                    key={a.id}
+                    asset={a}
+                    isQuickActive={quickPreview.enabled && quickPreview.activeAsset?.id === a.id}
+                    onHover={quickPreview.enabled ? () => quickPreview.setHoverAsset(a) : undefined}
+                    onHoverEnd={quickPreview.enabled ? () => quickPreview.setHoverAsset(null) : undefined}
+                    onClick={() => {
+                      if (quickPreview.enabled) {
+                        quickPreview.togglePin(a);
+                      } else {
+                        setSelected(a);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          {quickPreview.enabled && (
+            <QuickPreviewPanel
+              asset={quickPreview.activeAsset}
+              pinned={!!quickPreview.activeAsset && quickPreview.pinnedId === quickPreview.activeAsset.id}
+              onTogglePin={() => {
+                if (quickPreview.activeAsset) quickPreview.togglePin(quickPreview.activeAsset);
+              }}
+              onOpenDetails={() => {
+                if (quickPreview.activeAsset) setSelected(quickPreview.activeAsset);
+              }}
+              clients={clients}
+            />
+          )}
         </div>
       )}
 

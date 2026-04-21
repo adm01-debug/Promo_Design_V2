@@ -2,13 +2,27 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
+import { cn } from "@/lib/utils";
 
-export function AssetCard({ asset, onClick }: { asset: Asset; onClick?: () => void }) {
+interface AssetCardProps {
+  asset: Asset;
+  onClick?: () => void;
+  onHover?: () => void;
+  onHoverEnd?: () => void;
+  isQuickActive?: boolean;
+}
+
+export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }: AssetCardProps) {
   return (
     <Card
       role={onClick ? "button" : undefined}
       onClick={onClick}
-      className="overflow-hidden cursor-pointer hover:shadow-elegant transition-shadow group"
+      onMouseEnter={onHover}
+      onMouseLeave={onHoverEnd}
+      className={cn(
+        "overflow-hidden cursor-pointer hover:shadow-elegant transition-all group",
+        isQuickActive && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+      )}
     >
       <div className="relative aspect-square bg-muted">
         <AssetThumbnail asset={asset} className="w-full h-full" />

@@ -92,6 +92,7 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Coleções/Pastas | `/dam/collections` | *(planejado)* | 🔴 | Sem tabela `collections` no schema; requer migração + UI hierárquica. |
 | Lixeira (assets arquivados) | `/dam/trash` | *(parcial via filtro `archived` em `DamLibraryPage.tsx`)* | 🟡 | Filtro `is_archived` existe; falta view dedicada com restore em lote. |
 | Busca avançada (saved searches) | `/dam` | `src/features/dam/components/SavedSearchesMenu.tsx` + `src/features/dam/hooks/use-saved-searches.ts` | ✅ | Filtros nomeados, fixáveis e reaplicáveis em 1 clique; persistidos por usuário/organização na tabela `dam_saved_searches`. |
+| Prévia rápida (quick preview) | `/dam` | `src/features/dam/components/QuickPreviewPanel.tsx` + `src/features/dam/hooks/use-quick-preview.ts` | ✅ | Painel lateral sticky com thumbnail ampliado, metadados, versão e ações; hover (debounce 150ms) ou clique para fixar. Estado persistido em `localStorage`. |
 
 ## 7. Magic Up (AI)
 
