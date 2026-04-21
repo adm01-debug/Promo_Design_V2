@@ -193,7 +193,11 @@ export default function DamPreviewPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div
+      className="h-[calc(100vh-4rem)] flex flex-col"
+      role="region"
+      aria-label="Pré-visualização de assets"
+    >
       <header className="border-b border-border px-4 py-2 flex items-center gap-3 shrink-0">
         <Button variant="ghost" size="sm" asChild>
           <Link to={`/dam${queryString}`}>
@@ -206,7 +210,7 @@ export default function DamPreviewPage() {
           Pré-visualização rápida
         </div>
         <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar
+          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -220,7 +224,7 @@ export default function DamPreviewPage() {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
