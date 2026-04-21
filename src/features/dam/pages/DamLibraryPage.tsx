@@ -448,7 +448,7 @@ export default function DamLibraryPage() {
       )}
 
       <ActiveFiltersBar
-        search={debouncedSearch.trim() || undefined}
+        search={debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? debouncedSearch.trim() : undefined}
         onClearSearch={() => setSearch("")}
         assetTypes={assetTypes}
         onRemoveType={(t) => setAssetTypes((prev) => prev.filter((x) => x !== t))}
