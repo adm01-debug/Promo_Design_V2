@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2 } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
@@ -160,6 +161,28 @@ export default function DamLibraryPage() {
   });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
+
+  const hasActiveFilters =
+    debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
+    assetTypes.length > 0 ||
+    clientId !== "all" ||
+    selectedTags.length > 0 ||
+    includeArchived;
+
+  const canUpload = can(["owner", "admin", "designer"]);
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setAssetTypes([]);
+    setClientId("all");
+    setSelectedTags([]);
+    setIncludeArchived(false);
+    writeLS(SEARCH_KEY, null);
+    writeLS(ASSET_TYPES_KEY, null);
+    writeLS(CLIENT_ID_KEY, null);
+    writeLS(TAGS_KEY, null);
+    writeLS(SORT_KEY, null);
+  };
 
   useEffect(() => {
     try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* ignore */ }
@@ -502,48 +525,89 @@ export default function DamLibraryPage() {
         onRemoveTag={(t) => setSelectedTags((prev) => prev.filter((x) => x !== t))}
         includeArchived={includeArchived}
         onClearArchived={() => setIncludeArchived(false)}
-        onClearAll={() => {
-          setSearch("");
-          setAssetTypes([]);
-          setClientId("all");
-          setSelectedTags([]);
-          setIncludeArchived(false);
-          writeLS(SEARCH_KEY, null);
-          writeLS(ASSET_TYPES_KEY, null);
-          writeLS(CLIENT_ID_KEY, null);
-          writeLS(TAGS_KEY, null);
-          writeLS(SORT_KEY, null);
-        }}
+        onClearAll={clearAllFilters}
       />
 
-      <div className="text-xs text-muted-foreground">
-        {isLoading
-          ? "Carregando..."
-          : total === 0
-            ? "Nenhum asset encontrado"
-            : paginationMode === "loadmore"
-              ? `Mostrando ${displayedAssets.length} de ${total} ${total === 1 ? "asset" : "assets"}${
-                  includeArchived && archivedCount > 0
-                    ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""}`
-                    : ""
-                }`
-              : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}${
-                  includeArchived && archivedCount > 0
-                    ? ` · ${archivedCount} arquivado${archivedCount > 1 ? "s" : ""} nesta página`
-                    : ""
-                }`}
+      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+        {isLoading && displayedAssets.length === 0 ? (
+          <span>Carregando...</span>
+        ) : total === 0 ? (
+          <span>Nenhum asset encontrado</span>
+        ) : (
+          <>
+            <span>
+              {paginationMode === "loadmore"
+                ? `Mostrando ${displayedAssets.length} de ${total} ${total === 1 ? "asset" : "assets"}`
+                : `Mostrando ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total} ${total === 1 ? "asset" : "assets"}`}
+            </span>
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
+            )}
+            {includeArchived && archivedCount > 0 && (
+              <span>
+                · {archivedCount} arquivado{archivedCount > 1 ? "s" : ""}
+                {paginationMode === "pages" ? " nesta página" : ""}
+              </span>
+            )}
+          </>
+        )}
       </div>
 
       {isLoading && displayedAssets.length === 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-square w-full" />
-          ))}
-        </div>
+        viewMode === "list" ? (
+          <div className="space-y-2">
+            {Array.from({ length: Math.min(pageSize, 8) }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {Array.from({ length: Math.min(pageSize, 10) }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            ))}
+          </div>
+        )
       ) : displayedAssets.length === 0 ? (
-        <Card className="p-12 text-center text-muted-foreground">
-          Nenhum asset encontrado. Faça o upload do primeiro!
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+        >
+          <Card className="p-12 flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+              {hasActiveFilters ? (
+                <FilterX className="w-7 h-7 text-muted-foreground" />
+              ) : (
+                <FolderArchive className="w-7 h-7 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-base">
+                {hasActiveFilters
+                  ? "Nenhum asset corresponde aos filtros"
+                  : "Sua biblioteca está vazia"}
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                {hasActiveFilters
+                  ? "Tente remover algum filtro ou ajustar a busca."
+                  : "Faça upload do seu primeiro asset para começar."}
+              </p>
+            </div>
+            {hasActiveFilters ? (
+              <Button variant="outline" onClick={clearAllFilters}>
+                <FilterX className="w-4 h-4 mr-2" /> Limpar filtros
+              </Button>
+            ) : canUpload ? (
+              <Button onClick={() => setUploadOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" /> Fazer upload
+              </Button>
+            ) : null}
+          </Card>
+        </motion.div>
       ) : viewMode === "list" ? (
         <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
       ) : (
