@@ -1,40 +1,48 @@
 
 
-## Documentação de Funcionalidades — `FEATURES.md`
+## Auditoria de Funcionalidades sem UI Completa — `GAPS_UI.md`
 
-Vou gerar um documento markdown exaustivo (`/mnt/documents/PROMO_DESIGN_FEATURES.md`) catalogando todas as funcionalidades do Promo Design, com base em: rotas (`App.tsx`), navegação (`AppSidebar`), feature folders (`src/features/`), schema do banco (14 tabelas), edge function `mockup-ai`, hooks, integrações e o histórico das ondas enterprise já implementadas (Onda 1: multi-tenant + RBAC + audit; DAM + Brand Guidelines).
+Vou gerar um documento markdown (`/mnt/documents/PROMO_DESIGN_GAPS_UI.md`) catalogando funcionalidades que existem no backend (tabelas, hooks, funções DB, edge functions) mas **não possuem interface visual completa** ou estão **subutilizadas** na UI atual.
+
+### Metodologia
+
+Cruzamento entre:
+1. Schema do banco (15 tabelas, 10 funções DB, 2 buckets)
+2. Hooks em `src/features/*/hooks/` e `src/hooks/`
+3. Edge functions em `supabase/functions/`
+4. Rotas em `App.tsx` e navegação em `AppSidebar.tsx`
+5. Componentes existentes vs. capabilities expostas
 
 ### Estrutura do documento
 
-1. **Visão Geral** — propósito, stack, escopo
-2. **Módulos Principais** (cada um com sub-funcionalidades, rotas, tabelas e capabilities):
-   - **Dashboard** — widgets drag-and-drop, sparklines, count-up, layouts persistidos
-   - **Mockup Studio** — editor visual, mesh warp, multi-view, rascunhos, histórico, AI background removal
-   - **Ordens de Serviço** — CRUD, state machine (aberta/em_producao/concluida/cancelada), audit log, PDF export, dashboard analítico, realtime
-   - **Catálogo** — produtos, categorias, SKU, ProductPicker, analytics
-   - **Clientes (CRM)** — entidade compartilhada, contatos múltiplos, tags, busca
-   - **DAM (Biblioteca de Assets)** — logos/artes/fotos/mockups, versionamento, tags GIN, cores dominantes, AssetPicker
-   - **Brand Guidelines** — paleta primária/secundária, fontes, do/don't, logo principal por cliente
-   - **Magic Up (IA)** — geração de imagens publicitárias, prompts inteligentes, banco de prompts, histórico, favoritos, batch variations, edge function `mockup-ai`
-   - **Video Studio** — Novo Vídeo (3 etapas), Cinema Mode (LUTs), Moodboard, Photodump, Character Studio (Soul ID), Inspiração, Histórico, animações modulares
-3. **Funcionalidades Transversais**
-   - Multi-tenancy (organizações + roles: owner/admin/designer/approver/viewer)
-   - Auditoria universal (`audit_log` + triggers)
-   - Notificações (polling 15s, triggers DB)
-   - Command Palette (⌘K)
-   - Onboarding tour (6 etapas)
-   - Atalhos de teclado
-   - Dark/Light theme
-   - PWA-ready, responsivo
-4. **Segurança & Compliance** — RLS por organização, HIBP, signed URLs privadas, JWT em edge functions
-5. **Banco de Dados** — tabela por tabela com colunas-chave e RLS resumido
-6. **Integrações** — Bitrix24, n8n webhooks, Lovable AI Gateway
-7. **Qualidade** — 444+ testes Vitest, Playwright E2E
-8. **Roadmap das Ondas** — Onda 1 ✅, Onda 2 (em curso), Onda 3 (planejada)
+1. **Resumo Executivo** — quantos gaps encontrados, severidade
+2. **Gaps Críticos** (capability existe no DB/hook mas zero UI)
+3. **Gaps Parciais** (UI existe mas não expõe todas as capabilities)
+4. **Hooks Órfãos** (criados mas não consumidos por nenhum componente)
+5. **Funções DB sem trigger UI** (RPCs que poderiam ter ações visuais)
+6. **Edge Functions subutilizadas**
+7. **Tabelas com CRUD incompleto** (ex: só leitura, falta UI de criação/edição)
+8. **Recomendações Priorizadas** (impacto × esforço)
+
+### Itens já identificados na exploração prévia
+
+- **`client_contacts`** — tabela existe, hook gerencia, mas UI de múltiplos contatos por cliente não está visível na ClientsPage
+- **`assets` versionamento** — `parent_asset_id` + `version` no schema, hook `update` suporta, mas não há botão "Nova versão" no AssetDetailDrawer
+- **`assets.is_archived`** — mutation `archive` existe, mas UI não tem toggle "Mostrar arquivados" nem ação visível
+- **Brand Guidelines `logo_asset_id`** — campo existe, mas integração de auto-sugestão na OS pode estar incompleta
+- **Asset Picker no Mockup Editor** — componente criado, validar se foi conectado ao fluxo de upload de logo
+- **`audit_log` filtros** — página `/audit` existe, mas validar profundidade de filtros (por tabela, ação, usuário, range de datas)
+- **`organization_members` convites por email** — Edge Function planejada na Onda 1, validar se UI de convite envia email real
+- **`has_any_role` / `can()`** — helper existe no `useOrganization`, validar se botões críticos (delete, role change) estão gated por role
+- **Notificações** — sistema existe, validar se há central de preferências de notificação
+- **Magic Up favoritos** — campo no schema, validar UI de filtro/marcação
+- **Catalog analytics** — componente existe, validar se está plugado em alguma rota
 
 ### Entregável
 
-Arquivo único `.md` em `/mnt/documents/PROMO_DESIGN_FEATURES.md`, com índice clicável, tabelas de rotas e tabelas de capabilities por módulo. Tag `<lov-artifact>` ao final para download.
-
-Sobre o GitHub: a análise é feita 100% sobre o código fonte deste projeto (que é o que está sincronizado com o repositório GitHub via integração bidirecional). Não preciso acessar o GitHub externamente — o codebase aqui já é o estado mais recente.
+Arquivo `/mnt/documents/PROMO_DESIGN_GAPS_UI.md` com:
+- Tabela por categoria de gap
+- Para cada gap: capability do backend, evidência (arquivo/linha), o que falta na UI, esforço estimado, prioridade sugerida
+- Seção final com top 10 quick wins (alta visibilidade, baixo esforço)
+- Tag `<lov-artifact>` para download
 
