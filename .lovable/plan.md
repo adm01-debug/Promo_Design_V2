@@ -1,41 +1,40 @@
 
 
-## Busca server-side com trigram e mínimo de 3 caracteres
+## Persistir filtros da DAM ao sair e voltar
 
-A busca já vai ao servidor via `ilike` em `name`/`description` (e via RPC `search_assets_ranked` quando o sort é "Relevância"). Faltam três coisas: **(1)** garantir que termos com menos de 3 caracteres não disparem busca (evita full-table scans inúteis); **(2)** usar trigram (`%`) quando o termo tem ≥3 chars para aproveitar o índice GIN existente; **(3)** UX clara avisando o usuário que precisa digitar mais.
+Hoje `pageSize`, `tagsMode`, `includeArchived`, `viewMode` e `paginationMode` já sobrevivem em localStorage. Mas **busca, tipos, cliente, tags e ordenação só vivem na URL** — ao clicar em "DAM" na sidebar (que vai para `/dam` sem querystring), tudo zera. Vou estender a persistência para esses cinco filtros.
 
 ### Mudanças
 
-**Migration — índices trigram em `assets`**
-- Garantir extensão `pg_trgm` (já está, dado que `similarity()` é usado pelo RPC).
-- Criar índices se não existirem:
-  - `CREATE INDEX IF NOT EXISTS idx_assets_name_trgm ON public.assets USING gin (name gin_trgm_ops);`
-  - `CREATE INDEX IF NOT EXISTS idx_assets_description_trgm ON public.assets USING gin (description gin_trgm_ops);`
-- Sem alteração de schema, só índices.
+**`src/features/dam/pages/DamLibraryPage.tsx`** — adicionar chaves localStorage e fallback no estado inicial:
 
-**`src/features/dam/hooks/use-assets.ts`**
-- Constante `MIN_SEARCH_LENGTH = 3`.
-- Em `queryFn`:
-  - Computar `effectiveSearch = searchTerm.length >= MIN_SEARCH_LENGTH ? searchTerm : ""`.
-  - Se `useRelevance` mas `effectiveSearch` vazio → cair no path padrão (sem RPC).
-  - No path padrão, ao invés de `name.ilike.%term%,description.ilike.%term%`, usar o **operador trigram `%`** do PostgREST: `name.wfts.term` não se aplica; usar `or(\`name.ilike.%${term}%,description.ilike.%${term}%\`)` continua válido — o índice `gin_trgm_ops` acelera `ILIKE '%x%'` automaticamente quando a string tem ≥3 chars (regra do pg_trgm). Manter `ilike` é o caminho correto e já se beneficia do índice.
-  - Sanitização do termo: remover `%`, `,`, `(`, `)` antes de injetar.
-- Exportar `MIN_SEARCH_LENGTH` para uso na UI.
+- Novas constantes:
+  - `SEARCH_KEY = "dam-search"`
+  - `ASSET_TYPES_KEY = "dam-asset-types"`
+  - `CLIENT_ID_KEY = "dam-client-id"`
+  - `TAGS_KEY = "dam-tags"`
+  - `SORT_KEY = "dam-sort"`
 
-**`src/features/dam/pages/DamLibraryPage.tsx` e `src/features/dam/components/PreviewSidebar.tsx`**
-- Importar `MIN_SEARCH_LENGTH`.
-- Abaixo do `Input` de busca, mostrar hint `text-xs text-muted-foreground` quando `0 < search.trim().length < 3`: "Digite ao menos 3 caracteres para buscar".
-- Chip de busca em `ActiveFiltersBar` só aparece quando o termo ≥3 chars (já que termos curtos não filtram nada).
+- **Inicialização**: cada `useState` lê primeiro da URL; se ausente, lê do localStorage; se ausente, default. Mesmo padrão já usado em `tagsMode`/`includeArchived`.
 
-**`src/features/dam/components/AssetPicker.tsx`**
-- Mesmo hint sob o campo de busca.
+- **Persistência**: novo `useEffect` por filtro escrevendo no localStorage quando muda. Strings vazias → `removeItem` para não vazar lixo.
+
+- **Hidratação na URL**: quando o estado é restaurado do localStorage (e a URL está vazia), o `useEffect` que sincroniza com a URL já popula os params automaticamente — comportamento desejado para que a URL fique compartilhável imediatamente.
+
+- **Reset**: o botão "Limpar tudo" do `ActiveFiltersBar` deve agora **também** apagar as chaves de localStorage dos filtros (não da `pageSize`/`viewMode`/`paginationMode`, que são preferências de UI, não filtros). Implementar `clearAllFilters()` que zera estado E remove as 5 chaves.
+
+**`src/features/dam/hooks/use-dam-filters.ts`** (usado por `DamPreviewPage` e `PreviewSidebar`):
+
+- Mesma estratégia: ler do localStorage (mesmas chaves) como fallback quando a URL não tem o parâmetro. Assim a Preview também herda os filtros que estavam na biblioteca, e vice-versa.
+
+- O `reset()` também limpa as chaves de localStorage.
 
 ### Critérios de aceite
 
-- Digitar 1 ou 2 caracteres NÃO dispara nova requisição filtrada — listagem permanece sem filtro de busca; aparece o hint "Digite ao menos 3 caracteres".
-- A partir de 3 caracteres, busca é enviada ao servidor (debounce 300ms continua valendo) e usa os índices GIN trigram.
-- "Relevância" no dropdown de sort fica desabilitada/oculta enquanto o termo for menor que 3 chars.
-- Performance: busca em base com 50k+ assets responde em <300ms (índice trigram + `ilike '%x%'`).
-- URL `?q=` ainda é populada pelo termo digitado (para compartilhamento), mas a query só filtra quando ≥3 chars.
-- Sem regressão: filtros de tipo, cliente, tags, paginação, sort, retry de upload, auditoria continuam funcionando.
+- Filtrar por cliente "ACME", busca "logo azul", tipo "Logos", tag "verão" e sort "Nome A→Z" na DAM → navegar para `/catalog` → clicar em "DAM" na sidebar → todos os 5 filtros voltam exatamente como estavam, mesmo sem querystring na URL.
+- `pageSize` selecionado (ex.: 96) também sobrevive — já funciona, mantido.
+- Compartilhar URL com `?q=&type=&...` continua tendo prioridade sobre localStorage (URL ganha do storage).
+- Limpar filtros ("Limpar tudo") apaga tanto o estado quanto as chaves no localStorage — recarregar a página NÃO traz os filtros antigos de volta.
+- Preview (`/dam/preview`) e biblioteca (`/dam`) compartilham as mesmas chaves de localStorage, então os filtros se mantêm consistentes ao alternar entre as telas.
+- Sem regressão: paginação, busca server-side com mínimo de 3 chars, índices trigram, auditoria por versão, retry de upload continuam funcionando.
 
