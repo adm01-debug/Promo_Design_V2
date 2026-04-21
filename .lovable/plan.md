@@ -1,77 +1,73 @@
 
 
-## AssetPicker reutilizável — DAM ↔ Mockup Studio ↔ Service Order
+## Brand Guidelines — já implementado, propostas de polimento
 
-Já existe um `AssetPicker` básico em `src/features/dam/components/AssetPicker.tsx` (modal simples com busca e grid). Vou **evoluir esse componente** para uso premium reutilizável e **integrá-lo** ao Mockup Studio (escolher logo do DAM) e à Service Order (anexar/escolher arte).
+A tela `/clients/:clientId/brand` já existe e cobre todo o escopo solicitado:
 
-### 1. Evoluir `AssetPicker` (refactor)
+| Requisito | Status atual |
+|---|---|
+| Editor de paleta primária | ✅ Color picker + hex + nome, add/remove |
+| Editor de paleta secundária | ✅ Mesmo padrão |
+| Lista de fontes | ✅ Nome, uso, fonte/link, add/remove |
+| Regras Do | ✅ Textarea (uma por linha) com label verde |
+| Regras Don't | ✅ Textarea (uma por linha) com label vermelho |
+| Logo principal | ✅ AssetPicker integrado |
+| Notas adicionais | ✅ Textarea |
+| Preview aplicado | ✅ `BrandPreviewCard` com hero, tipografia, botões, paleta |
+| RBAC | ✅ Edição gated em `owner/admin/designer` |
+| Persistência | ✅ Hook `useBrandGuidelines` com upsert |
 
-- Filtros: busca (debounced 300ms), filtro por **cliente** (auto-preenche se `clientId` vier por prop), filtro por **tipo** (logo/art/photo/...), filtro por **tags** (reutilizar `TagFilter`)
-- Paginação real (24 por página) usando o `useAssets` já paginado
-- Toggle grid/lista (reutilizar padrão do DAM)
-- Empty state + skeleton de carregamento
-- Prop `assetType` agora é **default**, não trava (usuário pode mudar dentro do modal)
-- Props novas:
-  - `title?: string` (default "Selecionar da biblioteca")
-  - `defaultAssetType?: AssetType` (filtro inicial)
-  - `lockClient?: boolean` (se true, esconde o seletor de cliente)
-  - `onSelect: (asset: Asset) => void` (já existe)
+### Melhorias propostas (polimento premium)
 
-### 2. Integração no **Mockup Studio**
+Como o esqueleto está completo, sugiro 5 incrementos focados em **qualidade visual e UX**:
 
-Em `MockupRightPanel.tsx`, na seção de upload de logo, adicionar botão secundário **"Escolher do DAM"** ao lado do upload de arquivo.
-- Abre `AssetPicker` com `defaultAssetType="logo"` e `clientId` derivado do produto/cliente atual (se disponível) ou `null`
-- Ao selecionar: baixa o arquivo do storage (signed URL via `supabase.storage.from('assets').createSignedUrl`) e injeta no editor como se fosse upload local — reutiliza `handleLogoUpload(file: File)` existente em `useMockupEditor`
-- Feedback toast "Logo carregado da biblioteca"
+**1. Paleta — copy-to-clipboard + preview de contraste**
+- Click no chip de cor copia o hex (toast "Copiado #FF5733")
+- Mini-badge WCAG AA/AAA ao lado de cada cor (calcula contraste contra branco/preto)
 
-### 3. Integração na **Service Order**
+**2. Fontes — load real do Google Fonts no preview**
+- Quando o usuário digita "Inter", "Poppins", "Roboto"...: injetar `<link>` para Google Fonts dinamicamente para que o preview renderize com a fonte real, não fallback
+- Detecção: tentar `https://fonts.googleapis.com/css2?family={nome}:wght@400;700`
 
-Em `ServiceOrder.tsx`, no `ArtUploadField`, adicionar botão **"Escolher do DAM"**.
-- Abre `AssetPicker` com `defaultAssetType="art"` e `clientId` (derivado do `clientName` se houver match em clients, ou aberto)
-- Ao selecionar: usa o `file_path` para gerar URL pública/assinada e seta em `form.artFile` + `form.artFileDataUrl`
-- Toast de confirmação
+**3. Regras Do/Don't — chips em vez de linhas**
+- Manter textarea como modo edição rápida, mas exibir em **chips** com ícone ✓/✗ no preview-card (mais visual)
+- Chips clicáveis para deletar individualmente
 
-### 4. Persistência da seleção (vinculação OS ↔ asset)
+**4. Preview expandido — múltiplas seções**
+- Aba "Card de marca" (atual) + aba "Aplicação completa" mostrando:
+  - Header de site com logo + cores
+  - Cartão de produto com tipografia
+  - Combinações de cores (primária+secundária, gradiente)
 
-Hoje a OS guarda só `art_file` (nome) e `art_file_data_url` (URL). Para rastrear vinculação ao DAM:
-- Adicionar coluna `art_asset_id uuid NULL` em `service_orders` (FK lógica para `assets.id`, sem constraint física para evitar bloqueio de delete)
-- Quando o usuário seleciona via DAM, gravar `art_asset_id`
-- Quando faz upload manual, manter `null`
-- Permite no futuro: badge "vinculado à biblioteca", abrir asset original a partir da OS, atualizar arte quando uma nova versão é publicada
+**5. Export de brand kit (PDF)**
+- Botão "Exportar PDF" no header que gera um PDF de 1-2 páginas com paleta, fontes, regras e logo (reutilizar pipeline `jspdf` já presente em `service-orders/lib/ServiceOrderPdf.ts` como base)
 
-Para o **cliente**: nada novo necessário — `assets.client_id` já existe e o picker filtra por ele. A "memória" da seleção fica naturalmente no asset.
+### Detalhes técnicos
 
-### 5. Edge case — assets em bucket privado
-
-O bucket `assets` é privado. O picker e o consumo precisam usar `createSignedUrl` (válido por 1h) em vez de URL pública. Encapsular num helper `getAssetSignedUrl(filePath: string): Promise<string>` em `src/features/dam/lib/asset-urls.ts`.
+- **Contraste WCAG**: função pura em `src/features/dam/lib/color-contrast.ts` — fórmula relative luminance + ratio
+- **Google Fonts loader**: hook `useGoogleFont(name: string)` que injeta `<link>` único no `<head>` (cacheado por nome para evitar duplicatas)
+- **Chips Do/Don't**: novo componente `RuleChips` com modo "edit" (textarea) e "view" (chips), toggle por botão
+- **Aba Aplicação**: novo componente `BrandApplicationPreview` (header simulado + product card + gradiente)
+- **PDF export**: `src/features/dam/lib/brand-kit-pdf.ts` usando `jsPDF`; layout simples 1 página (logo + paleta com swatches + fontes + regras)
 
 ### Arquivos a criar/editar
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/dam/components/AssetPicker.tsx` | Reescrever — filtros completos, paginação, toggle |
-| `src/features/dam/lib/asset-urls.ts` | Criar — helper de signed URL |
-| `src/features/mockup/components/MockupRightPanel.tsx` | Editar — botão "Escolher do DAM" + abrir picker |
-| `src/features/service-orders/components/ArtUploadField.tsx` | Editar — botão "Escolher do DAM" + callback |
-| `src/features/service-orders/pages/ServiceOrder.tsx` | Editar — gerenciar `art_asset_id`, passar callback |
-| `src/features/service-orders/hooks/use-service-orders.ts` | Editar — incluir `artAssetId` no payload |
-| `src/features/service-orders/types.ts` | Editar — adicionar `artAssetId?: string \| null` |
-| `supabase/migrations/<ts>_service_orders_art_asset_id.sql` | Criar — `ALTER TABLE service_orders ADD COLUMN art_asset_id uuid` |
-
-### Detalhes técnicos
-
-- **Carregar arquivo do DAM como `File`**: `fetch(signedUrl) → blob → new File([blob], asset.name, { type: asset.mime_type })` — assim o pipeline de upload existente (`handleLogoUpload`/`handleArtUpload`) processa sem mudanças
-- **RBAC**: picker só lista assets que o usuário pode SELECT (RLS já garante via `is_member_of`)
-- **Performance**: `useAssets` paginado evita carregar 1000+ assets de uma vez
-- **A11y**: dialog com foco no campo de busca ao abrir; ESC fecha
-- **i18n**: textos em pt-BR seguindo padrão do app
+| `src/features/dam/lib/color-contrast.ts` | Criar — utilitários WCAG |
+| `src/features/dam/lib/google-fonts-loader.ts` | Criar — hook `useGoogleFont` |
+| `src/features/dam/lib/brand-kit-pdf.ts` | Criar — gerador PDF |
+| `src/features/dam/components/BrandPreviewCard.tsx` | Editar — copy hex + badge contraste + Google Fonts |
+| `src/features/dam/components/BrandApplicationPreview.tsx` | Criar — preview avançado |
+| `src/features/dam/components/RuleChips.tsx` | Criar — chips Do/Don't |
+| `src/features/dam/pages/BrandGuidelinesPage.tsx` | Editar — abas de preview, botão Exportar PDF, RuleChips |
 
 ### Critérios de aceite
 
-- Botão "Escolher do DAM" aparece no Mockup Studio (seção logo) e na Service Order (campo arte)
-- Modal abre com filtro de tipo já aplicado conforme o contexto (logo/art)
-- Busca, tags, cliente e paginação funcionam dentro do modal
-- Selecionar um asset injeta o arquivo no editor/formulário sem reload
-- OS criada via DAM grava `art_asset_id`; OS criada via upload manual mantém `art_asset_id = null`
-- Bucket privado é acessado via signed URL (sem 403)
+- Click em uma cor copia hex e mostra toast
+- Cada cor tem badge "AA"/"AAA"/"FAIL" indicando contraste sobre branco
+- Fontes do Google Fonts carregam de verdade no preview
+- Aba "Aplicação" mostra header + product card simulados
+- Botão "Exportar PDF" gera arquivo `brand-kit-{cliente}.pdf`
+- Chips de Do/Don't são deletáveis individualmente
 
