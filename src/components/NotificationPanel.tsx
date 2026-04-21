@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Bell, CheckCheck, Trash2, ClipboardList, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bell, CheckCheck, Trash2, ClipboardList, ArrowRight, ShieldAlert } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
@@ -25,6 +26,10 @@ function formatTime(dateStr: string): string {
 }
 
 function getEventLabel(n: Notification): string {
+  if (n.eventType === "audit_alert") {
+    // newStatus = "INSERT em <tabela>", productName = nome da regra
+    return n.newStatus;
+  }
   if (n.eventType === "os_created") {
     return `Nova OS criada`;
   }
@@ -41,9 +46,11 @@ function getStatusDot(status: string): string {
 const NotificationItem = ({
   notification,
   onMarkRead,
+  onNavigate,
 }: {
   notification: Notification;
   onMarkRead: (id: string) => void;
+  onNavigate: (n: Notification) => void;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: -4 }}
@@ -51,29 +58,52 @@ const NotificationItem = ({
     exit={{ opacity: 0, x: -20 }}
     role="listitem"
     tabIndex={0}
+    data-testid={`notification-item-${notification.id}`}
+    data-event-type={notification.eventType}
     aria-label={`OS ${notification.osNumber}${notification.productName ? ` — ${notification.productName}` : ""}: ${getEventLabel(notification)}${notification.read ? "" : " (não lida)"}`}
     onKeyDown={(e) => {
-      if ((e.key === "Enter" || e.key === " ") && !notification.read) {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        onMarkRead(notification.id);
+        if (!notification.read) onMarkRead(notification.id);
+        onNavigate(notification);
       }
     }}
     className={cn(
       "flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       notification.read
         ? "opacity-60 hover:opacity-80"
-        : "bg-primary/5 hover:bg-primary/10"
+        : notification.eventType === "audit_alert"
+          ? "bg-warning/5 hover:bg-warning/10"
+          : "bg-primary/5 hover:bg-primary/10"
     )}
-    onClick={() => !notification.read && onMarkRead(notification.id)}
+    onClick={() => {
+      if (!notification.read) onMarkRead(notification.id);
+      onNavigate(notification);
+    }}
   >
     <div className="mt-0.5 shrink-0" aria-hidden="true">
-      <ClipboardList className={cn("w-4 h-4", getStatusDot(notification.newStatus))} />
+      {notification.eventType === "audit_alert" ? (
+        <ShieldAlert className="w-4 h-4 text-warning" />
+      ) : (
+        <ClipboardList className={cn("w-4 h-4", getStatusDot(notification.newStatus))} />
+      )}
     </div>
     <div className="flex-1 min-w-0">
       <p className="text-xs font-medium text-foreground truncate">
-        OS {notification.osNumber}
-        {notification.productName && (
-          <span className="text-muted-foreground font-normal"> — {notification.productName}</span>
+        {notification.eventType === "audit_alert" ? (
+          <>
+            <span className="text-warning">Alerta</span>
+            {notification.productName && (
+              <span className="text-muted-foreground font-normal"> — {notification.productName}</span>
+            )}
+          </>
+        ) : (
+          <>
+            OS {notification.osNumber}
+            {notification.productName && (
+              <span className="text-muted-foreground font-normal"> — {notification.productName}</span>
+            )}
+          </>
         )}
       </p>
       <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -84,7 +114,13 @@ const NotificationItem = ({
     <div className="flex flex-col items-end gap-1 shrink-0">
       <span className="text-[10px] text-muted-foreground">{formatTime(notification.createdAt)}</span>
       {!notification.read && (
-        <span className="w-2 h-2 rounded-full bg-primary" aria-hidden="true" />
+        <span
+          className={cn(
+            "w-2 h-2 rounded-full",
+            notification.eventType === "audit_alert" ? "bg-warning" : "bg-primary",
+          )}
+          aria-hidden="true"
+        />
       )}
     </div>
   </motion.div>
@@ -93,6 +129,26 @@ const NotificationItem = ({
 const NotificationPanel = () => {
   const { notifications, unreadCount, markRead, markAllRead, clearAll } = useNotifications();
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleNavigate = (n: Notification) => {
+    setOpen(false);
+    if (n.eventType === "audit_alert") {
+      // newStatus formato: "INSERT em <table>" ; oldStatus: <table>
+      const params = new URLSearchParams();
+      const m = /^([A-Z]+) em (.+)$/.exec(n.newStatus);
+      if (m) {
+        params.set("action", m[1]);
+        params.set("table", m[2]);
+      } else if (n.oldStatus) {
+        params.set("table", n.oldStatus);
+      }
+      const q = params.toString();
+      navigate(q ? `/audit?${q}` : "/audit");
+    } else if (n.osId) {
+      navigate(`/service-orders/${n.osId}`);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -120,6 +176,7 @@ const NotificationPanel = () => {
         className="w-80 sm:w-96 p-0 overflow-hidden"
         role="dialog"
         aria-label="Painel de notificações"
+        data-testid="notification-panel"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -160,6 +217,7 @@ const NotificationPanel = () => {
                   key={n.id}
                   notification={n}
                   onMarkRead={markRead}
+                  onNavigate={handleNavigate}
                 />
               ))}
             </AnimatePresence>

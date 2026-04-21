@@ -114,6 +114,59 @@ export type Database = {
           },
         ]
       }
+      audit_alert_rules: {
+        Row: {
+          actions: string[]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          table_names: string[]
+          target_user_id: string | null
+          updated_at: string
+          user_id: string
+          value_key: string | null
+          value_query: string | null
+        }
+        Insert: {
+          actions?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          table_names?: string[]
+          target_user_id?: string | null
+          updated_at?: string
+          user_id: string
+          value_key?: string | null
+          value_query?: string | null
+        }
+        Update: {
+          actions?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          table_names?: string[]
+          target_user_id?: string | null
+          updated_at?: string
+          user_id?: string
+          value_key?: string | null
+          value_query?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_alert_rules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
