@@ -566,11 +566,27 @@ export default function DamLibraryPage() {
             onPressedChange={setIncludeArchived}
             size="sm"
             variant="outline"
-            aria-label="Mostrar arquivados"
-            title="Mostrar arquivados"
+            aria-label={
+              includeArchived
+                ? "Ocultar itens arquivados (preferência lembrada entre sessões)"
+                : "Mostrar itens arquivados (preferência lembrada entre sessões)"
+            }
+            title={
+              includeArchived
+                ? "Ocultando para esconder. Sua preferência fica salva entre sessões."
+                : "Mostrar arquivados. Sua preferência fica salva entre sessões."
+            }
+            data-testid="dam-archived-toggle"
+            data-state-persisted="true"
           >
             <Archive className="w-4 h-4 mr-2" />
             Arquivados
+            {includeArchived && (
+              <span
+                aria-hidden="true"
+                className="ml-2 inline-flex h-1.5 w-1.5 rounded-full bg-primary animate-pulse"
+              />
+            )}
           </Toggle>
           <ToggleGroup
             type="single"
