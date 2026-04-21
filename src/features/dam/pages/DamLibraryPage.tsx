@@ -75,12 +75,27 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? "");
   const debouncedSearch = useDebounce(search, 300);
-  const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
-  const [clientId, setClientId] = useState<string | "all" | "none">("all");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>(() => {
+    const raw = searchParams.get("type");
+    if (!raw) return [];
+    const valid: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
+    return raw.split(",").filter((t): t is AssetType => valid.includes(t as AssetType));
+  });
+  const [clientId, setClientId] = useState<string | "all" | "none">(() => {
+    const raw = searchParams.get("client");
+    if (!raw) return "all";
+    if (raw === "all" || raw === "none") return raw;
+    return raw;
+  });
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    const raw = searchParams.get("tags");
+    return raw ? raw.split(",").filter(Boolean) : [];
+  });
   const [tagsMode, setTagsMode] = useState<"all" | "any">(() => {
+    const fromUrl = searchParams.get("tagsMode");
+    if (fromUrl === "all" || fromUrl === "any") return fromUrl;
     if (typeof window === "undefined") return "all";
     return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
   });
@@ -91,7 +106,11 @@ export default function DamLibraryPage() {
     if (fromUrl === "0") return false;
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
   });
-  const [sort, setSort] = useState<SortValue>("created_desc");
+  const [sort, setSort] = useState<SortValue>(() => {
+    const fromUrl = searchParams.get("sort") as SortValue | null;
+    if (fromUrl && SORT_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    return "created_desc";
+  });
   const [page, setPage] = useState<number>(() => {
     const fromUrl = Number(searchParams.get("page"));
     return Number.isFinite(fromUrl) && fromUrl > 0 ? fromUrl : 1;
