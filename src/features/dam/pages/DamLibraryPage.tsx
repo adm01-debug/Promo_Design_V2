@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -24,7 +24,7 @@ import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
 import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
 import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
-import { LAST_ASSET_KEY, LAST_ASSET_TTL_MS } from "./DamPreviewPage";
+import { readLastPreviewAsset, clearLastPreviewAsset } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
@@ -146,6 +146,10 @@ export default function DamLibraryPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const quickPreview = useQuickPreview();
+
+  // "Continue where you left off" — last asset viewed in /dam/preview.
+  const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(() => readLastPreviewAsset());
+  const highlightedRef = useRef<string | null>(null);
 
   const hasActiveFilters =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
@@ -297,6 +301,36 @@ export default function DamLibraryPage() {
   const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
 
+  const lastPreviewAsset = useMemo(
+    () => (lastPreviewAssetId ? displayedAssets.find((a) => a.id === lastPreviewAssetId) ?? null : null),
+    [displayedAssets, lastPreviewAssetId],
+  );
+
+  // Scroll to & briefly highlight the last previewed asset once it's in the loaded list.
+  useEffect(() => {
+    if (!lastPreviewAssetId) return;
+    if (isLoading) return;
+    if (highlightedRef.current === lastPreviewAssetId) return;
+    if (!lastPreviewAsset) return;
+
+    const el = document.querySelector<HTMLElement>(`[data-asset-id="${lastPreviewAssetId}"]`);
+    if (!el) return;
+
+    highlightedRef.current = lastPreviewAssetId;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "transition-all");
+    const t = window.setTimeout(() => {
+      el.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background");
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, [lastPreviewAssetId, lastPreviewAsset, isLoading]);
+
+  const dismissLastPreview = () => {
+    clearLastPreviewAsset();
+    setLastPreviewAssetId(null);
+    highlightedRef.current = null;
+  };
+
   const archivedCount = useMemo(
     () => displayedAssets.filter((a) => a.is_archived).length,
     [displayedAssets],
@@ -382,15 +416,8 @@ export default function DamLibraryPage() {
                 if (selectedTags.length > 1) sp.set("tagsMode", tagsMode);
                 if (includeArchived) sp.set("archived", "1");
                 if (sort !== "created_desc") sp.set("sort", sort);
-                try {
-                  const raw = localStorage.getItem(LAST_ASSET_KEY);
-                  if (raw) {
-                    const parsed = JSON.parse(raw) as { id?: string; ts?: number };
-                    if (parsed?.id && typeof parsed.ts === "number" && Date.now() - parsed.ts < LAST_ASSET_TTL_MS) {
-                      sp.set("asset", parsed.id);
-                    }
-                  }
-                } catch { /* ignore */ }
+                const lastId = readLastPreviewAsset();
+                if (lastId) sp.set("asset", lastId);
                 const qs = sp.toString();
                 return `/dam/preview${qs ? `?${qs}` : ""}`;
               })()}
@@ -405,6 +432,41 @@ export default function DamLibraryPage() {
           )}
         </div>
       </header>
+
+      {lastPreviewAsset && (
+        <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+          <History className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground">Continuar de onde parou:</span>
+          <span className="font-medium truncate">{lastPreviewAsset.name}</span>
+          <Button variant="outline" size="sm" asChild className="ml-auto h-7">
+            <Link
+              to={(() => {
+                const sp = new URLSearchParams();
+                if (debouncedSearch.trim()) sp.set("q", debouncedSearch.trim());
+                if (assetTypes.length > 0) sp.set("type", assetTypes.join(","));
+                if (clientId !== "all") sp.set("client", clientId);
+                if (selectedTags.length > 0) sp.set("tags", selectedTags.join(","));
+                if (selectedTags.length > 1) sp.set("tagsMode", tagsMode);
+                if (includeArchived) sp.set("archived", "1");
+                if (sort !== "created_desc") sp.set("sort", sort);
+                sp.set("asset", lastPreviewAsset.id);
+                return `/dam/preview?${sp.toString()}`;
+              })()}
+            >
+              <Eye className="w-3.5 h-3.5 mr-1.5" /> Reabrir no preview
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={dismissLastPreview}
+            aria-label="Descartar"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex flex-col max-w-xs w-full">

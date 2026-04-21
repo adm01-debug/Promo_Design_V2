@@ -17,6 +17,7 @@ export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }
   return (
     <Card
       role={onClick ? "button" : undefined}
+      data-asset-id={asset.id}
       onClick={onClick}
       onMouseEnter={onHover}
       onMouseLeave={onHoverEnd}
