@@ -1,77 +1,99 @@
 
 
-## Upload drag-and-drop + Versionamento de Assets
+## Busca, filtros e paginação otimizados para o DAM
 
-Estender o fluxo de upload do DAM com drag-and-drop completo, tags multi-chip, e capacidade de criar **nova versão** de um asset existente preservando `parent_asset_id` e incrementando `version`.
+Tornar a busca da biblioteca **server-side** com índices GIN para tags e trigram para nome/descrição, paginação real (cursor/offset) e ordenação configurável.
 
-### O que vai mudar
+### Migração de banco
 
-**1. `AssetUploadDialog` — refatorar para drag-and-drop premium**
-- Dropzone real com eventos `onDragEnter/Leave/Over/Drop` (estado visual de hover ativo)
-- Lista de arquivos selecionados com thumbnail-preview, nome, tamanho, e botão remover por arquivo
-- Validação de tamanho (max 20MB) e tipos (imagem/PDF/SVG/AI/PSD)
-- Campo de **tags como chips** (input + Enter/vírgula adiciona, X remove) em vez do textarea CSV atual
-- Sugestão de tags já existentes na organização (autocomplete via Popover/Command)
-- Progresso individual por arquivo durante upload em lote
-- Modo dual: **"Novos assets"** (default) ou **"Nova versão de X"** (quando vem de um asset existente)
+Adicionar extensão e índices em `assets`:
 
-**2. Hook `useAssetUpload` — suportar versionamento**
-- Novo parâmetro opcional `parentAsset?: Asset` em `UploadOptions`
-- Quando presente:
-  - `parent_asset_id = parentAsset.id` (ou raiz da cadeia: `parent_asset_id ?? id`)
-  - `version = parentAsset.version + 1`
-  - Herda `asset_type`, `client_id`, `tags` do pai (editáveis no diálogo)
-  - Nome default: `"{nome original} v{N}"`
-- Mantém geração de thumbnail e extração de cores dominantes existentes
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-**3. `AssetDetailDrawer` — botão "Nova versão"**
-- Visível para roles `owner/admin/designer`
-- Abre `AssetUploadDialog` em modo versão, pré-populando metadados do asset atual
-- Após upload, drawer atualiza para mostrar a nova versão
+-- Tags: busca por contains/overlap em arrays
+CREATE INDEX IF NOT EXISTS idx_assets_tags_gin
+  ON public.assets USING GIN (tags);
 
-**4. Nova aba "Histórico de versões" no `AssetDetailDrawer`**
-- Lista todas as versões do asset (query: `parent_asset_id = root OR id = root`)
-- Mostra versão, data, autor, thumbnail; click em versão antiga abre seu próprio drawer
-- Badge "atual" na versão mais recente
+-- Nome e descrição: ILIKE rápido via trigram
+CREATE INDEX IF NOT EXISTS idx_assets_name_trgm
+  ON public.assets USING GIN (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_assets_description_trgm
+  ON public.assets USING GIN (description gin_trgm_ops);
 
-**5. Hook `use-assets` — nova query helper**
-- `useAssetVersions(rootAssetId)` retorna todas as versões ordenadas por `version DESC`
-- Resolve a raiz da cadeia (se o asset clicado já é uma versão, sobe até `parent_asset_id IS NULL`)
+-- Filtros frequentes
+CREATE INDEX IF NOT EXISTS idx_assets_org_created
+  ON public.assets (organization_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_assets_org_client
+  ON public.assets (organization_id, client_id);
+CREATE INDEX IF NOT EXISTS idx_assets_org_type
+  ON public.assets (organization_id, asset_type);
+CREATE INDEX IF NOT EXISTS idx_assets_archived
+  ON public.assets (organization_id, is_archived);
+```
 
-**6. Componente novo: `TagChipsInput`**
-- Reutilizável: input com chips, sugestões, validação
-- Usado no upload e no `AssetDetailDrawer` (substituir editor de tags atual se houver)
+### Hook `useAssets` — paginação + ordenação server-side
+
+Estender `AssetFilters`:
+
+```ts
+interface AssetFilters {
+  clientId?: string | null;
+  assetType?: AssetType | "all";
+  tags?: string[];
+  search?: string;
+  includeArchived?: boolean;
+  sortBy?: "created_at" | "name" | "file_size" | "version";
+  sortDir?: "asc" | "desc";
+  page?: number;       // 1-based
+  pageSize?: number;   // default 24
+}
+```
+
+Mudanças no `queryFn`:
+- `search` aplica `or("name.ilike.%q%,description.ilike.%q%")` no servidor (trigram)
+- `tags` continua usando `.contains("tags", filters.tags)` (índice GIN)
+- Adicionar `.range(from, to)` calculado de `page`/`pageSize`
+- Usar `.select("*", { count: "exact" })` para devolver total
+- Aplicar `.order(sortBy, { ascending: sortDir === "asc" })`
+
+Retorno do hook:
+```ts
+{ assets, total, page, pageSize, totalPages, isLoading, ...mutations }
+```
+
+### `DamLibraryPage` — UI de busca/sort/paginação
+
+- **Busca debounced** (300ms) usando `useDeferredValue` ou um `useDebounce` simples antes de mandar pro filtro
+- **Sort dropdown** ao lado dos filtros: "Mais recentes", "Mais antigos", "Nome A→Z", "Nome Z→A", "Maior arquivo", "Versão"
+- **Paginação** ao final usando o componente `pagination.tsx` já existente (Previous, números 1..N com ellipsis, Next)
+- Reset automático para página 1 quando qualquer filtro/busca/sort muda
+- Contador "Mostrando 1–24 de 137 assets"
+- Persistir `pageSize` em `localStorage["dam-page-size"]` (24/48/96)
 
 ### Arquivos a criar/editar
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/dam/components/AssetUploadDialog.tsx` | Reescrever — dropzone, lista de arquivos, modo versão |
-| `src/features/dam/components/TagChipsInput.tsx` | Criar — input de tags com chips + sugestões |
-| `src/features/dam/components/AssetVersionHistory.tsx` | Criar — aba de histórico de versões |
-| `src/features/dam/components/AssetDetailDrawer.tsx` | Editar — botão "Nova versão" + tab versions |
-| `src/features/dam/hooks/use-asset-upload.ts` | Editar — suportar `parentAsset` e versão |
-| `src/features/dam/hooks/use-assets.ts` | Editar — adicionar `useAssetVersions` helper |
-| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — passar callback de "Nova versão" para o drawer |
+| `supabase/migrations/<ts>_assets_search_indexes.sql` | Criar — extensão pg_trgm + índices GIN/btree |
+| `src/features/dam/hooks/use-assets.ts` | Editar — paginação, sort, busca server-side, count |
+| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — debounce, sort dropdown, pagination, page-size |
+| `src/hooks/use-debounce.ts` | Criar (se não existir) — `useDebounce(value, ms)` |
 
 ### Detalhes técnicos
 
-- **Drag-and-drop**: prevenir default em `dragover` para habilitar drop; estado `isDragging` controla classe visual (`border-primary bg-primary/5`)
-- **Tag suggestions**: derivar de `assets[].tags` (já carregados via `useAssets`); passar como prop `suggestions: string[]`
-- **Versionamento — raiz**: se `parentAsset.parent_asset_id` existe, usar essa raiz; senão usar `parentAsset.id` (cadeia plana, todas versões apontam para o original)
-- **Query de versões**: `.or('id.eq.{root},parent_asset_id.eq.{root}')` ordenada por `version DESC`
-- **Thumbnail e cores**: pipeline `processImage()` existente é reutilizado sem mudanças
-- **Audit log**: já é gravado automaticamente via trigger `write_audit_log` em `assets`
-- **RBAC**: botão "Nova versão" e dropzone só aparecem com `can(["owner","admin","designer"])`
-- **Limites**: max 10 arquivos por batch, 20MB cada, tipos validados antes do upload
+- **Compatibilidade**: `useAssetVersions` e `AssetUploadDialog` continuam usando `useAssets(orgId, {})` sem paginação → manter `pageSize` opcional (default sem paginar quando ausente)
+- **Tag suggestions**: hoje derivadas de `assets[]`; para preservar UX após paginar, fazer query separada `.select("tags").eq("organization_id", orgId)` agregada client-side, ou aceitar limitação na página atual (decidir: fazer query leve agregada)
+- **Performance**: trigram exige no mínimo 3 chars; busca <3 cai para LIKE simples
+- **Realtime**: invalidação por `["assets", orgId]` (raiz) já cobre todas variantes paginadas
+- **A11y**: pagination com `aria-current="page"` (já vem do componente)
 
 ### Critérios de aceite
 
-- Arrastar arquivos sobre o diálogo destaca a dropzone e aceita o drop
-- Cada arquivo na lista mostra preview, nome, tamanho e botão para remover
-- Tags são chips clicáveis com sugestões da org (autocomplete)
-- Click em "Nova versão" no drawer abre o upload pré-configurado
-- Nova versão grava `parent_asset_id` correto e `version = anterior + 1`
-- Aba "Versões" lista todas as versões do asset com badge "atual"
-- Upload em lote mostra progresso e tolera falhas individuais (uma falha não cancela as outras)
+- Busca por nome/descrição executa no servidor com trigram (verificável no Network tab)
+- Filtro de tags usa índice GIN (`EXPLAIN` mostra `Bitmap Index Scan on idx_assets_tags_gin`)
+- Paginação navega sem perder filtros/busca/sort
+- Mudar filtro reseta para página 1
+- Sort persiste por sessão (mesma página)
+- Performance: lista com 1000+ assets carrega <500ms na primeira página
 
