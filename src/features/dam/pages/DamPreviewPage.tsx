@@ -155,7 +155,7 @@ export default function DamPreviewPage() {
           Pré-visualização rápida
         </div>
         <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → navegar · Enter detalhes · Esc voltar
+          ← / → navegar · Enter detalhes · Z zoom · Esc voltar
         </div>
       </header>
 
