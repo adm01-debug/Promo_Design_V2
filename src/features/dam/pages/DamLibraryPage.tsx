@@ -42,6 +42,7 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
+const PAGE_KEY = "dam-page";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 const PAGINATION_MODE_KEY = "dam-pagination-mode";
