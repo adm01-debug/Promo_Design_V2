@@ -208,7 +208,11 @@ export default function DamLibraryPage() {
         onOpenChange={setUploadOpen}
         organizationId={currentOrgId}
       />
-      <AssetDetailDrawer asset={selected} onClose={() => setSelected(null)} />
+      <AssetDetailDrawer
+        asset={selected}
+        onClose={() => setSelected(null)}
+        onSelectAsset={(a) => setSelected(a)}
+      />
     </div>
   );
 }

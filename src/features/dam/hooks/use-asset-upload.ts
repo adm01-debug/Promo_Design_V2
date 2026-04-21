@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAssets, type AssetType } from "./use-assets";
+import { useAssets, type Asset, type AssetType } from "./use-assets";
 
 export interface UploadOptions {
   organizationId: string;
@@ -10,6 +10,8 @@ export interface UploadOptions {
   name?: string;
   description?: string;
   parentAssetId?: string | null;
+  /** When provided, upload becomes a new version of this asset. */
+  parentAsset?: Asset | null;
 }
 
 interface ImageMeta {
@@ -117,12 +119,20 @@ export function useAssetUpload(organizationId: string | null) {
       }
       setProgress(85);
 
+      // Versioning: chain root = parent.parent_asset_id ?? parent.id
+      const parent = options.parentAsset ?? null;
+      const parentRootId = parent ? (parent.parent_asset_id ?? parent.id) : null;
+      const nextVersion = parent ? parent.version + 1 : 1;
+      const versionedName =
+        options.name ??
+        (parent ? `${parent.name.replace(/\s+v\d+$/, "")} v${nextVersion}` : file.name);
+
       const asset = await create.mutateAsync({
         organization_id: options.organizationId,
-        client_id: options.clientId ?? null,
-        name: options.name ?? file.name,
+        client_id: options.clientId ?? parent?.client_id ?? null,
+        name: versionedName,
         description: options.description ?? null,
-        asset_type: options.assetType,
+        asset_type: options.assetType ?? parent?.asset_type ?? "other",
         file_path: filePath,
         file_size: file.size,
         mime_type: file.type,
@@ -130,8 +140,9 @@ export function useAssetUpload(organizationId: string | null) {
         height: meta?.height ?? null,
         dominant_colors: meta?.dominantColors ?? [],
         thumbnail_path: thumbnailPath,
-        tags: options.tags ?? [],
-        parent_asset_id: options.parentAssetId ?? null,
+        tags: options.tags ?? parent?.tags ?? [],
+        parent_asset_id: parentRootId ?? options.parentAssetId ?? null,
+        version: nextVersion,
       });
       setProgress(100);
       return asset;
