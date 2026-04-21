@@ -112,3 +112,23 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Templates | `/templates` | `src/pages/Templates.tsx` | ✅ |
 | Editor genérico | `/editor` | `src/pages/Editor.tsx` | ✅ |
 | 404 animado | `*` | `src/pages/NotFound.tsx` | ✅ |
+
+## 10. Backlog consolidado (rotas planejadas)
+
+Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / desbloqueia fluxos) ao fim (refinamentos).
+
+| # | Funcionalidade | Rota proposta | Status | Justificativa |
+|---|---|---|---|---|
+| 1 | Coleções/Pastas no DAM | `/dam/collections` | 🔴 | Organização hierárquica é gap crítico em libraries grandes. |
+| 2 | Aprovação de cliente (link público) | `/mockup/approve/:token` | 🔴 | Fecha o loop de homologação sem exigir login do cliente. |
+| 3 | Brand Guidelines — share público | `/brand/public/:token` | 🔴 | Permite enviar manual de marca sem expor a plataforma. |
+| 4 | Magic Up — Batch jobs | `/magicup/jobs` | 🔴 | Visibilidade de fila para gerações longas em lote. |
+| 5 | Templates de mockup salvos | `/mockup/templates` | 🔴 | Reuso de configurações; hoje só existe `/templates` genérico. |
+| 6 | Comparador de versões de mockup | `/mockup/compare` | 🔴 | Facilita revisão A/B entre iterações. |
+| 7 | Busca avançada DAM (saved searches) | `/dam/search` | 🔴 | Filtros complexos persistidos para workflows recorrentes. |
+| 8 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | 🔴 | Auditoria de mudanças no manual de marca. |
+| 9 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | Hoje hardcoded; bloqueia personalização por cliente. |
+| 10 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | Métricas de uso e produtividade além dos widgets atuais. |
+| 11 | Lixeira DAM | `/dam/trash` | 🟡 | Existe filtro `archived`, falta UI dedicada com restore. |
+| 12 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | Existe filtro em `/magicup/history`, falta galeria dedicada. |
+| 13 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | Hoje layout é editável inline; falta tela de gestão. |
