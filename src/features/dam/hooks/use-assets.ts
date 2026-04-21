@@ -62,6 +62,12 @@ export interface AssetInsert {
   version?: number;
 }
 
+export const MIN_SEARCH_LENGTH = 3;
+
+function sanitizeSearchTerm(term: string): string {
+  return term.replace(/[%,()]/g, " ").trim();
+}
+
 export function useAssets(organizationId: string | null, filters: AssetFilters = {}) {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -76,14 +82,15 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       const page = Math.max(1, filters.page ?? 1);
       const pageSize = filters.pageSize ?? 0;
       const searchTerm = filters.search?.trim() ?? "";
-      const useRelevance = sortBy === "relevance" && searchTerm.length > 0;
+      const effectiveSearch = searchTerm.length >= MIN_SEARCH_LENGTH ? sanitizeSearchTerm(searchTerm) : "";
+      const useRelevance = sortBy === "relevance" && effectiveSearch.length > 0;
 
       if (useRelevance) {
         const limit = hasPagination ? pageSize : 1000;
         const offset = hasPagination ? (page - 1) * pageSize : 0;
         const rpcArgs: Record<string, unknown> = {
           _org_id: organizationId!,
-          _query: searchTerm,
+          _query: effectiveSearch,
           _tags_mode: filters.tagsMode ?? "all",
           _include_archived: filters.includeArchived ?? false,
           _limit: limit,
@@ -126,9 +133,8 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
           q = q.contains("tags", filters.tags);
         }
       }
-      if (searchTerm) {
-        const term = searchTerm.replace(/[%,]/g, " ");
-        q = q.or(`name.ilike.%${term}%,description.ilike.%${term}%`);
+      if (effectiveSearch) {
+        q = q.or(`name.ilike.%${effectiveSearch}%,description.ilike.%${effectiveSearch}%`);
       }
       if (hasPagination) {
         const from = (page - 1) * pageSize;
