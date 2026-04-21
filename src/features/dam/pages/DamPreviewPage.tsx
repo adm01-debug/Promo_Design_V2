@@ -13,8 +13,8 @@ import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 
-const LAST_ASSET_KEY = "dam-last-preview-asset";
-const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
+export const LAST_ASSET_KEY = "dam-last-preview-asset";
+export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
 
 export default function DamPreviewPage() {
   const navigate = useNavigate();
