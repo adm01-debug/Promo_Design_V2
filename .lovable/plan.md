@@ -1,49 +1,52 @@
 
 
-## Retomar último asset e filtros ao voltar do preview para a biblioteca
+## Sincronizar asset ativo com `?asset=` em navegação back/forward
 
-Hoje o preview já persiste em `localStorage` (`dam-last-preview-asset`) o último asset visto (com TTL de 24h) e o `useDamFilters` mantém os filtros entre preview e biblioteca via URL + `localStorage`. Falta a "ponte" na biblioteca: ao entrar em `/dam`, scrollar/destacar o card do último asset e expor um atalho rápido para reabrir o preview no mesmo asset.
+Hoje `DamPreviewPage` lê `?asset=` apenas no mount/quando `assets` muda, e escreve via `setSearchParams({ replace: true })` quando `activeIndex` muda. Isso quebra a navegação back/forward do navegador: ao voltar, a URL muda mas o `activeIndex` não reage porque o efeito de leitura depende de `assets` (referência), não de `assetIdParam`.
 
 ### Mudanças
 
-**Editar: `src/features/dam/pages/DamLibraryPage.tsx`**
-- Importar `LAST_ASSET_KEY` e `LAST_ASSET_TTL_MS` de `DamPreviewPage`.
-- Ler do `localStorage` na montagem; se válido (não expirado), guardar em estado `lastPreviewAssetId: string | null`.
-- Após `assets` carregarem (efeito que dispara quando `isLoading === false` e há `lastPreviewAssetId`):
-  - Localizar o card via `data-asset-id={a.id}` (adicionar atributo no `AssetCard` e nas linhas do `AssetListView`).
-  - `el.scrollIntoView({ behavior: "smooth", block: "center" })`.
-  - Aplicar classe temporária `ring-2 ring-primary` por ~2s para destacar (`setTimeout` limpa).
-  - Limpar o id após o destaque para não repetir em re-renders subsequentes (estado local, sem apagar o `localStorage`).
-- Adicionar pequeno banner/chip no topo da lista (logo abaixo do header) quando `lastPreviewAssetId` existe e está nos resultados:
-  - Texto: "Continuar de onde parou: <nome do asset>" + botão `Reabrir no preview` (link para `/dam/preview?asset=<id>{queryString sem ?}`) + botão `X` para descartar (apaga o `localStorage` e esconde).
-
-**Editar: `src/features/dam/components/AssetCard.tsx`**
-- Adicionar `data-asset-id={asset.id}` no elemento raiz para permitir o `querySelector`.
-
-**Editar: `src/features/dam/components/AssetListView.tsx`**
-- Adicionar `data-asset-id={a.id}` na `<TableRow>` para o mesmo propósito.
-
 **Editar: `src/features/dam/pages/DamPreviewPage.tsx`**
-- Exportar uma função utilitária `readLastPreviewAsset(): string | null` (lê e valida TTL) para reutilização no `DamLibraryPage` em vez de duplicar a lógica de parse/expiração. Manter `LAST_ASSET_KEY` e `LAST_ASSET_TTL_MS` exportados.
+
+1. **Reagir a mudanças de `?asset=` (back/forward)**
+   - Trocar o efeito de restauração para depender de `assetIdParam` explicitamente:
+     ```ts
+     useEffect(() => {
+       if (assets.length === 0) return;
+       if (!assetIdParam) return;
+       const idx = assets.findIndex((a) => a.id === assetIdParam);
+       if (idx >= 0 && idx !== activeIndex) setActiveIndex(idx);
+     }, [assetIdParam, assets, activeIndex]);
+     ```
+   - Manter um efeito separado para o caso "sem `?asset=` e lista carregada" → cair no índice 0 só na primeira carga (guarda com `useRef` `didInitRef` para não sobrescrever navegação back/forward).
+
+2. **Usar `pushState` em mudanças explícitas de usuário, `replaceState` em sync passivo**
+   - Ao navegar via setas/teclado/click no thumb (ações deliberadas) → `setSearchParams(next)` SEM `{ replace: true }` para que back/forward do navegador percorra os assets visitados.
+   - Ao apenas restaurar de `?asset=` ou ajustar índice por clamp → continuar com `{ replace: true }` para não poluir histórico.
+   - Refatorar `goPrev`/`goNext` e `onSelect` do thumb strip para chamar uma função `selectAssetAt(idx, { pushHistory: true })` que atualiza `activeIndex` e a URL com push.
+   - O efeito de "sync URL ← activeAsset" passa a rodar só quando a fonte for state interno (clamp ou init), não em resposta a navegação back/forward.
+
+3. **Indicador visual de sincronização**
+   - Adicionar um pequeno chip no header ao lado de "Pré-visualização rápida" mostrando posição: `{activeIndex + 1} / {assets.length}` + ícone `Link2` com tooltip "Sincronizado com URL".
+   - Quando `assetIdParam` existe mas não está na lista atual (filtro mudou e excluiu o asset), mostrar chip de aviso `AlertCircle` com tooltip "Asset fora dos filtros atuais — mostrando primeiro disponível".
+
+4. **Persistência cross-page**
+   - O `localStorage` `dam-last-preview-asset` já é atualizado por efeito quando `activeAsset` muda — manter como está. Isso garante que ao sair do `/dam/preview`, ir para outra página e voltar via back, tanto a URL (`?asset=`) quanto o `localStorage` estão consistentes.
+   - Adicionar listener `popstate` apenas para registrar telemetria leve (opcional) — não necessário para o fluxo, pois `useSearchParams` já reflete mudanças de history.
 
 ### Comportamento
 
-- Filtros já são restaurados automaticamente (via `useDamFilters` + URL/localStorage) — sem mudanças necessárias.
-- Ao abrir `/dam` após visitar `/dam/preview?asset=X`:
-  - Banner "Continuar de onde parou: <nome>" aparece se X estiver entre os assets carregados.
-  - O card de X é scrollado para o centro e destacado por ~2s.
-  - Clicar em "Reabrir no preview" volta para `/dam/preview?asset=X&...filtros`.
-  - Clicar no X do banner descarta o estado e some.
-- Se o asset não estiver mais nos resultados (filtro mudou, asset arquivado/excluído), o banner não aparece e nada é destacado.
-- TTL de 24h continua valendo: depois disso o id é ignorado.
-- Se o usuário rolar/clicar antes do destaque, nada quebra; o destaque é só visual.
+- Navegar com `←/→` ou clicar em thumbnails empilha entradas no histórico do navegador.
+- Botão "voltar" do navegador volta para o asset anterior dentro do preview, ou para a página anterior se já estava no primeiro.
+- Sair de `/dam/preview?asset=X` → ir para `/catalog` → voltar (back) → restaura `/dam/preview?asset=X` com X como ativo (não cai no índice 0).
+- Chip de posição `{n}/{total}` + ícone Link2 sempre visível no header como indicador de sync.
+- Se o `?asset=` referenciar id que não está nos resultados (filtro divergente), chip de aviso aparece e o primeiro asset vira ativo.
 
 ### Critérios de aceite
 
-- Voltar de `/dam/preview` para `/dam` (via botão "Voltar à biblioteca" ou `Esc`) faz scroll automático até o último asset visto e o destaca por ~2s.
-- Banner "Continuar de onde parou" aparece com nome correto e botão para reabrir no preview com mesmos filtros.
-- Filtros (busca, tipo, cliente, tags, ordenação, arquivados) permanecem os mesmos sem redigitar.
-- Após 24h o estado expira e a página abre normal sem destaque/banner.
-- Se o asset não estiver na página atual de resultados, nada quebra (sem erro, sem banner).
-- Sem regressão em filtros, paginação, upload, drawer ou quick preview.
+- Setas/thumbs criam entradas no histórico; back/forward do navegador navega entre assets visitados.
+- Sair do preview e voltar via back restaura o asset correto (não o primeiro).
+- Mudar filtros não cria entradas extras no histórico (continua usando `replace`).
+- Chip `{n}/{total}` + ícone de link visível no header; chip de aviso quando `?asset=` referencia id ausente.
+- Sem regressão em atalhos (`Esc`, `Enter`, `Ctrl+Enter`, `M`, `Espaço`), modo Compare, drawer de detalhes ou filtros.
 
