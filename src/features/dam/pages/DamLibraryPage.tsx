@@ -263,16 +263,17 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-2 mr-2">
-            <Switch
-              id="archived-toggle"
-              checked={includeArchived}
-              onCheckedChange={setIncludeArchived}
-            />
-            <Label htmlFor="archived-toggle" className="text-xs cursor-pointer">
-              Arquivados
-            </Label>
-          </div>
+          <Toggle
+            pressed={includeArchived}
+            onPressedChange={setIncludeArchived}
+            size="sm"
+            variant="outline"
+            aria-label="Mostrar arquivados"
+            title="Mostrar arquivados"
+          >
+            <Archive className="w-4 h-4 mr-2" />
+            Arquivados
+          </Toggle>
           <ToggleGroup
             type="single"
             value={viewMode}
