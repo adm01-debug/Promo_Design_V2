@@ -64,6 +64,8 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Brand Guidelines do cliente | `/clients/:clientId/brand` | `src/features/dam/pages/BrandGuidelinesPage.tsx` | ✅ |
 | Resumo PDF do cliente | (lib) | `src/features/service-orders/lib/ClientSummaryPdf.ts` | ✅ |
 | Brand Kit PDF | (lib) | `src/features/dam/lib/brand-kit-pdf.ts` | ✅ |
+| Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | *(planejado)* | 🔴 |
+| Brand Guidelines — share público | `/brand/public/:token` | *(planejado)* | 🔴 |
 
 ## 6. DAM (Digital Asset Management)
 
@@ -74,6 +76,9 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Detalhe + audit trail | (drawer) | `src/features/dam/components/AssetDetailDrawer.tsx` | ✅ |
 | Versionamento | (componente) | `src/features/dam/components/AssetVersionHistory.tsx` | ✅ |
 | Upload com tags | (componente) | `src/features/dam/components/AssetUploadDialog.tsx` | ✅ |
+| Coleções/Pastas | `/dam/collections` | *(planejado)* | 🔴 |
+| Lixeira (assets arquivados) | `/dam/trash` | *(parcial via filtro `archived` em `DamLibraryPage.tsx`)* | 🟡 |
+| Busca avançada (saved searches) | `/dam/search` | *(planejado)* | 🔴 |
 
 ## 7. Magic Up (AI)
 
@@ -83,6 +88,9 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Galeria de prompts | `/magicup/prompts` | `src/features/magic-up/pages/MagicUpPrompts.tsx` | ✅ |
 | Histórico | `/magicup/history` | `src/features/magic-up/pages/MagicUpHistory.tsx` | ✅ |
 | Edge function AI | (backend) | `supabase/functions/mockup-ai/index.ts` | ✅ |
+| Favoritos (galeria dedicada) | `/magicup/favorites` | *(parcial via filtro em `/magicup/history`)* | 🟡 |
+| Batch jobs (status fila) | `/magicup/jobs` | *(planejado)* | 🔴 |
+| Estilos/presets gerenciáveis | `/magicup/styles` | *(planejado, hoje hardcoded em `MagicUpGenerate.tsx`)* | 🔴 |
 
 ## 8. Video Studio
 
