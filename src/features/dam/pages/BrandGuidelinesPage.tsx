@@ -20,7 +20,7 @@ import { useClients } from "@/features/clients/hooks/use-clients";
 import { useBrandGuidelines, type ColorEntry, type FontEntry } from "../hooks/use-brand-guidelines";
 import { useAssets, type Asset } from "../hooks/use-assets";
 import { AssetThumbnail } from "../components/AssetThumbnail";
-import { AssetPicker } from "../components/AssetPicker";
+import { AssetPicker } from "..";
 import { BrandPreviewCard } from "../components/BrandPreviewCard";
 import { BrandApplicationPreview } from "../components/BrandApplicationPreview";
 import { RuleChips } from "../components/RuleChips";

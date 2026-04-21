@@ -21,7 +21,7 @@ import {
 } from "@/features/service-orders";
 import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrderTopBar";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
-import type { Asset } from "@/features/dam/hooks/use-assets";
+import type { Asset } from "@/features/dam";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
