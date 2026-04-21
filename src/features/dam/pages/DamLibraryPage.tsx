@@ -349,6 +349,24 @@ export default function DamLibraryPage() {
               <List className="w-4 h-4" />
             </ToggleGroupItem>
           </ToggleGroup>
+          <ToggleGroup
+            type="single"
+            value={paginationMode}
+            onValueChange={(v) => {
+              if (!v) return;
+              setPaginationMode(v as PaginationMode);
+              setPage(1);
+              setAccumulated([]);
+            }}
+            size="sm"
+          >
+            <ToggleGroupItem value="pages" aria-label="Páginas" title="Paginação numerada">
+              1·2·3
+            </ToggleGroupItem>
+            <ToggleGroupItem value="loadmore" aria-label="Carregar mais" title="Carregar mais">
+              <ChevronDown className="w-4 h-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
