@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,6 +22,10 @@ import { useAssets, type Asset } from "../hooks/use-assets";
 import { AssetThumbnail } from "../components/AssetThumbnail";
 import { AssetPicker } from "../components/AssetPicker";
 import { BrandPreviewCard } from "../components/BrandPreviewCard";
+import { BrandApplicationPreview } from "../components/BrandApplicationPreview";
+import { RuleChips } from "../components/RuleChips";
+import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
+import { getAssetSignedUrl } from "../lib/asset-urls";
 import { toast } from "sonner";
 
 export default function BrandGuidelinesPage() {
@@ -66,6 +71,48 @@ export default function BrandGuidelinesPage() {
       notes: notes || null,
     });
     toast.success("Brand guidelines salvas");
+  };
+
+  const doList = doRules.split("\n").map((s) => s.trim()).filter(Boolean);
+  const dontList = dontRules.split("\n").map((s) => s.trim()).filter(Boolean);
+
+  const removeDo = (idx: number) => {
+    setDoRules(doList.filter((_, i) => i !== idx).join("\n"));
+  };
+  const removeDont = (idx: number) => {
+    setDontRules(dontList.filter((_, i) => i !== idx).join("\n"));
+  };
+
+  const handleExportPdf = async () => {
+    let logoDataUrl: string | null = null;
+    if (logoAsset) {
+      try {
+        const url = await getAssetSignedUrl(logoAsset.file_path);
+        if (url) {
+          const blob = await (await fetch(url)).blob();
+          logoDataUrl = await new Promise<string>((resolve) => {
+            const r = new FileReader();
+            r.onloadend = () => resolve(r.result as string);
+            r.readAsDataURL(blob);
+          });
+        }
+      } catch {
+        // ignore
+      }
+    }
+    const pdf = generateBrandKitPdf({
+      clientName: client?.name ?? "Cliente",
+      primary,
+      secondary,
+      fonts,
+      doRules: doList,
+      dontRules: dontList,
+      notes,
+      logoDataUrl,
+    });
+    const safe = (client?.name ?? "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    pdf.save(`brand-kit-${safe}.pdf`);
+    toast.success("Brand kit exportado");
   };
 
   const ColorList = ({
@@ -163,6 +210,9 @@ export default function BrandGuidelinesPage() {
             <Save className="w-4 h-4 mr-2" /> Salvar
           </Button>
         )}
+        <Button variant="outline" onClick={handleExportPdf} className="ml-2">
+          <Download className="w-4 h-4 mr-2" /> Exportar PDF
+        </Button>
       </div>
 
       {!isLoading && !guidelines && (
@@ -246,6 +296,9 @@ export default function BrandGuidelinesPage() {
             placeholder="Use sempre o logo em fundo branco..."
             className="mt-2"
           />
+          <div className="mt-3">
+            <RuleChips items={doList} variant="do" editable={editable} onRemove={removeDo} />
+          </div>
         </Card>
         <Card className="p-4">
           <Label className="text-destructive font-semibold">✗ Don't (uma regra por linha)</Label>
@@ -257,6 +310,9 @@ export default function BrandGuidelinesPage() {
             placeholder="Não distorça o logo..."
             className="mt-2"
           />
+          <div className="mt-3">
+            <RuleChips items={dontList} variant="dont" editable={editable} onRemove={removeDont} />
+          </div>
         </Card>
       </div>
 
@@ -284,13 +340,30 @@ export default function BrandGuidelinesPage() {
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" /> Brand Preview
         </h2>
-        <BrandPreviewCard
-          clientName={client?.name ?? "Cliente"}
-          primary={primary}
-          secondary={secondary}
-          fonts={fonts}
-          logo={logoAsset}
-        />
+        <Tabs defaultValue="card">
+          <TabsList>
+            <TabsTrigger value="card">Card de marca</TabsTrigger>
+            <TabsTrigger value="application">Aplicação completa</TabsTrigger>
+          </TabsList>
+          <TabsContent value="card" className="mt-4">
+            <BrandPreviewCard
+              clientName={client?.name ?? "Cliente"}
+              primary={primary}
+              secondary={secondary}
+              fonts={fonts}
+              logo={logoAsset}
+            />
+          </TabsContent>
+          <TabsContent value="application" className="mt-4">
+            <BrandApplicationPreview
+              clientName={client?.name ?? "Cliente"}
+              primary={primary}
+              secondary={secondary}
+              fonts={fonts}
+              logo={logoAsset}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
