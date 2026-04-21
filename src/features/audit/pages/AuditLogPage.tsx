@@ -2,7 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ScrollText, Download, Eye, Copy, ExternalLink, Bell, Keyboard } from "lucide-react";
+import {
+  ScrollText,
+  Download,
+  Eye,
+  Copy,
+  ExternalLink,
+  Bell,
+  Keyboard,
+  Loader2,
+  SearchX,
+  Inbox,
+  RotateCcw,
+} from "lucide-react";
 import { useOrganizations, useOrgMembers } from "@/hooks/use-organization";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,8 +34,10 @@ import { AuditFilters, type AuditFilterState } from "../components/AuditFilters"
 import { AuditDiffDialog } from "../components/AuditDiffDialog";
 import { AuditAlertsManager } from "../components/AuditAlertsManager";
 import { AuditSavedViewsMenu } from "../components/AuditSavedViewsMenu";
+import { AuditTableSkeleton } from "../components/AuditTableSkeleton";
 import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
+import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 const LS_KEY = "audit-filters-v1";
@@ -385,8 +399,18 @@ const AuditLogPage = () => {
             <Bell className="h-4 w-4" />
             Alertas
           </Button>
-          <Button onClick={handleExport} disabled={exporting || !currentOrgId || total === 0} variant="outline">
-            <Download className="h-4 w-4" />
+          <Button
+            onClick={handleExport}
+            disabled={exporting || !currentOrgId || total === 0}
+            variant="outline"
+            aria-busy={exporting}
+            data-testid="audit-export-button"
+          >
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
             {exporting ? "Exportando…" : "Exportar CSV"}
           </Button>
         </div>
@@ -396,26 +420,97 @@ const AuditLogPage = () => {
         <CardContent className="p-4 space-y-4">
           <AuditFilters state={filterState} onChange={setFilters} tables={tables} members={memberOpts} />
 
-          <ResultsPagination
-            page={page + 1}
-            pageSize={PAGE_SIZE}
-            total={total}
-            totalPages={totalPages}
-            onPageChange={(p) => setPage(p - 1)}
-            itemNoun="evento"
-          />
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <ResultsPagination
+                page={page + 1}
+                pageSize={PAGE_SIZE}
+                total={total}
+                totalPages={totalPages}
+                onPageChange={(p) => setPage(p - 1)}
+                itemNoun="evento"
+              />
+            </div>
+            {isLoading && rows.length > 0 && (
+              <span
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                aria-live="polite"
+                data-testid="audit-page-loading"
+              >
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Atualizando…
+              </span>
+            )}
+          </div>
 
           {!currentOrgId ? (
-            <p className="text-muted-foreground py-8 text-center">Selecione uma organização.</p>
-          ) : isLoading ? (
-            <p className="text-muted-foreground py-8 text-center">Carregando…</p>
+            <div className="py-12 flex flex-col items-center justify-center text-center gap-2 text-muted-foreground">
+              <Inbox className="h-10 w-10 opacity-40" />
+              <p className="text-sm">Selecione uma organização para ver a trilha de auditoria.</p>
+            </div>
+          ) : isLoading && rows.length === 0 ? (
+            <AuditTableSkeleton rows={Math.min(PAGE_SIZE, 8)} />
           ) : rows.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center">
-              {total === 0 && filterState.actions.length === 0 && !filterState.from && !filterState.tableName && !filterState.userId && !filterState.recordIdQuery
-                ? "Sem eventos ainda."
-                : "Nenhum resultado para os filtros aplicados."}
-            </p>
+            (() => {
+              const isEmptyFilters =
+                total === 0 &&
+                filterState.actions.length === 0 &&
+                !filterState.from &&
+                !filterState.to &&
+                !filterState.tableName &&
+                !filterState.userId &&
+                !filterState.recordIdQuery &&
+                !filterState.valueKey &&
+                !filterState.valueQuery &&
+                !filterState.ipQuery &&
+                !filterState.userAgentQuery;
+              return isEmptyFilters ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center gap-2 text-muted-foreground">
+                  <Inbox className="h-10 w-10 opacity-40" />
+                  <p className="text-sm font-medium text-foreground">Sem eventos ainda</p>
+                  <p className="text-xs max-w-sm">
+                    Conforme sua equipe usa o sistema, as ações registradas vão aparecer aqui.
+                  </p>
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-center gap-3 text-muted-foreground">
+                  <SearchX className="h-10 w-10 opacity-40" />
+                  <p className="text-sm font-medium text-foreground">Nenhum resultado</p>
+                  <p className="text-xs max-w-sm">
+                    Ajuste ou limpe os filtros acima para ver mais eventos.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setFilters({
+                        actions: [],
+                        recordIdQuery: "",
+                        valueKey: "",
+                        valueQuery: "",
+                        ipQuery: "",
+                        userAgentQuery: "",
+                        from: undefined,
+                        to: undefined,
+                        tableName: undefined,
+                        userId: undefined,
+                      })
+                    }
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Limpar filtros
+                  </Button>
+                </div>
+              );
+            })()
           ) : (
+            <div
+              className={cn(
+                "transition-opacity",
+                isLoading && "opacity-60 pointer-events-none",
+              )}
+              aria-busy={isLoading}
+            >
             <Table>
               <TableHeader>
                 <TableRow>
@@ -481,6 +576,7 @@ const AuditLogPage = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
