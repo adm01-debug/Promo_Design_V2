@@ -16,6 +16,8 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Notificações (polling 15s) | (global) | `src/components/NotificationPanel.tsx` | ✅ |
 | Onboarding tour | (global) | `src/components/OnboardingTour.tsx` | ✅ |
 | Atalhos de teclado | (global) | `src/components/KeyboardShortcutsDialog.tsx` | ✅ |
+| Dashboard analytics avançado | `/dashboard/analytics` | *(planejado)* | 🔴 |
+| Widgets customizáveis (config UI) | `/dashboard/widgets` | *(planejado)* | 🔴 |
 
 ## 2. Autenticação & Organização
 
@@ -38,6 +40,9 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Editor multi-view | `/mockup/editor` | `src/features/mockup/pages/MockupEditor.tsx` | ✅ |
 | Canvas + mesh warp | (componente) | `src/features/mockup/components/MockupCanvas.tsx` | ✅ |
 | Hook editor (state, AI, draft) | (hook) | `src/features/mockup/hooks/use-mockup-editor.ts` | ✅ |
+| Templates de mockup salvos | `/mockup/templates` | *(planejado, hoje só `/templates` genérico)* | 🔴 |
+| Comparador de versões | `/mockup/compare` | *(planejado)* | 🔴 |
+| Aprovação de cliente (link público) | `/mockup/approve/:token` | *(planejado)* | 🔴 |
 
 ## 4. Service Orders
 
@@ -59,6 +64,8 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Brand Guidelines do cliente | `/clients/:clientId/brand` | `src/features/dam/pages/BrandGuidelinesPage.tsx` | ✅ |
 | Resumo PDF do cliente | (lib) | `src/features/service-orders/lib/ClientSummaryPdf.ts` | ✅ |
 | Brand Kit PDF | (lib) | `src/features/dam/lib/brand-kit-pdf.ts` | ✅ |
+| Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | *(planejado)* | 🔴 |
+| Brand Guidelines — share público | `/brand/public/:token` | *(planejado)* | 🔴 |
 
 ## 6. DAM (Digital Asset Management)
 
@@ -69,6 +76,9 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Detalhe + audit trail | (drawer) | `src/features/dam/components/AssetDetailDrawer.tsx` | ✅ |
 | Versionamento | (componente) | `src/features/dam/components/AssetVersionHistory.tsx` | ✅ |
 | Upload com tags | (componente) | `src/features/dam/components/AssetUploadDialog.tsx` | ✅ |
+| Coleções/Pastas | `/dam/collections` | *(planejado)* | 🔴 |
+| Lixeira (assets arquivados) | `/dam/trash` | *(parcial via filtro `archived` em `DamLibraryPage.tsx`)* | 🟡 |
+| Busca avançada (saved searches) | `/dam/search` | *(planejado)* | 🔴 |
 
 ## 7. Magic Up (AI)
 
@@ -78,6 +88,9 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Galeria de prompts | `/magicup/prompts` | `src/features/magic-up/pages/MagicUpPrompts.tsx` | ✅ |
 | Histórico | `/magicup/history` | `src/features/magic-up/pages/MagicUpHistory.tsx` | ✅ |
 | Edge function AI | (backend) | `supabase/functions/mockup-ai/index.ts` | ✅ |
+| Favoritos (galeria dedicada) | `/magicup/favorites` | *(parcial via filtro em `/magicup/history`)* | 🟡 |
+| Batch jobs (status fila) | `/magicup/jobs` | *(planejado)* | 🔴 |
+| Estilos/presets gerenciáveis | `/magicup/styles` | *(planejado, hoje hardcoded em `MagicUpGenerate.tsx`)* | 🔴 |
 
 ## 8. Video Studio
 
@@ -99,3 +112,23 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Templates | `/templates` | `src/pages/Templates.tsx` | ✅ |
 | Editor genérico | `/editor` | `src/pages/Editor.tsx` | ✅ |
 | 404 animado | `*` | `src/pages/NotFound.tsx` | ✅ |
+
+## 10. Backlog consolidado (rotas planejadas)
+
+Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / desbloqueia fluxos) ao fim (refinamentos).
+
+| # | Funcionalidade | Rota proposta | Status | Justificativa |
+|---|---|---|---|---|
+| 1 | Coleções/Pastas no DAM | `/dam/collections` | 🔴 | Organização hierárquica é gap crítico em libraries grandes. |
+| 2 | Aprovação de cliente (link público) | `/mockup/approve/:token` | 🔴 | Fecha o loop de homologação sem exigir login do cliente. |
+| 3 | Brand Guidelines — share público | `/brand/public/:token` | 🔴 | Permite enviar manual de marca sem expor a plataforma. |
+| 4 | Magic Up — Batch jobs | `/magicup/jobs` | 🔴 | Visibilidade de fila para gerações longas em lote. |
+| 5 | Templates de mockup salvos | `/mockup/templates` | 🔴 | Reuso de configurações; hoje só existe `/templates` genérico. |
+| 6 | Comparador de versões de mockup | `/mockup/compare` | 🔴 | Facilita revisão A/B entre iterações. |
+| 7 | Busca avançada DAM (saved searches) | `/dam/search` | 🔴 | Filtros complexos persistidos para workflows recorrentes. |
+| 8 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | 🔴 | Auditoria de mudanças no manual de marca. |
+| 9 | Magic Up — estilos/presets gerenciáveis | `/magicup/styles` | 🔴 | Hoje hardcoded; bloqueia personalização por cliente. |
+| 10 | Dashboard analytics avançado | `/dashboard/analytics` | 🔴 | Métricas de uso e produtividade além dos widgets atuais. |
+| 11 | Lixeira DAM | `/dam/trash` | 🟡 | Existe filtro `archived`, falta UI dedicada com restore. |
+| 12 | Magic Up — favoritos | `/magicup/favorites` | 🟡 | Existe filtro em `/magicup/history`, falta galeria dedicada. |
+| 13 | Widgets customizáveis (config UI) | `/dashboard/widgets` | 🔴 | Hoje layout é editável inline; falta tela de gestão. |
