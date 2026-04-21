@@ -1,91 +1,40 @@
 
 
-## DAM — Digital Asset Management por Cliente
+## Documentação de Funcionalidades — `FEATURES.md`
 
-Biblioteca compartilhada de assets (logos, artes, mockups) por organização, com vínculo opcional a cliente, tags, busca, e brand guidelines (paleta, fontes, do/don't) por cliente.
+Vou gerar um documento markdown exaustivo (`/mnt/documents/PROMO_DESIGN_FEATURES.md`) catalogando todas as funcionalidades do Promo Design, com base em: rotas (`App.tsx`), navegação (`AppSidebar`), feature folders (`src/features/`), schema do banco (14 tabelas), edge function `mockup-ai`, hooks, integrações e o histórico das ondas enterprise já implementadas (Onda 1: multi-tenant + RBAC + audit; DAM + Brand Guidelines).
 
-### Banco de dados (migração)
+### Estrutura do documento
 
-**Enum** `asset_type`: `logo` | `art` | `photo` | `mockup` | `document` | `other`
+1. **Visão Geral** — propósito, stack, escopo
+2. **Módulos Principais** (cada um com sub-funcionalidades, rotas, tabelas e capabilities):
+   - **Dashboard** — widgets drag-and-drop, sparklines, count-up, layouts persistidos
+   - **Mockup Studio** — editor visual, mesh warp, multi-view, rascunhos, histórico, AI background removal
+   - **Ordens de Serviço** — CRUD, state machine (aberta/em_producao/concluida/cancelada), audit log, PDF export, dashboard analítico, realtime
+   - **Catálogo** — produtos, categorias, SKU, ProductPicker, analytics
+   - **Clientes (CRM)** — entidade compartilhada, contatos múltiplos, tags, busca
+   - **DAM (Biblioteca de Assets)** — logos/artes/fotos/mockups, versionamento, tags GIN, cores dominantes, AssetPicker
+   - **Brand Guidelines** — paleta primária/secundária, fontes, do/don't, logo principal por cliente
+   - **Magic Up (IA)** — geração de imagens publicitárias, prompts inteligentes, banco de prompts, histórico, favoritos, batch variations, edge function `mockup-ai`
+   - **Video Studio** — Novo Vídeo (3 etapas), Cinema Mode (LUTs), Moodboard, Photodump, Character Studio (Soul ID), Inspiração, Histórico, animações modulares
+3. **Funcionalidades Transversais**
+   - Multi-tenancy (organizações + roles: owner/admin/designer/approver/viewer)
+   - Auditoria universal (`audit_log` + triggers)
+   - Notificações (polling 15s, triggers DB)
+   - Command Palette (⌘K)
+   - Onboarding tour (6 etapas)
+   - Atalhos de teclado
+   - Dark/Light theme
+   - PWA-ready, responsivo
+4. **Segurança & Compliance** — RLS por organização, HIBP, signed URLs privadas, JWT em edge functions
+5. **Banco de Dados** — tabela por tabela com colunas-chave e RLS resumido
+6. **Integrações** — Bitrix24, n8n webhooks, Lovable AI Gateway
+7. **Qualidade** — 444+ testes Vitest, Playwright E2E
+8. **Roadmap das Ondas** — Onda 1 ✅, Onda 2 (em curso), Onda 3 (planejada)
 
-**Tabela `assets`** (multi-tenant, vínculo opcional a cliente)
-- `id`, `organization_id` (FK), `client_id` (FK nullable — assets gerais da org sem cliente)
-- `name`, `description`, `asset_type`, `file_path` (caminho no bucket), `file_size`, `mime_type`
-- `width`, `height` (px, para imagens), `dominant_colors` (text[] hex), `thumbnail_path`
-- `tags` (text[]), `metadata` (jsonb — DPI, formato vetor, etc.)
-- `version` (int, default 1), `parent_asset_id` (FK self — versionamento)
-- `is_archived`, `created_by`, `created_at`, `updated_at`
-- Índices: `(organization_id)`, `(client_id)`, `(asset_type)`, GIN em `tags`
-- RLS: membros leem; designers+ inserem/editam; admins+ deletam (mesmo padrão de `clients`)
-- Trigger de auditoria via `write_audit_log()` já existente
+### Entregável
 
-**Tabela `brand_guidelines`** (1:1 por cliente)
-- `id`, `organization_id`, `client_id` (UNIQUE)
-- `primary_colors` (jsonb — `[{name, hex}]`), `secondary_colors` (jsonb)
-- `fonts` (jsonb — `[{name, usage, source}]`)
-- `do_rules` (text[]), `dont_rules` (text[])
-- `logo_asset_id` (FK assets — logo principal)
-- `notes`, timestamps
-- RLS: igual a `clients`; trigger de auditoria
+Arquivo único `.md` em `/mnt/documents/PROMO_DESIGN_FEATURES.md`, com índice clicável, tabelas de rotas e tabelas de capabilities por módulo. Tag `<lov-artifact>` ao final para download.
 
-**Bucket de Storage `assets`** (privado, novo — mantém `art-uploads` intacto)
-- Caminho: `{organization_id}/{client_id|_org}/{asset_id}/{filename}`
-- Policies: leitura/escrita para membros da org dona do prefixo (validado via `is_member_of` do prefixo de path)
-
-### Backend (lógica de upload)
-
-Hook `useAssetUpload` (novo, em `src/features/dam/hooks/`):
-- Recebe `File`, `organizationId`, `clientId?`, `assetType`, `tags`
-- Gera thumbnail client-side (canvas, 256px max) para imagens
-- Extrai `dominant_colors` (top 3) reaproveitando `countUniqueColors` de `canvas-utils.ts`
-- Faz upload do arquivo + thumbnail no bucket `assets`
-- Insere row em `assets` com signed URLs gerados sob demanda
-
-### Frontend (nova feature `src/features/dam/`)
-
-**Hooks**
-- `use-assets.ts` — listar (com filtros: cliente, tipo, tags, busca textual), criar, atualizar, arquivar, criar nova versão
-- `use-brand-guidelines.ts` — get/upsert por cliente
-
-**Páginas**
-- `/dam` (DamLibraryPage) — biblioteca completa da organização
-  - Filtros: cliente (select), tipo (chips), tags (multi-select), busca por nome
-  - Toggle grid/list; cards mostram thumbnail, nome, tipo, tags, swatch de cores dominantes
-  - Botão "Novo asset" → `AssetUploadDialog` (drag-and-drop, multi-arquivo)
-  - Click no asset → `AssetDetailDrawer` (preview grande, metadata, versões, ações: baixar, copiar URL, nova versão, arquivar)
-- `/clients/:clientId/brand` (BrandGuidelinesPage) — guidelines do cliente
-  - Editor de paleta (primárias/secundárias com color picker)
-  - Lista de fontes (nome, uso, link/upload)
-  - Listas Do / Don't (textareas estilo bullet)
-  - Seletor de logo principal (modal de assets do cliente)
-  - Preview "Brand Card" com tudo aplicado
-- Aba "Assets" e "Brand" adicionadas dentro do detalhe do cliente em `/clients` (tabs)
-
-**Componentes reutilizáveis**
-- `AssetCard`, `AssetGrid`, `AssetUploadDialog`, `AssetPicker` (modal — usado no Mockup Studio para escolher logo da biblioteca)
-- `ColorSwatchEditor`, `FontList`, `RuleList` (do/don't)
-
-### Integrações com features existentes
-
-- **Mockup Editor**: botão "Escolher da biblioteca" no upload de logo → abre `AssetPicker` filtrado pelo cliente da OS
-- **Service Order**: ao selecionar cliente, sugere logo principal do `brand_guidelines.logo_asset_id`
-- **Sidebar**: novo item "DAM" no grupo Mockup Studio (ícone `FolderArchive`)
-- **App.tsx**: rotas `/dam` e `/clients/:clientId/brand`
-
-### Critérios de aceite
-
-- Upload de logo + tags + cliente → aparece na biblioteca filtrado
-- Busca por tag e por nome funciona com performance (índice GIN)
-- Versionamento: "nova versão" cria asset com `parent_asset_id` e incrementa `version`
-- Brand guidelines salvas por cliente; preview renderiza cores e fontes
-- Asset Picker no Mockup carrega logo selecionado direto no canvas
-- Audit log registra cada upload/edição/arquivamento
-- RLS: membro de outra organização não vê assets nem guidelines
-
-### Fora de escopo (próximas iterações)
-
-- Auto-tagging por IA (previsto na Onda 3)
-- Busca semântica por embeddings
-- Editor de imagem inline
-- Aprovação de assets com workflow (vai com Proofing na Onda 2)
+Sobre o GitHub: a análise é feita 100% sobre o código fonte deste projeto (que é o que está sincronizado com o repositório GitHub via integração bidirecional). Não preciso acessar o GitHub externamente — o codebase aqui já é o estado mais recente.
 
