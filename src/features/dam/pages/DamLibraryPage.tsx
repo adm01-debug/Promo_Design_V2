@@ -55,10 +55,18 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [assetType, setAssetType] = useState<AssetType | "all">("all");
   const [clientId, setClientId] = useState<string | "all" | "none">("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [sort, setSort] = useState<SortValue>("created_desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return 24;
+    const saved = Number(localStorage.getItem(PAGE_SIZE_KEY));
+    return [24, 48, 96].includes(saved) ? saved : 24;
+  });
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
@@ -70,29 +78,34 @@ export default function DamLibraryPage() {
     try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* ignore */ }
   }, [viewMode]);
 
+  useEffect(() => {
+    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
+  }, [pageSize]);
+
+  // Reset to page 1 when filters/search/sort/pageSize change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, assetType, clientId, selectedTags, includeArchived, sort, pageSize]);
+
   const filters = useMemo(
-    () => ({
-      assetType,
-      clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
-      tags: selectedTags.length > 0 ? selectedTags : undefined,
-      includeArchived,
-    }),
-    [assetType, clientId, selectedTags, includeArchived],
+    () => {
+      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[0];
+      return {
+        assetType,
+        clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        includeArchived,
+        search: debouncedSearch.trim() || undefined,
+        sortBy: opt.sortBy,
+        sortDir: opt.sortDir,
+        page,
+        pageSize,
+      };
+    },
+    [assetType, clientId, selectedTags, includeArchived, debouncedSearch, sort, page, pageSize],
   );
 
-  const { assets, isLoading } = useAssets(currentOrgId, filters);
-
-  // Client-side search across name/description/tags
-  const filteredAssets = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return assets;
-    return assets.filter((a) => {
-      if (a.name.toLowerCase().includes(q)) return true;
-      if (a.description?.toLowerCase().includes(q)) return true;
-      if (a.tags.some((t) => t.toLowerCase().includes(q))) return true;
-      return false;
-    });
-  }, [assets, search]);
+  const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
 
   const availableTags = useMemo(() => {
     const set = new Set<string>();
