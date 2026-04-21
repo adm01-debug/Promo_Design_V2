@@ -114,6 +114,16 @@ export default function DamLibraryPage() {
     try { localStorage.setItem(TAGS_MODE_KEY, tagsMode); } catch { /* ignore */ }
   }, [tagsMode]);
 
+  useEffect(() => {
+    try { localStorage.setItem(INCLUDE_ARCHIVED_KEY, includeArchived ? "1" : "0"); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (includeArchived) next.set("archived", "1");
+      else next.delete("archived");
+      return next;
+    }, { replace: true });
+  }, [includeArchived, setSearchParams]);
+
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
     if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
