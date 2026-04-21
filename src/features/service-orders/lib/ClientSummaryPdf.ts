@@ -27,6 +27,15 @@ export interface ClientSummaryClient {
   phone?: string | null;
 }
 
+export interface ClientSummaryProgress {
+  stage: string;
+  current: number;
+  total: number;
+  percent: number;
+}
+
+export type ClientSummaryProgressCallback = (p: ClientSummaryProgress) => void;
+
 async function fetchAsDataUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
