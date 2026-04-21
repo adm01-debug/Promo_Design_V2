@@ -18,6 +18,15 @@ export interface BatchPdfFilters {
   search?: string;
 }
 
+export interface BatchPdfProgress {
+  stage: string;
+  current: number;
+  total: number;
+  percent: number;
+}
+
+export type BatchPdfProgressCallback = (p: BatchPdfProgress) => void;
+
 async function fetchAsDataUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { mode: "cors" });
@@ -101,7 +110,11 @@ function drawCover(
   });
 }
 
-async function drawOrderPage(doc: jsPDF, order: StoredServiceOrder) {
+async function drawOrderPage(
+  doc: jsPDF,
+  order: StoredServiceOrder,
+  onMockupFetch?: () => void,
+) {
   const pw = doc.internal.pageSize.getWidth();
   const m = 12;
 
@@ -156,6 +169,7 @@ async function drawOrderPage(doc: jsPDF, order: StoredServiceOrder) {
 
   // Mockup
   if (order.mockupImageUrl) {
+    onMockupFetch?.();
     const dataUrl = await fetchAsDataUrl(order.mockupImageUrl);
     if (dataUrl) {
       const y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
@@ -183,22 +197,47 @@ export async function generateBatchPdf(
   orders: StoredServiceOrder[],
   filters: BatchPdfFilters,
   logoDataUrl?: string,
+  onProgress?: BatchPdfProgressCallback,
 ): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
+  onProgress?.({ stage: "Montando capa", current: 0, total: orders.length, percent: 2 });
   drawCover(doc, orders, filters, logoDataUrl);
+  onProgress?.({ stage: "Capa pronta", current: 0, total: orders.length, percent: 5 });
 
-  for (const order of orders) {
+  const total = orders.length;
+  for (let i = 0; i < total; i++) {
+    const order = orders[i];
+    const basePercent = 5 + (i / Math.max(1, total)) * 90;
+    onProgress?.({
+      stage: "Montando OS",
+      current: i + 1,
+      total,
+      percent: basePercent,
+    });
     doc.addPage();
-    await drawOrderPage(doc, order);
+    await drawOrderPage(doc, order, () => {
+      onProgress?.({
+        stage: "Baixando mockup",
+        current: i + 1,
+        total,
+        percent: basePercent + (90 / Math.max(1, total)) * 0.4,
+      });
+    });
+    // Yield to browser every 3 iterations so the UI can repaint
+    if ((i + 1) % 3 === 0) {
+      await new Promise((r) => setTimeout(r, 0));
+    }
   }
 
+  onProgress?.({ stage: "Finalizando", current: total, total, percent: 98 });
   // Footer em todas as páginas
-  const total = doc.getNumberOfPages();
-  for (let i = 1; i <= total; i++) {
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    drawFooter(doc, i, total);
+    drawFooter(doc, i, totalPages);
   }
 
+  onProgress?.({ stage: "Pronto", current: total, total, percent: 100 });
   return doc;
 }
