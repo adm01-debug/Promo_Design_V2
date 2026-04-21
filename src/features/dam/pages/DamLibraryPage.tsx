@@ -45,6 +45,25 @@ const PAGE_SIZE_KEY = "dam-page-size";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 const PAGINATION_MODE_KEY = "dam-pagination-mode";
+const SEARCH_KEY = "dam-search";
+const ASSET_TYPES_KEY = "dam-asset-types";
+const CLIENT_ID_KEY = "dam-client-id";
+const TAGS_KEY = "dam-tags";
+const SORT_KEY = "dam-sort";
+
+const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
+
+function readLS(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function writeLS(key: string, value: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (value === null || value === "") localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch { /* ignore */ }
+}
 
 type PaginationMode = "pages" | "loadmore";
 
@@ -75,23 +94,27 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? "");
+  const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? readLS(SEARCH_KEY) ?? "");
   const debouncedSearch = useDebounce(search, 300);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>(() => {
     const raw = searchParams.get("type");
-    if (!raw) return [];
-    const valid: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
-    return raw.split(",").filter((t): t is AssetType => valid.includes(t as AssetType));
+    const source = raw ?? readLS(ASSET_TYPES_KEY) ?? "";
+    if (!source) return [];
+    return source.split(",").filter((t): t is AssetType => VALID_ASSET_TYPES.includes(t as AssetType));
   });
   const [clientId, setClientId] = useState<string | "all" | "none">(() => {
     const raw = searchParams.get("client");
-    if (!raw) return "all";
+    if (!raw) {
+      const ls = readLS(CLIENT_ID_KEY);
+      return (ls as "all" | "none" | string) || "all";
+    }
     if (raw === "all" || raw === "none") return raw;
     return raw;
   });
   const [selectedTags, setSelectedTags] = useState<string[]>(() => {
     const raw = searchParams.get("tags");
-    return raw ? raw.split(",").filter(Boolean) : [];
+    const source = raw ?? readLS(TAGS_KEY) ?? "";
+    return source ? source.split(",").filter(Boolean) : [];
   });
   const [tagsMode, setTagsMode] = useState<"all" | "any">(() => {
     const fromUrl = searchParams.get("tagsMode");
@@ -109,6 +132,8 @@ export default function DamLibraryPage() {
   const [sort, setSort] = useState<SortValue>(() => {
     const fromUrl = searchParams.get("sort") as SortValue | null;
     if (fromUrl && SORT_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    const ls = readLS(SORT_KEY) as SortValue | null;
+    if (ls && SORT_OPTIONS.some((o) => o.value === ls)) return ls;
     return "created_desc";
   });
   const [page, setPage] = useState<number>(() => {
