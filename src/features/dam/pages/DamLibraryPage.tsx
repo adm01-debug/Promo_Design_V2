@@ -916,14 +916,27 @@ export default function DamLibraryPage() {
       )}
 
       {paginationMode === "pages" && total > 0 && (
-        <ResultsPagination
-          page={page}
-          pageSize={pageSize}
-          total={total}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          itemNoun="asset"
-        />
+        <nav
+          aria-label="Paginação de assets"
+          className="space-y-1"
+        >
+          <ResultsPagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            itemNoun="asset"
+          />
+          {totalPages > 1 && (
+            <p className="text-[11px] text-muted-foreground text-right">
+              Atalhos: <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">←</kbd>{" "}
+              <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">→</kbd> navegar ·{" "}
+              <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">Home</kbd>{" "}
+              <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">End</kbd> primeira/última
+            </p>
+          )}
+        </nav>
       )}
 
       <AssetUploadDialog
