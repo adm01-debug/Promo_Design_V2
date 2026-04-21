@@ -22,6 +22,8 @@ export interface AuditFilters {
   tableName?: string;
   userId?: string;
   recordIdQuery?: string;
+  valueKey?: string;       // chave dentro de old_values/new_values (ex: "status")
+  valueQuery?: string;     // texto a procurar
   page: number;
   pageSize: number;
 }
@@ -37,6 +39,23 @@ function applyFilters(query: any, f: AuditFilters) {
   if (f.userId) query = query.eq("user_id", f.userId);
   if (f.recordIdQuery && f.recordIdQuery.length >= 4) {
     query = query.ilike("record_id", `%${f.recordIdQuery}%`);
+  }
+  // Filtro por valor dentro de old_values / new_values
+  // Server-side só funciona quando temos uma CHAVE (PostgREST suporta column->>key=ilike.*x*)
+  if (f.valueKey && f.valueKey.trim().length > 0) {
+    const key = f.valueKey.trim().replace(/[",()]/g, "");
+    const term = (f.valueQuery ?? "").trim();
+    if (term.length > 0) {
+      const safeTerm = term.replace(/[,()]/g, "");
+      query = query.or(
+        `old_values->>${key}.ilike.%${safeTerm}%,new_values->>${key}.ilike.%${safeTerm}%`,
+      );
+    } else {
+      // só chave: traz registros onde a chave existe em algum dos lados (não-nulo)
+      query = query.or(
+        `old_values->>${key}.not.is.null,new_values->>${key}.not.is.null`,
+      );
+    }
   }
   return query;
 }
