@@ -301,6 +301,36 @@ export default function DamLibraryPage() {
   const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
 
+  const lastPreviewAsset = useMemo(
+    () => (lastPreviewAssetId ? displayedAssets.find((a) => a.id === lastPreviewAssetId) ?? null : null),
+    [displayedAssets, lastPreviewAssetId],
+  );
+
+  // Scroll to & briefly highlight the last previewed asset once it's in the loaded list.
+  useEffect(() => {
+    if (!lastPreviewAssetId) return;
+    if (isLoading) return;
+    if (highlightedRef.current === lastPreviewAssetId) return;
+    if (!lastPreviewAsset) return;
+
+    const el = document.querySelector<HTMLElement>(`[data-asset-id="${lastPreviewAssetId}"]`);
+    if (!el) return;
+
+    highlightedRef.current = lastPreviewAssetId;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "transition-all");
+    const t = window.setTimeout(() => {
+      el.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background");
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, [lastPreviewAssetId, lastPreviewAsset, isLoading]);
+
+  const dismissLastPreview = () => {
+    clearLastPreviewAsset();
+    setLastPreviewAssetId(null);
+    highlightedRef.current = null;
+  };
+
   const archivedCount = useMemo(
     () => displayedAssets.filter((a) => a.is_archived).length,
     [displayedAssets],
