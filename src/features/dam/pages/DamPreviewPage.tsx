@@ -164,6 +164,16 @@ export default function DamPreviewPage() {
 
       if (inEditable) return;
 
+      if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        setCompareMode((v) => !v);
+        return;
+      }
+      if (compareMode && e.key === " ") {
+        e.preventDefault();
+        if (activeAsset) compare.toggle(activeAsset.id);
+        return;
+      }
       if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
         e.preventDefault();
         goPrev();
