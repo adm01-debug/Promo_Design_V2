@@ -40,6 +40,7 @@ const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const OrganizationPage = lazyWithRetry(() => import("./features/organization/pages/OrganizationPage"));
 const ClientsPage = lazyWithRetry(() => import("./features/clients/pages/ClientsPage"));
 const AuditLogPage = lazyWithRetry(() => import("./features/audit/pages/AuditLogPage"));
+const AuditEventDetailPage = lazyWithRetry(() => import("./features/audit/pages/AuditEventDetailPage"));
 const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
@@ -97,6 +98,7 @@ const App = () => (
                   <Route path="/dam" element={<DamLibraryPage />} />
                   <Route path="/dam/preview" element={<DamPreviewPage />} />
                   <Route path="/audit" element={<AuditLogPage />} />
+                  <Route path="/audit/event/:eventId" element={<AuditEventDetailPage />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
