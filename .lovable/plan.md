@@ -1,38 +1,57 @@
 
 
-## Persistir asset ativo no Quick Preview
+## Exportação PDF — OS individual já existe, faltam exports compartilháveis
 
-Hoje `/dam/preview` reseta `activeIndex` para 0 sempre que filtros mudam ou a página recarrega. Vou persistir o asset ativo via **id** (não índice — índice fica inválido se filtros mudarem) e usar querystring + localStorage para sobreviver a reload e navegação.
+Hoje `generateServiceOrderPdf` gera o PDF de **uma OS** (botão Download na tela de edição). Vou adicionar **dois exports novos** focados em compartilhamento com cliente:
 
-### Comportamento
+### 1. PDF de lote de OSs (lista filtrada)
 
-- Ao navegar com ←/→ ou clicar num thumb, atualizar `?asset=<id>` na URL (replace, sem empilhar histórico)
-- Ao recarregar `/dam/preview?asset=<id>&...filtros`, restaurar `activeIndex` procurando o id na lista carregada
-- Se o id não estiver na lista atual (filtro mudou, asset arquivado), cair pro índice 0 silenciosamente
-- Ao clicar "Pré-visualizar" na biblioteca, se houver último asset visto salvo no localStorage **e** ele estiver compatível com os filtros sendo passados, abrir já nele
-- Ao voltar pra `/dam` via Esc ou botão, persistir o último id no localStorage (`dam-last-preview-asset`) para recuperação futura
+Na tela `/mockup/service-orders` (ServiceOrderList), botão **"Exportar PDF"** no header gera um PDF consolidado com:
+- Capa com logo Promo Brindes, contagem de OSs, filtros aplicados (status, busca), data de geração
+- Tabela resumo: nº OS · cliente · produto · técnica · qtd · status · entrega
+- Uma página por OS expandida (reusa layout simplificado do `generateServiceOrderPdf`, sem o verso de produção)
+- Footer com paginação
 
-### Detalhes técnicos
+Útil para enviar ao cliente um pacote de OSs em produção/aprovação.
 
-- **Querystring**: nova chave `asset` adicionada ao `useDamFilters` (ou tratada à parte em `DamPreviewPage` via `useSearchParams` direto, já que não é filtro). Prefiro tratar à parte para não poluir o hook de filtros.
-- **Sync índice ↔ id**: `useEffect` que, quando `assets` carrega, procura `assets.findIndex(a => a.id === assetIdParam)` e atualiza `activeIndex`. Quando `activeIndex` muda por interação, escreve `?asset=<assets[i].id>` via `setSearchParams(..., { replace: true })`.
-- **localStorage**: `dam-last-preview-asset` guarda `{ id, ts }`. Expira em 24h pra não ressuscitar contexto antigo demais.
-- **Reset comportamental**: o reset atual de `activeIndex=0` quando filtros mudam permanece, **exceto** se o id atual ainda existir na nova lista (preserva contexto quando o usuário só refina filtros).
-- **Botão Voltar**: link `/dam${queryString}` continua igual; o id fica no localStorage, não na URL da biblioteca (URL da Library permanece limpa).
+### 2. PDF "Resumo do Projeto" por cliente
+
+Na `ClientsPage` (e na ficha do cliente), botão **"Resumo PDF"** gera um relatório executivo do cliente:
+- Capa com nome/empresa do cliente e período (últimos 90 dias, configurável)
+- KPIs: total de OSs, qtd total de peças, OSs por status (donut), técnicas mais usadas (barras top 5)
+- Timeline cronológica de OSs (data · nº · produto · técnica · status)
+- Galeria de mockups (até 12 thumbnails das OSs com `mockup_image_url`)
+- Footer com branding
+
+Compartilhável como "fechamento" ou "status report" do cliente.
 
 ### Arquivos
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/dam/pages/DamPreviewPage.tsx` | Editar — ler/gravar `?asset=<id>`, restaurar índice por id, persistir em localStorage |
-| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — botão "Pré-visualizar" lê localStorage e injeta `?asset=<id>` se válido |
+| `src/features/service-orders/lib/ServiceOrderBatchPdf.ts` | Criar — `generateBatchPdf(orders, filters, logoDataUrl)` |
+| `src/features/service-orders/lib/ClientSummaryPdf.ts` | Criar — `generateClientSummaryPdf(client, orders, logoDataUrl, periodDays)` |
+| `src/features/service-orders/pages/ServiceOrderList.tsx` | Editar — botão "Exportar PDF" no header (usa orders já filtradas, busca todos via `pageSize: 1000` quando exporta) |
+| `src/features/clients/pages/ClientsPage.tsx` | Editar — botão "Resumo PDF" por linha + dialog de seleção de período (30/90/365 dias) |
+| `src/features/clients/hooks/use-clients.ts` | Editar (se necessário) — helper para puxar OSs do cliente filtradas por período |
+
+### Detalhes técnicos
+
+- **Stack**: `jspdf` + `jspdf-autotable` (já no projeto)
+- **Logo**: reusa `getLogoDataUrl()` do `logo-loader.ts`
+- **Imagens**: `mockup_image_url` é URL pública; carregar via `fetch` → blob → dataURL antes de `addImage` (em paralelo com `Promise.all`, com cap de 12)
+- **Performance**: para batch grande, `pageSize: 1000` num `useServiceOrders` chamado on-demand (não no render); loading state durante geração
+- **Filtros no PDF**: serializar status/busca atuais no header da capa ("Status: Em produção · Busca: ‘capacete’")
+- **Donut/barras**: desenhar manualmente no canvas (`doc.circle`/`doc.rect`) — sem dependências novas
+- **Validação**: se cliente não tem OSs no período, dialog informa e não gera
+- **Naming**: `ordens-servico-{YYYYMMDD}.pdf` e `resumo-{cliente-slug}-{YYYYMMDD}.pdf`
 
 ### Critérios de aceite
 
-- Navegar com ←/→ atualiza `?asset=<id>` na URL sem reload
-- Recarregar a página em `/dam/preview?asset=X` mantém o asset X selecionado
-- Mudar um filtro mantém o asset atual selecionado se ele continuar visível; senão, vai pro primeiro
-- Clicar "Pré-visualizar" na biblioteca abre no último asset visto (se ainda existir e <24h)
-- Esc/Voltar à biblioteca preserva o id no localStorage
-- Sem regressão nos atalhos de teclado nem na navegação por thumb
+- Botão "Exportar PDF" em `/mockup/service-orders` gera PDF com capa + tabela + página por OS, respeitando filtros ativos
+- Botão "Resumo PDF" em `/clients` (por linha) abre dialog com seletor de período e gera relatório executivo
+- Ambos os PDFs incluem logo Promo Brindes, paginação e branding consistente
+- Mockups embarcados nas thumbnails do resumo
+- Loading state visível durante geração (>1s para batch grande)
+- Sem regressão no PDF individual existente
 
