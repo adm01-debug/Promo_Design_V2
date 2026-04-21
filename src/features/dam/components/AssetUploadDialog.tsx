@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAssetUpload } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
 
