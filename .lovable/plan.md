@@ -1,99 +1,77 @@
 
 
-## Busca, filtros e paginação otimizados para o DAM
+## AssetPicker reutilizável — DAM ↔ Mockup Studio ↔ Service Order
 
-Tornar a busca da biblioteca **server-side** com índices GIN para tags e trigram para nome/descrição, paginação real (cursor/offset) e ordenação configurável.
+Já existe um `AssetPicker` básico em `src/features/dam/components/AssetPicker.tsx` (modal simples com busca e grid). Vou **evoluir esse componente** para uso premium reutilizável e **integrá-lo** ao Mockup Studio (escolher logo do DAM) e à Service Order (anexar/escolher arte).
 
-### Migração de banco
+### 1. Evoluir `AssetPicker` (refactor)
 
-Adicionar extensão e índices em `assets`:
+- Filtros: busca (debounced 300ms), filtro por **cliente** (auto-preenche se `clientId` vier por prop), filtro por **tipo** (logo/art/photo/...), filtro por **tags** (reutilizar `TagFilter`)
+- Paginação real (24 por página) usando o `useAssets` já paginado
+- Toggle grid/lista (reutilizar padrão do DAM)
+- Empty state + skeleton de carregamento
+- Prop `assetType` agora é **default**, não trava (usuário pode mudar dentro do modal)
+- Props novas:
+  - `title?: string` (default "Selecionar da biblioteca")
+  - `defaultAssetType?: AssetType` (filtro inicial)
+  - `lockClient?: boolean` (se true, esconde o seletor de cliente)
+  - `onSelect: (asset: Asset) => void` (já existe)
 
-```sql
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+### 2. Integração no **Mockup Studio**
 
--- Tags: busca por contains/overlap em arrays
-CREATE INDEX IF NOT EXISTS idx_assets_tags_gin
-  ON public.assets USING GIN (tags);
+Em `MockupRightPanel.tsx`, na seção de upload de logo, adicionar botão secundário **"Escolher do DAM"** ao lado do upload de arquivo.
+- Abre `AssetPicker` com `defaultAssetType="logo"` e `clientId` derivado do produto/cliente atual (se disponível) ou `null`
+- Ao selecionar: baixa o arquivo do storage (signed URL via `supabase.storage.from('assets').createSignedUrl`) e injeta no editor como se fosse upload local — reutiliza `handleLogoUpload(file: File)` existente em `useMockupEditor`
+- Feedback toast "Logo carregado da biblioteca"
 
--- Nome e descrição: ILIKE rápido via trigram
-CREATE INDEX IF NOT EXISTS idx_assets_name_trgm
-  ON public.assets USING GIN (name gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_assets_description_trgm
-  ON public.assets USING GIN (description gin_trgm_ops);
+### 3. Integração na **Service Order**
 
--- Filtros frequentes
-CREATE INDEX IF NOT EXISTS idx_assets_org_created
-  ON public.assets (organization_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_assets_org_client
-  ON public.assets (organization_id, client_id);
-CREATE INDEX IF NOT EXISTS idx_assets_org_type
-  ON public.assets (organization_id, asset_type);
-CREATE INDEX IF NOT EXISTS idx_assets_archived
-  ON public.assets (organization_id, is_archived);
-```
+Em `ServiceOrder.tsx`, no `ArtUploadField`, adicionar botão **"Escolher do DAM"**.
+- Abre `AssetPicker` com `defaultAssetType="art"` e `clientId` (derivado do `clientName` se houver match em clients, ou aberto)
+- Ao selecionar: usa o `file_path` para gerar URL pública/assinada e seta em `form.artFile` + `form.artFileDataUrl`
+- Toast de confirmação
 
-### Hook `useAssets` — paginação + ordenação server-side
+### 4. Persistência da seleção (vinculação OS ↔ asset)
 
-Estender `AssetFilters`:
+Hoje a OS guarda só `art_file` (nome) e `art_file_data_url` (URL). Para rastrear vinculação ao DAM:
+- Adicionar coluna `art_asset_id uuid NULL` em `service_orders` (FK lógica para `assets.id`, sem constraint física para evitar bloqueio de delete)
+- Quando o usuário seleciona via DAM, gravar `art_asset_id`
+- Quando faz upload manual, manter `null`
+- Permite no futuro: badge "vinculado à biblioteca", abrir asset original a partir da OS, atualizar arte quando uma nova versão é publicada
 
-```ts
-interface AssetFilters {
-  clientId?: string | null;
-  assetType?: AssetType | "all";
-  tags?: string[];
-  search?: string;
-  includeArchived?: boolean;
-  sortBy?: "created_at" | "name" | "file_size" | "version";
-  sortDir?: "asc" | "desc";
-  page?: number;       // 1-based
-  pageSize?: number;   // default 24
-}
-```
+Para o **cliente**: nada novo necessário — `assets.client_id` já existe e o picker filtra por ele. A "memória" da seleção fica naturalmente no asset.
 
-Mudanças no `queryFn`:
-- `search` aplica `or("name.ilike.%q%,description.ilike.%q%")` no servidor (trigram)
-- `tags` continua usando `.contains("tags", filters.tags)` (índice GIN)
-- Adicionar `.range(from, to)` calculado de `page`/`pageSize`
-- Usar `.select("*", { count: "exact" })` para devolver total
-- Aplicar `.order(sortBy, { ascending: sortDir === "asc" })`
+### 5. Edge case — assets em bucket privado
 
-Retorno do hook:
-```ts
-{ assets, total, page, pageSize, totalPages, isLoading, ...mutations }
-```
-
-### `DamLibraryPage` — UI de busca/sort/paginação
-
-- **Busca debounced** (300ms) usando `useDeferredValue` ou um `useDebounce` simples antes de mandar pro filtro
-- **Sort dropdown** ao lado dos filtros: "Mais recentes", "Mais antigos", "Nome A→Z", "Nome Z→A", "Maior arquivo", "Versão"
-- **Paginação** ao final usando o componente `pagination.tsx` já existente (Previous, números 1..N com ellipsis, Next)
-- Reset automático para página 1 quando qualquer filtro/busca/sort muda
-- Contador "Mostrando 1–24 de 137 assets"
-- Persistir `pageSize` em `localStorage["dam-page-size"]` (24/48/96)
+O bucket `assets` é privado. O picker e o consumo precisam usar `createSignedUrl` (válido por 1h) em vez de URL pública. Encapsular num helper `getAssetSignedUrl(filePath: string): Promise<string>` em `src/features/dam/lib/asset-urls.ts`.
 
 ### Arquivos a criar/editar
 
 | Arquivo | Ação |
 |---|---|
-| `supabase/migrations/<ts>_assets_search_indexes.sql` | Criar — extensão pg_trgm + índices GIN/btree |
-| `src/features/dam/hooks/use-assets.ts` | Editar — paginação, sort, busca server-side, count |
-| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — debounce, sort dropdown, pagination, page-size |
-| `src/hooks/use-debounce.ts` | Criar (se não existir) — `useDebounce(value, ms)` |
+| `src/features/dam/components/AssetPicker.tsx` | Reescrever — filtros completos, paginação, toggle |
+| `src/features/dam/lib/asset-urls.ts` | Criar — helper de signed URL |
+| `src/features/mockup/components/MockupRightPanel.tsx` | Editar — botão "Escolher do DAM" + abrir picker |
+| `src/features/service-orders/components/ArtUploadField.tsx` | Editar — botão "Escolher do DAM" + callback |
+| `src/features/service-orders/pages/ServiceOrder.tsx` | Editar — gerenciar `art_asset_id`, passar callback |
+| `src/features/service-orders/hooks/use-service-orders.ts` | Editar — incluir `artAssetId` no payload |
+| `src/features/service-orders/types.ts` | Editar — adicionar `artAssetId?: string \| null` |
+| `supabase/migrations/<ts>_service_orders_art_asset_id.sql` | Criar — `ALTER TABLE service_orders ADD COLUMN art_asset_id uuid` |
 
 ### Detalhes técnicos
 
-- **Compatibilidade**: `useAssetVersions` e `AssetUploadDialog` continuam usando `useAssets(orgId, {})` sem paginação → manter `pageSize` opcional (default sem paginar quando ausente)
-- **Tag suggestions**: hoje derivadas de `assets[]`; para preservar UX após paginar, fazer query separada `.select("tags").eq("organization_id", orgId)` agregada client-side, ou aceitar limitação na página atual (decidir: fazer query leve agregada)
-- **Performance**: trigram exige no mínimo 3 chars; busca <3 cai para LIKE simples
-- **Realtime**: invalidação por `["assets", orgId]` (raiz) já cobre todas variantes paginadas
-- **A11y**: pagination com `aria-current="page"` (já vem do componente)
+- **Carregar arquivo do DAM como `File`**: `fetch(signedUrl) → blob → new File([blob], asset.name, { type: asset.mime_type })` — assim o pipeline de upload existente (`handleLogoUpload`/`handleArtUpload`) processa sem mudanças
+- **RBAC**: picker só lista assets que o usuário pode SELECT (RLS já garante via `is_member_of`)
+- **Performance**: `useAssets` paginado evita carregar 1000+ assets de uma vez
+- **A11y**: dialog com foco no campo de busca ao abrir; ESC fecha
+- **i18n**: textos em pt-BR seguindo padrão do app
 
 ### Critérios de aceite
 
-- Busca por nome/descrição executa no servidor com trigram (verificável no Network tab)
-- Filtro de tags usa índice GIN (`EXPLAIN` mostra `Bitmap Index Scan on idx_assets_tags_gin`)
-- Paginação navega sem perder filtros/busca/sort
-- Mudar filtro reseta para página 1
-- Sort persiste por sessão (mesma página)
-- Performance: lista com 1000+ assets carrega <500ms na primeira página
+- Botão "Escolher do DAM" aparece no Mockup Studio (seção logo) e na Service Order (campo arte)
+- Modal abre com filtro de tipo já aplicado conforme o contexto (logo/art)
+- Busca, tags, cliente e paginação funcionam dentro do modal
+- Selecionar um asset injeta o arquivo no editor/formulário sem reload
+- OS criada via DAM grava `art_asset_id`; OS criada via upload manual mantém `art_asset_id = null`
+- Bucket privado é acessado via signed URL (sem 403)
 
