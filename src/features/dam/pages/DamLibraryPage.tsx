@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
@@ -24,7 +25,7 @@ import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
 import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
 import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
-import { readLastPreviewAsset, clearLastPreviewAsset } from "./DamPreviewPage";
+import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
