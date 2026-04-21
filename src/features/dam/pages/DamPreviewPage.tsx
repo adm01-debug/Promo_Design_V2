@@ -187,7 +187,7 @@ export default function DamPreviewPage() {
           Pré-visualização rápida
         </div>
         <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · Esc voltar
+          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -201,7 +201,7 @@ export default function DamPreviewPage() {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
