@@ -1,73 +1,75 @@
 
 
-## Brand Guidelines — já implementado, propostas de polimento
+## Checklist de funcionalidades por módulo
 
-A tela `/clients/:clientId/brand` já existe e cobre todo o escopo solicitado:
+Vou gerar um documento `.docx` com checklist organizada por módulo, mapeando cada funcionalidade à(s) rota(s) e arquivo(s) que a implementam. Saída em `/mnt/documents/`.
 
-| Requisito | Status atual |
-|---|---|
-| Editor de paleta primária | ✅ Color picker + hex + nome, add/remove |
-| Editor de paleta secundária | ✅ Mesmo padrão |
-| Lista de fontes | ✅ Nome, uso, fonte/link, add/remove |
-| Regras Do | ✅ Textarea (uma por linha) com label verde |
-| Regras Don't | ✅ Textarea (uma por linha) com label vermelho |
-| Logo principal | ✅ AssetPicker integrado |
-| Notas adicionais | ✅ Textarea |
-| Preview aplicado | ✅ `BrandPreviewCard` com hero, tipografia, botões, paleta |
-| RBAC | ✅ Edição gated em `owner/admin/designer` |
-| Persistência | ✅ Hook `useBrandGuidelines` com upsert |
+### Estrutura do documento
 
-### Melhorias propostas (polimento premium)
+**Capa + sumário** com 5 seções (uma por módulo). Cada seção contém uma tabela com 4 colunas:
 
-Como o esqueleto está completo, sugiro 5 incrementos focados em **qualidade visual e UX**:
+| Funcionalidade | Status | Rota(s) | Arquivo principal |
+|---|---|---|---|
 
-**1. Paleta — copy-to-clipboard + preview de contraste**
-- Click no chip de cor copia o hex (toast "Copiado #FF5733")
-- Mini-badge WCAG AA/AAA ao lado de cada cor (calcula contraste contra branco/preto)
+Status usa ícone: ✅ implementado · 🟡 parcial · ⬜ pendente.
 
-**2. Fontes — load real do Google Fonts no preview**
-- Quando o usuário digita "Inter", "Poppins", "Roboto"...: injetar `<link>` para Google Fonts dinamicamente para que o preview renderize com a fonte real, não fallback
-- Detecção: tentar `https://fonts.googleapis.com/css2?family={nome}:wght@400;700`
+### Conteúdo (resumo do que vai listar)
 
-**3. Regras Do/Don't — chips em vez de linhas**
-- Manter textarea como modo edição rápida, mas exibir em **chips** com ícone ✓/✗ no preview-card (mais visual)
-- Chips clicáveis para deletar individualmente
+**1. DAM — Digital Asset Management** (`/dam`)
+- Upload drag-and-drop com tags · multi-arquivo · progresso · tolerância a falhas
+- Versionamento (`parent_asset_id`, `version`) · aba "Versões" no drawer
+- Busca server-side (trigram) · filtro por tags (GIN) · cliente · tipo · arquivados
+- Sort configurável (data/nome/tamanho/versão) · paginação · page-size persistido
+- Toggle grid/lista · detalhes em drawer · download via signed URL
+- AssetPicker reutilizável (usado em Mockup e OS)
 
-**4. Preview expandido — múltiplas seções**
-- Aba "Card de marca" (atual) + aba "Aplicação completa" mostrando:
-  - Header de site com logo + cores
-  - Cartão de produto com tipografia
-  - Combinações de cores (primária+secundária, gradiente)
+**2. Brand Guidelines** (`/clients/:clientId/brand`)
+- Editor de paleta primária e secundária · color picker
+- Lista de fontes (nome/uso/source)
+- Regras Do/Don't (textarea + chips deletáveis)
+- Logo principal via AssetPicker
+- Copy hex ao clicar · badge WCAG AA/AAA/FAIL
+- Google Fonts dinâmico no preview
+- Abas "Card de marca" e "Aplicação completa"
+- Exportar PDF (`brand-kit-{cliente}.pdf`)
+- RBAC: edição gated em owner/admin/designer
 
-**5. Export de brand kit (PDF)**
-- Botão "Exportar PDF" no header que gera um PDF de 1-2 páginas com paleta, fontes, regras e logo (reutilizar pipeline `jspdf` já presente em `service-orders/lib/ServiceOrderPdf.ts` como base)
+**3. Mockup Studio** (`/mockup/*`)
+- Wizard 3 passos: produto → área → canvas (`/mockup/new`)
+- Drafts com restore (`/mockup/drafts`)
+- Histórico (`/mockup/history`)
+- Editor multi-view (`/mockup/editor`)
+- Upload de logo · "Escolher do DAM" via AssetPicker
+- AI: remover background · sugerir posicionamento
+- Mesh warp por superfície · blend modes · sombra
+- Auto-fit · perspective presets · undo/redo
+- Export PNG/JPEG/WebP/PDF de aprovação
+- Service Order vinculada (`/mockup/service-order`, `/mockup/service-orders`, `/mockup/service-dashboard`)
 
-### Detalhes técnicos
+**4. Magic Up — AI Imagery** (`/magicup/*`)
+- Geração com prompt manual ou smart (`/magicup/generate`)
+- Prompt bank com categorias (`/magicup/prompts`)
+- Histórico com favoritos · filtros · charts (`/magicup/history`)
+- Product picker integrado · variantes
+- Inspiration gallery
+- Download menu
 
-- **Contraste WCAG**: função pura em `src/features/dam/lib/color-contrast.ts` — fórmula relative luminance + ratio
-- **Google Fonts loader**: hook `useGoogleFont(name: string)` que injeta `<link>` único no `<head>` (cacheado por nome para evitar duplicatas)
-- **Chips Do/Don't**: novo componente `RuleChips` com modo "edit" (textarea) e "view" (chips), toggle por botão
-- **Aba Aplicação**: novo componente `BrandApplicationPreview` (header simulado + product card + gradiente)
-- **PDF export**: `src/features/dam/lib/brand-kit-pdf.ts` usando `jsPDF`; layout simples 1 página (logo + paleta com swatches + fontes + regras)
+**5. Dashboard** (`/`)
+- Saudação dinâmica · greeting + nome
+- Widgets reordenáveis (dnd-kit) com layout persistido
+- Estatísticas: OS, em produção, imagens IA, rascunhos
+- Gráfico semanal · heatmap mensal
+- Projetos recentes (drafts + OS + magic up unificados)
+- Toggle grid/lista · seletor de colunas
+- Modo "Personalizar" · reset de layout
+- Tour de onboarding · command palette (⌘K)
 
-### Arquivos a criar/editar
+### Geração
 
-| Arquivo | Ação |
-|---|---|
-| `src/features/dam/lib/color-contrast.ts` | Criar — utilitários WCAG |
-| `src/features/dam/lib/google-fonts-loader.ts` | Criar — hook `useGoogleFont` |
-| `src/features/dam/lib/brand-kit-pdf.ts` | Criar — gerador PDF |
-| `src/features/dam/components/BrandPreviewCard.tsx` | Editar — copy hex + badge contraste + Google Fonts |
-| `src/features/dam/components/BrandApplicationPreview.tsx` | Criar — preview avançado |
-| `src/features/dam/components/RuleChips.tsx` | Criar — chips Do/Don't |
-| `src/features/dam/pages/BrandGuidelinesPage.tsx` | Editar — abas de preview, botão Exportar PDF, RuleChips |
+Script Node usando `docx` (já no skill DOCX) → arquivo único `checklist-funcionalidades.docx` em `/mnt/documents/`. Após gerar, converter para PDF via LibreOffice e fazer QA visual de cada página antes de entregar.
 
-### Critérios de aceite
+### Arquivos a produzir
 
-- Click em uma cor copia hex e mostra toast
-- Cada cor tem badge "AA"/"AAA"/"FAIL" indicando contraste sobre branco
-- Fontes do Google Fonts carregam de verdade no preview
-- Aba "Aplicação" mostra header + product card simulados
-- Botão "Exportar PDF" gera arquivo `brand-kit-{cliente}.pdf`
-- Chips de Do/Don't são deletáveis individualmente
+- `/mnt/documents/checklist-funcionalidades.docx` — entrega principal
+- `<lov-artifact>` tag para o usuário baixar
 
