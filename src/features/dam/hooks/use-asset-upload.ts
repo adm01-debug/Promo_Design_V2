@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAssets, type Asset, type AssetType } from "./use-assets";
+import {
+  detectFileKind,
+  extractDominantColors,
+  rasterizePdfFirstPage,
+  rasterizeSvg,
+} from "../lib/file-preview";
 
 export interface UploadOptions {
   organizationId: string;
@@ -14,14 +20,14 @@ export interface UploadOptions {
   parentAsset?: Asset | null;
 }
 
-interface ImageMeta {
+interface FileMeta {
   width: number;
   height: number;
   thumbnailBlob: Blob | null;
   dominantColors: string[];
 }
 
-async function processImage(file: File): Promise<ImageMeta | null> {
+async function processRasterImage(file: File): Promise<FileMeta | null> {
   if (!file.type.startsWith("image/")) return null;
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
@@ -83,6 +89,34 @@ async function processImage(file: File): Promise<ImageMeta | null> {
   });
 }
 
+async function processFile(file: File): Promise<FileMeta | null> {
+  const kind = detectFileKind(file);
+  if (kind === "image") return processRasterImage(file);
+  if (kind === "pdf") {
+    const r = await rasterizePdfFirstPage(file, 512);
+    if (!r) return null;
+    if (r.url) URL.revokeObjectURL(r.url);
+    return {
+      width: r.width,
+      height: r.height,
+      thumbnailBlob: r.blob,
+      dominantColors: r.canvas ? extractDominantColors(r.canvas) : [],
+    };
+  }
+  if (kind === "svg") {
+    const r = await rasterizeSvg(file, 256);
+    if (!r) return null;
+    if (r.url) URL.revokeObjectURL(r.url);
+    return {
+      width: r.width,
+      height: r.height,
+      thumbnailBlob: r.blob,
+      dominantColors: r.canvas ? extractDominantColors(r.canvas) : [],
+    };
+  }
+  return null;
+}
+
 function sanitize(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
@@ -96,7 +130,7 @@ export function useAssetUpload(organizationId: string | null) {
     setIsUploading(true);
     setProgress(10);
     try {
-      const meta = await processImage(file);
+      const meta = await processFile(file);
       setProgress(35);
       const assetId = crypto.randomUUID();
       const folder = `${options.organizationId}/${options.clientId ?? "_org"}/${assetId}`;
