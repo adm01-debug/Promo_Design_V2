@@ -16,7 +16,7 @@ interface Props {
 export function BrandApplicationPreview({ clientName, primary, secondary, fonts, logo }: Props) {
   const heading = fonts[0]?.name ?? "Inter";
   const body = fonts[1]?.name ?? fonts[0]?.name ?? "Inter";
-  useGoogleFonts([heading, body]);
+  const { allReady } = useGoogleFonts([heading, body]);
 
   const c1 = primary[0]?.hex ?? "#0f172a";
   const c2 = primary[1]?.hex ?? secondary[0]?.hex ?? "#64748b";
@@ -36,7 +36,7 @@ export function BrandApplicationPreview({ clientName, primary, secondary, fonts,
             ) : (
               <div className="w-9 h-9 rounded bg-white/15 flex items-center justify-center font-bold">{clientName.charAt(0).toUpperCase()}</div>
             )}
-            <span style={{ fontFamily: `"${heading}", sans-serif` }} className="font-bold text-lg">{clientName}</span>
+            <span style={{ fontFamily: `"${heading}", sans-serif`, visibility: allReady ? "visible" : "hidden" }} className="font-bold text-lg">{clientName}</span>
           </div>
           <nav className="flex gap-5 text-sm opacity-90" style={{ fontFamily: `"${body}", sans-serif` }}>
             <span>Home</span><span>Produtos</span><span>Sobre</span><span>Contato</span>
@@ -46,7 +46,7 @@ export function BrandApplicationPreview({ clientName, primary, secondary, fonts,
           </button>
         </div>
         <div className="p-8 text-center" style={{ background: `linear-gradient(135deg, ${c1}, ${c2})`, color: onC1 }}>
-          <h2 style={{ fontFamily: `"${heading}", sans-serif` }} className="text-3xl font-bold mb-2">Sua marca em ação</h2>
+          <h2 style={{ fontFamily: `"${heading}", sans-serif`, visibility: allReady ? "visible" : "hidden" }} className="text-3xl font-bold mb-2">Sua marca em ação</h2>
           <p style={{ fontFamily: `"${body}", sans-serif` }} className="opacity-90">Combinação de cores primárias aplicadas em gradiente</p>
         </div>
       </Card>
