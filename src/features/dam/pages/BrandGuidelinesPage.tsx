@@ -9,6 +9,8 @@ import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy, Loader2 } from
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -110,6 +112,14 @@ export default function BrandGuidelinesPage() {
   };
   const removeDont = (idx: number) => {
     setDontRules(dontList.filter((_, i) => i !== idx).join("\n"));
+  };
+  const addDo = (rule: string) => {
+    if (doList.some((r) => r.toLowerCase() === rule.toLowerCase())) return;
+    setDoRules([...doList, rule].join("\n"));
+  };
+  const addDont = (rule: string) => {
+    if (dontList.some((r) => r.toLowerCase() === rule.toLowerCase())) return;
+    setDontRules([...dontList, rule].join("\n"));
   };
 
   const handleExportPdf = async () => {
@@ -371,33 +381,69 @@ export default function BrandGuidelinesPage() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-4">
-          <Label className="text-success font-semibold">✓ Do (uma regra por linha)</Label>
-          <Textarea
-            value={doRules}
-            disabled={!editable}
-            onChange={(e) => setDoRules(e.target.value)}
-            rows={6}
-            placeholder="Use sempre o logo em fundo branco..."
-            className="mt-2"
-          />
-          <div className="mt-3">
-            <RuleChips items={doList} variant="do" editable={editable} onRemove={removeDo} />
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-success font-semibold">✓ Do</Label>
+            <span className="text-xs text-muted-foreground">({doList.length})</span>
           </div>
+          <RuleChips
+            items={doList}
+            variant="do"
+            editable={editable}
+            onRemove={removeDo}
+            onAdd={editable ? addDo : undefined}
+          />
+          {editable && (
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs h-7 px-2 -ml-2 text-muted-foreground">
+                  <ChevronDown className="w-3 h-3 mr-1" />
+                  Editar em massa (texto)
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 pt-2">
+                <Textarea
+                  value={doRules}
+                  onChange={(e) => setDoRules(e.target.value)}
+                  rows={6}
+                  placeholder="Use sempre o logo em fundo branco..."
+                />
+                <p className="text-[11px] text-muted-foreground">Uma regra por linha. As mudanças são aplicadas automaticamente.</p>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </Card>
-        <Card className="p-4">
-          <Label className="text-destructive font-semibold">✗ Don't (uma regra por linha)</Label>
-          <Textarea
-            value={dontRules}
-            disabled={!editable}
-            onChange={(e) => setDontRules(e.target.value)}
-            rows={6}
-            placeholder="Não distorça o logo..."
-            className="mt-2"
-          />
-          <div className="mt-3">
-            <RuleChips items={dontList} variant="dont" editable={editable} onRemove={removeDont} />
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-destructive font-semibold">✗ Don't</Label>
+            <span className="text-xs text-muted-foreground">({dontList.length})</span>
           </div>
+          <RuleChips
+            items={dontList}
+            variant="dont"
+            editable={editable}
+            onRemove={removeDont}
+            onAdd={editable ? addDont : undefined}
+          />
+          {editable && (
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs h-7 px-2 -ml-2 text-muted-foreground">
+                  <ChevronDown className="w-3 h-3 mr-1" />
+                  Editar em massa (texto)
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 pt-2">
+                <Textarea
+                  value={dontRules}
+                  onChange={(e) => setDontRules(e.target.value)}
+                  rows={6}
+                  placeholder="Não distorça o logo..."
+                />
+                <p className="text-[11px] text-muted-foreground">Uma regra por linha. As mudanças são aplicadas automaticamente.</p>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </Card>
       </div>
 
