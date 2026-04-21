@@ -10,6 +10,10 @@ export { default as ArtUploadField } from "./components/ArtUploadField";
 export { default as PdfPreviewDialog } from "./components/PdfPreviewDialog";
 export { generateServiceOrderPdf } from "./lib/ServiceOrderPdf";
 export type { PdfFormData } from "./lib/ServiceOrderPdf";
+export { generateBatchPdf } from "./lib/ServiceOrderBatchPdf";
+export type { BatchPdfFilters } from "./lib/ServiceOrderBatchPdf";
+export { generateClientSummaryPdf, clientSlug } from "./lib/ClientSummaryPdf";
+export type { ClientSummaryClient } from "./lib/ClientSummaryPdf";
 export { getLogoDataUrl } from "./lib/logo-loader";
 export {
   validateForm,

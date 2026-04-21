@@ -8,9 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Users, Plus, Search, Pencil, Trash2, Palette } from "lucide-react";
+import { Users, Plus, Search, Pencil, Trash2, Palette, FileDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  generateClientSummaryPdf, getLogoDataUrl, clientSlug,
+  type OsStatus,
+} from "@/features/service-orders";
 
 const empty: ClientInput = { name: "", company: "", email: "", phone: "", notes: "" };
 
@@ -25,6 +30,83 @@ const ClientsPage = () => {
 
   const canEdit = can(["owner", "admin", "designer"]);
   const canDelete = can(["owner", "admin"]);
+
+  const [summaryClient, setSummaryClient] = useState<Client | null>(null);
+  const [summaryPeriod, setSummaryPeriod] = useState<30 | 90 | 365>(90);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  const handleGenerateSummary = async () => {
+    if (!summaryClient) return;
+    setGeneratingSummary(true);
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - summaryPeriod);
+      const { data, error } = await supabase
+        .from("service_orders")
+        .select("*")
+        .ilike("client_name", summaryClient.name)
+        .gte("created_at", since.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast({ title: "Sem dados", description: "Cliente não tem OSs no período selecionado.", variant: "destructive" });
+        return;
+      }
+      const orders = data.map((row) => ({
+        id: row.id,
+        osNumber: row.os_number,
+        status: row.status as OsStatus,
+        date: row.date,
+        deliveryDate: row.delivery_date ?? "",
+        clientName: row.client_name,
+        clientCompany: row.client_company ?? "",
+        clientPhone: row.client_phone ?? "",
+        clientEmail: row.client_email ?? "",
+        productName: row.product_name,
+        productSku: row.product_sku ?? "",
+        productMaterial: row.product_material ?? "",
+        productColors: row.product_colors ?? "",
+        technique: row.technique,
+        areaName: row.area_name ?? "",
+        areaWidth: row.area_width ?? "",
+        areaHeight: row.area_height ?? "",
+        areaShape: row.area_shape ?? "",
+        artColors: row.art_colors ?? "",
+        artDpi: row.art_dpi ?? "",
+        artFile: row.art_file ?? "",
+        artFileDataUrl: row.art_file_data_url ?? "",
+        quantity: String(row.quantity),
+        observations: row.observations ?? "",
+        mockupImageUrl: row.mockup_image_url ?? "",
+        identificacaoCaixa: row.identificacao_caixa ?? "",
+        materialEvento: row.material_evento ?? false,
+        aprovarPrimeiraPeca: row.aprovar_primeira_peca ?? false,
+        qtdCompra: row.qtd_compra ?? "",
+        qtdLiberada: row.qtd_liberada ?? "",
+        fazParteKit: row.faz_parte_kit ?? false,
+        gravacaoDetalhe: row.gravacao_detalhe ?? "",
+        artAssetId: row.art_asset_id ?? null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+      const logo = await getLogoDataUrl().catch(() => undefined);
+      const doc = await generateClientSummaryPdf(
+        { name: summaryClient.name, company: summaryClient.company, email: summaryClient.email, phone: summaryClient.phone },
+        orders,
+        summaryPeriod,
+        logo,
+      );
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      doc.save(`resumo-${clientSlug(summaryClient.name)}-${today}.pdf`);
+      toast({ title: "Resumo gerado", description: `${orders.length} OS(s) incluídas.` });
+      setSummaryClient(null);
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -116,6 +198,9 @@ const ClientsPage = () => {
                     <Button variant="ghost" size="sm" asChild>
                       <Link to={`/clients/${c.id}/brand`}><Palette className="h-3 w-3 mr-1" /> Brand</Link>
                     </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setSummaryClient(c); setSummaryPeriod(90); }}>
+                      <FileDown className="h-3 w-3 mr-1" /> Resumo PDF
+                    </Button>
                     {canEdit && <Button variant="ghost" size="sm" onClick={() => openEdit(c)}><Pencil className="h-3 w-3 mr-1" /> Editar</Button>}
                     {canDelete && <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)}><Trash2 className="h-3 w-3 mr-1" /> Excluir</Button>}
                   </div>
@@ -141,6 +226,40 @@ const ClientsPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={handleSave} disabled={addClient.isPending || updateClient.isPending}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!summaryClient} onOpenChange={(o) => !o && setSummaryClient(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resumo do Projeto — {summaryClient?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label>Período</Label>
+            <div className="flex gap-2">
+              {([30, 90, 365] as const).map((d) => (
+                <Button
+                  key={d}
+                  type="button"
+                  variant={summaryPeriod === d ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSummaryPeriod(d)}
+                >
+                  {d === 365 ? "Último ano" : `Últimos ${d} dias`}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Inclui KPIs, OSs por status, top técnicas, histórico cronológico e galeria de mockups.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSummaryClient(null)} disabled={generatingSummary}>Cancelar</Button>
+            <Button onClick={handleGenerateSummary} disabled={generatingSummary}>
+              {generatingSummary ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+              Gerar PDF
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

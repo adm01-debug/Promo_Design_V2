@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
   Package, Calendar, ArrowUpDown, CheckCircle2,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Download, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,9 @@ import {
 import {
   useServiceOrders, STATUS_CONFIG, getNextStatuses,
   type OsStatus,
+  generateBatchPdf, getLogoDataUrl,
 } from "@/features/service-orders";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 20;
@@ -39,6 +41,7 @@ const ServiceOrderList = () => {
   const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
   const [sortDesc, setSortDesc] = useState(true);
   const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState(false);
 
   const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
     page,
@@ -65,6 +68,73 @@ const ServiceOrderList = () => {
     toast.success("Ordem de Serviço excluída");
   };
 
+  const handleExportPdf = async () => {
+    setExporting(true);
+    try {
+      // Buscar todas as OSs respeitando filtros (até 1000)
+      let query = supabase.from("service_orders").select("*");
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (search) {
+        query = query.or(
+          `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
+        );
+      }
+      query = query.order("created_at", { ascending: !sortDesc }).limit(1000);
+      const { data, error } = await query;
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast.warning("Nenhuma OS para exportar com os filtros atuais");
+        return;
+      }
+      const orders = data.map((row) => ({
+        id: row.id,
+        osNumber: row.os_number,
+        status: row.status as OsStatus,
+        date: row.date,
+        deliveryDate: row.delivery_date ?? "",
+        clientName: row.client_name,
+        clientCompany: row.client_company ?? "",
+        clientPhone: row.client_phone ?? "",
+        clientEmail: row.client_email ?? "",
+        productName: row.product_name,
+        productSku: row.product_sku ?? "",
+        productMaterial: row.product_material ?? "",
+        productColors: row.product_colors ?? "",
+        technique: row.technique,
+        areaName: row.area_name ?? "",
+        areaWidth: row.area_width ?? "",
+        areaHeight: row.area_height ?? "",
+        areaShape: row.area_shape ?? "",
+        artColors: row.art_colors ?? "",
+        artDpi: row.art_dpi ?? "",
+        artFile: row.art_file ?? "",
+        artFileDataUrl: row.art_file_data_url ?? "",
+        quantity: String(row.quantity),
+        observations: row.observations ?? "",
+        mockupImageUrl: row.mockup_image_url ?? "",
+        identificacaoCaixa: row.identificacao_caixa ?? "",
+        materialEvento: row.material_evento ?? false,
+        aprovarPrimeiraPeca: row.aprovar_primeira_peca ?? false,
+        qtdCompra: row.qtd_compra ?? "",
+        qtdLiberada: row.qtd_liberada ?? "",
+        fazParteKit: row.faz_parte_kit ?? false,
+        gravacaoDetalhe: row.gravacao_detalhe ?? "",
+        artAssetId: row.art_asset_id ?? null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+      const logo = await getLogoDataUrl().catch(() => undefined);
+      const doc = await generateBatchPdf(orders, { status: statusFilter, search }, logo);
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      doc.save(`ordens-servico-${today}.pdf`);
+      toast.success(`PDF gerado com ${orders.length} OS(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // Reset page when filters change
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
   const handleFilterChange = (v: OsStatus | "all") => { setStatusFilter(v); setPage(1); };
@@ -78,9 +148,15 @@ const ServiceOrderList = () => {
             <h1 className="text-lg font-display font-bold text-foreground">Ordens de Serviço</h1>
             <p className="text-xs text-muted-foreground">{total} de {allTotal} ordem(ns)</p>
           </div>
-          <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
-            <Plus className="w-3.5 h-3.5" /> Nova OS
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-2" onClick={handleExportPdf} disabled={exporting || total === 0}>
+              {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Exportar PDF
+            </Button>
+            <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
+              <Plus className="w-3.5 h-3.5" /> Nova OS
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
