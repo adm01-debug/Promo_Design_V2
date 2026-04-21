@@ -5,8 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,6 +28,7 @@ import { BrandApplicationPreview } from "../components/BrandApplicationPreview";
 import { RuleChips } from "../components/RuleChips";
 import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
 import { getAssetSignedUrl } from "../lib/asset-urls";
+import { wcagBoth } from "../lib/color-contrast";
 import { toast } from "sonner";
 
 export default function BrandGuidelinesPage() {
@@ -123,7 +126,17 @@ export default function BrandGuidelinesPage() {
     title: string;
     list: ColorEntry[];
     setList: (l: ColorEntry[]) => void;
-  }) => (
+  }) => {
+    const copyHex = async (hex: string) => {
+      try {
+        await navigator.clipboard.writeText(hex.toUpperCase());
+        toast.success(`Copiado ${hex.toUpperCase()}`);
+      } catch {
+        toast.error("Falha ao copiar");
+      }
+    };
+    return (
+    <TooltipProvider delayDuration={150}>
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold">{title}</h3>
@@ -138,40 +151,66 @@ export default function BrandGuidelinesPage() {
         )}
       </div>
       <div className="space-y-2">
-        {list.map((c, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <input
-              type="color"
-              value={c.hex}
-              disabled={!editable}
-              onChange={(e) => {
-                const next = [...list]; next[i] = { ...c, hex: e.target.value }; setList(next);
-              }}
-              className="w-10 h-10 rounded border border-border cursor-pointer"
-            />
-            <Input
-              value={c.name}
-              disabled={!editable}
-              placeholder="Nome (ex: Marca primária)"
-              onChange={(e) => { const next = [...list]; next[i] = { ...c, name: e.target.value }; setList(next); }}
-            />
-            <Input
-              value={c.hex}
-              disabled={!editable}
-              className="w-28 font-mono"
-              onChange={(e) => { const next = [...list]; next[i] = { ...c, hex: e.target.value }; setList(next); }}
-            />
-            {editable && (
-              <Button size="icon" variant="ghost" onClick={() => setList(list.filter((_, idx) => idx !== i))}>
-                <Trash2 className="w-4 h-4" />
+        {list.map((c, i) => {
+          const w = wcagBoth(c.hex);
+          const variant = w.vsWhite === "FAIL" ? "destructive" : w.vsWhite === "AAA" ? "default" : "secondary";
+          return (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="color"
+                value={c.hex}
+                disabled={!editable}
+                onChange={(e) => {
+                  const next = [...list]; next[i] = { ...c, hex: e.target.value }; setList(next);
+                }}
+                className="w-10 h-10 rounded border border-border cursor-pointer"
+              />
+              <Input
+                value={c.name}
+                disabled={!editable}
+                placeholder="Nome (ex: Marca primária)"
+                onChange={(e) => { const next = [...list]; next[i] = { ...c, name: e.target.value }; setList(next); }}
+              />
+              <Input
+                value={c.hex}
+                disabled={!editable}
+                className="w-28 font-mono"
+                onChange={(e) => { const next = [...list]; next[i] = { ...c, hex: e.target.value }; setList(next); }}
+              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant={variant} className="font-mono text-[9px] px-1.5 py-0 cursor-help shrink-0">
+                    {w.vsWhite}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Contraste vs branco {w.ratioWhite.toFixed(2)}:1 · vs preto {w.ratioBlack.toFixed(2)}:1
+                </TooltipContent>
+              </Tooltip>
+              <Button
+                size="icon"
+                variant="ghost"
+                type="button"
+                onClick={() => copyHex(c.hex)}
+                title="Copiar HEX"
+                aria-label="Copiar HEX"
+              >
+                <Copy className="w-4 h-4" />
               </Button>
-            )}
-          </div>
-        ))}
+              {editable && (
+                <Button size="icon" variant="ghost" onClick={() => setList(list.filter((_, idx) => idx !== i))}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          );
+        })}
         {list.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma cor adicionada.</div>}
       </div>
     </Card>
-  );
+    </TooltipProvider>
+    );
+  };
 
   if (!currentOrgId || !clientId) {
     return <div className="p-6 text-sm text-muted-foreground">Cliente/organização não definido.</div>;
