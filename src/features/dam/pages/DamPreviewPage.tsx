@@ -80,6 +80,15 @@ export default function DamPreviewPage() {
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
 
+  // Resolve selected assets into Asset[] (maintain selection order).
+  const selectedAssets = useMemo(() => {
+    if (compare.selectedIds.length === 0) return [];
+    const map = new Map(assets.map((a) => [a.id, a]));
+    return compare.selectedIds
+      .map((id) => map.get(id))
+      .filter((a): a is Asset => Boolean(a));
+  }, [assets, compare.selectedIds]);
+
   // Restore activeIndex from ?asset=<id> when assets load / filters change.
   // If id is missing or not in the current list, fall back to index 0.
   useEffect(() => {
