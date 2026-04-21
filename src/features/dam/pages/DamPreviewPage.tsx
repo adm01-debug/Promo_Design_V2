@@ -17,6 +17,7 @@ import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { CompareGrid } from "../components/CompareGrid";
 import { CompareTopBar } from "../components/CompareTopBar";
 import { useCompareSelection } from "../hooks/use-compare-selection";
+import { ExportMenu } from "../components/ExportMenu";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
@@ -262,6 +263,12 @@ export default function DamPreviewPage() {
             </Badge>
           )}
         </Button>
+        <ExportMenu
+          assets={assets}
+          selectedAssets={selectedAssets}
+          clients={clients}
+          compareMode={compareMode}
+        />
         <div className="text-xs text-muted-foreground hidden md:block">
           ← / → (j/k) navegar · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · M compare · Espaço selecionar · Esc voltar
         </div>
