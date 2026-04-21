@@ -196,6 +196,27 @@ export default function DamPreviewPage() {
   const assetMissingFromList =
     Boolean(assetIdParam) && assets.length > 0 && !assets.some((a) => a.id === assetIdParam);
 
+  // When the URL/localStorage points to an asset that's not in the current results,
+  // show a one-time toast offering to clear filters. The localStorage entry is kept
+  // (filters may be temporary) — only cleared when the user explicitly chooses to clear filters.
+  useEffect(() => {
+    if (!assetMissingFromList) return;
+    if (didShowFallbackToastRef.current) return;
+    didShowFallbackToastRef.current = true;
+    toast("Asset fora dos filtros atuais", {
+      description:
+        "O asset visualizado por último não está disponível nos filtros atuais. Mostrando o primeiro disponível.",
+      duration: 5000,
+      action: {
+        label: "Limpar filtros",
+        onClick: () => {
+          resetFilters();
+          clearLastPreviewAsset();
+        },
+      },
+    });
+  }, [assetMissingFromList, resetFilters]);
+
   // Sync URL ?asset=<id> with current activeAsset.
   // Use push when the change came from a deliberate user action (arrows/thumbs),
   // replace when it's a passive sync (clamp/init/filter change).
