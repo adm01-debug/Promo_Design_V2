@@ -1,68 +1,38 @@
 
 
-## Tela de pré-visualização rápida (Quick Preview) — DAM
+## Persistir asset ativo no Quick Preview
 
-Adicionar uma rota dedicada `/dam/preview` (ou modal lightbox sobre `/dam`) onde o usuário navega assets em **tela cheia** com filtros laterais aplicados em tempo real, sem precisar abrir o drawer de detalhes para cada um.
+Hoje `/dam/preview` reseta `activeIndex` para 0 sempre que filtros mudam ou a página recarrega. Vou persistir o asset ativo via **id** (não índice — índice fica inválido se filtros mudarem) e usar querystring + localStorage para sobreviver a reload e navegação.
 
 ### Comportamento
 
-- **Layout split**: filtros à esquerda (sidebar 280px) + área central de preview grande + tira de thumbnails embaixo
-- **Navegação por teclado**: ←/→ para próximo/anterior asset, Esc para sair, Enter abre o drawer de detalhes completo
-- **Filtros em tempo real**: tipo (multi), tags (AND/OR), cliente, busca, arquivados — mesma lógica do `DamLibraryPage`, debounced
-- **Preview grande**: imagem em tela cheia com zoom (click pra ampliar 100% / fit), metadados sobrepostos no canto (nome, tipo, dimensões, tamanho, versão)
-- **Tira de thumbnails**: scroll horizontal embaixo, asset ativo destacado, click pula direto pra ele
-- **Ações rápidas no overlay**: Download, Copiar URL, Abrir detalhes, Próximo/Anterior — tudo flutuante sobre a imagem
-- **Botão "Quick Preview"** no header do `DamLibraryPage` que leva pra rota com filtros atuais preservados via querystring
+- Ao navegar com ←/→ ou clicar num thumb, atualizar `?asset=<id>` na URL (replace, sem empilhar histórico)
+- Ao recarregar `/dam/preview?asset=<id>&...filtros`, restaurar `activeIndex` procurando o id na lista carregada
+- Se o id não estiver na lista atual (filtro mudou, asset arquivado), cair pro índice 0 silenciosamente
+- Ao clicar "Pré-visualizar" na biblioteca, se houver último asset visto salvo no localStorage **e** ele estiver compatível com os filtros sendo passados, abrir já nele
+- Ao voltar pra `/dam` via Esc ou botão, persistir o último id no localStorage (`dam-last-preview-asset`) para recuperação futura
 
-### Estrutura
+### Detalhes técnicos
 
-```text
-/dam/preview?type=logo,art&tags=brand&tagsMode=any&q=capacete
-┌──────────────┬──────────────────────────────────────┐
-│  FILTROS     │                                      │
-│  ──────      │       [imagem grande do asset]       │
-│  Busca       │                                      │
-│  Tipo (multi)│       ◀  asset 5 de 42  ▶            │
-│  Tags AND/OR │                                      │
-│  Cliente     │  metadados | download | detalhes     │
-│  Arquivados  │                                      │
-│  Sort        │                                      │
-│              ├──────────────────────────────────────┤
-│  [42 assets] │  [tira horizontal de thumbs]         │
-└──────────────┴──────────────────────────────────────┘
-```
+- **Querystring**: nova chave `asset` adicionada ao `useDamFilters` (ou tratada à parte em `DamPreviewPage` via `useSearchParams` direto, já que não é filtro). Prefiro tratar à parte para não poluir o hook de filtros.
+- **Sync índice ↔ id**: `useEffect` que, quando `assets` carrega, procura `assets.findIndex(a => a.id === assetIdParam)` e atualiza `activeIndex`. Quando `activeIndex` muda por interação, escreve `?asset=<assets[i].id>` via `setSearchParams(..., { replace: true })`.
+- **localStorage**: `dam-last-preview-asset` guarda `{ id, ts }`. Expira em 24h pra não ressuscitar contexto antigo demais.
+- **Reset comportamental**: o reset atual de `activeIndex=0` quando filtros mudam permanece, **exceto** se o id atual ainda existir na nova lista (preserva contexto quando o usuário só refina filtros).
+- **Botão Voltar**: link `/dam${queryString}` continua igual; o id fica no localStorage, não na URL da biblioteca (URL da Library permanece limpa).
 
 ### Arquivos
 
 | Arquivo | Ação |
 |---|---|
-| `src/features/dam/pages/DamPreviewPage.tsx` | Criar — página principal com split layout |
-| `src/features/dam/components/PreviewSidebar.tsx` | Criar — filtros reutilizáveis (extrai lógica do `DamLibraryPage`) |
-| `src/features/dam/components/PreviewStage.tsx` | Criar — área central com imagem grande, zoom, navegação |
-| `src/features/dam/components/PreviewThumbStrip.tsx` | Criar — tira horizontal de thumbnails |
-| `src/features/dam/hooks/use-dam-filters.ts` | Criar — extrai estado de filtros do `DamLibraryPage` para hook compartilhado (sync com querystring) |
-| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — botão "Quick Preview" no header + usar `useDamFilters` |
-| `src/App.tsx` | Editar — registrar rota `/dam/preview` (lazy) |
-
-### Detalhes técnicos
-
-- **Sync querystring ↔ estado** via `useSearchParams`, para que reload/share mantenha filtros
-- **Hook `useDamFilters`** centraliza estado de busca/tipo/tags/cliente/sort/archived com persistência localStorage e sync URL — usado tanto pela Library quanto pela Preview
-- **Reaproveita `useAssets`** com `pageSize: 50` (lista mais agressiva pra preview rápido); paginação infinita no thumb strip via "carregar mais"
-- **Atalhos teclado**: `useEffect` com `keydown` listener — ←/→/Esc/Enter
-- **Zoom**: estado `zoomMode: "fit" | "actual"`, transform CSS `scale()` simples (sem libs)
-- **Drawer de detalhes**: reutiliza `AssetDetailDrawer` existente, abre por cima da preview
-- **Botão de retorno**: "Voltar à biblioteca" preserva filtros via querystring
+| `src/features/dam/pages/DamPreviewPage.tsx` | Editar — ler/gravar `?asset=<id>`, restaurar índice por id, persistir em localStorage |
+| `src/features/dam/pages/DamLibraryPage.tsx` | Editar — botão "Pré-visualizar" lê localStorage e injeta `?asset=<id>` se válido |
 
 ### Critérios de aceite
 
-- Rota `/dam/preview` acessível pelo botão "Quick Preview" na biblioteca
-- Filtros laterais alteram a lista em tempo real (debounce 300ms na busca)
-- Setas ←/→ navegam entre assets sem reload
-- Esc volta para `/dam` mantendo filtros
-- Enter (ou botão "Detalhes") abre o `AssetDetailDrawer` sobre a preview
-- Querystring reflete filtros (URL compartilhável)
-- Tira de thumbnails destaca asset ativo e permite click-to-jump
-- Zoom toggle (fit ↔ 100%) funciona em imagens grandes
-- Sem regressão na biblioteca atual (`/dam`)
+- Navegar com ←/→ atualiza `?asset=<id>` na URL sem reload
+- Recarregar a página em `/dam/preview?asset=X` mantém o asset X selecionado
+- Mudar um filtro mantém o asset atual selecionado se ele continuar visível; senão, vai pro primeiro
+- Clicar "Pré-visualizar" na biblioteca abre no último asset visto (se ainda existir e <24h)
+- Esc/Voltar à biblioteca preserva o id no localStorage
+- Sem regressão nos atalhos de teclado nem na navegação por thumb
 
