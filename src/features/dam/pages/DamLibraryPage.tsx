@@ -147,6 +147,10 @@ export default function DamLibraryPage() {
   const [selected, setSelected] = useState<Asset | null>(null);
   const quickPreview = useQuickPreview();
 
+  // "Continue where you left off" — last asset viewed in /dam/preview.
+  const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(() => readLastPreviewAsset());
+  const highlightedRef = useRef<string | null>(null);
+
   const hasActiveFilters =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
     assetTypes.length > 0 ||
