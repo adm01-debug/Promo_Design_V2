@@ -175,6 +175,26 @@ export default function DamPreviewPage() {
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
 
+  // Hydrate compare selection from ?compare=id1,id2,... on first load when assets are available.
+  useEffect(() => {
+    if (didHydrateCompareRef.current) return;
+    if (assets.length === 0) return;
+    const raw = searchParams.get("compare");
+    if (!raw) {
+      didHydrateCompareRef.current = true;
+      return;
+    }
+    const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    const valid = ids.filter((id) => assets.some((a) => a.id === id)).slice(0, compare.max);
+    if (valid.length >= 2) {
+      compare.clear();
+      valid.forEach((id) => compare.toggle(id));
+      setCompareMode(true);
+    }
+    didHydrateCompareRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets]);
+
   // Resolve selected assets into Asset[] (maintain selection order).
   const selectedAssets = useMemo(() => {
     if (compare.selectedIds.length === 0) return [];
