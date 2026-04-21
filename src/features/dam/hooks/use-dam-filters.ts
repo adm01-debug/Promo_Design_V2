@@ -8,6 +8,7 @@ const ASSET_TYPES_KEY = "dam-asset-types";
 const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
+const ARCHIVED_KEY = "dam-include-archived";
 
 function readLS(key: string): string | null {
   if (typeof window === "undefined") return null;
@@ -98,7 +99,7 @@ export function useDamFilters() {
       clientId: clientFromUrl || clientFromLs || "all",
       tags,
       tagsMode,
-      includeArchived: params.get("archived") === "1",
+      includeArchived: params.get("archived") === "1" || readLS(ARCHIVED_KEY) === "1",
       sort,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,6 +145,9 @@ export function useDamFilters() {
   useEffect(() => {
     writeLS(SORT_KEY, state.sort !== "created_desc" ? state.sort : null);
   }, [state.sort]);
+  useEffect(() => {
+    writeLS(ARCHIVED_KEY, state.includeArchived ? "1" : null);
+  }, [state.includeArchived]);
 
   // Auto-fallback if relevance is selected without a search term
   useEffect(() => {
@@ -198,6 +202,7 @@ export function useDamFilters() {
     writeLS(CLIENT_ID_KEY, null);
     writeLS(TAGS_KEY, null);
     writeLS(SORT_KEY, null);
+    writeLS(ARCHIVED_KEY, null);
   }, []);
 
   const queryString = useMemo(() => {
