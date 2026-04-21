@@ -8,9 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { useAssetUpload } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History, RotateCw } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
+import {
+  detectFileKind,
+  buildSvgPreviewUrl,
+  rasterizePdfFirstPage,
+  type FileKind,
+} from "../lib/file-preview";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -32,6 +38,8 @@ interface FileEntry {
   id: string;
   file: File;
   preview: string | null;
+  kind: FileKind;
+  previewLoading: boolean;
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
@@ -104,15 +112,43 @@ export function AssetUploadDialog({
         toast.error(`${f.name}: ${err}`);
         continue;
       }
+      const kind = detectFileKind(f);
+      const isRasterImage =
+        kind === "image" && (f.type || "").startsWith("image/");
       next.push({
         id: crypto.randomUUID(),
         file: f,
-        preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+        kind,
+        preview: isRasterImage ? URL.createObjectURL(f) : null,
+        previewLoading: kind === "pdf" || kind === "svg",
         progress: 0,
         status: "pending",
       });
     }
     setEntries((prev) => (isVersionMode ? next : [...prev, ...next]));
+    // Async preview generation for PDF/SVG (does not block UI)
+    next.forEach((entry) => {
+      if (entry.kind === "svg") {
+        buildSvgPreviewUrl(entry.file)
+          .then((url) => updatePreview(entry.id, url))
+          .catch(() => updatePreview(entry.id, null));
+      } else if (entry.kind === "pdf") {
+        rasterizePdfFirstPage(entry.file, 256)
+          .then((r) => updatePreview(entry.id, r?.url ?? null))
+          .catch(() => updatePreview(entry.id, null));
+      }
+    });
+  };
+
+  const updatePreview = (id: string, url: string | null) => {
+    setEntries((prev) =>
+      prev.map((e) => {
+        if (e.id !== id) return e;
+        // Revoke any prior url that we own (raster image used file URL too)
+        if (e.preview && e.preview !== url) URL.revokeObjectURL(e.preview);
+        return { ...e, preview: url, previewLoading: false };
+      })
+    );
   };
 
   const removeEntry = (id: string) => {
@@ -263,7 +299,28 @@ export function AssetUploadDialog({
               {entries.map((e) => (
                 <li key={e.id} className="flex items-center gap-3 p-2 rounded-md border bg-card">
                   {e.preview ? (
-                    <img src={e.preview} alt="" className="w-10 h-10 rounded object-cover" />
+                    <img
+                      src={e.preview}
+                      alt=""
+                      className="w-10 h-10 rounded object-cover bg-muted"
+                    />
+                  ) : e.previewLoading ? (
+                    <div
+                      className="w-10 h-10 rounded bg-muted flex items-center justify-center"
+                      title="Gerando preview..."
+                    >
+                      <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                    </div>
+                  ) : e.kind === "ai" || e.kind === "psd" ? (
+                    <div
+                      className="w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
+                      title={e.kind.toUpperCase()}
+                    >
+                      <FileType className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                        {e.kind}
+                      </span>
+                    </div>
                   ) : (
                     <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
                       <FileImage className="w-5 h-5 text-muted-foreground" />
