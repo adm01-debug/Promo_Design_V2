@@ -131,9 +131,24 @@ export default function DamPreviewPage() {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable) return;
+      const inEditable = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
       // When the detail drawer is open, let Radix handle Esc/focus; skip our shortcuts.
       if (detailAsset) return;
+
+      // Esc has special handling — even inside inputs we want to blur first.
+      if (e.key === "Escape") {
+        if (inEditable && target) {
+          e.preventDefault();
+          target.blur();
+          return;
+        }
+        e.preventDefault();
+        navigate(`/dam${queryString}`);
+        return;
+      }
+
+      if (inEditable) return;
+
       if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
         e.preventDefault();
         goPrev();
@@ -146,9 +161,13 @@ export default function DamPreviewPage() {
       } else if (e.key === "End") {
         e.preventDefault();
         if (assets.length > 0) setActiveIndex(assets.length - 1);
-      } else if (e.key === "Escape") {
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        navigate(`/dam${queryString}`);
+        if (activeAsset) {
+          const params = new URLSearchParams(queryString.startsWith("?") ? queryString.slice(1) : queryString);
+          params.set("asset", activeAsset.id);
+          window.open(`/dam/preview?${params.toString()}`, "_blank", "noopener,noreferrer");
+        }
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (activeAsset) setDetailAsset(activeAsset);
@@ -174,7 +193,11 @@ export default function DamPreviewPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div
+      className="h-[calc(100vh-4rem)] flex flex-col"
+      role="region"
+      aria-label="Pré-visualização de assets"
+    >
       <header className="border-b border-border px-4 py-2 flex items-center gap-3 shrink-0">
         <Button variant="ghost" size="sm" asChild>
           <Link to={`/dam${queryString}`}>
@@ -187,7 +210,7 @@ export default function DamPreviewPage() {
           Pré-visualização rápida
         </div>
         <div className="ml-auto text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar
+          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -201,7 +224,7 @@ export default function DamPreviewPage() {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Z zoom · C copiar · D baixar · Esc voltar
+            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Esc voltar
           </PopoverContent>
         </Popover>
       </header>
