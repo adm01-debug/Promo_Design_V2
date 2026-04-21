@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FolderArchive } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -13,12 +13,17 @@ import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 
+const LAST_ASSET_KEY = "dam-last-preview-asset";
+const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
+
 export default function DamPreviewPage() {
   const navigate = useNavigate();
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
   const { state, queryString } = filters;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const assetIdParam = searchParams.get("asset");
 
   const debouncedSearch = useDebounce(state.search, 300);
 
@@ -44,10 +49,19 @@ export default function DamPreviewPage() {
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
 
-  // Reset active index when result set changes
+  // Restore activeIndex from ?asset=<id> when assets load / filters change.
+  // If id is missing or not in the current list, fall back to index 0.
   useEffect(() => {
+    if (assets.length === 0) return;
+    if (assetIdParam) {
+      const idx = assets.findIndex((a) => a.id === assetIdParam);
+      if (idx >= 0) {
+        setActiveIndex(idx);
+        return;
+      }
+    }
     setActiveIndex(0);
-  }, [debouncedSearch, state.assetTypes, state.clientId, state.tags, state.tagsMode, state.includeArchived, state.sort]);
+  }, [assets, assetIdParam]);
 
   // Clamp activeIndex if list shrinks
   useEffect(() => {
@@ -57,6 +71,26 @@ export default function DamPreviewPage() {
   }, [assets.length, activeIndex]);
 
   const activeAsset = assets[activeIndex] ?? null;
+
+  // Sync URL ?asset=<id> with current activeAsset (replace, no history spam).
+  useEffect(() => {
+    if (!activeAsset) return;
+    if (searchParams.get("asset") === activeAsset.id) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("asset", activeAsset.id);
+    setSearchParams(next, { replace: true });
+  }, [activeAsset, searchParams, setSearchParams]);
+
+  // Persist last viewed asset to localStorage (for re-entry from library).
+  useEffect(() => {
+    if (!activeAsset) return;
+    try {
+      localStorage.setItem(
+        LAST_ASSET_KEY,
+        JSON.stringify({ id: activeAsset.id, ts: Date.now() }),
+      );
+    } catch { /* ignore */ }
+  }, [activeAsset]);
 
   const goPrev = () => {
     if (assets.length === 0) return;
