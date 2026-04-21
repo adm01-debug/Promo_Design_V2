@@ -135,3 +135,24 @@ export async function getAssetSignedUrl(path: string, expiresIn = 3600): Promise
   if (error) return null;
   return data.signedUrl;
 }
+
+/**
+ * Returns all versions of an asset chain (root + descendants) ordered by version DESC.
+ * The "root" is the original asset (parent_asset_id IS NULL); all later versions point to it.
+ */
+export function useAssetVersions(asset: Asset | null) {
+  const rootId = asset ? (asset.parent_asset_id ?? asset.id) : null;
+  return useQuery({
+    queryKey: ["asset-versions", rootId],
+    enabled: !!rootId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("assets")
+        .select("*")
+        .or(`id.eq.${rootId},parent_asset_id.eq.${rootId}`)
+        .order("version", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Asset[];
+    },
+  });
+}
