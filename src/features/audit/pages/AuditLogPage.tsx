@@ -21,6 +21,7 @@ import {
 import { AuditFilters, type AuditFilterState } from "../components/AuditFilters";
 import { AuditDiffDialog } from "../components/AuditDiffDialog";
 import { AuditAlertsManager } from "../components/AuditAlertsManager";
+import { AuditSavedViewsMenu } from "../components/AuditSavedViewsMenu";
 import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
@@ -255,6 +256,13 @@ const AuditLogPage = () => {
           <p className="text-muted-foreground">Consulte todas as ações da sua organização com filtros avançados.</p>
         </div>
         <div className="flex items-center gap-2">
+          {currentOrgId && (
+            <AuditSavedViewsMenu
+              organizationId={currentOrgId}
+              currentFilters={filterState}
+              onApply={setFilters}
+            />
+          )}
           <Button
             onClick={() => setAlertsOpen(true)}
             disabled={!currentOrgId}
