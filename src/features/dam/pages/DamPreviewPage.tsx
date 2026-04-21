@@ -58,6 +58,8 @@ export default function DamPreviewPage() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const compare = useCompareSelection();
 
   const queryFilters = useMemo(() => {
     const opt = SORT_OPTIONS.find((s) => s.value === state.sort) ?? SORT_OPTIONS[1];
