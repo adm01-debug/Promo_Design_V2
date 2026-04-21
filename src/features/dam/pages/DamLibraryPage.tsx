@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -21,6 +21,8 @@ import { AssetListView } from "../components/AssetListView";
 import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
 import { SavedSearchesMenu } from "../components/SavedSearchesMenu";
 import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
+import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
+import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LAST_ASSET_KEY, LAST_ASSET_TTL_MS } from "./DamPreviewPage";
 import {
