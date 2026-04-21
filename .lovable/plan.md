@@ -1,42 +1,51 @@
 
 
-## Thumbnails para PDF/SVG/AI no upload
+## Log de auditoria por versão de asset
 
-Hoje só imagens raster geram thumbnail e preview no `AssetUploadDialog` e via `processImage` em `useAssetUpload`. PDF/SVG/AI mostram apenas o ícone genérico `FileImage`. Vou estender ambos para gerar previews antes e depois do upload.
+Cada upload de versão hoje cria uma linha em `assets` (que dispara `write_audit_log` via trigger). Os INSERTs ficam em `audit_log` mas não são expostos no drawer. Vou adicionar uma seção "Auditoria" dentro da aba "Versões" mostrando quem criou cada versão e o que mudou em relação à anterior.
 
 ### Mudanças
 
-**`src/features/dam/components/AssetUploadDialog.tsx`**
-- Após `addFiles`, para cada entrada não-imagem:
-  - **SVG** (`image/svg+xml` ou extensão `.svg`): ler como texto via `FileReader.readAsText`, criar Blob `image/svg+xml` e `URL.createObjectURL` → atribuir a `entry.preview`
-  - **PDF** (`application/pdf`): usar `pdfjs-dist` (já instalado? verificar; se não, adicionar) para renderizar página 1 num canvas off-screen (largura 256px) → `canvas.toBlob` → `URL.createObjectURL` em `entry.preview`
-  - **AI / PSD**: sem renderer client-side viável → manter ícone, mas trocar por ícone específico (`FileType` ou badge "AI"/"PSD")
-- Tudo assíncrono e progressivo: entrada aparece imediatamente com placeholder ("Gerando preview...") e é atualizada quando o blob fica pronto
-- Manter cleanup dos `URL.revokeObjectURL` no unmount/remove
+**`src/features/dam/hooks/use-asset-audit.ts`** (novo)
+- Hook `useAssetAudit(asset: Asset | null)`:
+  - Busca o chain completo de versões (root + descendants) por id
+  - Faz `select * from audit_log where table_name='assets' and record_id in (chain_ids) order by created_at asc`
+  - Retorna entradas tipadas `AssetAuditEntry { id, version, action, user_id, created_at, old_values, new_values, changed_fields }`
+  - Computa `changed_fields` no cliente comparando `new_values` da versão N com `new_values` da versão N-1 (chain anterior), focando em campos relevantes: `name`, `tags`, `description`, `dominant_colors`, `asset_type`, `client_id`, `metadata`
+  - Cache key: `["asset-audit", rootId]`
 
-**`src/features/dam/hooks/use-asset-upload.ts`**
-- Estender `processImage` → `processFile(file)`:
-  - Imagem: comportamento atual
-  - SVG: rasterizar em canvas 256×256 via `<img>` apontando para data URL do SVG → gerar JPEG thumbnail e dimensões
-  - PDF: renderizar página 1 com pdfjs em canvas 512px largura → JPEG thumbnail + dimensões da página
-  - AI/PSD/outros: retornar `null` (sem thumb, sem dimensões)
-- Restante do upload (storage, dominantColors, mime) inalterado
-- `dominant_colors` continua extraído quando há canvas (PDF e SVG ganham paleta também)
+**`src/features/dam/components/AssetAuditTrail.tsx`** (novo)
+- Renderiza dentro de um `<Collapsible>` "Histórico de auditoria" abaixo da lista de versões
+- Cada entrada mostra:
+  - Badge da versão (`v3`)
+  - Autor (UUID truncado, mesma estratégia de `AssetVersionHistory`)
+  - Timestamp relativo (`format(date, "dd/MM/yyyy HH:mm")`)
+  - Lista compacta de campos alterados com chips coloridos: `tags`, `nome`, `descrição`, etc.
+  - Botão "Comparar" que abre `AssetMetadataDiffDialog`
+- Empty state: "Sem registros de auditoria para esta versão"
 
-**Dependências**
-- Adicionar `pdfjs-dist` (~2MB, lazy-import dinâmico só quando há PDF na fila para não inflar bundle inicial)
-- Configurar worker via `import.meta.url` → `pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString()`
+**`src/features/dam/components/AssetMetadataDiffDialog.tsx`** (novo)
+- Dialog que recebe `previousValues` e `currentValues` (subset de campos relevantes)
+- Layout 2 colunas (Antes/Depois) reutilizando o padrão visual do `AuditDiffDialog`:
+  - Coluna esquerda: borda destrutiva, fundo `destructive/5`
+  - Coluna direita: borda emerald, fundo `emerald/5`
+  - Campos alterados com `bg-amber-500/15` e borda âmbar
+- Renderiza tags como `<Badge>` lado a lado para comparação visual rápida
+- Renderiza `dominant_colors` como swatches
+- Demais campos como JSON inline
 
-**Sem mudanças** em banco, RLS, `AssetThumbnail` (já lê `thumbnail_path` que agora será preenchido) ou outros componentes.
+**`src/features/dam/components/AssetVersionHistory.tsx`** (modificar)
+- Após a `<ul>` de versões, renderizar `<AssetAuditTrail asset={asset} />`
+- Sem alterações nos filtros/persistência existentes
 
 ### Critérios de aceite
 
-- Selecionar PDF mostra preview da primeira página na lista do diálogo em até ~1s
-- Selecionar SVG mostra o vetor renderizado como preview
-- Selecionar `.ai`/`.psd` mostra ícone dedicado (sem quebrar)
-- Após upload, o card na grade da DAM exibe o thumbnail gerado (não mais ícone genérico) para PDF e SVG
-- `dominant_colors` é populado também para PDF/SVG quando rasterizáveis
-- Lazy-load do `pdfjs-dist`: bundle inicial não cresce se nenhum PDF for selecionado
-- Cleanup correto de blob URLs ao remover entradas/fechar diálogo
-- Sem regressão: imagens raster continuam funcionando idênticas; retry, validação de tags e modo versão preservados
+- Aba "Versões" mostra seção colapsável "Histórico de auditoria" abaixo da lista
+- Cada entrada lista versão, autor, data e campos alterados (chips de "tags", "nome" etc.)
+- Clicar em "Comparar" abre dialog com diff lado a lado destacando os campos modificados em âmbar
+- Tags aparecem como badges comparáveis visualmente; cores dominantes como swatches
+- INSERT (criação da versão) mostra "Criado" em vez de comparação; UPDATEs mostram diff vs estado anterior
+- Empty state quando o asset ainda não tem auditoria ou só tem 1 versão sem updates
+- Sem migração: usa `audit_log` existente; RLS já permite leitura para membros da org
+- Sem regressão: filtros, persistência localStorage e seleção de versão continuam funcionando
 
