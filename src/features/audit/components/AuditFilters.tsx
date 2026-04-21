@@ -207,6 +207,24 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
           aria-label="Texto a procurar nos valores"
         />
 
+        {/* IP address */}
+        <Input
+          placeholder="IP contém (ex: 192.168)"
+          value={state.ipQuery}
+          onChange={(e) => onChange({ ...state, ipQuery: e.target.value })}
+          className="h-9 w-[180px] font-mono text-xs"
+          aria-label="IP address contém"
+        />
+
+        {/* User agent */}
+        <Input
+          placeholder="User agent (ex: Chrome)"
+          value={state.userAgentQuery}
+          onChange={(e) => onChange({ ...state, userAgentQuery: e.target.value })}
+          className="h-9 w-[200px] font-mono text-xs"
+          aria-label="User agent contém"
+        />
+
         {hasAny && (
           <Button
             size="sm"
@@ -221,6 +239,8 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
                 userId: undefined,
                 valueKey: "",
                 valueQuery: "",
+                ipQuery: "",
+                userAgentQuery: "",
               })
             }
           >
@@ -266,6 +286,12 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
           )}
           {state.valueQuery && (
             <Chip label={`Valor: ${state.valueQuery}`} onRemove={() => onChange({ ...state, valueQuery: "" })} />
+          )}
+          {state.ipQuery && (
+            <Chip label={`IP: ${state.ipQuery}`} onRemove={() => onChange({ ...state, ipQuery: "" })} />
+          )}
+          {state.userAgentQuery && (
+            <Chip label={`UA: ${state.userAgentQuery}`} onRemove={() => onChange({ ...state, userAgentQuery: "" })} />
           )}
         </div>
       )}
