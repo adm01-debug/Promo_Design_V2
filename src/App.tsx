@@ -37,6 +37,9 @@ const Editor = lazyWithRetry(() => import("./pages/Editor"));
 const Auth = lazyWithRetry(() => import("./pages/Auth"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
+const OrganizationPage = lazyWithRetry(() => import("./features/organization/pages/OrganizationPage"));
+const ClientsPage = lazyWithRetry(() => import("./features/clients/pages/ClientsPage"));
+const AuditLogPage = lazyWithRetry(() => import("./features/audit/pages/AuditLogPage"));
 
 const queryClient = new QueryClient();
 
@@ -85,6 +88,9 @@ const App = () => (
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/templates" element={<Templates />} />
                   <Route path="/editor" element={<Editor />} />
+                  <Route path="/organization" element={<OrganizationPage />} />
+                  <Route path="/clients" element={<ClientsPage />} />
+                  <Route path="/audit" element={<AuditLogPage />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
