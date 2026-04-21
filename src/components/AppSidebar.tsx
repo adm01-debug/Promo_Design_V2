@@ -326,6 +326,24 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
           {!collapsed && <span className="text-sm">Configurações</span>}
         </Link>
 
+        <Link
+          to="/organization"
+          aria-label="Organização"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Building2 className="w-5 h-5 shrink-0" aria-hidden="true" />
+          {!collapsed && <span className="text-sm">Organização</span>}
+        </Link>
+
+        <Link
+          to="/audit"
+          aria-label="Trilha de auditoria"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <ScrollText className="w-5 h-5 shrink-0" aria-hidden="true" />
+          {!collapsed && <span className="text-sm">Auditoria</span>}
+        </Link>
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
