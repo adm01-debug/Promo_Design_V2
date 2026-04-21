@@ -180,6 +180,22 @@ export default function DamLibraryPage() {
     }, { replace: true });
   }, [page, pageSize, paginationMode, setSearchParams]);
 
+  // Sync content filters (search, types, client, tags, tagsMode, sort) with URL
+  useEffect(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      const q = debouncedSearch.trim();
+      if (q) next.set("q", q); else next.delete("q");
+      if (assetTypes.length > 0) next.set("type", assetTypes.join(",")); else next.delete("type");
+      if (clientId !== "all") next.set("client", clientId); else next.delete("client");
+      if (selectedTags.length > 0) next.set("tags", selectedTags.join(",")); else next.delete("tags");
+      if (selectedTags.length > 1 && tagsMode !== "all") next.set("tagsMode", tagsMode);
+      else next.delete("tagsMode");
+      if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
+      return next;
+    }, { replace: true });
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, setSearchParams]);
+
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
     if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
