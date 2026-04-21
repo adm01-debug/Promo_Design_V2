@@ -5,11 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Toggle } from "@/components/ui/toggle";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
@@ -44,6 +43,7 @@ const TYPES: { value: AssetType | "all"; label: string }[] = [
 const VIEW_MODE_KEY = "dam-view-mode";
 const PAGE_SIZE_KEY = "dam-page-size";
 const TAGS_MODE_KEY = "dam-tags-mode";
+const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -71,6 +71,7 @@ const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "n
 export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
@@ -80,7 +81,13 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return "all";
     return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
   });
-  const [includeArchived, setIncludeArchived] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = searchParams.get("archived");
+    if (fromUrl === "1") return true;
+    if (fromUrl === "0") return false;
+    return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
+  });
   const [sort, setSort] = useState<SortValue>("created_desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(() => {
