@@ -20,8 +20,7 @@ import {
   ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm,
 } from "@/features/service-orders";
 import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrderTopBar";
-import { AssetPicker } from "@/features/dam/components/AssetPicker";
-import { downloadAssetAsFile } from "@/features/dam/lib/asset-urls";
+import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import type { Asset } from "@/features/dam/hooks/use-assets";
 
 const ServiceOrder = () => {
