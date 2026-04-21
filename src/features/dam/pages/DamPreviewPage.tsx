@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset } from "../hooks/use-assets";
@@ -47,16 +48,52 @@ export function clearLastPreviewAsset(): void {
   try { localStorage.removeItem(LAST_ASSET_KEY); } catch { /* ignore */ }
 }
 
+/**
+ * Peeks the raw localStorage entry without clearing it.
+ * Returns { id, expired } so callers can show UX hints (e.g. expiration toasts).
+ * - id is null if there is no entry or the entry is malformed.
+ * - expired is true only when an entry exists but is past its TTL.
+ */
+export function peekLastPreviewAssetRaw(): { id: string | null; expired: boolean } {
+  if (typeof window === "undefined") return { id: null, expired: false };
+  try {
+    const raw = localStorage.getItem(LAST_ASSET_KEY);
+    if (!raw) return { id: null, expired: false };
+    const parsed = JSON.parse(raw) as { id?: string; ts?: number };
+    if (!parsed?.id || typeof parsed.ts !== "number") return { id: null, expired: false };
+    const expired = Date.now() - parsed.ts > LAST_ASSET_TTL_MS;
+    return { id: expired ? null : parsed.id, expired };
+  } catch {
+    return { id: null, expired: false };
+  }
+}
+
 export default function DamPreviewPage() {
   const navigate = useNavigate();
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const { state, queryString, setSort } = filters;
+  const { state, queryString, setSort, reset: resetFilters } = filters;
   const [searchParams, setSearchParams] = useSearchParams();
   const assetIdParam = searchParams.get("asset");
   const didInitRef = useRef(false);
   const userNavRef = useRef(false);
+  const didShowExpiredToastRef = useRef(false);
+  const didShowFallbackToastRef = useRef(false);
+
+  // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
+  useEffect(() => {
+    if (didShowExpiredToastRef.current) return;
+    const { expired } = peekLastPreviewAssetRaw();
+    if (expired) {
+      didShowExpiredToastRef.current = true;
+      clearLastPreviewAsset();
+      toast("Sessão de pré-visualização expirada", {
+        description: "Sua última sessão tem mais de 24h. Começando do início.",
+        duration: 4000,
+      });
+    }
+  }, []);
 
   const debouncedSearch = useDebounce(state.search, 300);
 
@@ -158,6 +195,27 @@ export default function DamPreviewPage() {
   const activeAsset = assets[activeIndex] ?? null;
   const assetMissingFromList =
     Boolean(assetIdParam) && assets.length > 0 && !assets.some((a) => a.id === assetIdParam);
+
+  // When the URL/localStorage points to an asset that's not in the current results,
+  // show a one-time toast offering to clear filters. The localStorage entry is kept
+  // (filters may be temporary) — only cleared when the user explicitly chooses to clear filters.
+  useEffect(() => {
+    if (!assetMissingFromList) return;
+    if (didShowFallbackToastRef.current) return;
+    didShowFallbackToastRef.current = true;
+    toast("Asset fora dos filtros atuais", {
+      description:
+        "O asset visualizado por último não está disponível nos filtros atuais. Mostrando o primeiro disponível.",
+      duration: 5000,
+      action: {
+        label: "Limpar filtros",
+        onClick: () => {
+          resetFilters();
+          clearLastPreviewAsset();
+        },
+      },
+    });
+  }, [assetMissingFromList, resetFilters]);
 
   // Sync URL ?asset=<id> with current activeAsset.
   // Use push when the change came from a deliberate user action (arrows/thumbs),

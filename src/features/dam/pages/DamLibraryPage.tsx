@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X } from "lucide-react";
+import { Archive, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
@@ -24,7 +25,7 @@ import type { SavedFiltersPayload } from "../hooks/use-saved-searches";
 import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
 import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
-import { readLastPreviewAsset, clearLastPreviewAsset } from "./DamPreviewPage";
+import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
@@ -150,6 +151,23 @@ export default function DamLibraryPage() {
   // "Continue where you left off" — last asset viewed in /dam/preview.
   const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(() => readLastPreviewAsset());
   const highlightedRef = useRef<string | null>(null);
+  const didShowExpiredToastRef = useRef(false);
+  const [fallbackDismissed, setFallbackDismissed] = useState(false);
+
+  // One-time toast on mount when the persisted "last preview" entry has expired (>24h).
+  useEffect(() => {
+    if (didShowExpiredToastRef.current) return;
+    const { expired } = peekLastPreviewAssetRaw();
+    if (expired) {
+      didShowExpiredToastRef.current = true;
+      clearLastPreviewAsset();
+      setLastPreviewAssetId(null);
+      toast("Sessão de pré-visualização expirada", {
+        description: "Sua última sessão tem mais de 24h. Começando do início.",
+        duration: 4000,
+      });
+    }
+  }, []);
 
   const hasActiveFilters =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ||
@@ -464,6 +482,35 @@ export default function DamLibraryPage() {
             aria-label="Descartar"
           >
             <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
+      {!lastPreviewAsset && lastPreviewAssetId && !isLoading && !fallbackDismissed && (
+        <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+          <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground truncate">
+            O último asset visualizado não está nos resultados atuais (pode ter sido arquivado ou removido pelos filtros).
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto h-7"
+            onClick={clearAllFilters}
+          >
+            <FilterX className="w-3.5 h-3.5 mr-1.5" /> Limpar filtros
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={() => {
+              clearLastPreviewAsset();
+              setLastPreviewAssetId(null);
+              setFallbackDismissed(true);
+            }}
+          >
+            Descartar
           </Button>
         </div>
       )}
