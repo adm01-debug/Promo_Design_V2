@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2,
+  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
+import { AssetPicker } from "@/features/dam/components/AssetPicker";
+import { downloadAssetAsFile } from "@/features/dam/lib/asset-urls";
+import { toast } from "sonner";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
@@ -65,6 +68,7 @@ interface EditorRightPanelProps {
 }
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
+  const [damPickerOpen, setDamPickerOpen] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
