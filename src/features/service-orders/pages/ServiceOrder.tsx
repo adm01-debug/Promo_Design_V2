@@ -22,6 +22,7 @@ import {
 import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrderTopBar";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import type { Asset } from "@/features/dam";
+import AssetVersionUpdateBanner from "@/features/service-orders/components/AssetVersionUpdateBanner";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
@@ -91,6 +92,12 @@ const ServiceOrder = () => {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao carregar arte do DAM.");
     }
+  }, [handleArtUpload]);
+
+  const handleVersionUpdate = useCallback(async (file: File, newAssetId: string) => {
+    await handleArtUpload(file);
+    setForm((prev) => ({ ...prev, artAssetId: newAssetId }));
+    setSaved(false);
   }, [handleArtUpload]);
 
   const handleSave = async () => {
@@ -174,6 +181,7 @@ const ServiceOrder = () => {
               <div><Label className="text-xs text-muted-foreground">Altura (cm)</Label><Input type="number" step="0.1" value={form.areaHeight} onChange={(e) => update("areaHeight", e.target.value)} className="font-mono" /></div>
               <div><Label className="text-xs text-muted-foreground">Cores da Arte (Pantone)</Label><Input placeholder="Pantone 186C, Pantone 300C..." value={form.artColors} onChange={(e) => update("artColors", e.target.value)} /></div>
               <div><Label className="text-xs text-muted-foreground">Resolução (DPI)</Label><Input type="number" value={form.artDpi} onChange={(e) => update("artDpi", e.target.value)} className="font-mono" /></div>
+              <AssetVersionUpdateBanner currentAssetId={form.artAssetId ?? null} onUpdate={handleVersionUpdate} />
               <ArtUploadField artFile={form.artFile} artFileDataUrl={form.artFileDataUrl} onUpload={handleArtUpload} onRemove={removeArt} uploading={uploading} onPickFromDam={() => setDamPickerOpen(true)} />
             </div>
           </section>

@@ -230,3 +230,37 @@ export function useAssetVersions(asset: Asset | null) {
     },
   });
 }
+
+/**
+ * Resolves the latest version available in the version chain of a given asset.
+ * Returns { current, latest, hasUpdate } where hasUpdate is true when latest.id !== assetId.
+ */
+export function useLatestAssetVersion(assetId: string | null) {
+  return useQuery({
+    queryKey: ["asset-latest", assetId],
+    enabled: !!assetId,
+    queryFn: async () => {
+      const { data: current, error: e1 } = await supabase
+        .from("assets")
+        .select("*")
+        .eq("id", assetId!)
+        .maybeSingle();
+      if (e1) throw e1;
+      if (!current) return { current: null, latest: null, hasUpdate: false };
+      const rootId = (current as unknown as Asset).parent_asset_id ?? (current as unknown as Asset).id;
+      const { data: chain, error: e2 } = await supabase
+        .from("assets")
+        .select("*")
+        .or(`id.eq.${rootId},parent_asset_id.eq.${rootId}`)
+        .order("version", { ascending: false })
+        .limit(1);
+      if (e2) throw e2;
+      const latest = ((chain ?? [])[0] ?? current) as unknown as Asset;
+      return {
+        current: current as unknown as Asset,
+        latest,
+        hasUpdate: latest.id !== assetId,
+      };
+    },
+  });
+}
