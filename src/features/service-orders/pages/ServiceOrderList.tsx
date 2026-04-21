@@ -24,6 +24,7 @@ import {
 } from "@/features/service-orders";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import PdfProgressOverlay, { type PdfProgress } from "@/components/PdfProgressOverlay";
 
 const PAGE_SIZE = 20;
 
@@ -42,6 +43,7 @@ const ServiceOrderList = () => {
   const [sortDesc, setSortDesc] = useState(true);
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState<PdfProgress | null>(null);
 
   const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
     page,
@@ -70,6 +72,7 @@ const ServiceOrderList = () => {
 
   const handleExportPdf = async () => {
     setExporting(true);
+    setPdfProgress({ stage: "Buscando OSs", current: 0, total: 0, percent: 0 });
     try {
       // Buscar todas as OSs respeitando filtros (até 1000)
       let query = supabase.from("service_orders").select("*");
@@ -86,6 +89,12 @@ const ServiceOrderList = () => {
         toast.warning("Nenhuma OS para exportar com os filtros atuais");
         return;
       }
+      setPdfProgress({
+        stage: "Preparando dados",
+        current: data.length,
+        total: data.length,
+        percent: 3,
+      });
       const orders = data.map((row) => ({
         id: row.id,
         osNumber: row.os_number,
@@ -124,7 +133,12 @@ const ServiceOrderList = () => {
         updatedAt: row.updated_at,
       }));
       const logo = await getLogoDataUrl().catch(() => undefined);
-      const doc = await generateBatchPdf(orders, { status: statusFilter, search }, logo);
+      const doc = await generateBatchPdf(
+        orders,
+        { status: statusFilter, search },
+        logo,
+        (p) => setPdfProgress(p),
+      );
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       doc.save(`ordens-servico-${today}.pdf`);
       toast.success(`PDF gerado com ${orders.length} OS(s)`);
@@ -132,6 +146,7 @@ const ServiceOrderList = () => {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar PDF");
     } finally {
       setExporting(false);
+      setPdfProgress(null);
     }
   };
 
