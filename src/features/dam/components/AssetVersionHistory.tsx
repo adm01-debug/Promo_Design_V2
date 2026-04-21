@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useAssetVersions, type Asset, getAssetSignedUrl } from "../hooks/use-assets";
 import { History, Search, X } from "lucide-react";
+import { AssetAuditTrail } from "./AssetAuditTrail";
 
 interface Props {
   asset: Asset;
