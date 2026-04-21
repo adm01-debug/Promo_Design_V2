@@ -1,60 +1,42 @@
 
 
-## AssetPicker reutilizável já existe — consolidar e documentar
+## Carregar arquivos do DAM via signed URL (já implementado — verificar e blindar)
 
-O componente `src/features/dam/components/AssetPicker.tsx` **já implementa todos os requisitos pedidos**: modal com busca debounced (mínimo 3 chars), filtro por tipo (`defaultAssetType` + dropdown), filtro por cliente (com `lockClient`), filtro por tags (`TagFilter`), paginação (24/página), views grid/list, skeleton de loading, empty state, e callback `onSelect(asset)`. Já é usado em:
+O fluxo já usa signed URL: `downloadAssetAsFile` em `src/features/dam/lib/asset-urls.ts` chama `supabase.storage.from("assets").createSignedUrl(filePath, 3600)`, faz `fetch` da URL, gera um `File` com nome e mime corretos. Esse helper é usado por `MockupRightPanel`, `EditorRightPanel` e `ArtUploadField` ao selecionar do DAM. O bucket `assets` é privado — confirmado em `<storage-buckets>`.
 
-- `MockupRightPanel.tsx` (logo no MockupNew)
-- `EditorRightPanel.tsx` (logo no MockupEditor)
-- `ServiceOrder.tsx` via `ArtUploadField` (arte da OS)
-
-Não vale recriar — vale **endurecer a API e expor barrel export** para reuso futuro consistente.
+O que falta para ficar à prova de falhas: hoje quando o signed URL falha (rede caída, expiração, RLS bloqueando), `downloadAssetAsFile` retorna `null` e os consumidores apenas exibem `toast.error` — sem distinção entre "asset não existe", "sem permissão" e "fetch falhou".
 
 ### Mudanças
 
-**`src/features/dam/components/AssetPicker.tsx`** — pequenos refinamentos:
-- Adicionar prop opcional `defaultClientId?: string | null` distinta de `clientId`/`lockClient` (hoje `clientId` faz papel duplo: pré-selecionar e travar). Refator: `clientId` continua como pré-seleção, `lockClient` continua travando o select. Comportamento atual preservado.
-- Adicionar prop `multiSelect?: boolean` (default `false`) — quando `true`, troca `onSelect(asset)` por `onSelect(assets: Asset[])` via union de tipos discriminados. Header ganha contador "N selecionado(s)" + botão "Confirmar". Cards mostram checkbox no canto.
-- Adicionar prop `excludeAssetIds?: string[]` para esconder assets já vinculados (útil em telas que listam múltiplos vínculos).
-- Garantir foco inicial no input de busca e `ESC` fechando (já vem do Radix Dialog).
-- Reset de filtros ao abrir já existe — manter.
+**`src/features/dam/lib/asset-urls.ts`**
+- `getAssetSignedUrl(filePath, expiresIn=3600)` passa a lançar `Error` com mensagem traduzida em vez de retornar `null` silenciosamente. Mantém retorno `string` em sucesso.
+- `downloadAssetAsFile(filePath, name, mimeType?)`:
+  - Try/catch envolvendo `getAssetSignedUrl` e `fetch`.
+  - Em erro de signed URL → `throw new Error("Asset não encontrado ou sem permissão")`.
+  - Em erro HTTP do fetch → `throw new Error("Falha ao baixar arquivo (HTTP NNN)")`.
+  - Em erro de rede → `throw new Error("Sem conexão para baixar o asset")`.
+  - Sucesso retorna `File` (sem `null`).
+- Manter assinaturas exportadas via barrel `@/features/dam/index.ts` (já exporta).
 
-**`src/features/dam/index.ts`** (criar se não existir, ou estender) — barrel export:
-```ts
-export { AssetPicker } from "./components/AssetPicker";
-export { downloadAssetAsFile } from "./lib/asset-urls";
-export type { Asset, AssetType, AssetFilters } from "./hooks/use-assets";
-```
+**Consumidores — adaptar para o novo contrato com `try/catch`**:
+- `src/features/mockup/components/MockupRightPanel.tsx` — handler do `AssetPicker.onSelect`: `try { const file = await downloadAssetAsFile(...); handleLogoUpload(file); } catch (e) { toast.error(e.message) }`.
+- `src/features/mockup/components/EditorRightPanel.tsx` — mesmo padrão.
+- `src/features/service-orders/components/ArtUploadField.tsx` (e/ou `ServiceOrder.tsx` `handlePickFromDam`) — mesmo padrão; preserva `artAssetId` apenas em sucesso.
 
-**Atualizar imports nos 3 consumidores existentes** para usar `@/features/dam` em vez de caminhos profundos:
-- `MockupRightPanel.tsx`
-- `EditorRightPanel.tsx`
-- `ArtUploadField.tsx` (ou onde quer que `AssetPicker` seja importado em service-orders)
+**Cache opcional de signed URL (otimização leve)**
+- Map em memória `Map<filePath, { url: string; expiresAt: number }>` em `asset-urls.ts`. Reusa URL se ainda restam >5min de validade. Reduz round-trips quando o usuário reabre o picker várias vezes.
+- TTL alinhado ao `expiresIn` (3600s).
 
-**Documentação inline** — JSDoc no topo do `AssetPicker` listando props, comportamento de `lockClient`/`clientId`/`defaultAssetType`, callback shape e exemplo curto de uso.
-
-### API final (resumo)
-
-```ts
-interface AssetPickerProps {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  clientId?: string | null;          // pré-seleciona cliente
-  lockClient?: boolean;              // trava o select de cliente
-  defaultAssetType?: AssetType;      // pré-filtra tipo
-  excludeAssetIds?: string[];        // esconde assets já vinculados
-  title?: string;
-  multiSelect?: boolean;             // false = onSelect(asset), true = onSelect(asset[])
-  onSelect: (asset: Asset | Asset[]) => void;
-}
-```
+**Fora de escopo**
+- Sem mudanças no bucket (continua privado). Sem novas RLS — o `createSignedUrl` já respeita `storage.objects` policies existentes.
+- Sem mudanças no `AssetPicker` (já trabalha com `file_path`, não com URL).
+- Outros pontos que já usam signed URL (`PreviewStage`, `AssetDetailDrawer`, `AssetThumbnail`) ficam como estão — o helper centralizado se beneficia automaticamente do cache se forem migrados depois.
 
 ### Critérios de aceite
 
-- `AssetPicker` exportado via barrel `@/features/dam` e usado por Mockup Studio (logo) e Service Order (arte) sem mudança de comportamento visível.
-- Nova prop `multiSelect` funciona: clicar em cards alterna seleção, header mostra contador, botão "Confirmar" emite array.
-- Nova prop `excludeAssetIds` filtra resultados client-side (sem novo round-trip).
-- `lockClient` continua travando o seletor de cliente conforme já usado por Service Order.
-- Busca server-side com mínimo 3 chars, paginação 24/página, filtros tipo/cliente/tags, views grid/list — todos preservados.
-- Sem regressão nos 3 pontos de consumo existentes.
+- Selecionar um asset via DAM Picker (no MockupNew, MockupEditor ou Service Order) baixa o arquivo via signed URL do bucket privado `assets` e injeta no fluxo correto (logo na canvas / arte na OS).
+- Falha de download mostra mensagem clara e específica (não-encontrado vs sem-rede vs HTTP-erro).
+- Estado anterior do editor não quebra em caso de erro (logo/arte atual permanece).
+- Reabrir o picker e selecionar o mesmo asset duas vezes em <1h reaproveita o signed URL cacheado.
+- Sem regressão em `PreviewStage`, `AssetDetailDrawer`, `AssetThumbnail`, upload manual, drag-drop, AI bg-remove, export PDF/PNG, drafts.
 
