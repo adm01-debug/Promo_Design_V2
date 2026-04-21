@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { LayoutGrid, List, Search, Image as ImageIcon } from "lucide-react";
+import { LayoutGrid, List, Search, Image as ImageIcon, Check } from "lucide-react";
 import { useAssets, MIN_SEARCH_LENGTH, type Asset, type AssetType } from "../hooks/use-assets";
 import { AssetCard } from "./AssetCard";
 import { AssetThumbnail } from "./AssetThumbnail";
@@ -13,16 +13,49 @@ import { TagFilter } from "./TagFilter";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useDebounce } from "@/hooks/use-debounce";
+import { cn } from "@/lib/utils";
 
-interface Props {
+/**
+ * AssetPicker — modal reutilizável para escolher um (ou vários) asset(s) do DAM.
+ *
+ * Props principais:
+ * - `clientId` pré-seleciona o filtro de cliente (não trava — use `lockClient` para isso).
+ * - `lockClient` esconde o seletor de cliente (útil em telas com cliente fixo, ex. brand kit).
+ * - `defaultAssetType` pré-filtra por tipo (logo/art/photo/...).
+ * - `excludeAssetIds` esconde assets já vinculados (filtro client-side, sem round-trip).
+ * - `multiSelect=false` (default): callback `onSelect(asset: Asset)` ao clicar — fecha modal.
+ * - `multiSelect=true`: cards mostram checkbox; header exibe contador + botão "Confirmar" que emite `onSelect(assets: Asset[])`.
+ *
+ * Exemplo:
+ * ```tsx
+ * <AssetPicker
+ *   open={open}
+ *   onOpenChange={setOpen}
+ *   defaultAssetType="logo"
+ *   onSelect={(asset) => loadLogo(asset as Asset)}
+ * />
+ * ```
+ */
+type SingleSelectProps = {
+  multiSelect?: false;
+  onSelect: (asset: Asset) => void;
+};
+type MultiSelectProps = {
+  multiSelect: true;
+  onSelect: (assets: Asset[]) => void;
+};
+
+type CommonProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   clientId?: string | null;
   defaultAssetType?: AssetType;
   lockClient?: boolean;
   title?: string;
-  onSelect: (asset: Asset) => void;
-}
+  excludeAssetIds?: string[];
+};
+
+export type AssetPickerProps = CommonProps & (SingleSelectProps | MultiSelectProps);
 
 const TYPE_OPTIONS: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos os tipos" },
@@ -36,7 +69,10 @@ const TYPE_OPTIONS: { value: AssetType | "all"; label: string }[] = [
 
 const PAGE_SIZE = 24;
 
-export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lockClient, title, onSelect }: Props) {
+export function AssetPicker(props: AssetPickerProps) {
+  const { open, onOpenChange, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
+  const multiSelect = props.multiSelect === true;
+
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
 
@@ -47,6 +83,8 @@ export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lo
   const [tags, setTags] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedMap, setSelectedMap] = useState<Map<string, Asset>>(new Map());
 
   // Reset on open / when default props change
   useEffect(() => {
@@ -56,12 +94,14 @@ export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lo
       setActiveClientId(clientId ?? "all");
       setTags([]);
       setPage(1);
+      setSelectedIds(new Set());
+      setSelectedMap(new Map());
     }
   }, [open, defaultAssetType, clientId]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, assetType, activeClientId, tags]);
 
-  const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, {
+  const { assets: rawAssets, total: rawTotal, totalPages, isLoading } = useAssets(currentOrgId, {
     clientId: activeClientId === "all" ? undefined : activeClientId,
     assetType,
     tags,
@@ -70,14 +110,46 @@ export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lo
     pageSize: PAGE_SIZE,
   });
 
+  const excludeSet = useMemo(() => new Set(excludeAssetIds ?? []), [excludeAssetIds]);
+  const assets = useMemo(
+    () => (excludeSet.size === 0 ? rawAssets : rawAssets.filter((a) => !excludeSet.has(a.id))),
+    [rawAssets, excludeSet],
+  );
+  const total = excludeSet.size === 0 ? rawTotal : Math.max(0, rawTotal - rawAssets.filter((a) => excludeSet.has(a.id)).length);
+
   const availableTags = useMemo(() => {
     const set = new Set<string>();
     assets.forEach((a) => a.tags?.forEach((t) => set.add(t)));
     return Array.from(set).sort();
   }, [assets]);
 
+  const toggleSelected = (a: Asset) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(a.id)) next.delete(a.id);
+      else next.add(a.id);
+      return next;
+    });
+    setSelectedMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(a.id)) next.delete(a.id);
+      else next.set(a.id, a);
+      return next;
+    });
+  };
+
   const handlePick = (a: Asset) => {
-    onSelect(a);
+    if (multiSelect) {
+      toggleSelected(a);
+      return;
+    }
+    (props as SingleSelectProps).onSelect(a);
+    onOpenChange(false);
+  };
+
+  const confirmMulti = () => {
+    if (!multiSelect) return;
+    (props as MultiSelectProps).onSelect(Array.from(selectedMap.values()));
     onOpenChange(false);
   };
 
@@ -88,7 +160,19 @@ export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col gap-4">
         <DialogHeader>
-          <DialogTitle>{title ?? "Selecionar da biblioteca"}</DialogTitle>
+          <div className="flex items-center justify-between gap-4">
+            <DialogTitle>{title ?? "Selecionar da biblioteca"}</DialogTitle>
+            {multiSelect && (
+              <div className="flex items-center gap-2 mr-6">
+                <span className="text-xs text-muted-foreground">
+                  {selectedIds.size} selecionado{selectedIds.size === 1 ? "" : "s"}
+                </span>
+                <Button size="sm" disabled={selectedIds.size === 0} onClick={confirmMulti}>
+                  Confirmar
+                </Button>
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         {/* Filters */}
@@ -147,27 +231,62 @@ export function AssetPicker({ open, onOpenChange, clientId, defaultAssetType, lo
             </div>
           ) : view === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {assets.map((a) => (
-                <AssetCard key={a.id} asset={a} onClick={() => handlePick(a)} />
-              ))}
+              {assets.map((a) => {
+                const isSelected = selectedIds.has(a.id);
+                return (
+                  <div key={a.id} className="relative">
+                    <AssetCard asset={a} onClick={() => handlePick(a)} />
+                    {multiSelect && (
+                      <div
+                        className={cn(
+                          "absolute top-2 right-2 w-6 h-6 rounded-md border-2 flex items-center justify-center pointer-events-none transition-colors",
+                          isSelected
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "bg-background/80 border-border",
+                        )}
+                      >
+                        {isSelected && <Check className="w-4 h-4" />}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="flex flex-col gap-1">
-              {assets.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => handlePick(a)}
-                  className="flex items-center gap-3 p-2 rounded-md hover:bg-accent text-left transition-colors"
-                >
-                  <AssetThumbnail asset={a} className="w-12 h-12 rounded-md shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{a.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {a.asset_type} · v{a.version}{a.tags?.length ? ` · ${a.tags.join(", ")}` : ""}
-                    </p>
-                  </div>
-                </button>
-              ))}
+              {assets.map((a) => {
+                const isSelected = selectedIds.has(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => handlePick(a)}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-md hover:bg-accent text-left transition-colors",
+                      isSelected && "bg-accent",
+                    )}
+                  >
+                    <AssetThumbnail asset={a} className="w-12 h-12 rounded-md shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{a.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {a.asset_type} · v{a.version}{a.tags?.length ? ` · ${a.tags.join(", ")}` : ""}
+                      </p>
+                    </div>
+                    {multiSelect && (
+                      <div
+                        className={cn(
+                          "w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0",
+                          isSelected
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "border-border",
+                        )}
+                      >
+                        {isSelected && <Check className="w-3 h-3" />}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

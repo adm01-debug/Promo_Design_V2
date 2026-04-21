@@ -10,8 +10,7 @@ import { PERSPECTIVE_PRESETS } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
 import type { Placement, BlendMode, ExportFormat } from "@/features/mockup/hooks/use-mockup-editor";
 import { BLEND_MODES } from "@/features/mockup/hooks/use-mockup-editor";
-import { AssetPicker } from "@/features/dam/components/AssetPicker";
-import { downloadAssetAsFile } from "@/features/dam/lib/asset-urls";
+import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
 
 interface MockupRightPanelProps {
