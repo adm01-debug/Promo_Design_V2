@@ -35,3 +35,22 @@ export function wcagLevel(hex: string, against: string = "#ffffff"): WcagLevel {
 export function bestTextColor(bgHex: string): "#ffffff" | "#000000" {
   return contrastRatio(bgHex, "#ffffff") >= contrastRatio(bgHex, "#000000") ? "#ffffff" : "#000000";
 }
+
+export interface WcagBoth {
+  vsWhite: WcagLevel;
+  vsBlack: WcagLevel;
+  ratioWhite: number;
+  ratioBlack: number;
+}
+
+export function wcagBoth(hex: string): WcagBoth {
+  const ratioWhite = contrastRatio(hex, "#ffffff");
+  const ratioBlack = contrastRatio(hex, "#000000");
+  const level = (r: number): WcagLevel => (r >= 7 ? "AAA" : r >= 4.5 ? "AA" : "FAIL");
+  return {
+    vsWhite: level(ratioWhite),
+    vsBlack: level(ratioBlack),
+    ratioWhite,
+    ratioBlack,
+  };
+}
