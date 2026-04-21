@@ -726,6 +726,16 @@ export default function DamLibraryPage() {
             {hasActiveFilters && (
               <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
             )}
+            {isFetching && !isLoading && (
+              <span
+                className="inline-flex items-center gap-1 text-muted-foreground"
+                data-testid="dam-paginating-indicator"
+                aria-live="polite"
+              >
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Atualizando…
+              </span>
+            )}
           </>
         )}
       </div>
