@@ -16,6 +16,7 @@ import {
   generateClientSummaryPdf, getLogoDataUrl, clientSlug,
   type OsStatus,
 } from "@/features/service-orders";
+import PdfProgressOverlay, { type PdfProgress } from "@/components/PdfProgressOverlay";
 
 const empty: ClientInput = { name: "", company: "", email: "", phone: "", notes: "" };
 
@@ -34,17 +35,22 @@ const ClientsPage = () => {
   const [summaryClient, setSummaryClient] = useState<Client | null>(null);
   const [summaryPeriod, setSummaryPeriod] = useState<30 | 90 | 365>(90);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [summaryProgress, setSummaryProgress] = useState<PdfProgress | null>(null);
 
   const handleGenerateSummary = async () => {
     if (!summaryClient) return;
+    const clientName = summaryClient.name;
     setGeneratingSummary(true);
+    setSummaryProgress({ stage: "Buscando OSs", current: 0, total: 0, percent: 0 });
+    // Fechar o diálogo de seleção de período — overlay assume o controle visual
+    setSummaryClient(null);
     try {
       const since = new Date();
       since.setDate(since.getDate() - summaryPeriod);
       const { data, error } = await supabase
         .from("service_orders")
         .select("*")
-        .ilike("client_name", summaryClient.name)
+        .ilike("client_name", clientName)
         .gte("created_at", since.toISOString())
         .order("created_at", { ascending: false })
         .limit(1000);
@@ -53,6 +59,12 @@ const ClientsPage = () => {
         toast({ title: "Sem dados", description: "Cliente não tem OSs no período selecionado.", variant: "destructive" });
         return;
       }
+      setSummaryProgress({
+        stage: "Preparando dados",
+        current: data.length,
+        total: data.length,
+        percent: 3,
+      });
       const orders = data.map((row) => ({
         id: row.id,
         osNumber: row.os_number,
@@ -92,19 +104,20 @@ const ClientsPage = () => {
       }));
       const logo = await getLogoDataUrl().catch(() => undefined);
       const doc = await generateClientSummaryPdf(
-        { name: summaryClient.name, company: summaryClient.company, email: summaryClient.email, phone: summaryClient.phone },
+        { name: clientName, company: summaryClient?.company ?? null, email: summaryClient?.email ?? null, phone: summaryClient?.phone ?? null },
         orders,
         summaryPeriod,
         logo,
+        (p) => setSummaryProgress(p),
       );
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      doc.save(`resumo-${clientSlug(summaryClient.name)}-${today}.pdf`);
+      doc.save(`resumo-${clientSlug(clientName)}-${today}.pdf`);
       toast({ title: "Resumo gerado", description: `${orders.length} OS(s) incluídas.` });
-      setSummaryClient(null);
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
     } finally {
       setGeneratingSummary(false);
+      setSummaryProgress(null);
     }
   };
 

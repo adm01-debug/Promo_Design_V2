@@ -365,6 +365,12 @@ const ServiceOrderList = () => {
           </>
         )}
       </div>
+
+      <PdfProgressOverlay
+        open={!!pdfProgress}
+        title="Gerando PDF consolidado…"
+        progress={pdfProgress}
+      />
     </div>
   );
 };
