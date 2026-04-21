@@ -5,6 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -40,12 +44,24 @@ export function AssetAuditTrail({ asset }: Props) {
   const { data, isLoading } = useAssetAudit(asset);
   const [open, setOpen] = useState(false);
   const [diff, setDiff] = useState<AssetAuditEntry | null>(null);
+  const [actionFilter, setActionFilter] = useState<AssetAuditEntry["action"] | "ALL">("ALL");
 
   // Show newest first
   const entries = useMemo(() => {
     const list = [...(data ?? [])];
     return list.reverse();
   }, [data]);
+
+  const filteredEntries = useMemo(() => {
+    if (actionFilter === "ALL") return entries;
+    return entries.filter((e) => e.action === actionFilter);
+  }, [entries, actionFilter]);
+
+  const counts = useMemo(() => {
+    const c = { INSERT: 0, UPDATE: 0, DELETE: 0 } as Record<AssetAuditEntry["action"], number>;
+    for (const e of entries) c[e.action]++;
+    return c;
+  }, [entries]);
 
   // Build prev-state lookup (per asset_id) so UPDATE rows can compare against
   // the most recent prior snapshot for the same record. We rely on the asc
@@ -95,8 +111,43 @@ export function AssetAuditTrail({ asset }: Props) {
             Sem registros de auditoria para esta versão
           </div>
         ) : (
+          <>
+          <ToggleGroup
+            type="single"
+            value={actionFilter}
+            onValueChange={(v) =>
+              setActionFilter((v as AssetAuditEntry["action"] | "ALL") || "ALL")
+            }
+            className="justify-start flex-wrap gap-1"
+            size="sm"
+          >
+            <ToggleGroupItem value="ALL" className="h-7 px-2 text-xs gap-1">
+              Todos
+              <Badge variant="secondary" className="text-[10px] ml-0.5">{entries.length}</Badge>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="INSERT" className="h-7 px-2 text-xs gap-1">
+              <Plus className="w-3 h-3" />
+              Criados
+              <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.INSERT}</Badge>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="UPDATE" className="h-7 px-2 text-xs gap-1">
+              <Pencil className="w-3 h-3" />
+              Atualizados
+              <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.UPDATE}</Badge>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="DELETE" className="h-7 px-2 text-xs gap-1">
+              <Trash2 className="w-3 h-3" />
+              Removidos
+              <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.DELETE}</Badge>
+            </ToggleGroupItem>
+          </ToggleGroup>
+          {filteredEntries.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-3 text-center border border-dashed rounded-md">
+              Nenhum registro corresponde ao filtro
+            </div>
+          ) : (
           <ul className="space-y-2">
-            {entries.map((e) => {
+            {filteredEntries.map((e) => {
               const meta = ACTION_META[e.action];
               const Icon = meta.icon;
               const prev = prevSnapshots.get(e.id) ?? null;
@@ -158,6 +209,8 @@ export function AssetAuditTrail({ asset }: Props) {
               );
             })}
           </ul>
+          )}
+          </>
         )}
       </CollapsibleContent>
 
