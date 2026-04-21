@@ -71,9 +71,13 @@ export default function DamLibraryPage() {
   const { clients } = useClients(currentOrgId);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-  const [assetType, setAssetType] = useState<AssetType | "all">("all");
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
   const [clientId, setClientId] = useState<string | "all" | "none">("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagsMode, setTagsMode] = useState<"all" | "any">(() => {
+    if (typeof window === "undefined") return "all";
+    return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
+  });
   const [includeArchived, setIncludeArchived] = useState(false);
   const [sort, setSort] = useState<SortValue>("created_desc");
   const [page, setPage] = useState(1);
@@ -97,18 +101,28 @@ export default function DamLibraryPage() {
     try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
   }, [pageSize]);
 
+  useEffect(() => {
+    try { localStorage.setItem(TAGS_MODE_KEY, tagsMode); } catch { /* ignore */ }
+  }, [tagsMode]);
+
+  // If user clears search while sorting by relevance, fall back to "Mais recentes"
+  useEffect(() => {
+    if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
+  }, [debouncedSearch, sort]);
+
   // Reset to page 1 when filters/search/sort/pageSize change
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, assetType, clientId, selectedTags, includeArchived, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort, pageSize]);
 
   const filters = useMemo(
     () => {
-      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[0];
+      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
       return {
-        assetType,
+        assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
+        tagsMode,
         includeArchived,
         search: debouncedSearch.trim() || undefined,
         sortBy: opt.sortBy,
@@ -117,7 +131,7 @@ export default function DamLibraryPage() {
         pageSize,
       };
     },
-    [assetType, clientId, selectedTags, includeArchived, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, debouncedSearch, sort, page, pageSize],
   );
 
   const { assets, total, totalPages, isLoading } = useAssets(currentOrgId, filters);
