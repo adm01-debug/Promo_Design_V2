@@ -1,45 +1,36 @@
 
 
-## Componente de paginação reutilizável com total de resultados
+## Persistir `includeArchived` no localStorage
 
-Criar um `<DamPagination>` que mostre "X–Y de Z resultados", desabilite Anterior/Próximo nos limites, e use a paginação numerada existente (`buildPageList` com elipses). Substituir os 3 blocos de paginação ad-hoc atuais por esse componente.
+Os filtros `clientId`, `tags`, `tagsMode`, `search`, `assetTypes` e `sort` já são persistidos no localStorage em `useDamFilters` (chaves `dam-client-id`, `dam-tags`, `dam-tags-mode`, etc.). O único que falta é `includeArchived` — atualmente só vem da URL (`?archived=1`) e some ao recarregar sem querystring.
 
-### Arquivo novo: `src/features/dam/components/DamPagination.tsx`
+### Mudança única em `src/features/dam/hooks/use-dam-filters.ts`
 
-Props:
-- `page: number` (1-based)
-- `pageSize: number`
-- `total: number`
-- `totalPages: number`
-- `onPageChange: (page: number) => void`
-- `className?: string`
+1. **Nova chave**: adicionar `const ARCHIVED_KEY = "dam-include-archived";` ao bloco de constantes no topo.
 
-Renderiza dois blocos:
-1. **Contador** (à esquerda): `Mostrando <strong>{from}–{to}</strong> de <strong>{total}</strong> resultados` — quando `total === 0`, mostra "Nenhum resultado". `from = (page-1)*pageSize + 1`, `to = Math.min(page*pageSize, total)`.
-2. **Controles** (à direita): usa `Pagination`/`PaginationContent`/`PaginationLink` do shadcn (`src/components/ui/pagination.tsx` já existe). Botões Anterior/Próximo com `aria-disabled` + `pointer-events-none opacity-50` quando `page === 1` ou `page === totalPages`. Páginas numeradas via helper `buildPageList(page, totalPages)` (mover de `DamLibraryPage` para dentro do componente — ou exportar de `lib/`).
+2. **Leitura inicial**: no `useMemo` de `initial`, trocar
+   ```ts
+   includeArchived: params.get("archived") === "1",
+   ```
+   por:
+   ```ts
+   includeArchived: params.get("archived") === "1" || readLS(ARCHIVED_KEY) === "1",
+   ```
+   (URL continua tendo prioridade; LS é fallback.)
 
-Layout: `flex items-center justify-between gap-4 flex-wrap` — conta colapsa abaixo em telas estreitas.
+3. **Persistência**: adicionar `useEffect` ao lado dos outros de write:
+   ```ts
+   useEffect(() => {
+     writeLS(ARCHIVED_KEY, state.includeArchived ? "1" : null);
+   }, [state.includeArchived]);
+   ```
 
-Acessibilidade: `nav aria-label="Paginação"`, `aria-current="page"` no item ativo, `aria-disabled` real (não só visual) nos limites.
-
-### Refatorar consumidores
-
-**`src/features/dam/pages/DamLibraryPage.tsx`**
-- Remover o `buildPageList` local e o JSX de paginação manual (modo `pages`).
-- Substituir por `<DamPagination page={page} pageSize={pageSize} total={total} totalPages={totalPages} onPageChange={setPage} />` — só renderizar quando `paginationMode === "pages"` e `total > 0`.
-
-**`src/features/dam/components/AssetPicker.tsx`**
-- Substituir o rodapé com `Anterior`/`Próximo` simples por `<DamPagination />`.
-
-**`src/features/audit/pages/AuditLogPage.tsx`**
-- Atualmente mostra só Anterior/Próximo + "X de Y". Trocar pelo mesmo componente (renomeá-lo para `ResultsPagination` em `src/components/ResultsPagination.tsx` se for reutilizar fora de DAM — caso contrário, manter no folder dam e o audit faz import). **Decisão**: criar como `src/components/ResultsPagination.tsx` (genérico, sem dependência de feature) já que serve 3 lugares.
+4. **Reset**: dentro de `reset()`, adicionar `writeLS(ARCHIVED_KEY, null);` junto das outras limpezas.
 
 ### Critérios de aceite
 
-- Componente único `<ResultsPagination>` em `src/components/`.
-- Mostra "X–Y de Z resultados" (ou "Nenhum resultado" / "Z resultados" no singular para 1 página).
-- Botão Anterior desabilitado (visual + `aria-disabled` + sem clique) na página 1; Próximo idem na última.
-- Links numerados com elipses para mais de ~7 páginas.
-- `DamLibraryPage` (modo páginas), `AssetPicker` e `AuditLogPage` passam a usar o componente; nenhum bloco de paginação manual remanescente nesses arquivos.
-- TypeScript estrito; sem regressão visual (mesmo espaçamento e altura das paginações atuais).
+- Marcar "Incluir arquivados" em `/dam`, recarregar a página (sem querystring): o switch continua marcado e a lista mantém os arquivados visíveis.
+- "Limpar filtros" também limpa o estado persistido de arquivados.
+- URL continua sendo a fonte autoritativa quando presente (compartilhar link com `?archived=0` implícito — sem o parâmetro — não força o LS; comportamento atual é "URL ou LS, qualquer um marcado ativa", o que é consistente com o resto dos filtros).
+- Sem mudanças em `clientId`/`tags`/`tagsMode` (já persistidos).
 
