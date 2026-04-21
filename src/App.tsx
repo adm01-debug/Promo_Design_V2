@@ -40,6 +40,8 @@ const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const OrganizationPage = lazyWithRetry(() => import("./features/organization/pages/OrganizationPage"));
 const ClientsPage = lazyWithRetry(() => import("./features/clients/pages/ClientsPage"));
 const AuditLogPage = lazyWithRetry(() => import("./features/audit/pages/AuditLogPage"));
+const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
+const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
 
 const queryClient = new QueryClient();
 
@@ -90,6 +92,8 @@ const App = () => (
                   <Route path="/editor" element={<Editor />} />
                   <Route path="/organization" element={<OrganizationPage />} />
                   <Route path="/clients" element={<ClientsPage />} />
+                  <Route path="/clients/:clientId/brand" element={<BrandGuidelinesPage />} />
+                  <Route path="/dam" element={<DamLibraryPage />} />
                   <Route path="/audit" element={<AuditLogPage />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
