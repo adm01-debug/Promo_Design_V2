@@ -1071,6 +1071,11 @@ export default function DamLibraryPage() {
         onClose={() => setSelected(null)}
         onSelectAsset={(a) => setSelected(a)}
       />
+      <LibraryActivityDialog
+        open={activityOpen}
+        onOpenChange={setActivityOpen}
+        organizationId={currentOrgId}
+      />
     </div>
   );
 }
