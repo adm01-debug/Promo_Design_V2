@@ -1089,6 +1089,21 @@ export default function DamLibraryPage() {
               tags: selectedTags.length > 0 ? selectedTags : undefined,
               tagsMode,
               includeArchived,
+              archivedOnly,
+              ocrOnly,
+              minSize: customSize?.minBytes ?? undefined,
+              maxSize: customSize?.maxBytes ?? undefined,
+              sizeUnit: customSize?.unit,
+              sizeRangeLabel:
+                sizeRange !== "all" && !customSize
+                  ? SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange)?.label
+                  : undefined,
+              updatedRangeLabel:
+                updatedRange !== "all"
+                  ? UPDATED_RANGE_OPTIONS.find((o) => o.value === updatedRange)?.label
+                  : undefined,
+              pageSize,
+              viewMode,
               sortLabel: SORT_OPTIONS.find((s) => s.value === sort)?.label,
             }}
           />
