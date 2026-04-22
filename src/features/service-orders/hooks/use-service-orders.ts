@@ -60,7 +60,7 @@ export interface StoredServiceOrder {
   updatedAt: string;
 }
 
-function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
+export function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
   return {
     id: row.id,
     osNumber: row.os_number,
