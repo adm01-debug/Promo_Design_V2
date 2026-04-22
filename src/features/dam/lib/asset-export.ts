@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
 import { getAssetSignedUrl } from "./asset-urls";
+import { buildFilterRows, type AssetsPdfFiltersSummary } from "./asset-pdf";
 
 function escape(value: string): string {
   if (/[",\n;]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
@@ -72,6 +73,41 @@ export function buildAssetsCsv(assets: Asset[], clients: Client[], columns?: Csv
   const header = headersFor(columns).join(",");
   const lines = assets.map((a) => rowFor(a, clientName(a, map), columns).map(escape).join(","));
   return [header, ...lines].join("\n");
+}
+
+/**
+ * Builds the same CSV but with a block of metadata lines on top, each prefixed
+ * with `# ` so spreadsheet apps that don't understand the comment convention
+ * still surface them as a leading text row instead of mis-parsing the schema.
+ *
+ * Layout:
+ *   # Biblioteca de Assets — Exportação
+ *   # Gerado em 22/04/2026 19:46
+ *   # Busca: "logo demo"
+ *   # Tipos: Logo, Arte
+ *   # ...
+ *   # ---
+ *   id,name,type,...
+ *   ...
+ */
+export function buildAssetsCsvWithMetadata(
+  assets: Asset[],
+  clients: Client[],
+  filters: AssetsPdfFiltersSummary,
+  columns?: CsvColumnId[],
+): string {
+  const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
+  const meta: string[] = [
+    "# Biblioteca de Assets — Exportação",
+    `# Gerado em ${generatedAt}`,
+  ];
+  for (const [label, value] of buildFilterRows(filters)) {
+    // Escape line breaks inside values so each metadata line is exactly one row.
+    const safeValue = String(value).replace(/[\r\n]+/g, " ");
+    meta.push(`# ${label}: ${safeValue}`);
+  }
+  meta.push("# ---");
+  return [...meta, buildAssetsCsv(assets, clients, columns)].join("\n");
 }
 
 export function downloadCsv(filename: string, csv: string): void {
