@@ -366,15 +366,54 @@ export function AssetAuditTrail({ asset }: Props) {
                   </div>
                   {e.action === "UPDATE" && e.changed_fields.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {e.changed_fields.map((f: TrackedField) => (
-                        <Badge
-                          key={f}
-                          variant="outline"
-                          className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10"
-                        >
-                          {FIELD_LABELS[f]}
-                        </Badge>
-                      ))}
+                      <TooltipProvider delayDuration={150}>
+                        {e.changed_fields.map((f: TrackedField) => {
+                          const oldRaw = e.old_values?.[f as string];
+                          const newRaw = e.new_values?.[f as string];
+                          const oldStr = truncate(formatValue(oldRaw));
+                          const newStr = truncate(formatValue(newRaw));
+                          return (
+                            <Tooltip key={f}>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 cursor-help"
+                                  tabIndex={0}
+                                >
+                                  {FIELD_LABELS[f]}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                align="start"
+                                className="max-w-md p-0 overflow-hidden"
+                              >
+                                <div className="px-3 py-2 border-b bg-muted/40 text-[11px] font-medium capitalize">
+                                  {FIELD_LABELS[f]}
+                                </div>
+                                <div className="grid grid-cols-1 gap-2 p-3 text-xs">
+                                  <div>
+                                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                                      Antes
+                                    </div>
+                                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug max-h-32 overflow-auto rounded bg-destructive/10 text-destructive p-2">
+                                      {oldStr}
+                                    </pre>
+                                  </div>
+                                  <div>
+                                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                                      Depois
+                                    </div>
+                                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug max-h-32 overflow-auto rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-2">
+                                      {newStr}
+                                    </pre>
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          );
+                        })}
+                      </TooltipProvider>
                     </div>
                   )}
                   {e.action === "UPDATE" && e.changed_fields.length === 0 && (
