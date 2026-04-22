@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -49,6 +55,40 @@ function filtersEqual(a: SavedFiltersPayload, b: SavedFiltersPayload): boolean {
   );
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  search: "Busca",
+  clientId: "Cliente",
+  assetTypes: "Tipos",
+  tags: "Tags",
+  tagsMode: "Modo (E/OU)",
+  includeArchived: "Arquivados",
+  sort: "Ordenação",
+};
+
+function diffFilters(a: SavedFiltersPayload, b: SavedFiltersPayload): string[] {
+  const diffs: string[] = [];
+  if (a.search.trim() !== b.search.trim()) diffs.push("search");
+  if (a.clientId !== b.clientId) diffs.push("clientId");
+  if (
+    a.assetTypes.length !== b.assetTypes.length ||
+    !a.assetTypes.every((t) => b.assetTypes.includes(t))
+  )
+    diffs.push("assetTypes");
+  const tagsDiffer =
+    a.tags.length !== b.tags.length || !a.tags.every((t) => b.tags.includes(t));
+  if (tagsDiffer) diffs.push("tags");
+  // tagsMode só conta como diff se ambos têm 2+ tags (caso contrário é irrelevante)
+  if (
+    a.tagsMode !== b.tagsMode &&
+    a.tags.length > 1 &&
+    b.tags.length > 1
+  )
+    diffs.push("tagsMode");
+  if (a.includeArchived !== b.includeArchived) diffs.push("includeArchived");
+  if (a.sort !== b.sort) diffs.push("sort");
+  return diffs;
+}
+
 export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   const { currentOrgId } = useOrganizations();
   const { user } = useAuth();
@@ -64,10 +104,27 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   const [renameValue, setRenameValue] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const activeId = useMemo(
-    () => items.find((s) => filtersEqual(s.filters, currentFilters))?.id ?? null,
+  const matches = useMemo(
+    () =>
+      items.map((s) => {
+        const diffs = diffFilters(s.filters, currentFilters);
+        return { id: s.id, diffs, exact: diffs.length === 0 };
+      }),
     [items, currentFilters],
   );
+  const matchById = useMemo(
+    () => new Map(matches.map((m) => [m.id, m])),
+    [matches],
+  );
+  const activeId = matches.find((m) => m.exact)?.id ?? null;
+  // Best partial match: smallest diff count (>0), preferring fewer changes
+  const partialMatch = useMemo(() => {
+    if (activeId) return null;
+    const partials = matches
+      .filter((m) => m.diffs.length > 0 && m.diffs.length <= 2)
+      .sort((a, b) => a.diffs.length - b.diffs.length);
+    return partials[0] ?? null;
+  }, [matches, activeId]);
 
   const pinnedCount = items.filter((s) => s.is_pinned).length;
 
@@ -145,6 +202,7 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
 
   return (
     <>
+      <TooltipProvider delayDuration={150}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="default" aria-label="Filtros salvos">
@@ -153,6 +211,15 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             {activeId && (
               <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
                 Ativo
+              </Badge>
+            )}
+            {!activeId && partialMatch && (
+              <Badge
+                variant="outline"
+                className="ml-2 text-[10px] px-1.5 py-0 border-amber-500/40 text-amber-600 dark:text-amber-400"
+                title={`Quase: ${partialMatch.diffs.length} diferença(s)`}
+              >
+                ~{partialMatch.diffs.length}
               </Badge>
             )}
           </Button>
@@ -173,7 +240,10 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             </div>
           )}
           {sorted.map((s) => {
+            const match = matchById.get(s.id);
             const isActive = s.id === activeId;
+            const diffs = match?.diffs ?? [];
+            const isPartial = !isActive && diffs.length > 0 && diffs.length <= 2;
             const isRenaming = renameId === s.id;
             const isConfirmingDelete = confirmDeleteId === s.id;
             return (
@@ -221,6 +291,23 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
                           Ativo
                         </Badge>
                       )}
+                      {isPartial && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1 py-0 shrink-0 border-amber-500/40 text-amber-600 dark:text-amber-400"
+                              aria-label={`${diffs.length} diferença(s)`}
+                            >
+                              ~{diffs.length}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="text-xs">
+                            Difere em:{" "}
+                            {diffs.map((d) => FIELD_LABELS[d] ?? d).join(", ")}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </button>
                     <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
@@ -264,6 +351,7 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
           })}
         </DropdownMenuContent>
       </DropdownMenu>
+      </TooltipProvider>
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent className="sm:max-w-md">
