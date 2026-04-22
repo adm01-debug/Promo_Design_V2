@@ -11,8 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAssetVersions, type Asset, getAssetSignedUrl } from "../hooks/use-assets";
-import { History, Search, X } from "lucide-react";
+import { History, Search, X, MessageSquare, MessageSquareDashed } from "lucide-react";
 import { AssetAuditTrail } from "./AssetAuditTrail";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   asset: Asset;
@@ -244,6 +245,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
                     <div className="text-xs text-muted-foreground">
                       v{v.version} · {new Date(v.created_at).toLocaleDateString("pt-BR")} · {shortId(v.created_by)}
                     </div>
+                    <VersionDescription description={v.description} />
                   </div>
                 </button>
               </li>
@@ -254,5 +256,32 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
 
       <AssetAuditTrail asset={asset} />
     </div>
+  );
+}
+
+function VersionDescription({ description }: { description: string | null }) {
+  const text = (description ?? "").trim();
+  const hasText = text.length > 0;
+  const Icon = hasText ? MessageSquare : MessageSquareDashed;
+  const label = hasText ? text : "Sem comentário";
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className={`mt-1 flex items-start gap-1.5 text-xs ${
+              hasText ? "text-foreground/80" : "text-muted-foreground italic"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Icon className="w-3 h-3 mt-0.5 shrink-0 opacity-70" />
+            <span className="truncate">{label}</span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="start" className="max-w-xs whitespace-pre-wrap">
+          {hasText ? text : "Nenhuma descrição foi adicionada para esta versão."}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
