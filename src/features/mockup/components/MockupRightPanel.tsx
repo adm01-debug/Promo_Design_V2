@@ -131,8 +131,18 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
             <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => setShowLogo(!showLogo)}>
               {showLogo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />} {showLogo ? "Ocultar" : "Mostrar"}
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive gap-1" onClick={clearLogo}>
-              <Trash2 className="w-3 h-3" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-destructive gap-1 flex-1"
+              onClick={() => {
+                clearLogo();
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              aria-label="Remover logo"
+              title="Remover logo e voltar ao estado vazio"
+            >
+              <Trash2 className="w-3 h-3" /> Remover
             </Button>
           </div>
         )}
