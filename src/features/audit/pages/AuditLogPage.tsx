@@ -403,7 +403,18 @@ const AuditLogPage = () => {
             <AuditSavedViewsMenu
               organizationId={currentOrgId}
               currentFilters={filterState}
-              onApply={setFilters}
+              currentPage={page}
+              currentPageSize={pageSize}
+              onApply={(s, opts) => {
+                setFilters(s);
+                if (opts?.pageSize && PAGE_SIZE_OPTIONS.includes(opts.pageSize)) {
+                  setPageSize(opts.pageSize);
+                }
+                // setFilters resets page to 0; restore desired page on next tick.
+                if (typeof opts?.page === "number" && opts.page > 0) {
+                  setTimeout(() => setPage(opts.page!), 0);
+                }
+              }}
             />
           )}
           <Button

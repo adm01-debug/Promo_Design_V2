@@ -12,6 +12,9 @@ export interface AuditSavedViewFilters {
   valueQuery?: string;
   ipQuery?: string;
   userAgentQuery?: string;
+  /** Pagination state — restored when applying the view. */
+  page?: number;
+  pageSize?: number;
 }
 
 export interface AuditSavedView {
