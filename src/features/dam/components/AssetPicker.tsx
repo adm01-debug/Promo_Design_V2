@@ -75,8 +75,20 @@ const TYPE_OPTIONS: { value: AssetType | "all"; label: string }[] = [
 const PAGE_SIZE = 24;
 
 export function AssetPicker(props: AssetPickerProps) {
-  const { open, onOpenChange, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
+  const { open, onOpenChange, defaultClientId, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
+  // `defaultClientId` é o nome canônico; `clientId` permanece como fallback (legado).
+  const initialClientId = defaultClientId ?? clientId ?? "all";
   const multiSelect = props.multiSelect === true;
+
+  // Validação dev-only: garante que `onSelect` casa com o modo selecionado.
+  if (import.meta.env.DEV && typeof props.onSelect !== "function") {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[AssetPicker] prop \`onSelect\` deve ser uma função. ` +
+        `Em multiSelect=${multiSelect ? "true" : "false"}, espera-se ` +
+        `\`(${multiSelect ? "assets: Asset[]" : "asset: Asset"}) => void\`.`,
+    );
+  }
 
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
@@ -84,7 +96,7 @@ export function AssetPicker(props: AssetPickerProps) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [assetType, setAssetType] = useState<AssetType | "all">(defaultAssetType ?? "all");
-  const [activeClientId, setActiveClientId] = useState<string | "all">(clientId ?? "all");
+  const [activeClientId, setActiveClientId] = useState<string | "all">(initialClientId);
   const [tags, setTags] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
@@ -96,13 +108,13 @@ export function AssetPicker(props: AssetPickerProps) {
     if (open) {
       setSearch("");
       setAssetType(defaultAssetType ?? "all");
-      setActiveClientId(clientId ?? "all");
+      setActiveClientId(initialClientId);
       setTags([]);
       setPage(1);
       setSelectedIds(new Set());
       setSelectedMap(new Map());
     }
-  }, [open, defaultAssetType, clientId]);
+  }, [open, defaultAssetType, initialClientId]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, assetType, activeClientId, tags]);
 
