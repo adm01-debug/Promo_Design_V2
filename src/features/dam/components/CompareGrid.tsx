@@ -28,6 +28,10 @@ export function CompareGrid({ assets, onRemove }: Props) {
   const [transform, setTransform] = useState<Transform>(INITIAL);
   const [mode, setMode] = useState<"fit" | "actual">("fit");
 
+  // Pan/zoom step constants for keyboard nudging.
+  const PAN_STEP = 40; // px per arrow press
+  const ZOOM_STEP = 1.2;
+
   // Reset transform when set of assets changes
   useEffect(() => {
     setTransform(INITIAL);
@@ -42,6 +46,17 @@ export function CompareGrid({ assets, onRemove }: Props) {
   const setActual = useCallback(() => {
     setTransform({ scale: 1, tx: 0, ty: 0 });
     setMode("actual");
+  }, []);
+
+  const zoomBy = useCallback((factor: number) => {
+    setTransform((t) => ({
+      ...t,
+      scale: Math.min(8, Math.max(0.2, t.scale * factor)),
+    }));
+  }, []);
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    setTransform((t) => ({ ...t, tx: t.tx + dx, ty: t.ty + dy }));
   }, []);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
