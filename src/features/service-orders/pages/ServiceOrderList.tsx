@@ -210,6 +210,16 @@ const ServiceOrderList = () => {
   // Reset page when filters change
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
   const handleFilterChange = (v: OsStatus | "all") => { setStatusFilter(v); setPage(1); };
+  const handleProductChange = (v: string) => { setProductQuery(v); setPage(1); };
+  const handleDateFromChange = (d: Date | undefined) => { setDateFrom(d); setPage(1); };
+  const handleDateToChange = (d: Date | undefined) => { setDateTo(d); setPage(1); };
+  const hasAdvancedFilters = !!(productQuery || dateFrom || dateTo);
+  const clearAdvancedFilters = () => {
+    setProductQuery("");
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -257,6 +267,55 @@ const ServiceOrderList = () => {
               <ArrowUpDown className="w-4 h-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Advanced filters: product + creation date range — all URL-synced */}
+        <div className="flex flex-wrap items-end gap-2 mt-3">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Produto</label>
+            <div className="relative">
+              <Package className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                value={productQuery}
+                onChange={(e) => handleProductChange(e.target.value)}
+                placeholder="Nome ou SKU…"
+                className="h-8 w-[200px] pl-7 text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Criada de</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 w-[160px] justify-start text-left text-xs font-normal", !dateFrom && "text-muted-foreground")}>
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  {dateFrom ? formatDate(dateFrom, "dd/MM/yyyy") : "Selecionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent mode="single" selected={dateFrom} onSelect={handleDateFromChange} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Criada até</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 w-[160px] justify-start text-left text-xs font-normal", !dateTo && "text-muted-foreground")}>
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  {dateTo ? formatDate(dateTo, "dd/MM/yyyy") : "Selecionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent mode="single" selected={dateTo} onSelect={handleDateToChange} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>
+          {hasAdvancedFilters && (
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground" onClick={clearAdvancedFilters}>
+              <X className="w-3.5 h-3.5" /> Limpar avançados
+            </Button>
+          )}
         </div>
       </div>
 
