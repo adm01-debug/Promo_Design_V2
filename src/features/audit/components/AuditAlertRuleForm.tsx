@@ -77,6 +77,8 @@ export function AuditAlertRuleForm({
   const [valueQuery, setValueQuery] = useState<string>(prefill?.valueQuery ?? "");
   const [recipientsMode, setRecipientsMode] = useState<RecipientsMode>("owner");
   const [recipientUserIds, setRecipientUserIds] = useState<string[]>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedConditions, setAdvancedConditions] = useState<AuditAdvancedCondition[]>([]);
 
   const reset = () => {
     setName("");
@@ -87,6 +89,8 @@ export function AuditAlertRuleForm({
     setValueQuery("");
     setRecipientsMode("owner");
     setRecipientUserIds([]);
+    setAdvancedConditions([]);
+    setAdvancedOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -106,6 +110,9 @@ export function AuditAlertRuleForm({
         value_query: valueQuery.trim() || null,
         recipients_mode: recipientsMode,
         recipient_user_ids: recipientsMode === "users" ? recipientUserIds : [],
+        advanced_conditions: advancedConditions
+          .map((c) => ({ ...c, key: c.key.trim(), value: c.value.trim() }))
+          .filter((c) => c.key.length > 0),
       });
       toast({ title: "Regra criada", description: trimmed });
       reset();
