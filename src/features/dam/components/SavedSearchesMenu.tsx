@@ -323,7 +323,6 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             const diffs = match?.diffs ?? [];
             const isPartial = !isActive && diffs.length > 0 && diffs.length <= 2;
             const isRenaming = renameId === s.id;
-            const isConfirmingDelete = confirmDeleteId === s.id;
             return (
               <div key={s.id} className="px-1 py-0.5">
                 {isRenaming ? (
