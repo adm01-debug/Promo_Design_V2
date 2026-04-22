@@ -11,6 +11,7 @@ import { useClients } from "@/features/clients/hooks/use-clients";
 import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
+import { cn } from "@/lib/utils";
 import {
   detectFileKind,
   buildSvgPreviewUrl,
@@ -416,7 +417,23 @@ export function AssetUploadDialog({
           </div>
 
           <div>
-            <Label className="mb-1.5 block">Tags</Label>
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <Label className="m-0">Tags</Label>
+              <span
+                className={cn(
+                  "text-[11px] tabular-nums font-mono transition-colors",
+                  tags.length >= 20
+                    ? "text-destructive font-semibold"
+                    : tags.length >= 16
+                      ? "text-warning"
+                      : "text-muted-foreground",
+                )}
+                aria-live="polite"
+                aria-label={`${tags.length} de 20 tags utilizadas`}
+              >
+                {tags.length}/20
+              </span>
+            </div>
             <TagChipsInput
               value={tags}
               onChange={setTags}
