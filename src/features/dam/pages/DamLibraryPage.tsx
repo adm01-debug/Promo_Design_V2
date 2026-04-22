@@ -1063,7 +1063,7 @@ export default function DamLibraryPage() {
                 aria-label="Copiar link da visualização atual"
                 data-testid="dam-copy-link"
               >
-                {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                {copiedLink ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
