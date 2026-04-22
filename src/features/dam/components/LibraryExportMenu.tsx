@@ -153,10 +153,33 @@ export function LibraryExportMenu({
   );
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [history, setHistory] = useState<ExportHistoryEntry[]>(() => readHistory());
   const count = assets.length;
   const disabled = count === 0;
   const allDisabled = !organizationId || total === 0;
   const willTruncate = total > MAX_EXPORT_ROWS;
+
+  const recordExport = (entry: Omit<ExportHistoryEntry, "id" | "at" | "label">) => {
+    const scopeLabel = entry.scope === "all" ? "Todos filtrados" : "Página atual";
+    const label = `${entry.kind.toUpperCase()} · ${scopeLabel} · ${entry.rows.toLocaleString("pt-BR")} linhas`;
+    const full: ExportHistoryEntry = {
+      ...entry,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      at: Date.now(),
+      label,
+    };
+    setHistory((prev) => {
+      const next = [full, ...prev].slice(0, HISTORY_LIMIT);
+      writeHistory(next);
+      return next;
+    });
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    writeHistory([]);
+    toast.success("Histórico de exportações limpo");
+  };
 
   const handleCsv = () => {
     if (disabled) {
@@ -170,6 +193,7 @@ export function LibraryExportMenu({
     }, csvCols);
     const ts = format(new Date(), "yyyyMMdd-HHmmss");
     downloadCsv(`dam-assets-${ts}.csv`, csv);
+    recordExport({ kind: "csv", scope: "current", rows: count, filters, filtersSummary, columns: csvCols });
     toast.success(`CSV exportado (${count} assets)`);
   };
 
@@ -182,6 +206,7 @@ export function LibraryExportMenu({
     try {
       await new Promise((r) => setTimeout(r, 0));
       downloadAssetsPdf(assets, clients, { ...filtersSummary, shown: count, total }, pdfCols);
+      recordExport({ kind: "pdf", scope: "current", rows: count, filters, filtersSummary, columns: pdfCols });
       toast.success(`PDF exportado (${count} assets)`);
     } catch (e) {
       toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
