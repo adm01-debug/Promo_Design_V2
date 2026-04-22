@@ -594,49 +594,6 @@ export default function DamLibraryPage() {
   }, [isFetching, page]);
   const isPaginating = isFetching && !isLoading && loadedPage !== page;
 
-  // Compose a single, debounced SR-only status string. We emit ONE sentence
-  // per state transition (loading -> updating -> ready) so screen readers
-  // get a clear, non-repetitive announcement on every page/filter change.
-  useEffect(() => {
-    let next = "";
-    if (isLoading && displayedAssets.length === 0) {
-      next = "Carregando assets…";
-    } else if (isPaginating) {
-      next = paginationMode === "pages"
-        ? `Carregando página ${page} de ${totalPages || 1}…`
-        : "Carregando mais assets…";
-    } else if (isFetching && !isLoading) {
-      next = "Atualizando lista de assets…";
-    } else if (total === 0) {
-      next = hasActiveFilters
-        ? "Nenhum asset corresponde aos filtros."
-        : "Nenhum asset encontrado.";
-    } else {
-      const fmt = (n: number) => n.toLocaleString("pt-BR");
-      const noun = total === 1 ? "asset" : "assets";
-      if (paginationMode === "pages") {
-        const from = (page - 1) * pageSize + 1;
-        const to = Math.min(page * pageSize, total);
-        next = `Mostrando ${fmt(from)} a ${fmt(to)} de ${fmt(total)} ${noun}${hasActiveFilters ? ", filtrados" : ""}.`;
-      } else {
-        next = `Mostrando ${fmt(displayedAssets.length)} de ${fmt(total)} ${noun}${hasActiveFilters ? ", filtrados" : ""}.`;
-      }
-    }
-    // Avoid no-op updates so SR doesn't re-announce the same string.
-    setA11yStatus((prev) => (prev === next ? prev : next));
-  }, [
-    isLoading,
-    isFetching,
-    isPaginating,
-    displayedAssets.length,
-    total,
-    page,
-    pageSize,
-    totalPages,
-    paginationMode,
-    hasActiveFilters,
-  ]);
-
   const handleRestore = async (asset: Asset) => {
     try {
       await restore.mutateAsync(asset.id);
