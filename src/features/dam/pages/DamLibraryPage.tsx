@@ -677,6 +677,32 @@ export default function DamLibraryPage() {
             <PanelRight className="w-4 h-4 mr-2" />
             Prévia
           </Toggle>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={ocrOnly}
+                onPressedChange={setOcrOnly}
+                size="sm"
+                variant="outline"
+                aria-label="Apenas correspondências OCR"
+                aria-pressed={ocrOnly}
+                disabled={debouncedSearch.trim().length < MIN_SEARCH_LENGTH}
+              >
+                <ScanText className="w-4 h-4 mr-2" />
+                Só OCR
+                {ocrOnly && ocrFilteredOut > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-[10px]">
+                    -{ocrFilteredOut}
+                  </Badge>
+                )}
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+              {debouncedSearch.trim().length < MIN_SEARCH_LENGTH
+                ? "Faça uma busca para destacar correspondências por OCR"
+                : "Mostrar apenas resultados encontrados pelo texto interno (OCR)"}
+            </TooltipContent>
+          </Tooltip>
           <Button variant="outline" asChild>
             <Link
               to={(() => {
