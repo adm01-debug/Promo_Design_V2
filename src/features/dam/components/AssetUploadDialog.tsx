@@ -11,6 +11,7 @@ import { useClients } from "@/features/clients/hooks/use-clients";
 import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
+import { cn } from "@/lib/utils";
 import {
   detectFileKind,
   buildSvgPreviewUrl,
@@ -424,7 +425,7 @@ export function AssetUploadDialog({
                   tags.length >= 20
                     ? "text-destructive font-semibold"
                     : tags.length >= 16
-                      ? "text-amber-500"
+                      ? "text-warning"
                       : "text-muted-foreground",
                 )}
                 aria-live="polite"
