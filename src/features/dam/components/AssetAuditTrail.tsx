@@ -191,6 +191,75 @@ export function AssetAuditTrail({ asset }: Props) {
               <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.DELETE}</Badge>
             </ToggleGroupItem>
           </ToggleGroup>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Select value={userFilter} onValueChange={setUserFilter}>
+              <SelectTrigger className="h-7 px-2 text-xs w-auto min-w-[140px]">
+                <SelectValue placeholder="Usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">Todos os usuários</SelectItem>
+                {userOptions.map((u) => (
+                  <SelectItem key={u} value={u} className="text-xs font-mono">
+                    {shortId(u)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                  Campo
+                  {fieldFilter.length > 0 && (
+                    <Badge variant="secondary" className="text-[10px] ml-0.5">
+                      {fieldFilter.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-xs">Campos alterados</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {TRACKED_FIELDS.map((f) => (
+                  <DropdownMenuCheckboxItem
+                    key={f}
+                    checked={fieldFilter.includes(f)}
+                    onCheckedChange={() => toggleField(f)}
+                    className="text-xs capitalize"
+                  >
+                    {FIELD_LABELS[f]}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+              title={sortDir === "desc" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
+            >
+              {sortDir === "desc" ? (
+                <ArrowDownWideNarrow className="w-3 h-3" />
+              ) : (
+                <ArrowUpWideNarrow className="w-3 h-3" />
+              )}
+              Data
+            </Button>
+
+            {hasExtraFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1"
+                onClick={clearExtra}
+              >
+                <X className="w-3 h-3" />
+                Limpar
+              </Button>
+            )}
+          </div>
           {filteredEntries.length === 0 ? (
             <div className="text-sm text-muted-foreground py-3 text-center border border-dashed rounded-md">
               Nenhum registro corresponde ao filtro
