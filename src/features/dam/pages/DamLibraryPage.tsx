@@ -34,6 +34,7 @@ import { BatchOcrDialog } from "../components/BatchOcrDialog";
 import { parseBoolParam } from "../lib/parse-bool-param";
 import { JumpToPage } from "../components/JumpToPage";
 import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
+import { SizeRangeFilter, type CustomSizeRange } from "../components/SizeRangeFilter";
 import {
   AlertDialog,
   AlertDialogAction,
