@@ -147,8 +147,8 @@ describe("AssetUploadDialog · preview generation & blob cleanup", () => {
     });
   });
 
-  it("revokes blob URLs on cleanup (unmount)", async () => {
-    const { unmount } = render(
+  it("revokes blob URL when an entry is removed (cleanup)", async () => {
+    render(
       <AssetUploadDialog
         open
         onOpenChange={() => {}}
@@ -156,17 +156,19 @@ describe("AssetUploadDialog · preview generation & blob cleanup", () => {
       />,
     );
 
-    // raster image takes the createObjectURL path synchronously in addFiles
     const img = new File([new Uint8Array([1, 2, 3])], "pic.png", { type: "image/png" });
     dropFile(img);
 
     await waitFor(() => {
       expect(createObjectURL).toHaveBeenCalled();
+      expect(document.querySelector('img[src="blob:raster"]')).toBeTruthy();
     });
 
-    unmount();
+    const removeBtn = screen.getByRole("button", { name: /remover/i });
+    removeBtn.click();
 
-    // Cleanup effect must release the blob URL we created
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:raster");
+    await waitFor(() => {
+      expect(revokeObjectURL).toHaveBeenCalledWith("blob:raster");
+    });
   });
 });
