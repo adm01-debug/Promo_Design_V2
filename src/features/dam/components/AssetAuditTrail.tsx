@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2, ArrowDownWideNarrow, ArrowUpWideNarrow, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +64,9 @@ export function AssetAuditTrail({ asset }: Props) {
   const [userFilter, setUserFilter] = useState<string>("ALL");
   const [fieldFilter, setFieldFilter] = useState<TrackedField[]>([]);
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+  const PAGE_SIZE = 25;
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Apply selected sort direction over a copy of the data
   const entries = useMemo(() => {
