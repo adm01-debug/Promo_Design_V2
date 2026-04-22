@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCheck, Trash2, ClipboardList, ArrowRight, ShieldAlert } from "lucide-react";
+import { Bell, CheckCheck, Trash2, ClipboardList, ArrowRight, ShieldAlert, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
@@ -127,9 +127,40 @@ const NotificationItem = ({
 );
 
 const NotificationPanel = () => {
-  const { notifications, unreadCount, markRead, markAllRead, clearAll } = useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    markRead,
+    markAllRead,
+    clearAll,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useNotifications();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-load next page when the sentinel scrolls into view inside the panel.
+  useEffect(() => {
+    if (!open) return;
+    if (!hasNextPage) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+    const root = node.closest('[data-notif-scroll="true"]') as HTMLElement | null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !isFetchingNextPage) {
+            void fetchNextPage();
+          }
+        }
+      },
+      { root, rootMargin: "120px 0px", threshold: 0 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [open, hasNextPage, isFetchingNextPage, fetchNextPage, notifications.length]);
 
   const handleNavigate = (n: Notification) => {
     setOpen(false);
@@ -204,23 +235,54 @@ const NotificationPanel = () => {
         </div>
 
         {/* List */}
-        <div className="max-h-80 overflow-y-auto p-1.5 space-y-0.5" role="list" aria-labelledby="notif-heading">
+        <div
+          className="max-h-80 overflow-y-auto p-1.5 space-y-0.5"
+          role="list"
+          aria-labelledby="notif-heading"
+          data-notif-scroll="true"
+        >
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground" role="status">
               <Bell className="w-8 h-8 mb-2 opacity-30" aria-hidden="true" />
               <p className="text-xs">Nenhuma notificação</p>
             </div>
           ) : (
-            <AnimatePresence initial={false}>
-              {notifications.map((n) => (
-                <NotificationItem
-                  key={n.id}
-                  notification={n}
-                  onMarkRead={markRead}
-                  onNavigate={handleNavigate}
-                />
-              ))}
-            </AnimatePresence>
+            <>
+              <AnimatePresence initial={false}>
+                {notifications.map((n) => (
+                  <NotificationItem
+                    key={n.id}
+                    notification={n}
+                    onMarkRead={markRead}
+                    onNavigate={handleNavigate}
+                  />
+                ))}
+              </AnimatePresence>
+              {hasNextPage && (
+                <div
+                  ref={sentinelRef}
+                  className="flex items-center justify-center py-2"
+                  data-testid="notification-load-more-sentinel"
+                >
+                  <button
+                    type="button"
+                    onClick={() => void fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
+                    aria-label="Carregar mais notificações"
+                  >
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                        Carregando…
+                      </>
+                    ) : (
+                      "Carregar mais"
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
