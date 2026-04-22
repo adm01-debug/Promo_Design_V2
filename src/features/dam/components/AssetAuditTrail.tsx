@@ -87,7 +87,9 @@ interface Props {
 
 export function AssetAuditTrail({ asset }: Props) {
   const { data, isLoading } = useAssetAudit(asset);
-  const [open, setOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const auditParam = searchParams.get("audit");
+  const [open, setOpen] = useState(!!auditParam);
   const [diff, setDiff] = useState<AssetAuditEntry | null>(null);
   const [actionFilter, setActionFilter] = useState<AssetAuditEntry["action"] | "ALL">("ALL");
   const [userFilter, setUserFilter] = useState<string>("ALL");
@@ -138,6 +140,50 @@ export function AssetAuditTrail({ asset }: Props) {
   };
   const hasExtraFilters =
     userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
+
+  // Open the diff dialog automatically when ?audit=<id> is present
+  useEffect(() => {
+    if (!auditParam || !data) return;
+    const target = data.find((e) => e.id === auditParam);
+    if (target) {
+      setOpen(true);
+      setDiff(target);
+    } else {
+      toast.error("Evento de auditoria não encontrado neste asset");
+      const next = new URLSearchParams(searchParams);
+      next.delete("audit");
+      setSearchParams(next, { replace: true });
+    }
+    // We intentionally only react to data + param changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auditParam, data]);
+
+  const openDiff = (e: AssetAuditEntry) => {
+    setDiff(e);
+    const next = new URLSearchParams(searchParams);
+    next.set("audit", e.id);
+    setSearchParams(next, { replace: true });
+  };
+
+  const closeDiff = () => {
+    setDiff(null);
+    if (searchParams.has("audit")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("audit");
+      setSearchParams(next, { replace: true });
+    }
+  };
+
+  const copyDeepLink = async (e: AssetAuditEntry) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("audit", e.id);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      toast.success("Link do diff copiado");
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
 
   // Reset visible window whenever the resulting list changes
   useEffect(() => {
