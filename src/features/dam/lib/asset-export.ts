@@ -305,6 +305,8 @@ export async function downloadAssetsZipsByType(
   const master = new JSZip();
   const perType = new Map<string, { zip: JSZip; used: Map<string, number>; rows: string[][]; ok: number; failed: number }>();
   const globalRows: string[][] = [];
+  const perTypePdfRows = new Map<string, ManifestPdfOptions["rows"]>();
+  const globalPdfRows: ManifestPdfOptions["rows"] = [];
   let ok = 0;
   let failed = 0;
 
@@ -352,6 +354,9 @@ export async function downloadAssetsZipsByType(
     const row = [...rowFor(asset, clientName(asset, map)), status, status === "ok" ? candidate : ""];
     bucket.rows.push(row);
     globalRows.push([...rowFor(asset, clientName(asset, map)), status, zipPath]);
+    if (!perTypePdfRows.has(type)) perTypePdfRows.set(type, []);
+    perTypePdfRows.get(type)!.push({ asset, status, zipPath: status === "ok" ? candidate : "" });
+    globalPdfRows.push({ asset, status, zipPath });
     onProgress?.(i + 1, assets.length);
   }
 
@@ -362,6 +367,12 @@ export async function downloadAssetsZipsByType(
   for (const [type, bucket] of perType) {
     const manifest = [perTypeHeader, ...bucket.rows.map((r) => r.map(escape).join(","))].join("\n");
     bucket.zip.file("manifest.csv", `\ufeff${manifest}`);
+    bucket.zip.file("manifest.pdf", buildManifestPdf({
+      title: `Manifesto — ${type}`,
+      scopeLabel: `${bucket.rows.length} assets`,
+      rows: perTypePdfRows.get(type) ?? [],
+      clientMap: map,
+    }));
     const nestedBlob = await bucket.zip.generateAsync({ type: "blob" });
     master.file(`${safeName(type)}.zip`, nestedBlob);
     byType[type] = { ok: bucket.ok, failed: bucket.failed };
@@ -371,6 +382,13 @@ export async function downloadAssetsZipsByType(
   const globalHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
   const globalManifest = [globalHeader, ...globalRows.map((r) => r.map(escape).join(","))].join("\n");
   master.file("manifest.csv", `\ufeff${globalManifest}`);
+  master.file("manifest.pdf", buildManifestPdf({
+    title: "Manifesto de Assets — por tipo",
+    scopeLabel: `${assets.length} assets · ${perType.size} tipo(s)`,
+    rows: globalPdfRows,
+    clientMap: map,
+    groupByType: true,
+  }));
 
   const blob = await master.generateAsync({ type: "blob" });
   const url = URL.createObjectURL(blob);
