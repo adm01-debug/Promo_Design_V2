@@ -22,6 +22,7 @@ import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
 import { ExportProgressPanel } from "../components/ExportProgressPanel";
 import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnosis";
+import { ActiveFiltersSummaryPanel } from "../components/ActiveFiltersSummaryPanel";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
@@ -745,6 +746,18 @@ export default function DamPreviewPage() {
           </PopoverContent>
         </Popover>
       </header>
+
+      <ActiveFiltersSummaryPanel
+        state={state}
+        activeAsset={activeAsset}
+        clientNameById={clientNameById}
+        onClearAssetTypes={() => setAssetTypes([])}
+        onClearClient={() => setClientId("all")}
+        onClearTags={() => setTags([])}
+        onClearSearch={() => setSearch("")}
+        onClearArchived={() => setIncludeArchived(true)}
+        onResetAll={() => resetFilters()}
+      />
 
       <div className="flex-1 flex min-h-0">
         <PreviewSidebar
