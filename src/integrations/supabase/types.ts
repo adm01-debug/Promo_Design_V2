@@ -117,6 +117,7 @@ export type Database = {
       audit_alert_rules: {
         Row: {
           actions: string[]
+          advanced_conditions: Json
           created_at: string
           id: string
           is_active: boolean
@@ -133,6 +134,7 @@ export type Database = {
         }
         Insert: {
           actions?: string[]
+          advanced_conditions?: Json
           created_at?: string
           id?: string
           is_active?: boolean
@@ -149,6 +151,7 @@ export type Database = {
         }
         Update: {
           actions?: string[]
+          advanced_conditions?: Json
           created_at?: string
           id?: string
           is_active?: boolean
