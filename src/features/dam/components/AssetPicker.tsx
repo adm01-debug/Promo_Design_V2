@@ -86,7 +86,23 @@ export function AssetPicker(props: AssetPickerProps) {
   const [activeClientId, setActiveClientId] = useState<string | "all">(initialClientId);
   const [tags, setTags] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [page, setPage] = useState(1);
+  const sessionKey = `asset-picker-page:${defaultAssetType ?? "all"}:${initialClientId ?? "all"}`;
+  const [page, setPage] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    try {
+      const stored = sessionStorage.getItem(sessionKey);
+      const n = stored ? parseInt(stored, 10) : 1;
+      return Number.isFinite(n) && n >= 1 ? n : 1;
+    } catch {
+      return 1;
+    }
+  });
+  useEffect(() => {
+    try {
+      if (page > 1) sessionStorage.setItem(sessionKey, String(page));
+      else sessionStorage.removeItem(sessionKey);
+    } catch { /* ignore */ }
+  }, [page, sessionKey]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedMap, setSelectedMap] = useState<Map<string, Asset>>(new Map());
 
@@ -97,11 +113,17 @@ export function AssetPicker(props: AssetPickerProps) {
       setAssetType(defaultAssetType ?? "all");
       setActiveClientId(initialClientId);
       setTags([]);
-      setPage(1);
+      try {
+        const stored = sessionStorage.getItem(sessionKey);
+        const n = stored ? parseInt(stored, 10) : 1;
+        setPage(Number.isFinite(n) && n >= 1 ? n : 1);
+      } catch {
+        setPage(1);
+      }
       setSelectedIds(new Set());
       setSelectedMap(new Map());
     }
-  }, [open, defaultAssetType, initialClientId]);
+  }, [open, defaultAssetType, initialClientId, sessionKey]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, assetType, activeClientId, tags]);
 
