@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,8 +22,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Asset, AssetFilters } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { buildAssetsCsvWithMetadata, downloadCsv } from "../lib/asset-export";
-import { downloadAssetsPdf, type AssetsPdfFiltersSummary } from "../lib/asset-pdf";
+import {
+  buildAssetsCsvWithMetadata,
+  downloadCsv,
+  CSV_COLUMNS,
+  DEFAULT_CSV_COLUMNS,
+  type CsvColumnId,
+} from "../lib/asset-export";
+import {
+  downloadAssetsPdf,
+  PDF_COLUMNS,
+  DEFAULT_PDF_COLUMNS,
+  type AssetsPdfFiltersSummary,
+  type PdfColumnId,
+} from "../lib/asset-pdf";
+import { ColumnsDialog } from "./ColumnsDialog";
 import {
   fetchAllFilteredAssets,
   estimateExportSeconds,
@@ -48,6 +61,28 @@ interface Props {
 /** Above this many rows, we ask the user to confirm before kicking off the export. */
 const CONFIRM_THRESHOLD = 500;
 
+/** localStorage keys used to remember the user's column selection across sessions. */
+const CSV_COLS_KEY = "dam-export-csv-columns";
+const PDF_COLS_KEY = "dam-export-pdf-columns";
+
+function readCols<Id extends string>(key: string, allowed: readonly Id[], fallback: Id[]): Id[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return fallback;
+    const allowedSet = new Set<string>(allowed);
+    const filtered = parsed.filter((id): id is Id => typeof id === "string" && allowedSet.has(id));
+    return filtered.length > 0 ? filtered : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeCols<Id extends string>(key: string, cols: Id[]): void {
+  try { localStorage.setItem(key, JSON.stringify(cols)); } catch { /* quota / disabled */ }
+}
+
 export function LibraryExportMenu({
   assets,
   clients,
@@ -59,6 +94,17 @@ export function LibraryExportMenu({
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ loaded: number; total: number } | null>(null);
   const [confirmAll, setConfirmAll] = useState<null | { kind: "csv" | "pdf"; estSec: number }>(null);
+  // Column selections (persisted) for CSV/PDF.
+  const csvAllIds = CSV_COLUMNS.map((c) => c.id) as CsvColumnId[];
+  const pdfAllIds = PDF_COLUMNS.map((c) => c.id) as PdfColumnId[];
+  const [csvCols, setCsvCols] = useState<CsvColumnId[]>(() =>
+    readCols<CsvColumnId>(CSV_COLS_KEY, csvAllIds, DEFAULT_CSV_COLUMNS),
+  );
+  const [pdfCols, setPdfCols] = useState<PdfColumnId[]>(() =>
+    readCols<PdfColumnId>(PDF_COLS_KEY, pdfAllIds, DEFAULT_PDF_COLUMNS),
+  );
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
   const count = assets.length;
   const disabled = count === 0;
   const allDisabled = !organizationId || total === 0;
@@ -73,7 +119,7 @@ export function LibraryExportMenu({
       ...filtersSummary,
       shown: count,
       total,
-    });
+    }, csvCols);
     const ts = format(new Date(), "yyyyMMdd-HHmmss");
     downloadCsv(`dam-assets-${ts}.csv`, csv);
     toast.success(`CSV exportado (${count} assets)`);
@@ -87,7 +133,7 @@ export function LibraryExportMenu({
     setBusy(true);
     try {
       await new Promise((r) => setTimeout(r, 0));
-      downloadAssetsPdf(assets, clients, { ...filtersSummary, shown: count, total });
+      downloadAssetsPdf(assets, clients, { ...filtersSummary, shown: count, total }, pdfCols);
       toast.success(`PDF exportado (${count} assets)`);
     } catch (e) {
       toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
@@ -119,7 +165,7 @@ export function LibraryExportMenu({
           ...filtersSummary,
           shown: all.length,
           total: totalReported || all.length,
-        });
+        }, csvCols);
         const ts = format(new Date(), "yyyyMMdd-HHmmss");
         downloadCsv(`dam-assets-todos-${ts}.csv`, csv);
       } else {
@@ -127,7 +173,7 @@ export function LibraryExportMenu({
           ...filtersSummary,
           shown: all.length,
           total: totalReported || all.length,
-        });
+        }, pdfCols);
       }
 
       const msg = truncated
@@ -181,6 +227,29 @@ export function LibraryExportMenu({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
+            <Settings2 className="w-3 h-3" />
+            Colunas
+          </DropdownMenuLabel>
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); setCsvDialogOpen(true); }}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="flex-1">Colunas do CSV</span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {csvCols.length}/{csvAllIds.length}
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); setPdfDialogOpen(true); }}
+          >
+            <FileText className="w-4 h-4" />
+            <span className="flex-1">Colunas do PDF</span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {pdfCols.length}/{pdfAllIds.length}
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
             <Database className="w-3 h-3" />
             Todos os filtrados
           </DropdownMenuLabel>
@@ -209,6 +278,40 @@ export function LibraryExportMenu({
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ColumnsDialog
+        open={csvDialogOpen}
+        onOpenChange={setCsvDialogOpen}
+        allColumns={CSV_COLUMNS}
+        value={csvCols}
+        defaults={DEFAULT_CSV_COLUMNS}
+        assetCount={count > 0 ? count : total}
+        title="Escolher colunas do CSV"
+        description="Selecione quais colunas incluir no arquivo CSV."
+        confirmLabel="Salvar seleção"
+        onConfirm={(cols) => {
+          setCsvCols(cols);
+          writeCols(CSV_COLS_KEY, cols);
+          toast.success(`Colunas do CSV atualizadas (${cols.length})`);
+        }}
+      />
+
+      <ColumnsDialog
+        open={pdfDialogOpen}
+        onOpenChange={setPdfDialogOpen}
+        allColumns={PDF_COLUMNS}
+        value={pdfCols}
+        defaults={DEFAULT_PDF_COLUMNS}
+        assetCount={count > 0 ? count : total}
+        title="Escolher colunas do PDF"
+        description="Selecione quais colunas aparecem na tabela do PDF."
+        confirmLabel="Salvar seleção"
+        onConfirm={(cols) => {
+          setPdfCols(cols);
+          writeCols(PDF_COLS_KEY, cols);
+          toast.success(`Colunas do PDF atualizadas (${cols.length})`);
+        }}
+      />
 
       <AlertDialog
         open={confirmAll !== null}

@@ -21,6 +21,25 @@ function formatBytes(n?: number | null): string {
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+/**
+ * Available PDF columns. The order here defines the canonical ordering when
+ * the user picks a subset (we always render in canonical order, never in
+ * the user's selection order).
+ */
+export const PDF_COLUMNS = [
+  { id: "name",       label: "Nome" },
+  { id: "type",       label: "Tipo" },
+  { id: "client",     label: "Cliente" },
+  { id: "version",    label: "Versão" },
+  { id: "size",       label: "Tamanho" },
+  { id: "tags",       label: "Tags" },
+  { id: "created_at", label: "Criado em" },
+] as const;
+
+export type PdfColumnId = (typeof PDF_COLUMNS)[number]["id"];
+
+export const DEFAULT_PDF_COLUMNS: PdfColumnId[] = PDF_COLUMNS.map((c) => c.id);
+
 export interface AssetsPdfFiltersSummary {
   search?: string;
   assetTypes?: string[];
@@ -100,10 +119,18 @@ export function buildAssetsPdf(
   assets: Asset[],
   clients: Client[],
   filters: AssetsPdfFiltersSummary,
+  pdfColumns?: PdfColumnId[],
 ): jsPDF {
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
   const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
+
+  // Resolve which PDF columns to render. Always emit in canonical order so the
+  // layout stays predictable (e.g. "Nome" stays leftmost when selected).
+  const selected = new Set<PdfColumnId>(
+    pdfColumns && pdfColumns.length > 0 ? pdfColumns : DEFAULT_PDF_COLUMNS,
+  );
+  const activeCols = PDF_COLUMNS.filter((c) => selected.has(c.id));
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -179,36 +206,59 @@ export function buildAssetsPdf(
 
   // Table — column widths are computed from the available page width so the
   // layout adapts to A4 landscape regardless of jsPDF's measurements.
-  const head = [["Nome", "Tipo", "Cliente", "Versão", "Tamanho", "Tags", "Criado em"]];
-  const body = assets.map((a) => [
-    a.name,
-    TYPE_LABEL[a.asset_type] ?? a.asset_type,
-    a.client_id ? clientMap.get(a.client_id) ?? "—" : "—",
-    String(a.version ?? ""),
-    formatBytes(a.file_size),
-    // Show up to 8 tags, then "+N" if truncated. autoTable will wrap as needed.
-    (() => {
-      const tags = a.tags ?? [];
-      const shown = tags.slice(0, 8).join(", ");
-      return tags.length > 8 ? `${shown} +${tags.length - 8}` : shown;
-    })(),
-    a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy") : "—",
-  ]);
-
-  // Distribute remaining width between Nome (flex) and Tags (flex) so that
-  // long names/tag lists wrap into multi-line cells instead of being clipped.
   const tableWidth = pageW - MARGIN_X * 2;
-  const fixedCols = { tipo: 56, versao: 46, tamanho: 64, criado: 68 } as const;
-  const fixedTotal = fixedCols.tipo + fixedCols.versao + fixedCols.tamanho + fixedCols.criado;
-  // Cliente takes ~18% of remaining flex room, Nome ~32%, Tags ~50%.
-  const flexRoom = Math.max(360, tableWidth - fixedTotal);
-  const clienteW = Math.round(flexRoom * 0.22);
-  const nomeW = Math.round(flexRoom * 0.32);
-  const tagsW = flexRoom - clienteW - nomeW;
+  // Per-column fixed widths (only consumed if the column is active).
+  const FIXED: Record<PdfColumnId, number | null> = {
+    name: null, // flex
+    type: 56,
+    client: null, // flex
+    version: 46,
+    size: 64,
+    tags: null, // flex
+    created_at: 68,
+  };
+  // Flex distribution among active flex columns: name 32, client 22, tags 46 (sums to 1.0 if all three).
+  const FLEX_SHARE: Record<PdfColumnId, number> = {
+    name: 0.32, type: 0, client: 0.22, version: 0, size: 0, tags: 0.46, created_at: 0,
+  };
+  const fixedTotal = activeCols.reduce((acc, c) => acc + (FIXED[c.id] ?? 0), 0);
+  const flexRoom = Math.max(180, tableWidth - fixedTotal);
+  const flexShareSum = activeCols.reduce((acc, c) => acc + FLEX_SHARE[c.id], 0) || 1;
+
+  // Build head + body restricted to active columns.
+  const headRow = activeCols.map((c) => c.label);
+  const valueFor = (a: Asset, id: PdfColumnId): string => {
+    switch (id) {
+      case "name": return a.name;
+      case "type": return TYPE_LABEL[a.asset_type] ?? a.asset_type;
+      case "client": return a.client_id ? clientMap.get(a.client_id) ?? "—" : "—";
+      case "version": return String(a.version ?? "");
+      case "size": return formatBytes(a.file_size);
+      case "tags": {
+        const tags = a.tags ?? [];
+        const shown = tags.slice(0, 8).join(", ");
+        return tags.length > 8 ? `${shown} +${tags.length - 8}` : shown;
+      }
+      case "created_at": return a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy") : "—";
+    }
+  };
+  const bodyRows = assets.map((a) => activeCols.map((c) => valueFor(a, c.id)));
+
+  // Column styles (width + alignment) per active column.
+  const columnStyles: Record<number, Record<string, unknown>> = {};
+  activeCols.forEach((c, idx) => {
+    const fixed = FIXED[c.id];
+    const width = fixed != null ? fixed : Math.round((FLEX_SHARE[c.id] / flexShareSum) * flexRoom);
+    const style: Record<string, unknown> = { cellWidth: width };
+    if (c.id === "name") style.fontStyle = "bold";
+    if (c.id === "version" || c.id === "size" || c.id === "created_at") style.halign = "right";
+    if (c.id === "tags") style.textColor = [80, 80, 90];
+    columnStyles[idx] = style;
+  });
 
   autoTable(doc, {
-    head,
-    body,
+    head: [headRow],
+    body: bodyRows,
     // First page also reserves space for the header.
     startY: headerHeight,
     // `margin.top` ensures every page break leaves room for the repeated header.
@@ -233,15 +283,7 @@ export function buildAssetsPdf(
       halign: "left",
     },
     alternateRowStyles: { fillColor: [245, 245, 247] },
-    columnStyles: {
-      0: { cellWidth: nomeW, fontStyle: "bold" },
-      1: { cellWidth: fixedCols.tipo },
-      2: { cellWidth: clienteW },
-      3: { cellWidth: fixedCols.versao, halign: "right" },
-      4: { cellWidth: fixedCols.tamanho, halign: "right" },
-      5: { cellWidth: tagsW, textColor: [80, 80, 90] },
-      6: { cellWidth: fixedCols.criado, halign: "right" },
-    },
+    columnStyles,
     didDrawPage: (data) => {
       // Repeat header on every page so context (filters, generated-at) is never lost.
       drawHeader();
@@ -279,8 +321,9 @@ export function downloadAssetsPdf(
   assets: Asset[],
   clients: Client[],
   filters: AssetsPdfFiltersSummary,
+  pdfColumns?: PdfColumnId[],
 ): void {
-  const doc = buildAssetsPdf(assets, clients, filters);
+  const doc = buildAssetsPdf(assets, clients, filters, pdfColumns);
   const ts = format(new Date(), "yyyyMMdd-HHmmss");
   doc.save(`dam-assets-${ts}.pdf`);
 }
