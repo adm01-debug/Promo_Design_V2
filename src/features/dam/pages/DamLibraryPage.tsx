@@ -444,8 +444,13 @@ export default function DamLibraryPage() {
     }
   }, [assets, page, paginationMode, isLoading]);
 
-  const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
+  const baseAssets = paginationMode === "loadmore" ? accumulated : assets;
+  const displayedAssets = useMemo(
+    () => (ocrOnly ? baseAssets.filter((a) => a.ocr_match === true) : baseAssets),
+    [baseAssets, ocrOnly],
+  );
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
+  const ocrFilteredOut = ocrOnly ? baseAssets.length - displayedAssets.length : 0;
 
   // Restore previously pinned Quick Preview asset once the asset list is loaded.
   useEffect(() => {
