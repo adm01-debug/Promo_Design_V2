@@ -25,6 +25,10 @@ import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnos
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
 export const COMPARE_MODE_KEY = "dam-compare-mode";
+/** Last URL query string (filters + ?asset + ?compare) used in /dam/preview. */
+export const PREVIEW_QS_KEY = "dam-preview-qs";
+/** Last set of compare-selected asset ids (CSV). Used when URL has no ?compare=. */
+export const COMPARE_IDS_KEY = "dam-compare-ids";
 
 /**
  * Reads the last viewed preview asset id from localStorage, validating TTL.
@@ -95,6 +99,24 @@ export default function DamPreviewPage() {
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);
   const didHydrateCompareRef = useRef(false);
+  const didRestoreSessionRef = useRef(false);
+
+  // Mount-only: if the URL is empty (no filters / asset / compare) but we have a saved
+  // session from a previous visit to /dam/preview, restore it via replace navigation.
+  // This keeps /dam/preview "remembering" the last context the user worked with.
+  useEffect(() => {
+    if (didRestoreSessionRef.current) return;
+    didRestoreSessionRef.current = true;
+    if (typeof window === "undefined") return;
+    if (searchParams.toString() !== "") return; // user came in WITH an explicit URL — respect it
+    let saved: string | null = null;
+    try { saved = sessionStorage.getItem(PREVIEW_QS_KEY); } catch { /* ignore */ }
+    if (!saved) return;
+    const trimmed = saved.startsWith("?") ? saved.slice(1) : saved;
+    if (!trimmed) return;
+    navigate(`/dam/preview?${trimmed}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
@@ -152,6 +174,25 @@ export default function DamPreviewPage() {
   }, [compareMode]);
   const compare = useCompareSelection();
 
+  // Persist current URL query string (filters + asset + compare) so re-entry into
+  // /dam/preview with no params restores the same context.
+  useEffect(() => {
+    if (!didRestoreSessionRef.current) return; // wait until restore-on-mount has run
+    try {
+      const qs = searchParams.toString();
+      if (qs) sessionStorage.setItem(PREVIEW_QS_KEY, qs);
+    } catch { /* ignore */ }
+  }, [searchParams]);
+
+  // Persist compare selection (ids only). Used as a fallback when URL has no ?compare=.
+  useEffect(() => {
+    try {
+      const ids = compare.selectedIds;
+      if (ids.length >= 2) sessionStorage.setItem(COMPARE_IDS_KEY, ids.join(","));
+      else sessionStorage.removeItem(COMPARE_IDS_KEY);
+    } catch { /* ignore */ }
+  }, [compare.selectedIds]);
+
   // Last asset that was actually visible in results — used to diagnose why it
   // disappeared after a filter change, and to restore selection when filters clear.
   const [lastKnownAsset, setLastKnownAsset] = useState<Asset | null>(null);
@@ -179,7 +220,11 @@ export default function DamPreviewPage() {
   useEffect(() => {
     if (didHydrateCompareRef.current) return;
     if (assets.length === 0) return;
-    const raw = searchParams.get("compare");
+    // Prefer ?compare= from URL; fall back to last set persisted in sessionStorage.
+    let raw = searchParams.get("compare");
+    if (!raw) {
+      try { raw = sessionStorage.getItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
+    }
     if (!raw) {
       didHydrateCompareRef.current = true;
       return;
