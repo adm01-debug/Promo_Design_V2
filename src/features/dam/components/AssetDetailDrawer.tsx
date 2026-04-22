@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star } from "lucide-react";
+import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star, Eraser } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -33,6 +33,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const [ocrStatus, setOcrStatus] = useState<string>("none");
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrClearing, setOcrClearing] = useState(false);
 
   useEffect(() => {
     if (!asset) return;
@@ -136,6 +137,27 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
       : ocrStatus === "done" || ocrStatus === "failed"
         ? "Reprocessar OCR"
         : "Extrair texto (OCR)";
+
+  const clearOcr = async () => {
+    if (!asset) return;
+    if (!confirm("Limpar o texto OCR deste asset? Você pode reprocessar depois.")) return;
+    setOcrClearing(true);
+    try {
+      const { error } = await supabase
+        .from("assets")
+        .update({ ocr_text: null, ocr_status: "none" })
+        .eq("id", asset.id);
+      if (error) throw error;
+      setOcrText(null);
+      setOcrStatus("none");
+      setOcrOpen(false);
+      toast.success("OCR removido");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao limpar OCR");
+    } finally {
+      setOcrClearing(false);
+    }
+  };
 
   return (
     <Sheet open={!!asset} onOpenChange={(o) => !o && onClose()}>
@@ -248,19 +270,37 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                   </Badge>
                 </div>
                 {can(["owner", "admin", "designer"]) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={runOcr}
-                    disabled={ocrLoading || ocrStatus === "pending"}
-                  >
-                    {ocrLoading || ocrStatus === "pending" ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <ScanText className="w-4 h-4 mr-2" />
+                  <div className="flex items-center gap-1">
+                    {(ocrText || ocrStatus !== "none") && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={clearOcr}
+                        disabled={ocrClearing || ocrLoading || ocrStatus === "pending"}
+                        title="Limpar OCR (texto e status)"
+                        aria-label="Limpar OCR"
+                      >
+                        {ocrClearing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eraser className="w-4 h-4" />
+                        )}
+                      </Button>
                     )}
-                    {ocrButtonLabel}
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={runOcr}
+                      disabled={ocrLoading || ocrStatus === "pending" || ocrClearing}
+                    >
+                      {ocrLoading || ocrStatus === "pending" ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <ScanText className="w-4 h-4 mr-2" />
+                      )}
+                      {ocrButtonLabel}
+                    </Button>
+                  </div>
                 )}
               </div>
               {ocrText && ocrText.trim().length > 0 ? (
