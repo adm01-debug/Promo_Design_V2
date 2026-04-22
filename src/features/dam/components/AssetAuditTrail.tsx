@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2 } from "lucide-react";
+import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2, ArrowDownWideNarrow, ArrowUpWideNarrow, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,10 +13,26 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   useAssetAudit,
   FIELD_LABELS,
+  TRACKED_FIELDS,
   type AssetAuditEntry,
   type TrackedField,
 } from "../hooks/use-asset-audit";
@@ -45,17 +61,51 @@ export function AssetAuditTrail({ asset }: Props) {
   const [open, setOpen] = useState(false);
   const [diff, setDiff] = useState<AssetAuditEntry | null>(null);
   const [actionFilter, setActionFilter] = useState<AssetAuditEntry["action"] | "ALL">("ALL");
+  const [userFilter, setUserFilter] = useState<string>("ALL");
+  const [fieldFilter, setFieldFilter] = useState<TrackedField[]>([]);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
 
-  // Show newest first
+  // Apply selected sort direction over a copy of the data
   const entries = useMemo(() => {
     const list = [...(data ?? [])];
-    return list.reverse();
+    list.sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sortDir === "desc" ? tb - ta : ta - tb;
+    });
+    return list;
+  }, [data, sortDir]);
+
+  const userOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of data ?? []) set.add(e.user_id);
+    return Array.from(set);
   }, [data]);
 
   const filteredEntries = useMemo(() => {
-    if (actionFilter === "ALL") return entries;
-    return entries.filter((e) => e.action === actionFilter);
-  }, [entries, actionFilter]);
+    return entries.filter((e) => {
+      if (actionFilter !== "ALL" && e.action !== actionFilter) return false;
+      if (userFilter !== "ALL" && e.user_id !== userFilter) return false;
+      if (fieldFilter.length > 0) {
+        if (e.action !== "UPDATE") return false;
+        const has = fieldFilter.some((f) => e.changed_fields.includes(f));
+        if (!has) return false;
+      }
+      return true;
+    });
+  }, [entries, actionFilter, userFilter, fieldFilter]);
+
+  const toggleField = (f: TrackedField) =>
+    setFieldFilter((prev) =>
+      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f],
+    );
+  const clearExtra = () => {
+    setUserFilter("ALL");
+    setFieldFilter([]);
+    setSortDir("desc");
+  };
+  const hasExtraFilters =
+    userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
 
   const counts = useMemo(() => {
     const c = { INSERT: 0, UPDATE: 0, DELETE: 0 } as Record<AssetAuditEntry["action"], number>;
@@ -141,6 +191,75 @@ export function AssetAuditTrail({ asset }: Props) {
               <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.DELETE}</Badge>
             </ToggleGroupItem>
           </ToggleGroup>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Select value={userFilter} onValueChange={setUserFilter}>
+              <SelectTrigger className="h-7 px-2 text-xs w-auto min-w-[140px]">
+                <SelectValue placeholder="Usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">Todos os usuários</SelectItem>
+                {userOptions.map((u) => (
+                  <SelectItem key={u} value={u} className="text-xs font-mono">
+                    {shortId(u)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                  Campo
+                  {fieldFilter.length > 0 && (
+                    <Badge variant="secondary" className="text-[10px] ml-0.5">
+                      {fieldFilter.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-xs">Campos alterados</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {TRACKED_FIELDS.map((f) => (
+                  <DropdownMenuCheckboxItem
+                    key={f}
+                    checked={fieldFilter.includes(f)}
+                    onCheckedChange={() => toggleField(f)}
+                    className="text-xs capitalize"
+                  >
+                    {FIELD_LABELS[f]}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+              title={sortDir === "desc" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
+            >
+              {sortDir === "desc" ? (
+                <ArrowDownWideNarrow className="w-3 h-3" />
+              ) : (
+                <ArrowUpWideNarrow className="w-3 h-3" />
+              )}
+              Data
+            </Button>
+
+            {hasExtraFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1"
+                onClick={clearExtra}
+              >
+                <X className="w-3 h-3" />
+                Limpar
+              </Button>
+            )}
+          </div>
           {filteredEntries.length === 0 ? (
             <div className="text-sm text-muted-foreground py-3 text-center border border-dashed rounded-md">
               Nenhum registro corresponde ao filtro
