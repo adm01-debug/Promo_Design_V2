@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Json } from "@/integrations/supabase/types";
@@ -86,6 +86,12 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
   const query = useQuery({
     queryKey: ["assets", organizationId, filters],
     enabled: !!organizationId,
+    // Cache tuning: keep previous results visible while a new query (e.g. typing) is in
+    // flight to avoid layout flash; treat data as fresh for 30s and keep in memory 5min.
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const sortBy = filters.sortBy ?? "created_at";
       const sortDir = filters.sortDir ?? "desc";
