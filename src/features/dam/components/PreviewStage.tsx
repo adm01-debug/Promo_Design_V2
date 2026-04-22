@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ChevronLeft,
   ChevronRight,
@@ -208,44 +209,62 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
               </Button>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopy}
-            disabled={!url}
-            title="Copiar URL (C)"
-            aria-label="Copiar URL"
-            className="h-8 px-2 text-xs gap-1"
-          >
-            {copied ? <Check className="w-3.5 h-3.5" /> : <LinkIcon className="w-3.5 h-3.5" />}
-            {copied ? "Copiado" : "Copiar"}
-            <span className="sr-only" aria-live="polite">
-              {copied ? "URL copiada para a área de transferência" : ""}
-            </span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleDownload}
-            disabled={!url}
-            title="Download (D)"
-            aria-label="Baixar arquivo"
-            className="h-8 px-2 text-xs gap-1"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Baixar
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onOpenDetails}
-            title="Detalhes (Enter)"
-            aria-label="Abrir detalhes do asset"
-            className="h-8 px-2 text-xs gap-1"
-          >
-            <Info className="w-3.5 h-3.5" />
-            Detalhes
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+                disabled={!url}
+                aria-label="Copiar URL"
+                className="h-8 px-2 text-xs gap-1"
+              >
+                {copied ? <Check className="w-3.5 h-3.5" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                {copied ? "Copiado" : "Copiar"}
+                <span className="sr-only" aria-live="polite">
+                  {copied ? "URL copiada para a área de transferência" : ""}
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              Copiar URL <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">C</kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDownload}
+                disabled={!url}
+                aria-label="Baixar arquivo"
+                className="h-8 px-2 text-xs gap-1"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Baixar
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              Baixar arquivo <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">D</kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onOpenDetails}
+                aria-label="Abrir detalhes do asset"
+                className="h-8 px-2 text-xs gap-1"
+              >
+                <Info className="w-3.5 h-3.5" />
+                Detalhes
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              Abrir detalhes <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">Enter</kbd>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
