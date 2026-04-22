@@ -227,6 +227,29 @@ export function LibraryExportMenu({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
+            <Settings2 className="w-3 h-3" />
+            Colunas
+          </DropdownMenuLabel>
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); setCsvDialogOpen(true); }}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="flex-1">Colunas do CSV</span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {csvCols.length}/{csvAllIds.length}
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); setPdfDialogOpen(true); }}
+          >
+            <FileText className="w-4 h-4" />
+            <span className="flex-1">Colunas do PDF</span>
+            <span className="text-[10px] text-muted-foreground tabular-nums">
+              {pdfCols.length}/{pdfAllIds.length}
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
             <Database className="w-3 h-3" />
             Todos os filtrados
           </DropdownMenuLabel>
@@ -255,6 +278,40 @@ export function LibraryExportMenu({
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ColumnsDialog
+        open={csvDialogOpen}
+        onOpenChange={setCsvDialogOpen}
+        allColumns={CSV_COLUMNS}
+        value={csvCols}
+        defaults={DEFAULT_CSV_COLUMNS}
+        assetCount={count > 0 ? count : total}
+        title="Escolher colunas do CSV"
+        description="Selecione quais colunas incluir no arquivo CSV."
+        confirmLabel="Salvar seleção"
+        onConfirm={(cols) => {
+          setCsvCols(cols);
+          writeCols(CSV_COLS_KEY, cols);
+          toast.success(`Colunas do CSV atualizadas (${cols.length})`);
+        }}
+      />
+
+      <ColumnsDialog
+        open={pdfDialogOpen}
+        onOpenChange={setPdfDialogOpen}
+        allColumns={PDF_COLUMNS}
+        value={pdfCols}
+        defaults={DEFAULT_PDF_COLUMNS}
+        assetCount={count > 0 ? count : total}
+        title="Escolher colunas do PDF"
+        description="Selecione quais colunas aparecem na tabela do PDF."
+        confirmLabel="Salvar seleção"
+        onConfirm={(cols) => {
+          setPdfCols(cols);
+          writeCols(PDF_COLS_KEY, cols);
+          toast.success(`Colunas do PDF atualizadas (${cols.length})`);
+        }}
+      />
 
       <AlertDialog
         open={confirmAll !== null}
