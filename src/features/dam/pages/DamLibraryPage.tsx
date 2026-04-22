@@ -33,6 +33,7 @@ import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
 import { parseBoolParam } from "../lib/parse-bool-param";
+import { JumpToPage } from "../components/JumpToPage";
 import {
   AlertDialog,
   AlertDialogAction,
