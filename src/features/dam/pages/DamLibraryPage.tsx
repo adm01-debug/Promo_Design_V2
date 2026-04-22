@@ -427,6 +427,12 @@ export default function DamLibraryPage() {
   const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
 
+  // Restore previously pinned Quick Preview asset once the asset list is loaded.
+  useEffect(() => {
+    if (displayedAssets.length === 0) return;
+    quickPreview.hydratePinFromAssets(displayedAssets);
+  }, [displayedAssets, quickPreview]);
+
   // Keyboard navigation for Quick Preview: ↑/↓ moves selection, Space pins, Enter opens details.
   // Active only when Quick Preview is enabled and the user isn't typing in an input/textarea.
   useEffect(() => {
