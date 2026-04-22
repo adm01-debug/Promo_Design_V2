@@ -131,6 +131,13 @@ export default function DamLibraryPage() {
     if (fromUrl === "0") return false;
     return localStorage.getItem(ARCHIVED_ONLY_KEY) === "1";
   });
+  const [ocrOnly, setOcrOnly] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = searchParams.get("ocrOnly");
+    if (fromUrl === "1") return true;
+    if (fromUrl === "0") return false;
+    return localStorage.getItem(OCR_ONLY_KEY) === "1";
+  });
   const [sort, setSort] = useState<SortValue>(() => {
     const fromUrl = searchParams.get("sort") as SortValue | null;
     if (fromUrl && SORT_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
