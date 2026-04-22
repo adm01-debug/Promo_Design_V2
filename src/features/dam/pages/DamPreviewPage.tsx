@@ -174,6 +174,25 @@ export default function DamPreviewPage() {
   }, [compareMode]);
   const compare = useCompareSelection();
 
+  // Persist current URL query string (filters + asset + compare) so re-entry into
+  // /dam/preview with no params restores the same context.
+  useEffect(() => {
+    if (!didRestoreSessionRef.current) return; // wait until restore-on-mount has run
+    try {
+      const qs = searchParams.toString();
+      if (qs) sessionStorage.setItem(PREVIEW_QS_KEY, qs);
+    } catch { /* ignore */ }
+  }, [searchParams]);
+
+  // Persist compare selection (ids only). Used as a fallback when URL has no ?compare=.
+  useEffect(() => {
+    try {
+      const ids = compare.selectedIds;
+      if (ids.length >= 2) sessionStorage.setItem(COMPARE_IDS_KEY, ids.join(","));
+      else sessionStorage.removeItem(COMPARE_IDS_KEY);
+    } catch { /* ignore */ }
+  }, [compare.selectedIds]);
+
   // Last asset that was actually visible in results — used to diagnose why it
   // disappeared after a filter change, and to restore selection when filters clear.
   const [lastKnownAsset, setLastKnownAsset] = useState<Asset | null>(null);
