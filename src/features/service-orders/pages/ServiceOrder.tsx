@@ -86,7 +86,7 @@ const ServiceOrder = () => {
   const handlePickFromDam = useCallback(async (asset: Asset) => {
     try {
       const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
-      await handleArtUpload(file);
+      await handleArtUpload(file, { keepAssetId: true });
       setForm((prev) => ({ ...prev, artAssetId: asset.id }));
       toast.success("Arte vinculada à biblioteca");
     } catch (err) {
@@ -95,7 +95,7 @@ const ServiceOrder = () => {
   }, [handleArtUpload]);
 
   const handleVersionUpdate = useCallback(async (file: File, newAssetId: string) => {
-    await handleArtUpload(file);
+    await handleArtUpload(file, { keepAssetId: true });
     setForm((prev) => ({ ...prev, artAssetId: newAssetId }));
     setSaved(false);
   }, [handleArtUpload]);
