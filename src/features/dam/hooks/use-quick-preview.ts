@@ -66,6 +66,20 @@ export function useQuickPreview() {
     setPinnedAsset((prev) => (prev?.id === asset.id ? null : asset));
   }, []);
 
+  /**
+   * Imperatively set the active asset (used by keyboard nav).
+   * Bypasses hover debounce and clears any previous pin so arrows
+   * always advance the selection visibly.
+   */
+  const setActiveAsset = useCallback((asset: Asset | null) => {
+    if (hoverTimer.current) {
+      window.clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+    setPinnedAsset(null);
+    setHoverAssetState(asset);
+  }, []);
+
   const toggleEnabled = useCallback(() => {
     setEnabled((v) => !v);
   }, []);
@@ -77,6 +91,7 @@ export function useQuickPreview() {
     toggleEnabled,
     activeAsset,
     setHoverAsset,
+    setActiveAsset,
     pinnedId: pinnedAsset?.id ?? null,
     togglePin,
     clearPin: () => setPinnedAsset(null),
