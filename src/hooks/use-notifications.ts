@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
 import { useVisibilityPolling } from "./use-visibility-polling";
@@ -44,40 +44,93 @@ function rowToNotification(row: NotificationRow): Notification {
 }
 
 const POLL_INTERVAL = 15_000; // 15 seconds
+const PAGE_SIZE = 20;
 
 export function useNotifications() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const key = ["notifications", user?.id];
+  const listKey = ["notifications", user?.id];
+  const unreadKey = ["notifications-unread", user?.id];
 
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: key,
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
+  /**
+   * Keyset-paginated notifications list.
+   * Each page is fetched with `created_at < lastSeenCreatedAt` (or no cursor for
+   * the first page). This avoids OFFSET scans on large inboxes and keeps each
+   * request O(PAGE_SIZE) regardless of total count.
+   */
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: listKey,
+    enabled: !!user,
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }) => {
+      if (!user) return [] as Notification[];
+      let q = supabase
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(50);
+        .order("id", { ascending: false })
+        .limit(PAGE_SIZE);
+      if (pageParam) {
+        q = q.lt("created_at", pageParam);
+      }
+      const { data: rows, error } = await q;
       if (error) throw error;
-      return ((data as unknown as NotificationRow[]) ?? []).map(rowToNotification);
+      return ((rows as unknown as NotificationRow[]) ?? []).map(rowToNotification);
     },
-    enabled: !!user,
-    // Disable react-query's built-in refetchInterval — we manage it via useVisibilityPolling
+    getNextPageParam: (lastPage) => {
+      if (lastPage.length < PAGE_SIZE) return undefined;
+      return lastPage[lastPage.length - 1].createdAt;
+    },
     refetchInterval: false,
   });
 
-  // Visibility-aware polling: pauses when tab hidden, slows when blurred
+  const notifications = useMemo<Notification[]>(
+    () => data?.pages.flat() ?? [],
+    [data],
+  );
+
+  /**
+   * The unread badge must reflect the **global** unread count, not just what's
+   * been paginated in. A separate, lightweight HEAD count query handles this.
+   */
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: unreadKey,
+    enabled: !!user,
+    queryFn: async () => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("read", false);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: false,
+  });
+
+  // Visibility-aware polling: refresh both the list (first page) and the badge.
   useVisibilityPolling(
-    () => qc.invalidateQueries({ queryKey: key }),
+    () => {
+      qc.invalidateQueries({ queryKey: listKey, refetchType: "active" });
+      qc.invalidateQueries({ queryKey: unreadKey });
+    },
     POLL_INTERVAL,
     !!user,
     "Notificações",
   );
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["notifications"] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["notifications"] });
+    qc.invalidateQueries({ queryKey: ["notifications-unread"] });
+  };
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -119,5 +172,16 @@ export function useNotifications() {
   const markAllRead = useCallback(() => markAllReadMutation.mutate(), [markAllReadMutation]);
   const clearAll = useCallback(() => clearAllMutation.mutate(), [clearAllMutation]);
 
-  return { notifications, unreadCount, isLoading, markRead, markAllRead, clearAll };
+  return {
+    notifications,
+    unreadCount,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage: !!hasNextPage,
+    fetchNextPage,
+    markRead,
+    markAllRead,
+    clearAll,
+  };
 }
