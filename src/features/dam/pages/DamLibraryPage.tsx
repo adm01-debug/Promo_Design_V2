@@ -8,10 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, FileBox } from "lucide-react";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -56,8 +54,6 @@ const ASSET_TYPES_KEY = "dam-asset-types";
 const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
-const MIN_SIZE_KEY = "dam-min-size-mb";
-const MAX_SIZE_KEY = "dam-max-size-mb";
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 
@@ -160,17 +156,6 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return "pages";
     return (localStorage.getItem(PAGINATION_MODE_KEY) as PaginationMode) || "pages";
   });
-  // File size filters, expressed in MB in the UI; stored as bytes for the backend.
-  const [minSizeMB, setMinSizeMB] = useState<string>(() => {
-    const fromUrl = searchParams.get("minMB");
-    if (fromUrl !== null) return fromUrl;
-    return readLS(MIN_SIZE_KEY) ?? "";
-  });
-  const [maxSizeMB, setMaxSizeMB] = useState<string>(() => {
-    const fromUrl = searchParams.get("maxMB");
-    if (fromUrl !== null) return fromUrl;
-    return readLS(MAX_SIZE_KEY) ?? "";
-  });
   const [accumulated, setAccumulated] = useState<Asset[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
@@ -206,9 +191,7 @@ export default function DamLibraryPage() {
     assetTypes.length > 0 ||
     clientId !== "all" ||
     selectedTags.length > 0 ||
-    includeArchived ||
-    minSizeMB !== "" ||
-    maxSizeMB !== "";
+    includeArchived;
 
   const canUpload = can(["owner", "admin", "designer"]);
 
@@ -218,15 +201,12 @@ export default function DamLibraryPage() {
     setClientId("all");
     setSelectedTags([]);
     setIncludeArchived(false);
-    setMinSizeMB("");
-    setMaxSizeMB("");
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
     writeLS(TAGS_KEY, null);
     writeLS(SORT_KEY, null);
-    writeLS(MIN_SIZE_KEY, null);
-    writeLS(MAX_SIZE_KEY, null);
+    writeLS(INCLUDE_ARCHIVED_KEY, null);
   };
 
   useEffect(() => {
@@ -288,18 +268,6 @@ export default function DamLibraryPage() {
     writeLS(SORT_KEY, sort !== "created_desc" ? sort : null);
   }, [sort]);
 
-  // Persist + URL-sync size filters
-  useEffect(() => {
-    writeLS(MIN_SIZE_KEY, minSizeMB || null);
-    writeLS(MAX_SIZE_KEY, maxSizeMB || null);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (minSizeMB) next.set("minMB", minSizeMB); else next.delete("minMB");
-      if (maxSizeMB) next.set("maxMB", maxSizeMB); else next.delete("maxMB");
-      return next;
-    }, { replace: true });
-  }, [minSizeMB, maxSizeMB, setSearchParams]);
-
   // Sync page/pageSize with URL
   useEffect(() => {
     try {
@@ -341,15 +309,11 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, minSizeMB, maxSizeMB]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize]);
 
   const filters = useMemo(
     () => {
       const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
-      const parsedMin = Number.parseFloat(minSizeMB);
-      const parsedMax = Number.parseFloat(maxSizeMB);
-      const minBytes = Number.isFinite(parsedMin) && parsedMin > 0 ? Math.floor(parsedMin * 1024 * 1024) : undefined;
-      const maxBytes = Number.isFinite(parsedMax) && parsedMax > 0 ? Math.floor(parsedMax * 1024 * 1024) : undefined;
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -362,11 +326,9 @@ export default function DamLibraryPage() {
         sortDir: opt.sortDir,
         page,
         pageSize,
-        minSize: minBytes,
-        maxSize: maxBytes,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, minSizeMB, maxSizeMB],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
@@ -735,108 +697,6 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "h-9 gap-2",
-                  (minSizeMB || maxSizeMB) && "border-primary/50 text-primary",
-                )}
-                aria-label="Filtrar por tamanho de arquivo"
-              >
-                <FileBox className="w-4 h-4" />
-                Tamanho
-                {(minSizeMB || maxSizeMB) && (
-                  <Badge variant="secondary" className="text-[10px] ml-0.5">
-                    {minSizeMB && maxSizeMB
-                      ? `${minSizeMB}–${maxSizeMB}MB`
-                      : minSizeMB
-                      ? `≥${minSizeMB}MB`
-                      : `≤${maxSizeMB}MB`}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 p-3 space-y-3">
-              <div className="space-y-1.5">
-                <p className="text-xs font-medium">Tamanho do arquivo</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Em megabytes (MB). Aplicado no servidor.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="dam-min-mb" className="text-[11px] text-muted-foreground">
-                    Mínimo
-                  </Label>
-                  <Input
-                    id="dam-min-mb"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step={0.1}
-                    placeholder="ex: 0.5"
-                    value={minSizeMB}
-                    onChange={(e) => setMinSizeMB(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="dam-max-mb" className="text-[11px] text-muted-foreground">
-                    Máximo
-                  </Label>
-                  <Input
-                    id="dam-max-mb"
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step={0.1}
-                    placeholder="ex: 5"
-                    value={maxSizeMB}
-                    onChange={(e) => setMaxSizeMB(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <div className="flex gap-1 flex-wrap">
-                  {[
-                    { label: "≤ 1MB", min: "", max: "1" },
-                    { label: "1–10MB", min: "1", max: "10" },
-                    { label: "≥ 10MB", min: "10", max: "" },
-                  ].map((p) => (
-                    <Button
-                      key={p.label}
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-[11px]"
-                      onClick={() => {
-                        setMinSizeMB(p.min);
-                        setMaxSizeMB(p.max);
-                      }}
-                    >
-                      {p.label}
-                    </Button>
-                  ))}
-                </div>
-                {(minSizeMB || maxSizeMB) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-[11px]"
-                    onClick={() => {
-                      setMinSizeMB("");
-                      setMaxSizeMB("");
-                    }}
-                  >
-                    Limpar
-                  </Button>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
