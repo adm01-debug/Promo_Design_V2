@@ -693,6 +693,48 @@ export default function DamLibraryPage() {
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
   const ocrFilteredOut = ocrOnly ? baseAssets.length - displayedAssets.length : 0;
 
+  // Compose a single SR-only status string (one sentence per phase) so screen
+  // readers receive a clear, non-overlapping announcement for every loading,
+  // updating, and pagination transition.
+  useEffect(() => {
+    let next = "";
+    if (isLoading && displayedAssets.length === 0) {
+      next = "Carregando assets…";
+    } else if (isPaginating) {
+      next = paginationMode === "pages"
+        ? `Carregando página ${page} de ${totalPages || 1}…`
+        : "Carregando mais assets…";
+    } else if (isFetching && !isLoading) {
+      next = "Atualizando lista de assets…";
+    } else if (total === 0) {
+      next = hasActiveFilters
+        ? "Nenhum asset corresponde aos filtros."
+        : "Nenhum asset encontrado.";
+    } else {
+      const fmt = (n: number) => n.toLocaleString("pt-BR");
+      const noun = total === 1 ? "asset" : "assets";
+      if (paginationMode === "pages") {
+        const from = (page - 1) * pageSize + 1;
+        const to = Math.min(page * pageSize, total);
+        next = `Mostrando ${fmt(from)} a ${fmt(to)} de ${fmt(total)} ${noun}${hasActiveFilters ? ", filtrados" : ""}.`;
+      } else {
+        next = `Mostrando ${fmt(displayedAssets.length)} de ${fmt(total)} ${noun}${hasActiveFilters ? ", filtrados" : ""}.`;
+      }
+    }
+    setA11yStatus((prev) => (prev === next ? prev : next));
+  }, [
+    isLoading,
+    isFetching,
+    isPaginating,
+    displayedAssets.length,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    paginationMode,
+    hasActiveFilters,
+  ]);
+
   // Restore previously pinned Quick Preview asset once the asset list is loaded.
   useEffect(() => {
     if (displayedAssets.length === 0) return;
