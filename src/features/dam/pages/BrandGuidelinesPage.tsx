@@ -30,7 +30,7 @@ import { BrandApplicationPreview } from "../components/BrandApplicationPreview";
 import { RuleChips } from "../components/RuleChips";
 import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
 import { getAssetSignedUrl } from "../lib/asset-urls";
-import { wcagBoth } from "../lib/color-contrast";
+import { wcagBoth, normalizeHex, isValidHex } from "../lib/color-contrast";
 import { cn } from "@/lib/utils";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -93,9 +93,22 @@ export default function BrandGuidelinesPage() {
   const logoAsset = assets.find((a) => a.id === logoId) ?? null;
 
   const handleSave = async () => {
+    const normalizeList = (l: ColorEntry[]) =>
+      l
+        .map((c) => ({ ...c, hex: normalizeHex(c.hex) }))
+        .filter((c) => isValidHex(c.hex));
+    const cleanPrimary = normalizeList(primary);
+    const cleanSecondary = normalizeList(secondary);
+    const dropped =
+      primary.length - cleanPrimary.length + (secondary.length - cleanSecondary.length);
+    if (dropped > 0) {
+      toast.warning(`${dropped} cor(es) com HEX inválido foram ignoradas`);
+    }
+    setPrimary(cleanPrimary);
+    setSecondary(cleanSecondary);
     await upsert.mutateAsync({
-      primary_colors: primary,
-      secondary_colors: secondary,
+      primary_colors: cleanPrimary,
+      secondary_colors: cleanSecondary,
       fonts,
       do_rules: doRules.split("\n").map((s) => s.trim()).filter(Boolean),
       dont_rules: dontRules.split("\n").map((s) => s.trim()).filter(Boolean),
@@ -182,17 +195,6 @@ export default function BrandGuidelinesPage() {
         toast.error("Falha ao copiar");
       }
     };
-    const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
-    const SHORT_HEX_RE = /^#[0-9A-Fa-f]{3}$/;
-    const normalizeHex = (raw: string): string => {
-      let v = raw.trim().toUpperCase();
-      if (!v.startsWith("#")) v = `#${v}`;
-      if (SHORT_HEX_RE.test(v)) {
-        v = `#${v.slice(1).split("").map((c) => c + c).join("")}`;
-      }
-      return v;
-    };
-    const isValidHex = (v: string) => HEX_RE.test(v);
     const updateHex = (i: number, raw: string) => {
       const next = [...list];
       next[i] = { ...list[i], hex: raw };
