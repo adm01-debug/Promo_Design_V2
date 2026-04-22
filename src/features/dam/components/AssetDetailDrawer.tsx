@@ -264,18 +264,24 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                 )}
               </div>
               {ocrText && ocrText.trim().length > 0 ? (
-                <Collapsible open={ocrOpen} onOpenChange={setOcrOpen}>
+                <>
+                  {asset.ocr_match && (searchQuery ?? "").trim().length >= 2 && (
+                    <OcrSnippet text={ocrText} query={(searchQuery ?? "").trim()} />
+                  )}
+                  <Collapsible open={ocrOpen} onOpenChange={setOcrOpen}>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-7 text-xs px-2">
                       {ocrOpen ? "Ocultar" : "Mostrar"} texto extraído ({ocrText.length} caracteres)
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <pre className="text-xs whitespace-pre-wrap bg-muted rounded p-2 max-h-40 overflow-y-auto font-mono">
-                      {ocrText}
-                    </pre>
+                    <HighlightedPre
+                      text={ocrText}
+                      query={(searchQuery ?? "").trim()}
+                    />
                   </CollapsibleContent>
-                </Collapsible>
+                  </Collapsible>
+                </>
               ) : ocrStatus === "done" ? (
                 <p className="text-xs text-muted-foreground">Nenhum texto detectado.</p>
               ) : ocrStatus === "skipped" ? (
