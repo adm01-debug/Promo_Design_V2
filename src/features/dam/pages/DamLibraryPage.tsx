@@ -306,7 +306,7 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize]);
 
   const filters = useMemo(
     () => {
@@ -316,7 +316,8 @@ export default function DamLibraryPage() {
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
         tagsMode,
-        includeArchived,
+        includeArchived: archivedOnly ? true : includeArchived,
+        archivedOnly,
         search: debouncedSearch.trim() || undefined,
         sortBy: opt.sortBy,
         sortDir: opt.sortDir,
@@ -324,10 +325,10 @@ export default function DamLibraryPage() {
         pageSize,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize],
   );
 
-  const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
+  const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
 
   // Cache last-known totals so the counter stays stable during refetches and never
   // flickers back to "Carregando..." when paginating or filtering.
