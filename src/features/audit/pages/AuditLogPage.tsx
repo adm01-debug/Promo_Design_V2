@@ -514,8 +514,10 @@ const AuditLogPage = () => {
               <Inbox className="h-10 w-10 opacity-40" />
               <p className="text-sm">Selecione uma organização para ver a trilha de auditoria.</p>
             </div>
-          ) : (isLoading && rows.length === 0) || isPaginating ? (
-            <AuditTableSkeleton rows={Math.min(pageSize, 8)} />
+          ) : (isLoading && rows.length === 0) || isPaginating || isApplyingFilters ? (
+            <div className="animate-fade-in">
+              <AuditTableSkeleton rows={Math.min(pageSize, 8)} />
+            </div>
           ) : rows.length === 0 ? (
             (() => {
               const isEmptyFilters =
