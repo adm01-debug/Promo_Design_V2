@@ -36,6 +36,7 @@ const DEFAULT_FILTERS: VersionFilters = {
 };
 
 const STORAGE_KEY = "dam:version-history-filters";
+const PAGE_SIZE = 10;
 
 function loadFilters(): VersionFilters {
   if (typeof window === "undefined") return DEFAULT_FILTERS;
@@ -82,6 +83,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   const maxVersion = versions.reduce((m, v) => Math.max(m, v.version), 0);
 
   const [filters, setFilters] = useState<VersionFilters>(() => loadFilters());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     try {
@@ -89,6 +91,12 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
     } catch {
       // ignore quota / privacy mode errors
     }
+  }, [filters]);
+
+  // Reset pagination whenever filters change so the user starts from the top
+  // of the freshly filtered list.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
   }, [filters]);
 
   const authors = useMemo(() => {
@@ -126,6 +134,9 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
 
   const hasActiveFilters =
     filters.query.trim() !== "" || filters.author !== "all" || filters.sort !== "version_desc";
+
+  const visible = filtered.slice(0, visibleCount);
+  const remaining = Math.max(0, filtered.length - visible.length);
 
   if (isLoading) {
     return (
@@ -220,7 +231,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
         </div>
       ) : (
         <ul className="space-y-2">
-          {filtered.map((v) => {
+          {visible.map((v) => {
             const isCurrent = v.version === maxVersion;
             const isSelected = v.id === asset.id;
             return (
@@ -258,6 +269,42 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
             );
           })}
         </ul>
+      )}
+
+      {filtered.length > 0 && remaining > 0 && (
+        <div className="flex flex-col items-center gap-1 pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          >
+            Carregar mais ({Math.min(PAGE_SIZE, remaining)} de {remaining} restante{remaining > 1 ? "s" : ""})
+          </Button>
+          {filtered.length > PAGE_SIZE * 2 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground"
+              onClick={() => setVisibleCount(filtered.length)}
+            >
+              Mostrar todas ({filtered.length})
+            </Button>
+          )}
+        </div>
+      )}
+
+      {filtered.length > 0 && remaining === 0 && filtered.length > PAGE_SIZE && (
+        <div className="flex justify-center pt-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setVisibleCount(PAGE_SIZE)}
+          >
+            Recolher
+          </Button>
+        </div>
       )}
 
       <AssetAuditTrail asset={asset} />
