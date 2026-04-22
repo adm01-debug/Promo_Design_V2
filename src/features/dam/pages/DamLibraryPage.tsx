@@ -1185,7 +1185,29 @@ export default function DamLibraryPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 items-center">
+      <div
+        className="flex flex-wrap gap-3 items-center"
+        data-dam-filters-bar="true"
+        onKeyDown={(e) => {
+          // Shortcut: press "A" while focus is anywhere on the filter bar
+          // (but NOT inside an editable control) to toggle "Arquivados".
+          if (e.key !== "a" && e.key !== "A") return;
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          const target = e.target as HTMLElement | null;
+          if (!target) return;
+          const tag = target.tagName;
+          const isEditable =
+            tag === "INPUT" ||
+            tag === "TEXTAREA" ||
+            tag === "SELECT" ||
+            target.isContentEditable ||
+            target.getAttribute("role") === "combobox" ||
+            target.getAttribute("role") === "textbox";
+          if (isEditable) return;
+          e.preventDefault();
+          handleIncludeArchivedToggle(!includeArchived);
+        }}
+      >
         <div className="flex flex-col max-w-xs w-full">
           <Input
             placeholder="Buscar por nome, descrição, tag ou texto da imagem (OCR)..."
