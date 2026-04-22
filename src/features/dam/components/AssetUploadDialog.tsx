@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
@@ -16,6 +17,7 @@ import {
   detectFileKind,
   buildSvgPreviewUrl,
   rasterizePdfFirstPage,
+  getPdfPageCount,
   type FileKind,
 } from "../lib/file-preview";
 
@@ -95,6 +97,10 @@ interface FileEntry {
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   phase?: UploadPhase;
+  /** For PDFs: which page is rendered as thumb (1-indexed). */
+  pdfPage?: number;
+  /** Detected total pages for PDFs (null while loading). */
+  pdfPageCount?: number | null;
 }
 
 export function AssetUploadDialog({
