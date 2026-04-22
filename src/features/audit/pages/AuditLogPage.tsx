@@ -307,7 +307,12 @@ const AuditLogPage = () => {
     pageSize: pageSize,
   };
 
-  const { data, isLoading } = useAuditLog(queryFilters);
+  const { data, isLoading, isFetching } = useAuditLog(queryFilters);
+  const [loadedPage, setLoadedPage] = useState<number>(page);
+  useEffect(() => {
+    if (!isFetching) setLoadedPage(page);
+  }, [isFetching, page]);
+  const isPaginating = isFetching && !isLoading && loadedPage !== page;
   const rawRows = data?.rows ?? [];
   const serverTotal = data?.count ?? 0;
 
