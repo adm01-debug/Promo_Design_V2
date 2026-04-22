@@ -48,6 +48,9 @@ type MultiSelectProps = {
 type CommonProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Pré-seleciona o filtro de cliente (editável, salvo se `lockClient`). */
+  defaultClientId?: string | null;
+  /** @deprecated Use `defaultClientId`. Mantido por compatibilidade. */
   clientId?: string | null;
   defaultAssetType?: AssetType;
   lockClient?: boolean;
@@ -70,7 +73,8 @@ const TYPE_OPTIONS: { value: AssetType | "all"; label: string }[] = [
 const PAGE_SIZE = 24;
 
 export function AssetPicker(props: AssetPickerProps) {
-  const { open, onOpenChange, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
+  const { open, onOpenChange, defaultClientId, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
+  const initialClientId = defaultClientId ?? clientId ?? "all";
   const multiSelect = props.multiSelect === true;
 
   const { currentOrgId } = useOrganizations();
@@ -79,7 +83,7 @@ export function AssetPicker(props: AssetPickerProps) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [assetType, setAssetType] = useState<AssetType | "all">(defaultAssetType ?? "all");
-  const [activeClientId, setActiveClientId] = useState<string | "all">(clientId ?? "all");
+  const [activeClientId, setActiveClientId] = useState<string | "all">(initialClientId);
   const [tags, setTags] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
@@ -91,13 +95,13 @@ export function AssetPicker(props: AssetPickerProps) {
     if (open) {
       setSearch("");
       setAssetType(defaultAssetType ?? "all");
-      setActiveClientId(clientId ?? "all");
+      setActiveClientId(initialClientId);
       setTags([]);
       setPage(1);
       setSelectedIds(new Set());
       setSelectedMap(new Map());
     }
-  }, [open, defaultAssetType, clientId]);
+  }, [open, defaultAssetType, initialClientId]);
 
   useEffect(() => { setPage(1); }, [debouncedSearch, assetType, activeClientId, tags]);
 
