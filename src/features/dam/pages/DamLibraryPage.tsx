@@ -1350,8 +1350,20 @@ export default function DamLibraryPage() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 ml-auto">
-          <Select value={sizeRange} onValueChange={(v) => setSizeRange(v as SizeRangeKey)}>
-            <SelectTrigger className="w-44" aria-label="Filtrar por tamanho">
+          <Select
+            value={sizeRange}
+            onValueChange={(v) => {
+              setSizeRange(v as SizeRangeKey);
+              // Choosing a preset clears the custom range to keep one source of truth.
+              if (customSize) setCustomSize(null);
+            }}
+            disabled={customSize !== null}
+          >
+            <SelectTrigger
+              className="w-44"
+              aria-label="Filtrar por tamanho (predefinido)"
+              title={customSize ? "Filtro personalizado ativo — limpe para usar predefinidos" : undefined}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1360,6 +1372,14 @@ export default function DamLibraryPage() {
               ))}
             </SelectContent>
           </Select>
+          <SizeRangeFilter
+            value={customSize}
+            onChange={(next) => {
+              setCustomSize(next);
+              // Choosing a custom range clears the preset to keep one source of truth.
+              if (next && sizeRange !== "all") setSizeRange("all");
+            }}
+          />
           <Select value={updatedRange} onValueChange={(v) => setUpdatedRange(v as UpdatedRangeKey)}>
             <SelectTrigger className="w-44" aria-label="Filtrar por data de modificação">
               <SelectValue />
