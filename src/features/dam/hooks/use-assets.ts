@@ -158,6 +158,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       }
       if (typeof filters.minSize === "number") q = q.gte("file_size", filters.minSize);
       if (typeof filters.maxSize === "number") q = q.lte("file_size", filters.maxSize);
+      if (filters.updatedAfter) q = q.gte("updated_at", filters.updatedAfter);
       if (hasPagination) {
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;
