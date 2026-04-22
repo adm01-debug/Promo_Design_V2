@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle, Settings2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle, Settings2, History, Repeat2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -64,6 +64,54 @@ const CONFIRM_THRESHOLD = 500;
 /** localStorage keys used to remember the user's column selection across sessions. */
 const CSV_COLS_KEY = "dam-export-csv-columns";
 const PDF_COLS_KEY = "dam-export-pdf-columns";
+
+/** localStorage key for the last-N export history (most recent first). */
+const HISTORY_KEY = "dam-export-history";
+const HISTORY_LIMIT = 5;
+
+/** Snapshot of an export — enough to repeat it with the same filters/columns. */
+interface ExportHistoryEntry {
+  id: string;
+  kind: "csv" | "pdf";
+  /** "current" = visible page; "all" = all filtered rows. */
+  scope: "current" | "all";
+  at: number;
+  rows: number;
+  filters: AssetFilters;
+  filtersSummary: Omit<AssetsPdfFiltersSummary, "shown" | "total">;
+  columns: string[];
+  /** Short human label like `CSV · Filtrados · 124 linhas`. */
+  label: string;
+}
+
+function readHistory(): ExportHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((e): e is ExportHistoryEntry =>
+      e && typeof e === "object" &&
+      (e.kind === "csv" || e.kind === "pdf") &&
+      (e.scope === "current" || e.scope === "all"),
+    ).slice(0, HISTORY_LIMIT);
+  } catch { return []; }
+}
+
+function writeHistory(items: ExportHistoryEntry[]): void {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT))); } catch { /* ignore */ }
+}
+
+function formatRelative(ts: number): string {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "agora";
+  if (m < 60) return `${m} min atrás`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h atrás`;
+  const d = Math.floor(h / 24);
+  return `${d}d atrás`;
+}
 
 function readCols<Id extends string>(key: string, allowed: readonly Id[], fallback: Id[]): Id[] {
   try {
