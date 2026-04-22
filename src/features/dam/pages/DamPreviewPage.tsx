@@ -174,6 +174,24 @@ export default function DamPreviewPage() {
   }, [compareMode]);
   const compare = useCompareSelection();
 
+  // Toast hint when re-entering compare mode with a previously saved selection (≥ 2).
+  // Skips first render and the initial bool from sessionStorage to avoid noise on mount.
+  const prevCompareModeRef = useRef(compareMode);
+  const didShowRestoreToastRef = useRef(false);
+  useEffect(() => {
+    const wasOff = !prevCompareModeRef.current;
+    prevCompareModeRef.current = compareMode;
+    if (!wasOff || !compareMode) return;
+    if (didShowRestoreToastRef.current) return;
+    if (compare.selectedIds.length >= 2) {
+      didShowRestoreToastRef.current = true;
+      toast("Comparação restaurada", {
+        description: `${compare.selectedIds.length} assets carregados da sua seleção anterior.`,
+        duration: 2500,
+      });
+    }
+  }, [compareMode, compare.selectedIds.length]);
+
   // Persist current URL query string (filters + asset + compare) so re-entry into
   // /dam/preview with no params restores the same context.
   useEffect(() => {
