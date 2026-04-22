@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +25,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAuditAlertRule } from "../hooks/use-audit-alerts";
+import type { AuditAdvancedCondition, AuditAdvancedOp } from "../hooks/use-audit-alerts";
 import type { AuditAction } from "../hooks/use-audit-log";
 import type { AuditFilterState } from "./AuditFilters";
 
@@ -34,6 +40,14 @@ const ALL_ACTIONS: AuditAction[] = ["INSERT", "UPDATE", "DELETE"];
 const SENTINEL_ANY = "__any__";
 
 type RecipientsMode = "owner" | "organization" | "users";
+
+const OP_LABEL: Record<AuditAdvancedOp, string> = {
+  contains: "contém",
+  equals: "é igual a",
+  not_equals: "diferente de",
+  starts_with: "começa com",
+  ends_with: "termina com",
+};
 
 interface Props {
   open: boolean;
