@@ -1078,6 +1078,37 @@ export default function DamLibraryPage() {
         </div>
       </header>
 
+      {archivedFromUrlAtMount && includeArchived && !archivedUrlHintDismissed && (
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground animate-in fade-in slide-in-from-top-1 duration-200"
+          data-testid="dam-archived-url-hint"
+        >
+          <Link2 className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span>
+            Filtro <strong className="text-foreground font-medium">Arquivados</strong> aplicado pela URL
+            (<code className="rounded bg-muted px-1 py-0.5 text-[10px]">?archived=1</code>).
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-6 px-2 text-[11px]"
+            onClick={() => setIncludeArchived(false)}
+          >
+            Desativar
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setArchivedUrlHintDismissed(true)}
+            aria-label="Dispensar aviso"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
+
       {lastPreviewAsset && (
         <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
           <History className="w-4 h-4 text-muted-foreground shrink-0" />
