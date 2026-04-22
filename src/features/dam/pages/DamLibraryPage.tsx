@@ -460,6 +460,13 @@ export default function DamLibraryPage() {
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
+  // Track which page the displayed `assets` correspond to (after a successful fetch).
+  // While the current `page` doesn't match the last loaded page, we are paginating → show skeleton.
+  const [loadedPage, setLoadedPage] = useState<number>(page);
+  useEffect(() => {
+    if (!isFetching) setLoadedPage(page);
+  }, [isFetching, page]);
+  const isPaginating = isFetching && !isLoading && loadedPage !== page;
 
   const handleRestore = async (asset: Asset) => {
     try {
