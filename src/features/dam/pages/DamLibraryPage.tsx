@@ -1606,23 +1606,7 @@ export default function DamLibraryPage() {
       </div>
 
       {(isLoading && displayedAssets.length === 0) || isPaginating ? (
-        viewMode === "list" ? (
-          <div className="space-y-2">
-            {Array.from({ length: Math.min(pageSize, 24) }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {Array.from({ length: Math.min(pageSize, 30) }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-square w-full" />
-                <Skeleton className="h-3 w-2/3" />
-                <Skeleton className="h-3 w-1/3" />
-              </div>
-            ))}
-          </div>
-        )
+        <AssetGridSkeleton viewMode={viewMode} count={pageSize} />
       ) : displayedAssets.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
