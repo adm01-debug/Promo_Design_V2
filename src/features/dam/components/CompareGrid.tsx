@@ -28,6 +28,10 @@ export function CompareGrid({ assets, onRemove }: Props) {
   const [transform, setTransform] = useState<Transform>(INITIAL);
   const [mode, setMode] = useState<"fit" | "actual">("fit");
 
+  // Pan/zoom step constants for keyboard nudging.
+  const PAN_STEP = 40; // px per arrow press
+  const ZOOM_STEP = 1.2;
+
   // Reset transform when set of assets changes
   useEffect(() => {
     setTransform(INITIAL);
@@ -42,6 +46,17 @@ export function CompareGrid({ assets, onRemove }: Props) {
   const setActual = useCallback(() => {
     setTransform({ scale: 1, tx: 0, ty: 0 });
     setMode("actual");
+  }, []);
+
+  const zoomBy = useCallback((factor: number) => {
+    setTransform((t) => ({
+      ...t,
+      scale: Math.min(8, Math.max(0.2, t.scale * factor)),
+    }));
+  }, []);
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    setTransform((t) => ({ ...t, tx: t.tx + dx, ty: t.ty + dy }));
   }, []);
 
   const onWheel = useCallback((e: React.WheelEvent) => {
@@ -181,7 +196,7 @@ export function CompareGrid({ assets, onRemove }: Props) {
     <div className="flex-1 flex flex-col bg-muted/10 min-w-0">
       <div className="border-b border-border px-3 py-2 flex items-center gap-2 shrink-0">
         <span className="text-xs text-muted-foreground mr-auto">
-          Zoom/pan sincronizado · scroll/pinch zoom · arraste/1 dedo move
+          Sincronizado · scroll/pinch · arraste/1 dedo · setas movem · +/- zoom · 0 reset · 1 100% · ⌫ remove
         </span>
         <Button variant="ghost" size="sm" onClick={reset} className="h-8 px-2 text-xs gap-1">
           <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -214,6 +229,12 @@ export function CompareGrid({ assets, onRemove }: Props) {
             onWheel={onWheel}
             onMouseDown={onMouseDown}
             onPointerDown={onTouchPointerDown}
+            onZoomBy={zoomBy}
+            onPanBy={panBy}
+            onReset={reset}
+            onActual={setActual}
+            panStep={PAN_STEP}
+            zoomStep={ZOOM_STEP}
           />
         ))}
       </div>
@@ -228,9 +249,28 @@ interface CellProps {
   onWheel: (e: React.WheelEvent) => void;
   onMouseDown: (e: React.MouseEvent) => void;
   onPointerDown: (e: React.PointerEvent) => void;
+  onZoomBy: (factor: number) => void;
+  onPanBy: (dx: number, dy: number) => void;
+  onReset: () => void;
+  onActual: () => void;
+  panStep: number;
+  zoomStep: number;
 }
 
-function CompareCell({ asset, transform, onRemove, onWheel, onMouseDown, onPointerDown }: CellProps) {
+function CompareCell({
+  asset,
+  transform,
+  onRemove,
+  onWheel,
+  onMouseDown,
+  onPointerDown,
+  onZoomBy,
+  onPanBy,
+  onReset,
+  onActual,
+  panStep,
+  zoomStep,
+}: CellProps) {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const isImage = (asset.mime_type ?? "").startsWith("image/");
@@ -251,7 +291,11 @@ function CompareCell({ asset, transform, onRemove, onWheel, onMouseDown, onPoint
   return (
     <div className="relative bg-background border border-border rounded-md overflow-hidden flex flex-col min-h-0 min-w-0">
       <div className="flex items-center gap-2 px-2 py-1.5 border-b border-border bg-card/50 shrink-0">
-        <span className="text-xs font-medium truncate flex-1" title={asset.name}>
+        <span
+          className="text-xs font-medium truncate flex-1"
+          title={asset.name}
+          id={`compare-cell-title-${asset.id}`}
+        >
           {asset.name}
         </span>
         <Button
@@ -259,16 +303,69 @@ function CompareCell({ asset, transform, onRemove, onWheel, onMouseDown, onPoint
           size="icon"
           onClick={onRemove}
           className="h-6 w-6 shrink-0"
-          aria-label={`Remover ${asset.name} da comparação`}
+          aria-label={`Remover ${asset.name} da comparação (Backspace)`}
+          title={`Remover ${asset.name} (Backspace ou Delete)`}
         >
           <X className="w-3.5 h-3.5" />
         </Button>
       </div>
       <div
-        className="flex-1 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
+        className="flex-1 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background rounded-sm"
         onWheel={onWheel}
         onMouseDown={onMouseDown}
         onPointerDown={onPointerDown}
+        tabIndex={0}
+        role="application"
+        aria-labelledby={`compare-cell-title-${asset.id}`}
+        aria-roledescription="área de zoom e movimento sincronizado"
+        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight + - 0 1 Backspace"
+        onKeyDown={(e) => {
+          // Ignore if a modifier is held (let browser shortcuts pass through).
+          if (e.ctrlKey || e.metaKey || e.altKey) return;
+          switch (e.key) {
+            case "ArrowUp":
+              e.preventDefault();
+              onPanBy(0, panStep);
+              break;
+            case "ArrowDown":
+              e.preventDefault();
+              onPanBy(0, -panStep);
+              break;
+            case "ArrowLeft":
+              e.preventDefault();
+              onPanBy(panStep, 0);
+              break;
+            case "ArrowRight":
+              e.preventDefault();
+              onPanBy(-panStep, 0);
+              break;
+            case "+":
+            case "=":
+              e.preventDefault();
+              onZoomBy(zoomStep);
+              break;
+            case "-":
+            case "_":
+              e.preventDefault();
+              onZoomBy(1 / zoomStep);
+              break;
+            case "0":
+              e.preventDefault();
+              onReset();
+              break;
+            case "1":
+              e.preventDefault();
+              onActual();
+              break;
+            case "Backspace":
+            case "Delete":
+              e.preventDefault();
+              onRemove();
+              break;
+            default:
+              break;
+          }
+        }}
       >
         {loading ? (
           <Skeleton className="w-3/4 h-3/4" />
