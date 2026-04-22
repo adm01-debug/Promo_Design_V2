@@ -86,6 +86,12 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
   const query = useQuery({
     queryKey: ["assets", organizationId, filters],
     enabled: !!organizationId,
+    // Cache tuning: keep previous results visible while a new query (e.g. typing) is in
+    // flight to avoid layout flash; treat data as fresh for 30s and keep in memory 5min.
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const sortBy = filters.sortBy ?? "created_at";
       const sortDir = filters.sortDir ?? "desc";
