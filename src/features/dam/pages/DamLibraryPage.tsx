@@ -1135,6 +1135,18 @@ export default function DamLibraryPage() {
         </div>
       </header>
 
+      {/* Single SR-only live region for all loading/pagination/result states.
+          aria-atomic ensures the full sentence is read on each change. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="dam-a11y-status"
+      >
+        {a11yStatus}
+      </div>
+
       {archivedFromUrlAtMount && includeArchived && !archivedUrlHintDismissed && (
         <div
           role="status"
