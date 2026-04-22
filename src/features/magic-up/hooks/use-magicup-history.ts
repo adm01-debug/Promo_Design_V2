@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
+import { toast } from "sonner";
 
 export interface MagicUpHistoryItem {
   id: string;
@@ -65,7 +66,11 @@ export function useMagicUpHistory() {
 
   const toggleFavMutation = useMutation({
     mutationFn: async (id: string) => {
-      const item = items.find((i) => i.id === id);
+      const current = queryClient.getQueryData<MagicUpHistoryItem[]>([
+        "magicup-history",
+        user?.id,
+      ]);
+      const item = current?.find((i) => i.id === id);
       if (!item) return;
       const { error } = await supabase
         .from("magicup_history")
@@ -73,7 +78,22 @@ export function useMagicUpHistory() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: invalidate,
+    onMutate: async (id: string) => {
+      const queryKey = ["magicup-history", user?.id] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<MagicUpHistoryItem[]>(queryKey);
+      queryClient.setQueryData<MagicUpHistoryItem[]>(queryKey, (old) =>
+        (old ?? []).map((i) => (i.id === id ? { ...i, favorite: !i.favorite } : i)),
+      );
+      return { previous, queryKey };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(context.queryKey, context.previous);
+      }
+      toast.error("Não foi possível atualizar o favorito");
+    },
+    onSettled: invalidate,
   });
 
   const deleteMutation = useMutation({
