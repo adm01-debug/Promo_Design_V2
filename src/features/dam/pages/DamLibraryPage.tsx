@@ -389,6 +389,7 @@ export default function DamLibraryPage() {
       LIST_SHOW_SIZE_KEY,
       SIZE_RANGE_KEY,
       UPDATED_RANGE_KEY,
+      CUSTOM_SIZE_KEY,
     ];
     for (const k of KEYS) {
       try { localStorage.removeItem(k); } catch { /* ignore */ }
@@ -408,6 +409,7 @@ export default function DamLibraryPage() {
     setViewMode("grid");
     setSizeRange("all");
     setUpdatedRange("all");
+    setCustomSize(null);
     setShowSizeColumn(false);
     setSearchParams(new URLSearchParams(), { replace: true });
     setResetOpen(false);
