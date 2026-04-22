@@ -453,6 +453,39 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir filtro salvo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const target = items.find((s) => s.id === confirmDeleteId);
+                return target
+                  ? `"${target.name}" será removido. Você terá alguns segundos para desfazer.`
+                  : "Esta ação não poderá ser desfeita após o tempo de undo.";
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDeleteId) handleDelete(confirmDeleteId);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={remove.isPending}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
