@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileArchive, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { buildAssetsCsv, downloadCsv, downloadAssetsZip } from "../lib/asset-export";
+import { buildAssetsCsv, downloadCsv, downloadAssetsZip, downloadAssetsZipsByType } from "../lib/asset-export";
 import { format } from "date-fns";
 
 interface Props {
@@ -73,6 +73,45 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
     }
   };
 
+  const exportZipByType = async (scope: Asset[]) => {
+    if (scope.length === 0) {
+      toast.warning("Nenhum asset para exportar");
+      return;
+    }
+    const types = new Set(scope.map((a) => a.asset_type || "other"));
+    if (types.size < 2) {
+      const ok = window.confirm(
+        `Todos os ${scope.length} assets são do mesmo tipo (${[...types][0]}). Gerar ZIP por tipo mesmo assim?`,
+      );
+      if (!ok) return;
+    }
+    if (scope.length > ZIP_CONFIRM_THRESHOLD) {
+      const ok = window.confirm(
+        `Exportar ${scope.length} assets em ZIPs separados por tipo? Isso pode levar alguns minutos.`,
+      );
+      if (!ok) return;
+    }
+    setIsExporting(true);
+    const toastId = toast.loading(`Empacotando 0/${scope.length} assets…`);
+    try {
+      const result = await downloadAssetsZipsByType(scope, clients, (done, t) => {
+        toast.loading(`Empacotando ${done}/${t} assets…`, { id: toastId });
+      });
+      const summary = Object.entries(result.byType)
+        .map(([t, c]) => `${t}: ${c.ok}${c.failed > 0 ? ` (${c.failed} falhas)` : ""}`)
+        .join(" · ");
+      if (result.failed === 0) {
+        toast.success(`ZIP por tipo exportado — ${summary}`, { id: toastId });
+      } else {
+        toast.warning(`ZIP por tipo com ${result.failed} falha(s) — ${summary}`, { id: toastId });
+      }
+    } catch (e) {
+      toast.error(`Falha ao gerar ZIP por tipo: ${e instanceof Error ? e.message : "erro"}`, { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -110,6 +149,24 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
         <DropdownMenuItem onClick={() => exportZip(selectedAssets)} disabled={selDisabled || isExporting}>
           <FileArchive className="w-4 h-4" />
           <span className="flex-1">ZIP — Seleção</span>
+          <span className="text-xs text-muted-foreground">{selCount}</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-xs">ZIP separado por tipo</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => exportZipByType(assets)}
+          disabled={total === 0 || isExporting}
+        >
+          <FolderTree className="w-4 h-4" />
+          <span className="flex-1">Por tipo — Filtrados</span>
+          <span className="text-xs text-muted-foreground">{total}</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => exportZipByType(selectedAssets)}
+          disabled={selDisabled || isExporting}
+        >
+          <FolderTree className="w-4 h-4" />
+          <span className="flex-1">Por tipo — Seleção</span>
           <span className="text-xs text-muted-foreground">{selCount}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
