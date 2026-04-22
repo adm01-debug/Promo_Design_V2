@@ -230,10 +230,29 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   };
 
   const handleDelete = async (id: string) => {
+    const target = items.find((s) => s.id === id);
+    if (!target) return;
     try {
       await remove.mutateAsync(id);
-      toast({ title: "Excluído" });
       setConfirmDeleteId(null);
+      sonnerToast.success(`"${target.name}" excluído`, {
+        duration: 6000,
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              await create.mutateAsync({
+                name: target.name,
+                filters: target.filters,
+                is_pinned: target.is_pinned,
+              });
+              sonnerToast.success(`"${target.name}" restaurado`);
+            } catch (e) {
+              sonnerToast.error(`Falha ao restaurar: ${(e as Error).message}`);
+            }
+          },
+        },
+      });
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
     }
@@ -323,18 +342,6 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRename(s.id)} aria-label="Confirmar">
                       <Check className="w-3.5 h-3.5" />
                     </Button>
-                  </div>
-                ) : isConfirmingDelete ? (
-                  <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
-                    <span>Excluir "{s.name}"?</span>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="destructive" className="h-6 px-2 text-[11px]" onClick={() => handleDelete(s.id)}>
-                        Sim
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setConfirmDeleteId(null)}>
-                        Não
-                      </Button>
-                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 group">
