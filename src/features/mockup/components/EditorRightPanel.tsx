@@ -68,6 +68,7 @@ interface EditorRightPanelProps {
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
+  const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
@@ -105,10 +106,16 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
           <Button variant="outline" size="sm" className="text-xs" onClick={() => fileInputRef.current?.click()}>
             <Upload className="w-3.5 h-3.5 mr-1" /> {logoFile ? logoFile.name.slice(0, 10) : "Upload"}
           </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)}>
-            <Library className="w-3.5 h-3.5 mr-1" /> DAM
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)} disabled={isLoadingFromDam}>
+            {isLoadingFromDam ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Library className="w-3.5 h-3.5 mr-1" />}
+            {isLoadingFromDam ? "Carregando..." : "DAM"}
           </Button>
         </div>
+        {isLoadingFromDam && (
+          <p className="text-[10px] text-primary mt-1.5 flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Baixando logo do DAM…
+          </p>
+        )}
         {logoPreview && (
           <div className="flex items-center gap-1 mt-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => setShowLogo(!showLogo)}>
@@ -254,11 +261,14 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
         defaultAssetType="logo"
         title="Escolher logo da biblioteca"
         onSelect={async (asset) => {
+          setIsLoadingFromDam(true);
           try {
             const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
             handleLogoUpload(file);
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível carregar o asset");
+          } finally {
+            setIsLoadingFromDam(false);
           }
         }}
       />
