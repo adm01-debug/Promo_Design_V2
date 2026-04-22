@@ -72,8 +72,19 @@ const MagicUpHistory = () => {
   }), [items, search, filterFavorites, filterProduct, dateFrom, dateTo]);
 
   const handleDelete = (id: string) => { deleteItem(id); if (selectedItem?.id === id) setSelectedItem(null); };
-  const clearFilters = () => { clearFavoritesFilter(); setFilterProduct(null); setDateFrom(undefined); setDateTo(undefined); setSearch(""); };
-  const hasActiveFilters = filterFavorites || filterProduct || dateFrom || dateTo;
+  /** Resets every filter and clears all related URL params in one shot. */
+  const clearFilters = () => {
+    setFilterFavorites(false);
+    setFilterProduct(null);
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setSearch("");
+    // Wipe any leftover query params (fav, q, product, from, to) immediately —
+    // the sync effect would do it, but doing it here keeps the URL change atomic
+    // with the click and avoids a 1-frame stale URL.
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
+  const hasActiveFilters = !!(filterFavorites || filterProduct || dateFrom || dateTo || search);
 
   const styleChartData = useMemo(() => {
     const map: Record<string, number> = {};
