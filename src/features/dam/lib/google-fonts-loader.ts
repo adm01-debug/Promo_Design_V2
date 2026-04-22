@@ -12,17 +12,11 @@ function prescanExisting() {
     'link[href*="fonts.googleapis.com"]',
   );
   links.forEach((link) => {
-    // Suporta múltiplos `family=` no mesmo href e separadores `|` (API legada).
-    const matches = link.href.matchAll(/family=([^&]+)/g);
-    for (const m of matches) {
-      const raw = m[1];
-      const families = raw.split("|");
-      for (const f of families) {
-        const name = decodeURIComponent(f.split(":")[0].replace(/\+/g, " ")).trim().toLowerCase();
-        if (name && !cache.has(name)) {
-          cache.set(name, Promise.resolve(true));
-        }
-      }
+    const match = link.href.match(/family=([^:&]+)/);
+    if (!match) return;
+    const family = decodeURIComponent(match[1].replace(/\+/g, " ")).trim().toLowerCase();
+    if (family && !cache.has(family)) {
+      cache.set(family, Promise.resolve(true));
     }
   });
 }
@@ -47,20 +41,6 @@ export function loadGoogleFont(
   const wghtList = [...weights].sort((a, b) => a - b).join(";");
   const href = `https://fonts.googleapis.com/css2?family=${family}:wght@${wghtList}&display=swap`;
 
-  // Defesa extra contra corridas: se já existe um <link> para essa família,
-  // não injeta novo, apenas confirma o carregamento via FontFaceSet.
-  const existing = document.head.querySelector<HTMLLinkElement>(
-    `link[data-google-font="${key}"]`,
-  );
-  if (existing) {
-    const fontsApi = (document as Document & { fonts?: FontFaceSet }).fonts;
-    const p = fontsApi?.load
-      ? fontsApi.load(`1em "${trimmed}"`).then((f) => f.length > 0).catch(() => false)
-      : Promise.resolve(true);
-    cache.set(key, p);
-    return p;
-  }
-
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = href;
@@ -83,7 +63,18 @@ export function loadGoogleFont(
       if (fontsApi?.load) {
         fontsApi
           .load(`1em "${trimmed}"`)
-          .then((faces) => finish(faces.length > 0))
+          .then((faces) => {
+            // Validação dupla: faces precisa ter ao menos 1 FontFace registrado E
+            // document.fonts.check confirma que o navegador aceita a família.
+            // Google Fonts CSS API responde 200 mesmo para famílias inexistentes
+            // (CSS vazio) — só descobrimos via FontFaceSet.
+            const hasFaces = faces.length > 0;
+            const accepted = fontsApi.check ? fontsApi.check(`1em "${trimmed}"`) : true;
+            if (!hasFaces || !accepted) {
+              console.warn(`[google-fonts] "${trimmed}" não encontrada no Google Fonts`);
+            }
+            finish(hasFaces && accepted);
+          })
           .catch(() => finish(false));
       } else {
         finish(true);
@@ -113,8 +104,8 @@ export function useGoogleFonts(names: string[]): {
       setLoaded({});
       return;
     }
-    // Resolve cada fonte individualmente para forçar re-render assim que cada uma
-    // estiver pronta, evitando flash de fallback no primeiro paint.
+    // Resolve cada fonte individualmente — re-render imediato quando cada uma fica
+    // pronta (ou falha), evitando flash de fallback.
     clean.forEach((n) => {
       loadGoogleFont(n).then((ok) => {
         if (cancelled) return;
