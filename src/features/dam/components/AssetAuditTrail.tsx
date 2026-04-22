@@ -21,6 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -41,6 +47,27 @@ import { AssetMetadataDiffDialog } from "./AssetMetadataDiffDialog";
 
 function shortId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
+}
+
+function formatValue(v: unknown): string {
+  if (v === undefined || v === null) return "—";
+  if (typeof v === "string") return v.length === 0 ? "(vazio)" : v;
+  if (Array.isArray(v)) {
+    if (v.length === 0) return "[]";
+    return v.map((x) => (typeof x === "string" ? x : JSON.stringify(x))).join(", ");
+  }
+  if (typeof v === "object") {
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
+    }
+  }
+  return String(v);
+}
+
+function truncate(s: string, max = 600): string {
+  return s.length > max ? `${s.slice(0, max)}…` : s;
 }
 
 const ACTION_META: Record<
