@@ -165,7 +165,7 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
           {versionLoading ? (
             <Skeleton className="inline-block h-3 w-10 align-middle" />
           ) : (
-            `v${latestQuery.data?.latestVersion ?? asset.version}`
+            `v${latestQuery.data?.latest?.version ?? asset.version}`
           )}
         </dd>
       </dl>
