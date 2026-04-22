@@ -49,6 +49,7 @@ const PAGE_KEY = "dam-page";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 const ARCHIVED_ONLY_KEY = "dam-archived-only";
+const OCR_ONLY_KEY = "dam-ocr-only";
 const PAGINATION_MODE_KEY = "dam-pagination-mode";
 const SEARCH_KEY = "dam-search";
 const ASSET_TYPES_KEY = "dam-asset-types";
