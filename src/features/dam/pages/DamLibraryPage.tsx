@@ -266,7 +266,56 @@ export default function DamLibraryPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
+
+  // Wipes every dam-* preference persisted in localStorage and returns all
+  // toggles/filters/pagination to factory defaults. URL search params are
+  // cleared so reload starts clean.
+  const handleResetPreferences = () => {
+    const KEYS = [
+      VIEW_MODE_KEY,
+      PAGE_SIZE_KEY,
+      PAGE_KEY,
+      TAGS_MODE_KEY,
+      INCLUDE_ARCHIVED_KEY,
+      ARCHIVED_ONLY_KEY,
+      OCR_ONLY_KEY,
+      PAGINATION_MODE_KEY,
+      SEARCH_KEY,
+      ASSET_TYPES_KEY,
+      CLIENT_ID_KEY,
+      TAGS_KEY,
+      SORT_KEY,
+      LIST_SHOW_SIZE_KEY,
+      SIZE_RANGE_KEY,
+      UPDATED_RANGE_KEY,
+    ];
+    for (const k of KEYS) {
+      try { localStorage.removeItem(k); } catch { /* ignore */ }
+    }
+    setSearch("");
+    setAssetTypes([]);
+    setClientId("all");
+    setSelectedTags([]);
+    setTagsMode("all");
+    setIncludeArchived(false);
+    setArchivedOnly(false);
+    setOcrOnly(false);
+    setSort("created_desc");
+    setPage(1);
+    setPageSize(24);
+    setPaginationMode("pages");
+    setViewMode("grid");
+    setSizeRange("all");
+    setUpdatedRange("all");
+    setShowSizeColumn(false);
+    setSearchParams(new URLSearchParams(), { replace: true });
+    setResetOpen(false);
+    toast.success("Preferências redefinidas", {
+      description: "Filtros, toggles e paginação voltaram ao padrão.",
+    });
+  };
 
   // "Continue where you left off" — last asset viewed in /dam/preview.
   // The optional `?highlight=<assetId>` URL param takes precedence over the
