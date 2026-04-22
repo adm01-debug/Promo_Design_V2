@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree, ChevronDown, Star, ListChecks } from "lucide-react";
+import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree, ChevronDown, Star, ListChecks, Settings2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,9 +13,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { buildAssetsCsv, downloadCsv, downloadAssetsZip, downloadAssetsZipsByType, ExportCanceledError } from "../lib/asset-export";
+import { buildAssetsCsv, downloadCsv, downloadAssetsZip, downloadAssetsZipsByType, ExportCanceledError, DEFAULT_CSV_COLUMNS, CSV_COLUMNS, type CsvColumnId } from "../lib/asset-export";
 import { format } from "date-fns";
 import { useExportQueue, newJobId } from "../hooks/use-export-queue";
+import { CsvColumnsDialog } from "./CsvColumnsDialog";
 
 interface Props {
   assets: Asset[];
@@ -31,6 +32,23 @@ type ExportScope = "filtered" | "selection";
 type ExportFormat = "csv" | "zip" | "zip-by-type";
 interface ExportPref { scope: ExportScope; format: ExportFormat }
 const PREF_KEY = "dam-export-pref";
+const CSV_COLUMNS_KEY = "dam-export-csv-columns";
+
+function readCsvColumns(): CsvColumnId[] {
+  try {
+    const raw = localStorage.getItem(CSV_COLUMNS_KEY);
+    if (!raw) return [...DEFAULT_CSV_COLUMNS];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [...DEFAULT_CSV_COLUMNS];
+    const valid = new Set(CSV_COLUMNS.map((c) => c.id));
+    const filtered = parsed.filter((id): id is CsvColumnId => typeof id === "string" && valid.has(id as CsvColumnId));
+    return filtered.length > 0 ? filtered : [...DEFAULT_CSV_COLUMNS];
+  } catch { return [...DEFAULT_CSV_COLUMNS]; }
+}
+
+function writeCsvColumns(cols: CsvColumnId[]): void {
+  try { localStorage.setItem(CSV_COLUMNS_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
+}
 
 function readPref(): ExportPref | null {
   try {
@@ -63,6 +81,8 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
   const [isExporting, setIsExporting] = useState(false);
   const [pref, setPref] = useState<ExportPref | null>(() => readPref());
   useEffect(() => { if (pref) writePref(pref); }, [pref]);
+  const [csvColumns, setCsvColumns] = useState<CsvColumnId[]>(() => readCsvColumns());
+  const [csvDialog, setCsvDialog] = useState<{ open: boolean; scope: Asset[]; label: string; kind: ExportScope } | null>(null);
   const enqueue = useExportQueue((s) => s.enqueue);
   const updateJob = useExportQueue((s) => s.update);
   const setPanelOpen = useExportQueue((s) => s.setPanelOpen);
@@ -73,7 +93,7 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
   const selCount = selectedAssets.length;
   const selDisabled = !compareMode || selCount === 0;
 
-  const runCsv = (scope: Asset[], label: string) => {
+  const runCsv = (scope: Asset[], label: string, columns: CsvColumnId[] = csvColumns) => {
     if (scope.length === 0) {
       toast.warning("Nenhum asset para exportar");
       return;
@@ -81,16 +101,16 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
     const id = newJobId();
     enqueue({
       id,
-      label: `CSV — ${label === "selecao" ? "Seleção" : "Filtrados"} (${scope.length})`,
+      label: `CSV — ${label === "selecao" ? "Seleção" : "Filtrados"} (${scope.length} · ${columns.length} col)`,
       kind: "csv",
       total: 1,
     });
     try {
-      const csv = buildAssetsCsv(scope, clients);
+      const csv = buildAssetsCsv(scope, clients, columns);
       const ts = format(new Date(), "yyyyMMdd-HHmmss");
       downloadCsv(`dam-${label}-${ts}.csv`, csv);
-      updateJob(id, { status: "done", done: 1, finishedAt: Date.now(), summary: `${scope.length} assets` });
-      toast.success(`CSV exportado (${scope.length} assets)`);
+      updateJob(id, { status: "done", done: 1, finishedAt: Date.now(), summary: `${scope.length} assets · ${columns.length} colunas` });
+      toast.success(`CSV exportado (${scope.length} assets · ${columns.length} colunas)`);
     } catch (e) {
       updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
       toast.error(`Falha ao gerar CSV: ${e instanceof Error ? e.message : "erro"}`);
@@ -199,8 +219,19 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
 
   /** Wraps a runner so it remembers the chosen (scope, format) for the quick button. */
   const exportCsv = (scope: Asset[], label: string, kind: ExportScope) => {
-    setPref({ scope: kind, format: "csv" });
-    runCsv(scope, label);
+    if (scope.length === 0) {
+      toast.warning("Nenhum asset para exportar");
+      return;
+    }
+    // Open column-picker dialog before running.
+    setCsvDialog({ open: true, scope, label, kind });
+  };
+  const handleCsvDialogConfirm = (cols: CsvColumnId[]) => {
+    setCsvColumns(cols);
+    writeCsvColumns(cols);
+    if (!csvDialog) return;
+    setPref({ scope: csvDialog.kind, format: "csv" });
+    runCsv(csvDialog.scope, csvDialog.label, cols);
   };
   const exportZip = (scope: Asset[], kind: ExportScope) => {
     setPref({ scope: kind, format: "zip" });
@@ -232,7 +263,7 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
     }
     const scopeLabel = usedFallback ? "filtered" : pref.scope;
     const csvLabel = scopeLabel === "selection" ? "selecao" : "filtrados";
-    if (pref.format === "csv") runCsv(scope, csvLabel);
+    if (pref.format === "csv") runCsv(scope, csvLabel, csvColumns);
     else if (pref.format === "zip") void runZip(scope);
     else void runZipByType(scope);
   };
