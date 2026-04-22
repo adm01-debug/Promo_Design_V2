@@ -69,6 +69,12 @@ export function AssetUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
 
+  // Clear stale tag validation errors when switching asset type (e.g., arte final ↔ mockup),
+  // so an old error doesn't keep blocking submission after the user changed modes.
+  useEffect(() => {
+    setTagError(null);
+  }, [assetType]);
+
   // Reset when re-opening or switching parent
   useEffect(() => {
     if (open) {
