@@ -522,6 +522,41 @@ export default function DamLibraryPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => {
+              const params = new URLSearchParams();
+              const q = debouncedSearch.trim();
+              if (q) params.set("q", q);
+              if (assetTypes.length > 0) params.set("type", assetTypes.join(","));
+              if (clientId !== "all") params.set("client", clientId);
+              if (selectedTags.length > 0) params.set("tags", selectedTags.join(","));
+              if (selectedTags.length > 1 && tagsMode !== "all") params.set("tagsMode", tagsMode);
+              if (sort !== "created_desc") params.set("sort", sort);
+              if (includeArchived) params.set("archived", "1");
+              if (archivedOnly) params.set("archivedOnly", "1");
+              if (paginationMode === "loadmore") params.set("mode", "loadmore");
+              if (pageSize !== 24) params.set("pageSize", String(pageSize));
+              if (page > 1 && paginationMode === "pages") params.set("page", String(page));
+              const qs = params.toString();
+              const url = `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ""}`;
+              const copy = async () => {
+                try {
+                  await navigator.clipboard.writeText(url);
+                  toast.success("Link copiado", { description: "Cole para compartilhar com os filtros atuais." });
+                } catch {
+                  // Fallback: prompt so user can copy manually
+                  window.prompt("Copie o link compartilhável:", url);
+                }
+              };
+              copy();
+            }}
+            title="Copiar link com filtros atuais"
+          >
+            <Link2 className="w-4 h-4 mr-2" />
+            Compartilhar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setActivityOpen(true)}
             title="Atividade recente da biblioteca"
           >
