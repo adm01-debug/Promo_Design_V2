@@ -39,7 +39,9 @@ import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 50;
+const PAGE_SIZE_KEY = "audit-page-size";
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const LS_KEY = "audit-filters-v1";
 
 const ACTION_VARIANT: Record<AuditAction, "default" | "secondary" | "destructive"> = {
