@@ -620,6 +620,9 @@ export default function DamLibraryPage() {
       const updatedAfter = updRange?.hours
         ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
         : undefined;
+      // Custom size range overrides the preset when active.
+      const minSize = customSize ? customSize.minBytes ?? undefined : range?.min;
+      const maxSize = customSize ? customSize.maxBytes ?? undefined : range?.max;
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -632,12 +635,12 @@ export default function DamLibraryPage() {
         sortDir: opt.sortDir,
         page,
         pageSize,
-        minSize: range?.min,
-        maxSize: range?.max,
+        minSize,
+        maxSize,
         updatedAfter,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange, customSize],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
