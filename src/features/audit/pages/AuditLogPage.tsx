@@ -307,7 +307,12 @@ const AuditLogPage = () => {
     pageSize: pageSize,
   };
 
-  const { data, isLoading } = useAuditLog(queryFilters);
+  const { data, isLoading, isFetching } = useAuditLog(queryFilters);
+  const [loadedPage, setLoadedPage] = useState<number>(page);
+  useEffect(() => {
+    if (!isFetching) setLoadedPage(page);
+  }, [isFetching, page]);
+  const isPaginating = isFetching && !isLoading && loadedPage !== page;
   const rawRows = data?.rows ?? [];
   const serverTotal = data?.count ?? 0;
 
@@ -461,7 +466,7 @@ const AuditLogPage = () => {
               <Inbox className="h-10 w-10 opacity-40" />
               <p className="text-sm">Selecione uma organização para ver a trilha de auditoria.</p>
             </div>
-          ) : isLoading && rows.length === 0 ? (
+          ) : (isLoading && rows.length === 0) || isPaginating ? (
             <AuditTableSkeleton rows={Math.min(pageSize, 8)} />
           ) : rows.length === 0 ? (
             (() => {
