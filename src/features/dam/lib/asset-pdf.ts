@@ -119,7 +119,7 @@ export function buildAssetsPdf(
   assets: Asset[],
   clients: Client[],
   filters: AssetsPdfFiltersSummary,
-  columns?: PdfColumnId[],
+  pdfColumns?: PdfColumnId[],
 ): jsPDF {
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
@@ -128,7 +128,7 @@ export function buildAssetsPdf(
   // Resolve which PDF columns to render. Always emit in canonical order so the
   // layout stays predictable (e.g. "Nome" stays leftmost when selected).
   const selected = new Set<PdfColumnId>(
-    columns && columns.length > 0 ? columns : DEFAULT_PDF_COLUMNS,
+    pdfColumns && pdfColumns.length > 0 ? pdfColumns : DEFAULT_PDF_COLUMNS,
   );
   const activeCols = PDF_COLUMNS.filter((c) => selected.has(c.id));
 
