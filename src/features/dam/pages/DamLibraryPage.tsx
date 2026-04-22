@@ -8,8 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle } from "lucide-react";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, FileBox } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -54,6 +56,8 @@ const ASSET_TYPES_KEY = "dam-asset-types";
 const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
+const MIN_SIZE_KEY = "dam-min-size-mb";
+const MAX_SIZE_KEY = "dam-max-size-mb";
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 
