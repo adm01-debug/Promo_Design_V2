@@ -36,6 +36,7 @@ const DEFAULT_FILTERS: VersionFilters = {
 };
 
 const STORAGE_KEY = "dam:version-history-filters";
+const PAGE_SIZE = 10;
 
 function loadFilters(): VersionFilters {
   if (typeof window === "undefined") return DEFAULT_FILTERS;
@@ -82,6 +83,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   const maxVersion = versions.reduce((m, v) => Math.max(m, v.version), 0);
 
   const [filters, setFilters] = useState<VersionFilters>(() => loadFilters());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     try {
@@ -89,6 +91,12 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
     } catch {
       // ignore quota / privacy mode errors
     }
+  }, [filters]);
+
+  // Reset pagination whenever filters change so the user starts from the top
+  // of the freshly filtered list.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
   }, [filters]);
 
   const authors = useMemo(() => {
@@ -126,6 +134,9 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
 
   const hasActiveFilters =
     filters.query.trim() !== "" || filters.author !== "all" || filters.sort !== "version_desc";
+
+  const visible = filtered.slice(0, visibleCount);
+  const remaining = Math.max(0, filtered.length - visible.length);
 
   if (isLoading) {
     return (
@@ -220,7 +231,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
         </div>
       ) : (
         <ul className="space-y-2">
-          {filtered.map((v) => {
+          {visible.map((v) => {
             const isCurrent = v.version === maxVersion;
             const isSelected = v.id === asset.id;
             return (
