@@ -373,9 +373,10 @@ export default function DamLibraryPage() {
       if (selectedTags.length > 1 && tagsMode !== "all") next.set("tagsMode", tagsMode);
       else next.delete("tagsMode");
       if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
+      if (sizeRange !== "all") next.set("size", sizeRange); else next.delete("size");
       return next;
     }, { replace: true });
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, setSearchParams]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, setSearchParams]);
 
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
@@ -386,11 +387,12 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange]);
 
   const filters = useMemo(
     () => {
       const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
+      const range = SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange);
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -403,9 +405,11 @@ export default function DamLibraryPage() {
         sortDir: opt.sortDir,
         page,
         pageSize,
+        minSize: range?.min,
+        maxSize: range?.max,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
