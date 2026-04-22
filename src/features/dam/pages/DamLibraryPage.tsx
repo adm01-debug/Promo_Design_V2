@@ -966,7 +966,12 @@ export default function DamLibraryPage() {
               </div>
             )}
             {viewMode === "list" ? (
-              <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
+              <AssetListView
+                assets={displayedAssets}
+                clients={clients}
+                onSelect={setSelected}
+                onRestore={canUpload ? handleRestore : undefined}
+              />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {displayedAssets.map((a) => (
@@ -976,6 +981,7 @@ export default function DamLibraryPage() {
                     isQuickActive={quickPreview.enabled && quickPreview.activeAsset?.id === a.id}
                     onHover={quickPreview.enabled ? () => quickPreview.setHoverAsset(a) : undefined}
                     onHoverEnd={quickPreview.enabled ? () => quickPreview.setHoverAsset(null) : undefined}
+                    onRestore={canUpload ? handleRestore : undefined}
                     onClick={() => {
                       if (quickPreview.enabled) {
                         quickPreview.togglePin(a);
