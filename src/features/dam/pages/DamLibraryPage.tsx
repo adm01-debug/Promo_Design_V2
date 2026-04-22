@@ -679,6 +679,15 @@ export default function DamLibraryPage() {
               <Plus className="w-4 h-4 mr-2" /> Novo asset
             </Button>
           )}
+          {can(["owner", "admin", "designer"]) && (
+            <Button
+              variant="outline"
+              onClick={() => setBatchOcrOpen(true)}
+              title="Reprocessar OCR para vários assets visíveis"
+            >
+              <ScanText className="w-4 h-4 mr-2" /> OCR em lote
+            </Button>
+          )}
         </div>
       </header>
 
