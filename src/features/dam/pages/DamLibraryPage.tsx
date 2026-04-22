@@ -86,6 +86,7 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [activityOpen, setActivityOpen] = useState(false);
   const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? readLS(SEARCH_KEY) ?? "");
   const debouncedSearch = useDebounce(search, 300);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>(() => {
