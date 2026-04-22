@@ -203,6 +203,22 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(LIST_SHOW_SIZE_KEY) === "1";
   });
+  const [sizeRange, setSizeRange] = useState<SizeRangeKey>(() => {
+    const fromUrl = searchParams.get("size") as SizeRangeKey | null;
+    if (fromUrl && SIZE_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    if (typeof window === "undefined") return "all";
+    const ls = localStorage.getItem(SIZE_RANGE_KEY) as SizeRangeKey | null;
+    if (ls && SIZE_RANGE_OPTIONS.some((o) => o.value === ls)) return ls;
+    return "all";
+  });
+  useEffect(() => {
+    try {
+      if (sizeRange !== "all") localStorage.setItem(SIZE_RANGE_KEY, sizeRange);
+      else localStorage.removeItem(SIZE_RANGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [sizeRange]);
   useEffect(() => {
     try {
       if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
