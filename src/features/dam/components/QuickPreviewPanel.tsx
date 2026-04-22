@@ -22,6 +22,8 @@ interface QuickPreviewPanelProps {
   clients: Client[];
   /** Optional: called when the user clicks a tag chip to apply it as a library filter. */
   onApplyTag?: (tag: string) => void;
+  /** Active sort label (e.g. "Maior arquivo"), shown as context in the panel header. */
+  sortLabel?: string;
 }
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -31,7 +33,7 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApplyTag }: QuickPreviewPanelProps) {
+function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApplyTag, sortLabel }: QuickPreviewPanelProps) {
   const [url, setUrl] = useState<string | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -71,6 +73,11 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
         <p className="text-xs max-w-[220px]">
           Passe o mouse sobre um asset ou clique para fixar e ver os detalhes aqui.
         </p>
+        {sortLabel && (
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70 mt-1">
+            Ordenação: {sortLabel}
+          </p>
+        )}
       </div>
     );
   }
@@ -108,6 +115,15 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
           <div className="flex items-center gap-1.5 flex-wrap">
             <Badge variant="secondary" className="capitalize">{asset.asset_type}</Badge>
             {asset.version > 1 && <Badge variant="outline">v{asset.version}</Badge>}
+            {sortLabel && (
+              <Badge
+                variant="outline"
+                className="text-[10px] text-muted-foreground border-dashed"
+                title="Ordenação ativa na biblioteca"
+              >
+                {sortLabel}
+              </Badge>
+            )}
             {versionLoading && (
               <Badge variant="outline" className="gap-1 text-muted-foreground" aria-label="Verificando versão">
                 <Loader2 className="w-3 h-3 animate-spin" />
