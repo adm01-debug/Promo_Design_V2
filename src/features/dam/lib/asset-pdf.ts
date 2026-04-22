@@ -321,8 +321,9 @@ export function downloadAssetsPdf(
   assets: Asset[],
   clients: Client[],
   filters: AssetsPdfFiltersSummary,
+  pdfColumns?: PdfColumnId[],
 ): void {
-  const doc = buildAssetsPdf(assets, clients, filters);
+  const doc = buildAssetsPdf(assets, clients, filters, pdfColumns);
   const ts = format(new Date(), "yyyyMMdd-HHmmss");
   doc.save(`dam-assets-${ts}.pdf`);
 }
