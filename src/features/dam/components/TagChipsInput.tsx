@@ -79,13 +79,22 @@ export function TagChipsInput({
     }
   };
 
-  const filteredSuggestions = useMemo(() => {
+  const usedSet = useMemo(() => new Set(value.map((t) => t.toLowerCase())), [value]);
+
+  const matchedSuggestions = useMemo(() => {
     const q = draft.trim().toLowerCase();
-    return suggestions
-      .filter((s) => !value.includes(s))
-      .filter((s) => (q ? s.toLowerCase().includes(q) : true))
-      .slice(0, 6);
-  }, [suggestions, draft, value]);
+    return suggestions.filter((s) => (q ? s.toLowerCase().includes(q) : true));
+  }, [suggestions, draft]);
+
+  // Show used tags first (highlighted) so the user can confirm choices, then unused.
+  const visibleSuggestions = useMemo(() => {
+    const decorated = matchedSuggestions.map((s) => ({ tag: s, used: usedSet.has(s.toLowerCase()) }));
+    decorated.sort((a, b) => (a.used === b.used ? 0 : a.used ? -1 : 1));
+    return decorated.slice(0, 8);
+  }, [matchedSuggestions, usedSet]);
+
+  const totalMatches = matchedSuggestions.length;
+  const usedMatches = matchedSuggestions.filter((s) => usedSet.has(s.toLowerCase())).length;
 
   return (
     <div className="relative">
@@ -129,19 +138,34 @@ export function TagChipsInput({
       {error && (
         <p className="text-destructive text-xs mt-1" role="alert">{error}</p>
       )}
-      {focused && filteredSuggestions.length > 0 && (
+      {focused && visibleSuggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover p-1 shadow-md">
-          {filteredSuggestions.map((s) => (
+          <div className="flex items-center justify-between px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <span>Sugestões</span>
+            <span className="tabular-nums font-mono">
+              {usedMatches > 0 ? `${usedMatches} adicionada${usedMatches > 1 ? "s" : ""} · ` : ""}
+              {totalMatches} disponíve{totalMatches === 1 ? "l" : "is"}
+            </span>
+          </div>
+          {visibleSuggestions.map(({ tag, used }) => (
             <button
-              key={s}
+              key={tag}
               type="button"
+              disabled={used}
               onMouseDown={(e) => {
                 e.preventDefault();
-                addTag(s);
+                if (used) return;
+                addTag(tag);
               }}
-              className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent"
+              className={cn(
+                "w-full flex items-center justify-between gap-2 text-left px-2 py-1.5 text-sm rounded transition-colors",
+                used ? "bg-primary/10 text-primary cursor-default" : "hover:bg-accent",
+              )}
+              aria-disabled={used}
+              title={used ? "Tag já adicionada" : `Adicionar tag ${tag}`}
             >
-              {s}
+              <span className="truncate">{tag}</span>
+              {used && <Check className="w-3.5 h-3.5 shrink-0" />}
             </button>
           ))}
         </div>
