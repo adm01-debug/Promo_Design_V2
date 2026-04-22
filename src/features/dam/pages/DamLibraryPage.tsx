@@ -160,6 +160,17 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return "pages";
     return (localStorage.getItem(PAGINATION_MODE_KEY) as PaginationMode) || "pages";
   });
+  // File size filters, expressed in MB in the UI; stored as bytes for the backend.
+  const [minSizeMB, setMinSizeMB] = useState<string>(() => {
+    const fromUrl = searchParams.get("minMB");
+    if (fromUrl !== null) return fromUrl;
+    return readLS(MIN_SIZE_KEY) ?? "";
+  });
+  const [maxSizeMB, setMaxSizeMB] = useState<string>(() => {
+    const fromUrl = searchParams.get("maxMB");
+    if (fromUrl !== null) return fromUrl;
+    return readLS(MAX_SIZE_KEY) ?? "";
+  });
   const [accumulated, setAccumulated] = useState<Asset[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
