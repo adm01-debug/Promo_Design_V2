@@ -1054,6 +1054,22 @@ export default function DamLibraryPage() {
             </TooltipTrigger>
             <TooltipContent>Redefinir preferências (filtros, toggles, paginação)</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopyLink}
+                aria-label="Copiar link da visualização atual"
+                data-testid="dam-copy-link"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {copiedLink ? "Copiado!" : "Copiar link com filtros atuais"}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </header>
 
