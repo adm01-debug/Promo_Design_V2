@@ -20,9 +20,10 @@ interface Props {
   asset: Asset | null;
   onClose: () => void;
   onSelectAsset?: (a: Asset) => void;
+  searchQuery?: string;
 }
 
-export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
+export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const { currentOrgId, can } = useOrganizations();
   const { archive, restore, remove } = useAssets(currentOrgId);
@@ -38,7 +39,8 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
     getAssetSignedUrl(asset.file_path, 3600).then(setUrl);
     setOcrText(asset.ocr_text ?? null);
     setOcrStatus(asset.ocr_status ?? "none");
-    setOcrOpen(false);
+    // Auto-open OCR section when arriving from a search that matched OCR text.
+    setOcrOpen(Boolean(asset.ocr_match && (searchQuery ?? "").trim().length >= 2));
   }, [asset]);
 
   // Poll once if OCR is pending
