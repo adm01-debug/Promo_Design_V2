@@ -37,7 +37,9 @@ const MagicUpHistory = () => {
   });
   // Open the filters panel automatically when the URL already has product/date filters.
   const [showFilters, setShowFilters] = useState(
-    () => !!(searchParams.get("product") || searchParams.get("from") || searchParams.get("to")),
+    () =>
+      searchParams.get("filters") === "1" ||
+      !!(searchParams.get("product") || searchParams.get("from") || searchParams.get("to")),
   );
   const [selectedItem, setSelectedItem] = useState<MagicUpHistoryItem | null>(null);
 
@@ -55,11 +57,14 @@ const MagicUpHistory = () => {
     if (filterProduct) next.set("product", filterProduct);
     if (dateFrom) next.set("from", dateFrom.toISOString().slice(0, 10));
     if (dateTo) next.set("to", dateTo.toISOString().slice(0, 10));
+    // Persist panel open state only when no other filter implies it,
+    // so links like ?filters=1 reopen the panel even when empty.
+    if (showFilters && !filterProduct && !dateFrom && !dateTo) next.set("filters", "1");
     const desired = next.toString();
     const current = window.location.search.replace(/^\?/, "");
     if (desired === current) return;
     setSearchParams(next, { replace: true });
-  }, [filterFavorites, search, filterProduct, dateFrom, dateTo, setSearchParams]);
+  }, [filterFavorites, search, filterProduct, dateFrom, dateTo, showFilters, setSearchParams]);
 
   const clearFavoritesFilter = useCallback(() => setFilterFavorites(false), []);
 
