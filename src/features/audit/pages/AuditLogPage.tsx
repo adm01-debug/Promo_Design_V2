@@ -103,6 +103,15 @@ const AuditLogPage = () => {
   const { toast } = useToast();
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_PAGE_SIZE;
+    const stored = Number(localStorage.getItem(PAGE_SIZE_KEY));
+    return PAGE_SIZE_OPTIONS.includes(stored) ? stored : DEFAULT_PAGE_SIZE;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
+    setPage(0);
+  }, [pageSize]);
   const [selected, setSelected] = useState<AuditEntry | null>(null);
   const [exporting, setExporting] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
