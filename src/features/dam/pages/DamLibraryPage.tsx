@@ -58,6 +58,7 @@ const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
 const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
 const SIZE_RANGE_KEY = "dam-size-range";
+const UPDATED_RANGE_KEY = "dam-updated-range";
 
 type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
 const SIZE_RANGE_OPTIONS: {
@@ -71,6 +72,15 @@ const SIZE_RANGE_OPTIONS: {
   { value: "1to5mb", label: "1–5 MB", min: 1 * 1024 * 1024, max: 5 * 1024 * 1024 },
   { value: "5to20mb", label: "5–20 MB", min: 5 * 1024 * 1024, max: 20 * 1024 * 1024 },
   { value: "gt20mb", label: "Acima de 20 MB", min: 20 * 1024 * 1024 },
+];
+
+type UpdatedRangeKey = "all" | "24h" | "7d" | "30d" | "90d";
+const UPDATED_RANGE_OPTIONS: { value: UpdatedRangeKey; label: string; hours?: number }[] = [
+  { value: "all", label: "Qualquer data" },
+  { value: "24h", label: "Últimas 24h", hours: 24 },
+  { value: "7d", label: "Últimos 7 dias", hours: 24 * 7 },
+  { value: "30d", label: "Últimos 30 dias", hours: 24 * 30 },
+  { value: "90d", label: "Últimos 90 dias", hours: 24 * 90 },
 ];
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
