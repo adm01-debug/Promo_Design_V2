@@ -274,6 +274,18 @@ export default function DamLibraryPage() {
     return parseBoolParam(searchParams.get("archived")) === true;
   });
   const [archivedUrlHintDismissed, setArchivedUrlHintDismissed] = useState(false);
+  // First-time-only Tooltip on the Arquivados toggle: opens once when the
+  // user toggles it for the first time this session, then never reopens.
+  const [archivedTooltipOpen, setArchivedTooltipOpen] = useState(false);
+  const [archivedTooltipShown, setArchivedTooltipShown] = useState(false);
+  const handleIncludeArchivedToggle = (next: boolean) => {
+    setIncludeArchived(next);
+    if (!archivedTooltipShown) {
+      setArchivedTooltipShown(true);
+      setArchivedTooltipOpen(true);
+      window.setTimeout(() => setArchivedTooltipOpen(false), 2500);
+    }
+  };
 
   // Copies the current full URL (including all active filters and toggles like
   // ?archived=1) to the clipboard so the user can share the exact view.
@@ -1240,11 +1252,18 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
-          <Tooltip>
+          <Tooltip
+            open={archivedTooltipOpen || undefined}
+            onOpenChange={(o) => {
+              // Only allow programmatic open via our first-toggle handler.
+              // Hover/focus opens are suppressed once the hint has been shown.
+              if (!o) setArchivedTooltipOpen(false);
+            }}
+          >
             <TooltipTrigger asChild>
               <Toggle
                 pressed={includeArchived}
-                onPressedChange={setIncludeArchived}
+                onPressedChange={handleIncludeArchivedToggle}
                 size="sm"
                 variant="outline"
                 aria-label={
