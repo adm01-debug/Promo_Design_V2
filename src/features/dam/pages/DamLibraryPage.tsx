@@ -1282,6 +1282,7 @@ export default function DamLibraryPage() {
         asset={selected}
         onClose={() => setSelected(null)}
         onSelectAsset={(a) => setSelected(a)}
+        searchQuery={debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? debouncedSearch.trim() : undefined}
       />
       <LibraryActivityDialog
         open={activityOpen}
