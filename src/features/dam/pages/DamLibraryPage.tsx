@@ -9,7 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2 } from "lucide-react";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } 
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
+import { BatchOcrDialog } from "../components/BatchOcrDialog";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -163,6 +164,7 @@ export default function DamLibraryPage() {
   });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
+  const [batchOcrOpen, setBatchOcrOpen] = useState(false);
   const quickPreview = useQuickPreview();
 
   // "Continue where you left off" — last asset viewed in /dam/preview.
@@ -675,6 +677,15 @@ export default function DamLibraryPage() {
           {can(["owner", "admin", "designer"]) && (
             <Button onClick={() => setUploadOpen(true)}>
               <Plus className="w-4 h-4 mr-2" /> Novo asset
+            </Button>
+          )}
+          {can(["owner", "admin", "designer"]) && (
+            <Button
+              variant="outline"
+              onClick={() => setBatchOcrOpen(true)}
+              title="Reprocessar OCR para vários assets visíveis"
+            >
+              <ScanText className="w-4 h-4 mr-2" /> OCR em lote
             </Button>
           )}
         </div>
@@ -1227,6 +1238,11 @@ export default function DamLibraryPage() {
         open={activityOpen}
         onOpenChange={setActivityOpen}
         organizationId={currentOrgId}
+      />
+      <BatchOcrDialog
+        open={batchOcrOpen}
+        onOpenChange={setBatchOcrOpen}
+        assets={displayedAssets}
       />
     </div>
   );
