@@ -35,8 +35,8 @@ import {
   type SavedSearch,
   PINNED_LIMIT,
   SAVED_SEARCH_LIMIT,
-  savedFiltersSchema,
   SAVED_FILTERS_VERSION,
+  migrateSavedFilters,
 } from "../hooks/use-saved-searches";
 
 interface Props {
@@ -124,7 +124,7 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
       const text = await file.text();
       const json = JSON.parse(text);
       const raw = json?.filters ?? json;
-      const parsed = savedFiltersSchema.parse(raw);
+      const parsed = migrateSavedFilters(raw);
       onApply(parsed);
       toast({ title: "Filtros importados", description: "Snapshot aplicado." });
     } catch (e) {
