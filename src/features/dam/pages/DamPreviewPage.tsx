@@ -99,6 +99,24 @@ export default function DamPreviewPage() {
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);
   const didHydrateCompareRef = useRef(false);
+  const didRestoreSessionRef = useRef(false);
+
+  // Mount-only: if the URL is empty (no filters / asset / compare) but we have a saved
+  // session from a previous visit to /dam/preview, restore it via replace navigation.
+  // This keeps /dam/preview "remembering" the last context the user worked with.
+  useEffect(() => {
+    if (didRestoreSessionRef.current) return;
+    didRestoreSessionRef.current = true;
+    if (typeof window === "undefined") return;
+    if (searchParams.toString() !== "") return; // user came in WITH an explicit URL — respect it
+    let saved: string | null = null;
+    try { saved = sessionStorage.getItem(PREVIEW_QS_KEY); } catch { /* ignore */ }
+    if (!saved) return;
+    const trimmed = saved.startsWith("?") ? saved.slice(1) : saved;
+    if (!trimmed) return;
+    navigate(`/dam/preview?${trimmed}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
