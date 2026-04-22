@@ -1234,6 +1234,15 @@ export default function DamLibraryPage() {
                 clients={clients}
                 onSelect={setSelected}
                 onRestore={canUpload ? handleRestore : undefined}
+                showSize={showSizeColumn}
+                sizeSortDir={
+                  sort === "size_desc" ? "desc" : sort === "size_asc" ? "asc" : null
+                }
+                onToggleSizeSort={() => {
+                  setSort((prev) =>
+                    prev === "size_desc" ? "size_asc" : "size_desc",
+                  );
+                }}
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
