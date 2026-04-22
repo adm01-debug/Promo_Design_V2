@@ -259,10 +259,29 @@ export default function DamLibraryPage() {
   const quickPreview = useQuickPreview();
 
   // "Continue where you left off" — last asset viewed in /dam/preview.
-  const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(() => readLastPreviewAsset());
+  // The optional `?highlight=<assetId>` URL param takes precedence over the
+  // localStorage entry, so deep links from /dam/preview keep working even when
+  // the user cleared their session or opens the link on a different device.
+  const highlightParam = searchParams.get("highlight");
+  const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(
+    () => highlightParam ?? readLastPreviewAsset()
+  );
   const highlightedRef = useRef<string | null>(null);
   const didShowExpiredToastRef = useRef(false);
   const [fallbackDismissed, setFallbackDismissed] = useState(false);
+
+  // Keep state in sync if the user navigates with a different `highlight=` value
+  // (e.g. clicking another shared link without a full reload). Strips the param
+  // from the URL afterwards so reload doesn't replay an outdated highlight.
+  useEffect(() => {
+    if (!highlightParam) return;
+    setLastPreviewAssetId(highlightParam);
+    setFallbackDismissed(false);
+    highlightedRef.current = null;
+    const next = new URLSearchParams(searchParams);
+    next.delete("highlight");
+    setSearchParams(next, { replace: true });
+  }, [highlightParam, searchParams, setSearchParams]);
 
   // One-time toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
