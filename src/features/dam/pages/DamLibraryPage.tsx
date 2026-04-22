@@ -1680,18 +1680,21 @@ export default function DamLibraryPage() {
           <div
             className={cn(
               "flex-1 min-w-0 relative transition-opacity duration-200",
-              isFetching && !isLoading && "opacity-60 pointer-events-none",
+              isFetching && !isLoading && !isPaginating && "pointer-events-none",
             )}
             aria-busy={isFetching && !isLoading}
           >
-            {isFetching && !isLoading && (
-              <div
-                className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border"
-                aria-hidden="true"
-              >
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Carregando…
-              </div>
+            {/* Background revalidation: overlay reusable skeleton on top of
+                the cached list so the user perceives the refresh consistently
+                without unmounting current data. The cold-start case is handled
+                above (AssetGridSkeleton, no overlay). */}
+            {isFetching && !isLoading && !isPaginating && (
+              <AssetGridSkeleton
+                viewMode={viewMode}
+                count={Math.min(displayedAssets.length || pageSize, pageSize)}
+                overlay
+                label="Atualizando lista de assets"
+              />
             )}
             {viewMode === "list" ? (
               <AssetListView
