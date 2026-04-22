@@ -33,6 +33,7 @@ import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
 import { parseBoolParam } from "../lib/parse-bool-param";
+import { JumpToPage } from "../components/JumpToPage";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1797,6 +1798,13 @@ export default function DamLibraryPage() {
             pageSizeOptions={[12, 24, 48, 96]}
             onPageSizeChange={setPageSize}
           />
+          {totalPages > 1 && (
+            <JumpToPage
+              currentPage={page}
+              totalPages={totalPages}
+              onJump={setPage}
+            />
+          )}
           {totalPages > 1 && (
             <p className="text-[11px] text-muted-foreground text-right">
               Atalhos: <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">←</kbd>{" "}
