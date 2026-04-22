@@ -330,6 +330,17 @@ export default function DamLibraryPage() {
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
 
+  const handleRestore = async (asset: Asset) => {
+    try {
+      await restore.mutateAsync(asset.id);
+      toast.success(`"${asset.name}" restaurado`, {
+        description: "O asset voltou à biblioteca ativa.",
+      });
+    } catch (e) {
+      toast.error(`Falha ao restaurar: ${e instanceof Error ? e.message : "erro"}`);
+    }
+  };
+
   // Cache last-known totals so the counter stays stable during refetches and never
   // flickers back to "Carregando..." when paginating or filtering.
   const lastTotalsRef = useRef<{ total: number; totalPages: number; page: number; pageSize: number; displayedLen: number } | null>(null);
