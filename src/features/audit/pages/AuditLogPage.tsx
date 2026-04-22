@@ -313,6 +313,43 @@ const AuditLogPage = () => {
     if (!isFetching) setLoadedPage(page);
   }, [isFetching, page]);
   const isPaginating = isFetching && !isLoading && loadedPage !== page;
+
+  // Show the skeleton when filters change too (saved view applied, manual edit,
+  // page-size change), not just on first load. Stays on until the refetch
+  // completes, then fades back to the table — no flicker if the response is
+  // instant because we only flip on after a tiny delay.
+  const filtersKey = useMemo(
+    () =>
+      JSON.stringify({
+        f: filterState.from?.toISOString(),
+        t: filterState.to?.toISOString(),
+        a: filterState.actions,
+        tn: filterState.tableName,
+        u: filterState.userId,
+        q: filterState.recordIdQuery,
+        vk: filterState.valueKey,
+        vq: filterState.valueQuery,
+        ip: filterState.ipQuery,
+        ua: filterState.userAgentQuery,
+        ps: pageSize,
+      }),
+    [filterState, pageSize],
+  );
+  const [appliedFiltersKey, setAppliedFiltersKey] = useState(filtersKey);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  useEffect(() => {
+    if (filtersKey === appliedFiltersKey) return;
+    // Debounce so single-keystroke changes don't trigger a flash on instant responses.
+    const t = window.setTimeout(() => setIsApplyingFilters(true), 120);
+    return () => window.clearTimeout(t);
+  }, [filtersKey, appliedFiltersKey]);
+  useEffect(() => {
+    if (!isFetching && filtersKey !== appliedFiltersKey) {
+      setAppliedFiltersKey(filtersKey);
+      setIsApplyingFilters(false);
+    }
+  }, [isFetching, filtersKey, appliedFiltersKey]);
+
   const rawRows = data?.rows ?? [];
   const serverTotal = data?.count ?? 0;
 
