@@ -147,6 +147,62 @@ export function ResultsPagination({
           </PaginationContent>
         </Pagination>
       )}
+      {totalPages > 5 && (
+        <GoToPage totalPages={totalPages} currentPage={safePage} onGo={go} />
+      )}
     </div>
+  );
+}
+
+function GoToPage({
+  totalPages,
+  currentPage,
+  onGo,
+}: {
+  totalPages: number;
+  currentPage: number;
+  onGo: (p: number) => void;
+}) {
+  const [value, setValue] = useState<string>(String(currentPage));
+  useEffect(() => {
+    setValue(String(currentPage));
+  }, [currentPage]);
+
+  const submit = () => {
+    const n = parseInt(value, 10);
+    if (!Number.isFinite(n)) return;
+    const clamped = Math.max(1, Math.min(totalPages, n));
+    setValue(String(clamped));
+    onGo(clamped);
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+      className="flex items-center gap-2"
+    >
+      <label htmlFor="goto-page" className="text-xs whitespace-nowrap">
+        Ir para
+      </label>
+      <Input
+        id="goto-page"
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={totalPages}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={submit}
+        className="h-8 w-16 text-center"
+        aria-label={`Ir para página (1 a ${totalPages})`}
+      />
+      <span className="text-xs text-muted-foreground whitespace-nowrap">de {totalPages}</span>
+      <Button type="submit" size="sm" variant="outline" className="h-8">
+        Ir
+      </Button>
+    </form>
   );
 }
