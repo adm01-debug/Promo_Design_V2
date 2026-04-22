@@ -157,7 +157,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
                 className={cn(
                   "w-4 h-4 transition-colors",
                   isFavorite(asset.id)
-                    ? "fill-amber-400 text-amber-400"
+                    ? "fill-primary text-primary"
                     : "text-muted-foreground",
                 )}
               />
