@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star } from "lucide-react";
+import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star, Eraser } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -33,6 +33,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const [ocrStatus, setOcrStatus] = useState<string>("none");
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
+  const [ocrClearing, setOcrClearing] = useState(false);
 
   useEffect(() => {
     if (!asset) return;
@@ -136,6 +137,27 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
       : ocrStatus === "done" || ocrStatus === "failed"
         ? "Reprocessar OCR"
         : "Extrair texto (OCR)";
+
+  const clearOcr = async () => {
+    if (!asset) return;
+    if (!confirm("Limpar o texto OCR deste asset? Você pode reprocessar depois.")) return;
+    setOcrClearing(true);
+    try {
+      const { error } = await supabase
+        .from("assets")
+        .update({ ocr_text: null, ocr_status: "none" })
+        .eq("id", asset.id);
+      if (error) throw error;
+      setOcrText(null);
+      setOcrStatus("none");
+      setOcrOpen(false);
+      toast.success("OCR removido");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao limpar OCR");
+    } finally {
+      setOcrClearing(false);
+    }
+  };
 
   return (
     <Sheet open={!!asset} onOpenChange={(o) => !o && onClose()}>
