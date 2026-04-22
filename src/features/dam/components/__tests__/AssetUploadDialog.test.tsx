@@ -25,15 +25,15 @@ vi.mock("@/features/clients/hooks/use-clients", () => ({
   useClients: () => ({ clients: [] }),
 }));
 
-const buildSvgPreviewUrl = vi.fn(async () => "blob:svg-preview");
-const rasterizePdfFirstPage = vi.fn(async () => ({
+const buildSvgPreviewUrl = vi.fn(async (..._args: unknown[]) => "blob:svg-preview");
+const rasterizePdfFirstPage = vi.fn(async (..._args: unknown[]) => ({
   blob: new Blob(["x"], { type: "image/jpeg" }),
   url: "blob:pdf-preview",
   width: 100,
   height: 100,
   canvas: null,
 }));
-const getPdfPageCount = vi.fn(async () => 5);
+const getPdfPageCount = vi.fn(async (..._args: unknown[]) => 5);
 
 vi.mock("../../lib/file-preview", async (orig) => {
   const actual = (await orig()) as typeof import("../../lib/file-preview");
