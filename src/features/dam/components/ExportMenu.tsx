@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree, ChevronDown, Star, ListChecks } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -246,6 +247,22 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
 
   return (
     <div className="inline-flex items-center">
+      {queueCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 mr-2 relative"
+          onClick={() => setPanelOpen(true)}
+          title="Mostrar fila de exportações"
+          aria-label="Mostrar fila de exportações"
+        >
+          <ListChecks className="w-3.5 h-3.5" />
+          Fila
+          <Badge variant={runningCount > 0 ? "default" : "secondary"} className="h-4 px-1 text-[10px] tabular-nums">
+            {runningCount > 0 ? `${runningCount}/${queueCount}` : queueCount}
+          </Badge>
+        </Button>
+      )}
       {pref && (
         <Button
           variant="outline"
