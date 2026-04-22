@@ -81,7 +81,7 @@ const ServiceOrder = () => {
     } catch { toast.error("Erro ao enviar a arte."); } finally { setUploading(false); }
   }, [uploadFile]);
 
-  const removeArt = () => { setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "" })); setSaved(false); };
+  const removeArt = () => { setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "", artAssetId: null })); setSaved(false); };
 
   const handlePickFromDam = useCallback(async (asset: Asset) => {
     try {
