@@ -277,6 +277,24 @@ export function LibraryExportMenu({
     void runAllExport(kind);
   };
 
+  /** Re-runs an export from history using the saved filters/columns/scope. */
+  const repeatExport = async (entry: ExportHistoryEntry) => {
+    // Restore the column selection that was used previously.
+    if (entry.kind === "csv") {
+      const cols = entry.columns.filter((c): c is CsvColumnId => (csvAllIds as string[]).includes(c));
+      if (cols.length > 0) { setCsvCols(cols); writeCols(CSV_COLS_KEY, cols); }
+    } else {
+      const cols = entry.columns.filter((c): c is PdfColumnId => (pdfAllIds as string[]).includes(c));
+      if (cols.length > 0) { setPdfCols(cols); writeCols(PDF_COLS_KEY, cols); }
+    }
+    if (entry.scope === "all") {
+      // Defer to the same confirm flow so large repeats still get a heads-up.
+      triggerAllExport(entry.kind);
+      return;
+    }
+    if (entry.kind === "csv") handleCsv(); else await handlePdf();
+  };
+
   return (
     <>
       <DropdownMenu>
