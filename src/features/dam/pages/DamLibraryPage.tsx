@@ -278,6 +278,9 @@ export default function DamLibraryPage() {
   // user toggles it for the first time this session, then never reopens.
   const [archivedTooltipOpen, setArchivedTooltipOpen] = useState(false);
   const [archivedTooltipShown, setArchivedTooltipShown] = useState(false);
+  // Single source of truth for the SR-only live region. We compose a single
+  // sentence per phase so screen readers don't announce overlapping fragments.
+  const [a11yStatus, setA11yStatus] = useState<string>("");
   const handleIncludeArchivedToggle = (next: boolean) => {
     setIncludeArchived(next);
     if (!archivedTooltipShown) {
@@ -690,6 +693,48 @@ export default function DamLibraryPage() {
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
   const ocrFilteredOut = ocrOnly ? baseAssets.length - displayedAssets.length : 0;
 
+  // Compose a single SR-only status string (one sentence per phase) so screen
+  // readers receive a clear, non-overlapping announcement for every loading,
+  // updating, and pagination transition.
+  useEffect(() => {
+    let next = "";
+    if (isLoading && displayedAssets.length === 0) {
+      next = "Carregando assets…";
+    } else if (isPaginating) {
+      next = paginationMode === "pages"
+        ? `Carregando página ${page} de ${totalPages || 1}…`
+        : "Carregando mais assets…";
+    } else if (isFetching && !isLoading) {
+      next = "Atualizando lista de assets…";
+    } else if (total === 0) {
+      next = hasActiveFilters
+        ? "Nenhum asset corresponde aos filtros."
+        : "Nenhum asset encontrado.";
+    } else {
+      const fmt = (n: number) => n.toLocaleString("pt-BR");
+      const noun = total === 1 ? "asset" : "assets";
+      if (paginationMode === "pages") {
+        const from = (page - 1) * pageSize + 1;
+        const to = Math.min(page * pageSize, total);
+        next = `Mostrando ${fmt(from)} a ${fmt(to)} de ${fmt(total)} ${noun}${hasActiveFilters ? ", filtrados" : ""}.`;
+      } else {
+        next = `Mostrando ${fmt(displayedAssets.length)} de ${fmt(total)} ${noun}${hasActiveFilters ? ", filtrados" : ""}.`;
+      }
+    }
+    setA11yStatus((prev) => (prev === next ? prev : next));
+  }, [
+    isLoading,
+    isFetching,
+    isPaginating,
+    displayedAssets.length,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    paginationMode,
+    hasActiveFilters,
+  ]);
+
   // Restore previously pinned Quick Preview asset once the asset list is loaded.
   useEffect(() => {
     if (displayedAssets.length === 0) return;
@@ -1090,6 +1135,18 @@ export default function DamLibraryPage() {
         </div>
       </header>
 
+      {/* Single SR-only live region for all loading/pagination/result states.
+          aria-atomic ensures the full sentence is read on each change. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        data-testid="dam-a11y-status"
+      >
+        {a11yStatus}
+      </div>
+
       {archivedFromUrlAtMount && includeArchived && !archivedUrlHintDismissed && (
         <div
           role="status"
@@ -1483,7 +1540,7 @@ export default function DamLibraryPage() {
             : stable
               ? { total: stable.total, page: stable.page, pageSize: stable.pageSize, displayedLen: stable.displayedLen }
               : null;
-          if (!src) return <span>Carregando...</span>;
+          if (!src) return <span aria-hidden="true">Carregando...</span>;
           if (src.total === 0) {
             return (
               <span>
@@ -1503,7 +1560,7 @@ export default function DamLibraryPage() {
             (includeArchived ? 1 : 0);
           return (
             <>
-              <span data-testid="dam-results-counter" aria-live="polite">
+              <span data-testid="dam-results-counter">
                 {paginationMode === "loadmore"
                   ? `Mostrando ${fmt(displayedAssets.length)} de ${fmt(src.total)} ${noun}${hasActiveFilters ? " (filtrados)" : ""}`
                   : `Mostrando ${fmt(from)}–${fmt(to)} de ${fmt(src.total)} ${noun}${hasActiveFilters ? " (filtrados)" : ""}`}
@@ -1535,7 +1592,7 @@ export default function DamLibraryPage() {
                 <span
                   className="inline-flex items-center gap-1 text-muted-foreground"
                   data-testid="dam-paginating-indicator"
-                  aria-live="polite"
+                  aria-hidden="true"
                 >
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Atualizando…
@@ -1643,7 +1700,10 @@ export default function DamLibraryPage() {
             aria-busy={isFetching && !isLoading}
           >
             {isFetching && !isLoading && (
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border">
+              <div
+                className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border"
+                aria-hidden="true"
+              >
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Carregando…
               </div>
