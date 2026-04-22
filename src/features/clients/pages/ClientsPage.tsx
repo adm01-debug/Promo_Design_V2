@@ -261,7 +261,7 @@ const ClientsPage = () => {
                   size="sm"
                   onClick={() => setSummaryPeriod(d)}
                 >
-                  {d === 365 ? "Último ano" : `Últimos ${d} dias`}
+                  {`Últimos ${d} dias`}
                 </Button>
               ))}
             </div>
