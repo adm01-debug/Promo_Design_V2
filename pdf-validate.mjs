@@ -1,10 +1,12 @@
 import { JSDOM } from 'jsdom';
-const dom = new JSDOM('<!doctype html><html><body></body></html>');
+const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost' });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.navigator = dom.window.navigator;
 globalThis.HTMLCanvasElement = dom.window.HTMLCanvasElement;
 globalThis.Image = dom.window.Image;
+globalThis.localStorage = dom.window.localStorage;
+globalThis.sessionStorage = dom.window.sessionStorage;
 
 const { buildAssetsPdf } = await import('/dev-server/src/features/dam/lib/asset-pdf.ts');
 const { buildAssetsCsvWithMetadata } = await import('/dev-server/src/features/dam/lib/asset-export.ts');
