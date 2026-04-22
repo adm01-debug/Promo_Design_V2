@@ -72,6 +72,7 @@ const SORT_KEY = "dam-sort";
 const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
 const SIZE_RANGE_KEY = "dam-size-range";
 const UPDATED_RANGE_KEY = "dam-updated-range";
+const CUSTOM_SIZE_KEY = "dam-custom-size-range";
 
 type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
 const SIZE_RANGE_OPTIONS: {
