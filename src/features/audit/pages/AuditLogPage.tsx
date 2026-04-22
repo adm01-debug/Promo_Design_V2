@@ -440,6 +440,8 @@ const AuditLogPage = () => {
                 totalPages={totalPages}
                 onPageChange={(p) => setPage(p - 1)}
                 itemNoun="evento"
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageSizeChange={setPageSize}
               />
             </div>
             {isLoading && rows.length > 0 && (
