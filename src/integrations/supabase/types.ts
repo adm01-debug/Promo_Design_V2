@@ -893,6 +893,10 @@ export type Database = {
     }
     Functions: {
       current_user_orgs: { Args: never; Returns: string[] }
+      explain_search_assets_ranked: {
+        Args: { _org_id: string; _query?: string }
+        Returns: Json
+      }
       has_any_role: {
         Args: {
           _org_id: string
@@ -998,8 +1002,6 @@ export type Database = {
               width: number
             }[]
           }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
