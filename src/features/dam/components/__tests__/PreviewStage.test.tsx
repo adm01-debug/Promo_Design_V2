@@ -67,3 +67,98 @@ describe("PreviewStage — Detalhes durante loading da URL assinada", () => {
     expect(onOpenDetails).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("PreviewStage — atalhos C/D respeitam contexto de digitação e modificadores", () => {
+  function setupWithUrl() {
+    const onOpenDetails = vi.fn();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    // Resolve URL imediatamente para habilitar atalhos C/D.
+    const mod = require("../../hooks/use-assets") as {
+      getAssetSignedUrl: ReturnType<typeof vi.fn>;
+    };
+    mod.getAssetSignedUrl.mockImplementationOnce(() => Promise.resolve("https://signed/url"));
+    render(
+      <TooltipProvider>
+        <PreviewStage
+          asset={asset}
+          index={0}
+          total={1}
+          onPrev={() => {}}
+          onNext={() => {}}
+          onOpenDetails={onOpenDetails}
+        />
+      </TooltipProvider>,
+    );
+    return { writeText };
+  }
+
+  it("não dispara C/D quando o foco está em um <input>", async () => {
+    const { writeText } = setupWithUrl();
+    // aguarda URL resolver (microtask) → useEffect roda
+    await Promise.resolve();
+    await Promise.resolve();
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    fireEvent.keyDown(input, { key: "c" });
+    fireEvent.keyDown(input, { key: "d" });
+    expect(writeText).not.toHaveBeenCalled();
+    document.body.removeChild(input);
+  });
+
+  it("não dispara C/D quando o foco está em <textarea>", async () => {
+    const { writeText } = setupWithUrl();
+    await Promise.resolve();
+    await Promise.resolve();
+    const ta = document.createElement("textarea");
+    document.body.appendChild(ta);
+    ta.focus();
+    fireEvent.keyDown(ta, { key: "c" });
+    fireEvent.keyDown(ta, { key: "d" });
+    expect(writeText).not.toHaveBeenCalled();
+    document.body.removeChild(ta);
+  });
+
+  it("não dispara C/D quando o foco está em contentEditable", async () => {
+    const { writeText } = setupWithUrl();
+    await Promise.resolve();
+    await Promise.resolve();
+    const div = document.createElement("div");
+    div.contentEditable = "true";
+    document.body.appendChild(div);
+    div.focus();
+    fireEvent.keyDown(div, { key: "c" });
+    fireEvent.keyDown(div, { key: "d" });
+    expect(writeText).not.toHaveBeenCalled();
+    document.body.removeChild(div);
+  });
+
+  it("ignora C/D combinados com modificadores (Ctrl/Meta/Alt/Shift)", async () => {
+    const { writeText } = setupWithUrl();
+    await Promise.resolve();
+    await Promise.resolve();
+    for (const mods of [
+      { ctrlKey: true },
+      { metaKey: true },
+      { altKey: true },
+      { shiftKey: true },
+    ]) {
+      fireEvent.keyDown(window, { key: "c", ...mods });
+      fireEvent.keyDown(window, { key: "d", ...mods });
+    }
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it("dispara C (copiar) quando sem foco em input e sem modificadores", async () => {
+    const { writeText } = setupWithUrl();
+    // Espera o useEffect popular `url`
+    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.keyDown(window, { key: "c" });
+    await Promise.resolve();
+    expect(writeText).toHaveBeenCalledWith("https://signed/url");
+  });
+});
