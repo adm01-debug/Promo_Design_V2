@@ -58,13 +58,15 @@ export async function rasterizePdfFirstPage(
   file: File,
   targetWidth = 512,
   mime: "image/jpeg" | "image/png" = "image/jpeg",
-  quality = 0.85
+  quality = 0.85,
+  pageNumber = 1
 ): Promise<RasterResult | null> {
   try {
     const pdfjs = await loadPdfjs();
     const buf = await file.arrayBuffer();
     const doc = await pdfjs.getDocument({ data: buf }).promise;
-    const page = await doc.getPage(1);
+    const safePage = Math.min(Math.max(1, Math.floor(pageNumber)), doc.numPages);
+    const page = await doc.getPage(safePage);
     const baseViewport = page.getViewport({ scale: 1 });
     const scale = targetWidth / baseViewport.width;
     const viewport = page.getViewport({ scale });
@@ -84,6 +86,18 @@ export async function rasterizePdfFirstPage(
       height: Math.round(baseViewport.height),
       canvas,
     };
+  } catch {
+    return null;
+  }
+}
+
+/** Returns the number of pages in a PDF file, or null on failure. */
+export async function getPdfPageCount(file: File): Promise<number | null> {
+  try {
+    const pdfjs = await loadPdfjs();
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    return doc.numPages;
   } catch {
     return null;
   }
