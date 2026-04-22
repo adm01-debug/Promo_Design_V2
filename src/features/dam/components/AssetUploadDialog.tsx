@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useAssetUpload } from "../hooks/use-asset-upload";
+import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
@@ -94,6 +94,7 @@ interface FileEntry {
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
+  phase?: UploadPhase;
 }
 
 export function AssetUploadDialog({
