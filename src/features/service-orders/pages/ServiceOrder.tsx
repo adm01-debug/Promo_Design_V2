@@ -64,18 +64,18 @@ const ServiceOrder = () => {
 
   const update = (field: keyof ServiceOrderData, value: string | boolean) => { setForm((prev) => ({ ...prev, [field]: value })); setErrors((prev) => ({ ...prev, [field]: "" })); setSaved(false); };
 
-  const handleArtUpload = useCallback(async (file: File) => {
+  const handleArtUpload = useCallback(async (file: File, opts?: { keepAssetId?: boolean }) => {
     setUploading(true);
     try {
       const publicUrl = await uploadFile(file, "art-files");
       if (publicUrl) {
         const isImage = file.type.startsWith("image/");
-        setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: isImage ? publicUrl : "" }));
+        setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: isImage ? publicUrl : "", ...(opts?.keepAssetId ? {} : { artAssetId: null }) }));
         setSaved(false); toast.success("Arte enviada para a nuvem!");
       } else {
-        if (!file.type.startsWith("image/")) { setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: "" })); setSaved(false); return; }
+        if (!file.type.startsWith("image/")) { setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: "", ...(opts?.keepAssetId ? {} : { artAssetId: null }) })); setSaved(false); return; }
         const reader = new FileReader();
-        reader.onload = (e) => { const dataUrl = e.target?.result; if (typeof dataUrl === "string") { setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl })); setSaved(false); } };
+        reader.onload = (e) => { const dataUrl = e.target?.result; if (typeof dataUrl === "string") { setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl, ...(opts?.keepAssetId ? {} : { artAssetId: null }) })); setSaved(false); } };
         reader.readAsDataURL(file); toast.warning("Upload na nuvem falhou. Arte salva localmente.");
       }
     } catch { toast.error("Erro ao enviar a arte."); } finally { setUploading(false); }
