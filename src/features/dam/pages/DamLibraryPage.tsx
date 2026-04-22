@@ -1252,11 +1252,18 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
-          <Tooltip>
+          <Tooltip
+            open={archivedTooltipOpen || undefined}
+            onOpenChange={(o) => {
+              // Only allow programmatic open via our first-toggle handler.
+              // Hover/focus opens are suppressed once the hint has been shown.
+              if (!o) setArchivedTooltipOpen(false);
+            }}
+          >
             <TooltipTrigger asChild>
               <Toggle
                 pressed={includeArchived}
-                onPressedChange={setIncludeArchived}
+                onPressedChange={handleIncludeArchivedToggle}
                 size="sm"
                 variant="outline"
                 aria-label={
