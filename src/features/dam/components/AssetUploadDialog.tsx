@@ -210,6 +210,8 @@ export function AssetUploadDialog({
         previewLoading: kind === "pdf" || kind === "svg",
         progress: 0,
         status: "pending",
+        pdfPage: kind === "pdf" ? 1 : undefined,
+        pdfPageCount: kind === "pdf" ? null : undefined,
       });
     }
     setEntries((prev) => (isVersionMode ? next : [...prev, ...next]));
@@ -220,11 +222,38 @@ export function AssetUploadDialog({
           .then((url) => updatePreview(entry.id, url))
           .catch(() => updatePreview(entry.id, null));
       } else if (entry.kind === "pdf") {
-        rasterizePdfFirstPage(entry.file, 256)
+        rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, 1)
           .then((r) => updatePreview(entry.id, r?.url ?? null))
           .catch(() => updatePreview(entry.id, null));
+        getPdfPageCount(entry.file)
+          .then((count) =>
+            setEntries((prev) =>
+              prev.map((e) => (e.id === entry.id ? { ...e, pdfPageCount: count } : e)),
+            ),
+          )
+          .catch(() => undefined);
       }
     });
+  };
+
+  const changePdfPage = (id: string, page: number) => {
+    setEntries((prev) => {
+      const target = prev.find((e) => e.id === id);
+      if (!target || target.kind !== "pdf") return prev;
+      const max = target.pdfPageCount ?? page;
+      const safe = Math.min(Math.max(1, Math.floor(page || 1)), Math.max(1, max));
+      if (safe === target.pdfPage) return prev;
+      return prev.map((e) =>
+        e.id === id ? { ...e, pdfPage: safe, previewLoading: true } : e,
+      );
+    });
+    const entry = entries.find((e) => e.id === id);
+    if (!entry || entry.kind !== "pdf") return;
+    const max = entry.pdfPageCount ?? page;
+    const safe = Math.min(Math.max(1, Math.floor(page || 1)), Math.max(1, max));
+    rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, safe)
+      .then((r) => updatePreview(id, r?.url ?? null))
+      .catch(() => updatePreview(id, null));
   };
 
   const updatePreview = (id: string, url: string | null) => {
