@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, Trash2, GitBranch, ScanText, Loader2 } from "lucide-react";
+import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2 } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -22,7 +22,7 @@ interface Props {
 export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const { currentOrgId, can } = useOrganizations();
-  const { archive, remove } = useAssets(currentOrgId);
+  const { archive, restore, remove } = useAssets(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrStatus, setOcrStatus] = useState<string>("none");
@@ -263,6 +263,20 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
                 }}
               >
                 <Archive className="w-4 h-4 mr-2" />Arquivar
+              </Button>
+            )}
+            {can(["owner", "admin", "designer"]) && asset.is_archived && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await restore.mutateAsync(asset.id);
+                  toast.success("Asset restaurado");
+                  onClose();
+                }}
+                disabled={restore.isPending}
+              >
+                <ArchiveRestore className="w-4 h-4 mr-2" />Restaurar
               </Button>
             )}
             {can(["owner", "admin"]) && (
