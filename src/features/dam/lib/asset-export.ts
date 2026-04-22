@@ -39,6 +39,9 @@ export const DEFAULT_CSV_COLUMNS: CsvColumnId[] = [
   "tags", "colors", "is_archived", "created_at", "updated_at", "storage_path",
 ];
 
+/** Headers used by the ZIP manifest (always full, independent of UI column choice). */
+const BASE_HEADERS = DEFAULT_CSV_COLUMNS;
+
 function pickColumns(ids: CsvColumnId[]): typeof CSV_COLUMNS[number][] {
   const map = new Map(CSV_COLUMNS.map((c) => [c.id, c] as const));
   const picked: typeof CSV_COLUMNS[number][] = [];
