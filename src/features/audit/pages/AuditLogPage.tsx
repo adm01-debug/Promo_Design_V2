@@ -574,7 +574,7 @@ const AuditLogPage = () => {
           ) : (
             <div
               className={cn(
-                "transition-opacity",
+                "transition-opacity animate-fade-in",
                 isLoading && "opacity-60 pointer-events-none",
               )}
               aria-busy={isLoading}
