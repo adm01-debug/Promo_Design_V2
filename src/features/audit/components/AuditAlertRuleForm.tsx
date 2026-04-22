@@ -33,6 +33,8 @@ import type { AuditFilterState } from "./AuditFilters";
 const ALL_ACTIONS: AuditAction[] = ["INSERT", "UPDATE", "DELETE"];
 const SENTINEL_ANY = "__any__";
 
+type RecipientsMode = "owner" | "organization" | "users";
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -59,6 +61,8 @@ export function AuditAlertRuleForm({
   const [targetUserId, setTargetUserId] = useState<string | undefined>(prefill?.userId);
   const [valueKey, setValueKey] = useState<string>(prefill?.valueKey ?? "");
   const [valueQuery, setValueQuery] = useState<string>(prefill?.valueQuery ?? "");
+  const [recipientsMode, setRecipientsMode] = useState<RecipientsMode>("owner");
+  const [recipientUserIds, setRecipientUserIds] = useState<string[]>([]);
 
   const reset = () => {
     setName("");
@@ -67,6 +71,8 @@ export function AuditAlertRuleForm({
     setTargetUserId(undefined);
     setValueKey("");
     setValueQuery("");
+    setRecipientsMode("owner");
+    setRecipientUserIds([]);
   };
 
   const handleSubmit = async () => {
@@ -84,6 +90,8 @@ export function AuditAlertRuleForm({
         target_user_id: targetUserId ?? null,
         value_key: valueKey.trim() || null,
         value_query: valueQuery.trim() || null,
+        recipients_mode: recipientsMode,
+        recipient_user_ids: recipientsMode === "users" ? recipientUserIds : [],
       });
       toast({ title: "Regra criada", description: trimmed });
       reset();
@@ -211,6 +219,62 @@ export function AuditAlertRuleForm({
               />
             </div>
           </div>
+
+          <div className="space-y-1.5">
+            <Label>Quem recebe a notificação</Label>
+            <Select
+              value={recipientsMode}
+              onValueChange={(v) => setRecipientsMode(v as RecipientsMode)}
+            >
+              <SelectTrigger data-testid="audit-alert-rule-recipients-mode">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="owner">Apenas eu (dono da regra)</SelectItem>
+                <SelectItem value="organization">Toda a organização</SelectItem>
+                <SelectItem value="users">Usuários específicos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {recipientsMode === "users" && (
+            <div className="space-y-1.5">
+              <Label>Selecione os usuários</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start font-normal"
+                    data-testid="audit-alert-rule-recipient-users"
+                  >
+                    {recipientUserIds.length === 0
+                      ? "Nenhum selecionado"
+                      : `${recipientUserIds.length} usuário(s)`}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-72 overflow-y-auto">
+                  {members.map((m) => (
+                    <DropdownMenuCheckboxItem
+                      key={m.user_id}
+                      checked={recipientUserIds.includes(m.user_id)}
+                      onCheckedChange={(checked) =>
+                        setRecipientUserIds((prev) =>
+                          checked
+                            ? Array.from(new Set([...prev, m.user_id]))
+                            : prev.filter((id) => id !== m.user_id),
+                        )
+                      }
+                    >
+                      {m.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className="text-[11px] text-muted-foreground">
+                Você sempre receberá suas próprias regras, mesmo que não esteja na lista.
+              </p>
+            </div>
+          )}
 
           {(actions.length > 0 || tableName || targetUserId) && (
             <div className="flex flex-wrap gap-1.5 pt-1">
