@@ -274,7 +274,7 @@ const ChartLegendContent = React.forwardRef<
       {payload.map((item, index) => {
         const key = `${nameKey || item?.dataKey || item?.value || "value"}`;
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
-        const labelText = itemConfig?.label ?? item?.value ?? key;
+        const labelText = itemConfig?.label ?? (item?.value != null ? String(item.value) : key);
         // Stable key even when item.value is missing or duplicated.
         const rowKey = `${item?.dataKey ?? item?.value ?? "legend"}-${index}`;
 
