@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -382,7 +382,7 @@ function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function highlightTokens(text: string, query: string): React.ReactNode[] {
+function highlightTokens(text: string, query: string): JSX.Element[] {
   const tokens = Array.from(
     new Set(
       query
