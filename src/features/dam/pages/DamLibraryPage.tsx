@@ -388,8 +388,19 @@ export default function DamLibraryPage() {
       if (pageSize !== 24) next.set("pageSize", String(pageSize));
       else next.delete("pageSize");
       return next;
-    }, { replace: true });
+    }, { replace: false });
   }, [page, pageSize, paginationMode, setSearchParams]);
+
+  // React to browser back/forward: re-sync page & pageSize from URL.
+  useEffect(() => {
+    const urlPage = Number(searchParams.get("page"));
+    const nextPage = Number.isFinite(urlPage) && urlPage >= 1 ? urlPage : 1;
+    if (nextPage !== page) setPage(nextPage);
+    const urlSize = Number(searchParams.get("pageSize"));
+    const nextSize = Number.isFinite(urlSize) && urlSize > 0 ? urlSize : 24;
+    if (nextSize !== pageSize) setPageSize(nextSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Sync content filters (search, types, client, tags, tagsMode, sort) with URL
   useEffect(() => {
