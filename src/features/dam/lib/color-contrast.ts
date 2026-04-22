@@ -54,3 +54,21 @@ export function wcagBoth(hex: string): WcagBoth {
     ratioBlack,
   };
 }
+
+const FULL_HEX_RE = /^#[0-9A-Fa-f]{6}$/;
+const SHORT_HEX_RE = /^#[0-9A-Fa-f]{3}$/;
+
+export function isValidHex(value: string): boolean {
+  return FULL_HEX_RE.test(value);
+}
+
+/** Normaliza um HEX: garante prefixo #, expande shorthand (#abc → #AABBCC) e converte para maiúsculo. */
+export function normalizeHex(raw: string): string {
+  let v = (raw ?? "").trim().toUpperCase();
+  if (!v) return "";
+  if (!v.startsWith("#")) v = `#${v}`;
+  if (SHORT_HEX_RE.test(v)) {
+    v = `#${v.slice(1).split("").map((c) => c + c).join("")}`;
+  }
+  return v;
+}

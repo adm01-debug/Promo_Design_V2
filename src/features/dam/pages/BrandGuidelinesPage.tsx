@@ -30,7 +30,8 @@ import { BrandApplicationPreview } from "../components/BrandApplicationPreview";
 import { RuleChips } from "../components/RuleChips";
 import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
 import { getAssetSignedUrl } from "../lib/asset-urls";
-import { wcagBoth } from "../lib/color-contrast";
+import { wcagBoth, normalizeHex, isValidHex } from "../lib/color-contrast";
+import { cn } from "@/lib/utils";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
@@ -92,9 +93,22 @@ export default function BrandGuidelinesPage() {
   const logoAsset = assets.find((a) => a.id === logoId) ?? null;
 
   const handleSave = async () => {
+    const normalizeList = (l: ColorEntry[]) =>
+      l
+        .map((c) => ({ ...c, hex: normalizeHex(c.hex) }))
+        .filter((c) => isValidHex(c.hex));
+    const cleanPrimary = normalizeList(primary);
+    const cleanSecondary = normalizeList(secondary);
+    const dropped =
+      primary.length - cleanPrimary.length + (secondary.length - cleanSecondary.length);
+    if (dropped > 0) {
+      toast.warning(`${dropped} cor(es) com HEX inválido foram ignoradas`);
+    }
+    setPrimary(cleanPrimary);
+    setSecondary(cleanSecondary);
     await upsert.mutateAsync({
-      primary_colors: primary,
-      secondary_colors: secondary,
+      primary_colors: cleanPrimary,
+      secondary_colors: cleanSecondary,
       fonts,
       do_rules: doRules.split("\n").map((s) => s.trim()).filter(Boolean),
       dont_rules: dontRules.split("\n").map((s) => s.trim()).filter(Boolean),
@@ -181,6 +195,27 @@ export default function BrandGuidelinesPage() {
         toast.error("Falha ao copiar");
       }
     };
+    const updateHex = (i: number, raw: string) => {
+      const next = [...list];
+      next[i] = { ...list[i], hex: raw };
+      setList(next);
+    };
+    const commitHex = (i: number) => {
+      const current = list[i].hex;
+      const normalized = normalizeHex(current);
+      if (!isValidHex(normalized)) {
+        toast.error(`HEX inválido: ${current}`);
+        const next = [...list];
+        next[i] = { ...list[i], hex: "#000000" };
+        setList(next);
+        return;
+      }
+      if (normalized !== current) {
+        const next = [...list];
+        next[i] = { ...list[i], hex: normalized };
+        setList(next);
+      }
+    };
     return (
     <TooltipProvider delayDuration={150}>
     <Card className="p-4">
@@ -198,16 +233,18 @@ export default function BrandGuidelinesPage() {
       </div>
       <div className="space-y-2">
         {list.map((c, i) => {
-          const w = wcagBoth(c.hex);
+          const valid = isValidHex(c.hex);
+          const safeHex = valid ? c.hex : "#000000";
+          const w = wcagBoth(safeHex);
           const variant = w.vsWhite === "FAIL" ? "destructive" : w.vsWhite === "AAA" ? "default" : "secondary";
           return (
             <div key={i} className="flex items-center gap-2">
               <input
                 type="color"
-                value={c.hex}
+                value={safeHex}
                 disabled={!editable}
                 onChange={(e) => {
-                  const next = [...list]; next[i] = { ...c, hex: e.target.value }; setList(next);
+                  const next = [...list]; next[i] = { ...c, hex: e.target.value.toUpperCase() }; setList(next);
                 }}
                 className="w-10 h-10 rounded border border-border cursor-pointer"
               />
@@ -220,17 +257,24 @@ export default function BrandGuidelinesPage() {
               <Input
                 value={c.hex}
                 disabled={!editable}
-                className="w-28 font-mono"
-                onChange={(e) => { const next = [...list]; next[i] = { ...c, hex: e.target.value }; setList(next); }}
+                aria-invalid={!valid}
+                className={cn("w-28 font-mono uppercase", !valid && "border-destructive focus-visible:ring-destructive")}
+                placeholder="#RRGGBB"
+                maxLength={7}
+                onChange={(e) => updateHex(i, e.target.value)}
+                onBlur={() => commitHex(i)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commitHex(i); } }}
               />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Badge variant={variant} className="font-mono text-[9px] px-1.5 py-0 cursor-help shrink-0">
-                    {w.vsWhite}
+                    {valid ? w.vsWhite : "—"}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Contraste vs branco {w.ratioWhite.toFixed(2)}:1 · vs preto {w.ratioBlack.toFixed(2)}:1
+                  {valid
+                    ? `Contraste vs branco ${w.ratioWhite.toFixed(2)}:1 · vs preto ${w.ratioBlack.toFixed(2)}:1`
+                    : "HEX inválido — corrija para ver o contraste"}
                 </TooltipContent>
               </Tooltip>
               <Button

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { wcagBoth, contrastRatio, bestTextColor } from "../color-contrast";
+import { wcagBoth, contrastRatio, bestTextColor, normalizeHex, isValidHex } from "../color-contrast";
 
 describe("color-contrast / wcagBoth", () => {
   it("retorna AAA vs branco para cores muito escuras", () => {
@@ -49,6 +49,42 @@ describe("color-contrast / wcagBoth", () => {
       contrastRatio("#abcdef", "#123456"),
       5,
     );
+  });
+});
+
+describe("color-contrast / normalizeHex + isValidHex", () => {
+  it("adiciona # quando ausente e converte para maiúsculo", () => {
+    expect(normalizeHex("ff00aa")).toBe("#FF00AA");
+    expect(normalizeHex("#ff00aa")).toBe("#FF00AA");
+  });
+
+  it("expande shorthand #abc → #AABBCC", () => {
+    expect(normalizeHex("#abc")).toBe("#AABBCC");
+    expect(normalizeHex("abc")).toBe("#AABBCC");
+  });
+
+  it("ignora espaços em branco", () => {
+    expect(normalizeHex("  #3b82f6  ")).toBe("#3B82F6");
+  });
+
+  it("retorna string vazia para entrada vazia", () => {
+    expect(normalizeHex("")).toBe("");
+    expect(normalizeHex("   ")).toBe("");
+  });
+
+  it("isValidHex aceita apenas #RRGGBB", () => {
+    expect(isValidHex("#FF00AA")).toBe(true);
+    expect(isValidHex("#ff00aa")).toBe(true);
+    expect(isValidHex("#FFF")).toBe(false);
+    expect(isValidHex("FF00AA")).toBe(false);
+    expect(isValidHex("#GGGGGG")).toBe(false);
+    expect(isValidHex("#12345")).toBe(false);
+  });
+
+  it("normaliza + valida em pipeline (como no save)", () => {
+    const inputs = ["abc", "#3b82f6", "ZZZZZZ", "  #fff  ", ""];
+    const cleaned = inputs.map(normalizeHex).filter(isValidHex);
+    expect(cleaned).toEqual(["#AABBCC", "#3B82F6", "#FFFFFF"]);
   });
 });
 
