@@ -61,17 +61,51 @@ export function AssetAuditTrail({ asset }: Props) {
   const [open, setOpen] = useState(false);
   const [diff, setDiff] = useState<AssetAuditEntry | null>(null);
   const [actionFilter, setActionFilter] = useState<AssetAuditEntry["action"] | "ALL">("ALL");
+  const [userFilter, setUserFilter] = useState<string>("ALL");
+  const [fieldFilter, setFieldFilter] = useState<TrackedField[]>([]);
+  const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
 
-  // Show newest first
+  // Apply selected sort direction over a copy of the data
   const entries = useMemo(() => {
     const list = [...(data ?? [])];
-    return list.reverse();
+    list.sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sortDir === "desc" ? tb - ta : ta - tb;
+    });
+    return list;
+  }, [data, sortDir]);
+
+  const userOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of data ?? []) set.add(e.user_id);
+    return Array.from(set);
   }, [data]);
 
   const filteredEntries = useMemo(() => {
-    if (actionFilter === "ALL") return entries;
-    return entries.filter((e) => e.action === actionFilter);
-  }, [entries, actionFilter]);
+    return entries.filter((e) => {
+      if (actionFilter !== "ALL" && e.action !== actionFilter) return false;
+      if (userFilter !== "ALL" && e.user_id !== userFilter) return false;
+      if (fieldFilter.length > 0) {
+        if (e.action !== "UPDATE") return false;
+        const has = fieldFilter.some((f) => e.changed_fields.includes(f));
+        if (!has) return false;
+      }
+      return true;
+    });
+  }, [entries, actionFilter, userFilter, fieldFilter]);
+
+  const toggleField = (f: TrackedField) =>
+    setFieldFilter((prev) =>
+      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f],
+    );
+  const clearExtra = () => {
+    setUserFilter("ALL");
+    setFieldFilter([]);
+    setSortDir("desc");
+  };
+  const hasExtraFilters =
+    userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
 
   const counts = useMemo(() => {
     const c = { INSERT: 0, UPDATE: 0, DELETE: 0 } as Record<AssetAuditEntry["action"], number>;
