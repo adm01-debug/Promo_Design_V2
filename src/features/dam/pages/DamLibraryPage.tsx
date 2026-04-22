@@ -698,6 +698,31 @@ export default function DamLibraryPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {sort !== "created_desc" && sort !== "relevance" && (
+            <Badge
+              variant="outline"
+              className="gap-1 pr-1 border-dashed cursor-pointer hover:bg-muted/40 transition"
+              onClick={() => setSort("relevance")}
+              title="Resetar para Relevância"
+              role="button"
+            >
+              <ArrowUpDown className="w-3 h-3" />
+              <span className="text-xs">
+                Ordenação: {SORT_OPTIONS.find((o) => o.value === sort)?.label ?? sort}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSort("relevance");
+                }}
+                className="ml-1 rounded hover:bg-background/50 p-0.5"
+                aria-label="Resetar ordenação para Relevância"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
           <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
           <Button
             variant="outline"
