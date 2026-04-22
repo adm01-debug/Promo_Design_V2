@@ -20,6 +20,8 @@ interface QuickPreviewPanelProps {
   onTogglePin: () => void;
   onOpenDetails: () => void;
   clients: Client[];
+  /** Optional: called when the user clicks a tag chip to apply it as a library filter. */
+  onApplyTag?: (tag: string) => void;
 }
 
 function formatBytes(bytes: number | null | undefined): string {
@@ -29,7 +31,7 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: QuickPreviewPanelProps) {
+function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApplyTag }: QuickPreviewPanelProps) {
   const [url, setUrl] = useState<string | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -178,11 +180,27 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
         <>
           <Separator />
           <div className="flex flex-wrap gap-1">
-            {visibleTags.map((t) => (
-              <Badge key={t} variant="outline" className="text-[10px] px-1.5 py-0">
-                {t}
-              </Badge>
-            ))}
+            {visibleTags.map((t) =>
+              onApplyTag ? (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    onApplyTag(t);
+                    toast({ title: "Filtro aplicado", description: `Tag "${t}" adicionada aos filtros.` });
+                  }}
+                  className="text-[10px] px-1.5 py-0 inline-flex items-center rounded-md border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                  title={`Filtrar por tag "${t}"`}
+                  aria-label={`Filtrar biblioteca pela tag ${t}`}
+                >
+                  {t}
+                </button>
+              ) : (
+                <Badge key={t} variant="outline" className="text-[10px] px-1.5 py-0">
+                  {t}
+                </Badge>
+              ),
+            )}
             {moreTags > 0 && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">+{moreTags}</Badge>
             )}
