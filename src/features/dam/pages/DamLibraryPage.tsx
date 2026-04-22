@@ -719,6 +719,37 @@ export default function DamLibraryPage() {
                 : "Mostrar também itens arquivados. Sua preferência fica salva entre sessões."}
             </TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={archivedOnly}
+                onPressedChange={setArchivedOnly}
+                size="sm"
+                variant="outline"
+                aria-label={
+                  archivedOnly
+                    ? "Sair do modo arquivados"
+                    : "Mostrar apenas itens arquivados"
+                }
+                data-testid="dam-archived-only-toggle"
+                className={cn(
+                  "gap-2 transition-colors",
+                  archivedOnly &&
+                    "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/15 data-[state=on]:bg-amber-500/10",
+                )}
+              >
+                <Archive className="w-4 h-4" />
+                <span className="font-medium">
+                  {archivedOnly ? "Modo arquivados" : "Apenas arquivados"}
+                </span>
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-[240px]">
+              {archivedOnly
+                ? "Mostrando somente arquivados. Use “Restaurar” para reativar."
+                : "Filtra a biblioteca para mostrar apenas itens arquivados."}
+            </TooltipContent>
+          </Tooltip>
           <ToggleGroup
             type="single"
             value={viewMode}
