@@ -1275,8 +1275,12 @@ export default function DamLibraryPage() {
                 data-state-persisted="true"
                 className={cn(
                   "gap-2 transition-colors",
+                  // Keyboard focus: high-contrast 2px ring offset from the surface
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  // Active state: stronger contrast (was primary/10 → primary/20)
+                  // and a fully opaque primary border so it reads on dark/light themes.
                   includeArchived &&
-                    "bg-primary/10 text-primary border-primary/40 hover:bg-primary/15 data-[state=on]:bg-primary/10 data-[state=on]:text-primary",
+                    "bg-primary/20 text-primary border-primary hover:bg-primary/25 data-[state=on]:bg-primary/20 data-[state=on]:text-primary data-[state=on]:border-primary",
                 )}
               >
                 {includeArchived ? (
