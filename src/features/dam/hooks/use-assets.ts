@@ -46,6 +46,10 @@ export interface AssetFilters {
   sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
+  /** File size lower bound, in bytes (inclusive). */
+  minSize?: number | null;
+  /** File size upper bound, in bytes (inclusive). */
+  maxSize?: number | null;
 }
 
 export interface AssetInsert {
@@ -110,6 +114,12 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
               : null;
         if (types) rpcArgs._asset_types = types;
         if (filters.tags && filters.tags.length > 0) rpcArgs._tags = filters.tags;
+        if (typeof filters.minSize === "number" && filters.minSize > 0) {
+          rpcArgs._min_size = Math.floor(filters.minSize);
+        }
+        if (typeof filters.maxSize === "number" && filters.maxSize > 0) {
+          rpcArgs._max_size = Math.floor(filters.maxSize);
+        }
         const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
         if (error) throw error;
         const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
@@ -147,6 +157,12 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       }
       if (effectiveSearch) {
         q = q.or(`name.ilike.%${effectiveSearch}%,description.ilike.%${effectiveSearch}%`);
+      }
+      if (typeof filters.minSize === "number" && filters.minSize > 0) {
+        q = q.gte("file_size", Math.floor(filters.minSize));
+      }
+      if (typeof filters.maxSize === "number" && filters.maxSize > 0) {
+        q = q.lte("file_size", Math.floor(filters.maxSize));
       }
       if (hasPagination) {
         const from = (page - 1) * pageSize;
