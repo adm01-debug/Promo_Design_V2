@@ -46,6 +46,10 @@ export interface AssetFilters {
   sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
+  /** Minimum file size in bytes (inclusive). */
+  minSize?: number | null;
+  /** Maximum file size in bytes (inclusive). */
+  maxSize?: number | null;
 }
 
 export interface AssetInsert {
@@ -110,6 +114,8 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
               : null;
         if (types) rpcArgs._asset_types = types;
         if (filters.tags && filters.tags.length > 0) rpcArgs._tags = filters.tags;
+        if (typeof filters.minSize === "number") rpcArgs._min_size = filters.minSize;
+        if (typeof filters.maxSize === "number") rpcArgs._max_size = filters.maxSize;
         const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
         if (error) throw error;
         const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
@@ -148,6 +154,8 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       if (effectiveSearch) {
         q = q.or(`name.ilike.%${effectiveSearch}%,description.ilike.%${effectiveSearch}%`);
       }
+      if (typeof filters.minSize === "number") q = q.gte("file_size", filters.minSize);
+      if (typeof filters.maxSize === "number") q = q.lte("file_size", filters.maxSize);
       if (hasPagination) {
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;

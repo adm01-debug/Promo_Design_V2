@@ -57,6 +57,21 @@ const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
 const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
+const SIZE_RANGE_KEY = "dam-size-range";
+
+type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
+const SIZE_RANGE_OPTIONS: {
+  value: SizeRangeKey;
+  label: string;
+  min?: number;
+  max?: number;
+}[] = [
+  { value: "all", label: "Qualquer tamanho" },
+  { value: "lt1mb", label: "Até 1 MB", max: 1 * 1024 * 1024 },
+  { value: "1to5mb", label: "1–5 MB", min: 1 * 1024 * 1024, max: 5 * 1024 * 1024 },
+  { value: "5to20mb", label: "5–20 MB", min: 5 * 1024 * 1024, max: 20 * 1024 * 1024 },
+  { value: "gt20mb", label: "Acima de 20 MB", min: 20 * 1024 * 1024 },
+];
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 
@@ -188,6 +203,22 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(LIST_SHOW_SIZE_KEY) === "1";
   });
+  const [sizeRange, setSizeRange] = useState<SizeRangeKey>(() => {
+    const fromUrl = searchParams.get("size") as SizeRangeKey | null;
+    if (fromUrl && SIZE_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    if (typeof window === "undefined") return "all";
+    const ls = localStorage.getItem(SIZE_RANGE_KEY) as SizeRangeKey | null;
+    if (ls && SIZE_RANGE_OPTIONS.some((o) => o.value === ls)) return ls;
+    return "all";
+  });
+  useEffect(() => {
+    try {
+      if (sizeRange !== "all") localStorage.setItem(SIZE_RANGE_KEY, sizeRange);
+      else localStorage.removeItem(SIZE_RANGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [sizeRange]);
   useEffect(() => {
     try {
       if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
@@ -237,12 +268,14 @@ export default function DamLibraryPage() {
     setClientId("all");
     setSelectedTags([]);
     setIncludeArchived(false);
+    setSizeRange("all");
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
     writeLS(TAGS_KEY, null);
     writeLS(SORT_KEY, null);
     writeLS(INCLUDE_ARCHIVED_KEY, null);
+    try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
   };
 
   useEffect(() => {
@@ -342,9 +375,10 @@ export default function DamLibraryPage() {
       if (selectedTags.length > 1 && tagsMode !== "all") next.set("tagsMode", tagsMode);
       else next.delete("tagsMode");
       if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
+      if (sizeRange !== "all") next.set("size", sizeRange); else next.delete("size");
       return next;
     }, { replace: true });
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, setSearchParams]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, setSearchParams]);
 
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
@@ -355,11 +389,12 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange]);
 
   const filters = useMemo(
     () => {
       const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
+      const range = SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange);
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -372,9 +407,11 @@ export default function DamLibraryPage() {
         sortDir: opt.sortDir,
         page,
         pageSize,
+        minSize: range?.min,
+        maxSize: range?.max,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
@@ -856,6 +893,16 @@ export default function DamLibraryPage() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 ml-auto">
+          <Select value={sizeRange} onValueChange={(v) => setSizeRange(v as SizeRangeKey)}>
+            <SelectTrigger className="w-44" aria-label="Filtrar por tamanho">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SIZE_RANGE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={sort} onValueChange={(v) => setSort(v as SortValue)}>
             <SelectTrigger className="w-44">
               <SelectValue />
