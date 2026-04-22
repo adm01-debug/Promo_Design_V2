@@ -54,8 +54,8 @@ describe("color-contrast / wcagBoth", () => {
 
 describe("color-contrast / wcagBoth — casos-limite de níveis", () => {
   // Limiares WCAG 2.1: AAA ≥ 7.0, AA ≥ 4.5, senão FAIL.
-  it("#767676 vs branco fica logo abaixo de 4.5 → FAIL vs branco", () => {
-    const w = wcagBoth("#767676");
+  it("#878787 vs branco fica abaixo de 4.5 → FAIL vs branco", () => {
+    const w = wcagBoth("#878787");
     expect(w.ratioWhite).toBeLessThan(4.5);
     expect(w.vsWhite).toBe("FAIL");
   });
