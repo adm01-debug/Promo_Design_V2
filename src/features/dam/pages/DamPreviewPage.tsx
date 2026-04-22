@@ -20,6 +20,7 @@ import { CompareGrid } from "../components/CompareGrid";
 import { CompareTopBar } from "../components/CompareTopBar";
 import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
+import { ExportProgressPanel } from "../components/ExportProgressPanel";
 import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnosis";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
@@ -802,6 +803,7 @@ export default function DamPreviewPage() {
         onSelectAsset={(a) => setDetailAsset(a)}
         searchQuery={debouncedSearch.trim().length >= 2 ? debouncedSearch.trim() : undefined}
       />
+      <ExportProgressPanel />
     </div>
   );
 }

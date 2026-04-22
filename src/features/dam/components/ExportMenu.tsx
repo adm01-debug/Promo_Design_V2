@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree, ChevronDown, Star } from "lucide-react";
+import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree, ChevronDown, Star, ListChecks } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,8 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { buildAssetsCsv, downloadCsv, downloadAssetsZip, downloadAssetsZipsByType } from "../lib/asset-export";
+import { buildAssetsCsv, downloadCsv, downloadAssetsZip, downloadAssetsZipsByType, ExportCanceledError } from "../lib/asset-export";
 import { format } from "date-fns";
+import { useExportQueue, newJobId } from "../hooks/use-export-queue";
 
 interface Props {
   assets: Asset[];
@@ -61,6 +63,11 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
   const [isExporting, setIsExporting] = useState(false);
   const [pref, setPref] = useState<ExportPref | null>(() => readPref());
   useEffect(() => { if (pref) writePref(pref); }, [pref]);
+  const enqueue = useExportQueue((s) => s.enqueue);
+  const updateJob = useExportQueue((s) => s.update);
+  const setPanelOpen = useExportQueue((s) => s.setPanelOpen);
+  const queueCount = useExportQueue((s) => s.jobs.length);
+  const runningCount = useExportQueue((s) => s.jobs.filter((j) => j.status === "running" || j.status === "queued").length);
 
   const total = assets.length;
   const selCount = selectedAssets.length;
@@ -71,10 +78,23 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
       toast.warning("Nenhum asset para exportar");
       return;
     }
-    const csv = buildAssetsCsv(scope, clients);
-    const ts = format(new Date(), "yyyyMMdd-HHmmss");
-    downloadCsv(`dam-${label}-${ts}.csv`, csv);
-    toast.success(`CSV exportado (${scope.length} assets)`);
+    const id = newJobId();
+    enqueue({
+      id,
+      label: `CSV — ${label === "selecao" ? "Seleção" : "Filtrados"} (${scope.length})`,
+      kind: "csv",
+      total: 1,
+    });
+    try {
+      const csv = buildAssetsCsv(scope, clients);
+      const ts = format(new Date(), "yyyyMMdd-HHmmss");
+      downloadCsv(`dam-${label}-${ts}.csv`, csv);
+      updateJob(id, { status: "done", done: 1, finishedAt: Date.now(), summary: `${scope.length} assets` });
+      toast.success(`CSV exportado (${scope.length} assets)`);
+    } catch (e) {
+      updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
+      toast.error(`Falha ao gerar CSV: ${e instanceof Error ? e.message : "erro"}`);
+    }
   };
 
   const runZip = async (scope: Asset[]) => {
@@ -89,21 +109,34 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
       if (!ok) return;
     }
     setIsExporting(true);
-    const toastId = toast.loading(`Empacotando 0/${scope.length} assets…`);
+    const id = newJobId();
+    const controller = new AbortController();
+    enqueue({
+      id,
+      label: `ZIP (${scope.length} assets)`,
+      kind: "zip",
+      total: scope.length,
+      controller,
+    });
     try {
-      const result = await downloadAssetsZip(scope, clients, (done, t) => {
-        toast.loading(`Empacotando ${done}/${t} assets…`, { id: toastId });
-      });
+      const result = await downloadAssetsZip(scope, clients, (done) => {
+        updateJob(id, { done });
+      }, controller.signal);
       if (result.failed === 0) {
-        toast.success(`ZIP exportado (${result.ok} assets)`, { id: toastId });
+        updateJob(id, { status: "done", done: scope.length, finishedAt: Date.now(), summary: `${result.ok} assets` });
+        toast.success(`ZIP exportado (${result.ok} assets)`);
       } else {
-        toast.warning(
-          `ZIP exportado com ${result.failed} falha(s) — veja manifest.csv (${result.ok} ok)`,
-          { id: toastId },
-        );
+        updateJob(id, { status: "done", done: scope.length, finishedAt: Date.now(), summary: `${result.ok} ok · ${result.failed} falhas (veja manifest.csv)` });
+        toast.warning(`ZIP exportado com ${result.failed} falha(s) — veja manifest.csv (${result.ok} ok)`);
       }
     } catch (e) {
-      toast.error(`Falha ao gerar ZIP: ${e instanceof Error ? e.message : "erro"}`, { id: toastId });
+      if (e instanceof ExportCanceledError) {
+        updateJob(id, { status: "canceled", finishedAt: Date.now() });
+        toast.info("Exportação cancelada");
+      } else {
+        updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
+        toast.error(`Falha ao gerar ZIP: ${e instanceof Error ? e.message : "erro"}`);
+      }
     } finally {
       setIsExporting(false);
     }
@@ -128,21 +161,37 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
       if (!ok) return;
     }
     setIsExporting(true);
-    const toastId = toast.loading(`Empacotando 0/${scope.length} assets…`);
+    const id = newJobId();
+    const controller = new AbortController();
+    enqueue({
+      id,
+      label: `ZIP por tipo (${scope.length} assets)`,
+      kind: "zip-by-type",
+      total: scope.length,
+      controller,
+    });
     try {
-      const result = await downloadAssetsZipsByType(scope, clients, (done, t) => {
-        toast.loading(`Empacotando ${done}/${t} assets…`, { id: toastId });
-      });
+      const result = await downloadAssetsZipsByType(scope, clients, (done) => {
+        updateJob(id, { done });
+      }, controller.signal);
       const summary = Object.entries(result.byType)
         .map(([t, c]) => `${t}: ${c.ok}${c.failed > 0 ? ` (${c.failed} falhas)` : ""}`)
         .join(" · ");
       if (result.failed === 0) {
-        toast.success(`ZIP por tipo exportado — ${summary}`, { id: toastId });
+        updateJob(id, { status: "done", done: scope.length, finishedAt: Date.now(), summary });
+        toast.success(`ZIP por tipo exportado — ${summary}`);
       } else {
-        toast.warning(`ZIP por tipo com ${result.failed} falha(s) — ${summary}`, { id: toastId });
+        updateJob(id, { status: "done", done: scope.length, finishedAt: Date.now(), summary });
+        toast.warning(`ZIP por tipo com ${result.failed} falha(s) — ${summary}`);
       }
     } catch (e) {
-      toast.error(`Falha ao gerar ZIP por tipo: ${e instanceof Error ? e.message : "erro"}`, { id: toastId });
+      if (e instanceof ExportCanceledError) {
+        updateJob(id, { status: "canceled", finishedAt: Date.now() });
+        toast.info("Exportação cancelada");
+      } else {
+        updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
+        toast.error(`Falha ao gerar ZIP por tipo: ${e instanceof Error ? e.message : "erro"}`);
+      }
     } finally {
       setIsExporting(false);
     }
@@ -198,6 +247,22 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
 
   return (
     <div className="inline-flex items-center">
+      {queueCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 mr-2 relative"
+          onClick={() => setPanelOpen(true)}
+          title="Mostrar fila de exportações"
+          aria-label="Mostrar fila de exportações"
+        >
+          <ListChecks className="w-3.5 h-3.5" />
+          Fila
+          <Badge variant={runningCount > 0 ? "default" : "secondary"} className="h-4 px-1 text-[10px] tabular-nums">
+            {runningCount > 0 ? `${runningCount}/${queueCount}` : queueCount}
+          </Badge>
+        </Button>
+      )}
       {pref && (
         <Button
           variant="outline"
