@@ -267,6 +267,13 @@ export default function DamLibraryPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
   const [copiedLink, setCopiedLink] = useState(false);
+  // Captured ONCE at mount: was the Arquivados toggle activated through the
+  // URL (?archived=...)? Used to surface a subtle "applied via link" hint.
+  const [archivedFromUrlAtMount] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return parseBoolParam(searchParams.get("archived")) === true;
+  });
+  const [archivedUrlHintDismissed, setArchivedUrlHintDismissed] = useState(false);
 
   // Copies the current full URL (including all active filters and toggles like
   // ?archived=1) to the clipboard so the user can share the exact view.
@@ -1070,6 +1077,37 @@ export default function DamLibraryPage() {
           </Tooltip>
         </div>
       </header>
+
+      {archivedFromUrlAtMount && includeArchived && !archivedUrlHintDismissed && (
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground animate-in fade-in slide-in-from-top-1 duration-200"
+          data-testid="dam-archived-url-hint"
+        >
+          <Link2 className="w-3.5 h-3.5 text-primary shrink-0" />
+          <span>
+            Filtro <strong className="text-foreground font-medium">Arquivados</strong> aplicado pela URL
+            (<code className="rounded bg-muted px-1 py-0.5 text-[10px]">?archived=1</code>).
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-6 px-2 text-[11px]"
+            onClick={() => setIncludeArchived(false)}
+          >
+            Desativar
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setArchivedUrlHintDismissed(true)}
+            aria-label="Dispensar aviso"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      )}
 
       {lastPreviewAsset && (
         <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
