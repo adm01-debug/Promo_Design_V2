@@ -3,15 +3,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { ScanText } from "lucide-react";
+import { ScanText, ArchiveRestore } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AssetListViewProps {
   assets: Asset[];
   clients: Client[];
   onSelect: (asset: Asset) => void;
+  onRestore?: (asset: Asset) => void;
 }
 
-export function AssetListView({ assets, clients, onSelect }: AssetListViewProps) {
+export function AssetListView({ assets, clients, onSelect, onRestore }: AssetListViewProps) {
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
 
@@ -27,6 +29,7 @@ export function AssetListView({ assets, clients, onSelect }: AssetListViewProps)
             <TableHead>Tags</TableHead>
             <TableHead className="w-24">Cores</TableHead>
             <TableHead className="w-28">Data</TableHead>
+            {onRestore && <TableHead className="w-28 text-right">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -91,6 +94,27 @@ export function AssetListView({ assets, clients, onSelect }: AssetListViewProps)
                 </div>
               </TableCell>
               <TableCell className="text-xs text-muted-foreground">{fmt(a.created_at)}</TableCell>
+              {onRestore && (
+                <TableCell className="text-right">
+                  {a.is_archived ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRestore(a);
+                      }}
+                      title="Restaurar asset"
+                    >
+                      <ArchiveRestore className="w-3.5 h-3.5" />
+                      Restaurar
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
