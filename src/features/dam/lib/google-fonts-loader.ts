@@ -63,7 +63,18 @@ export function loadGoogleFont(
       if (fontsApi?.load) {
         fontsApi
           .load(`1em "${trimmed}"`)
-          .then((faces) => finish(faces.length > 0))
+          .then((faces) => {
+            // Validação dupla: faces precisa ter ao menos 1 FontFace registrado E
+            // document.fonts.check confirma que o navegador aceita a família.
+            // Google Fonts CSS API responde 200 mesmo para famílias inexistentes
+            // (CSS vazio) — só descobrimos via FontFaceSet.
+            const hasFaces = faces.length > 0;
+            const accepted = fontsApi.check ? fontsApi.check(`1em "${trimmed}"`) : true;
+            if (!hasFaces || !accepted) {
+              console.warn(`[google-fonts] "${trimmed}" não encontrada no Google Fonts`);
+            }
+            finish(hasFaces && accepted);
+          })
           .catch(() => finish(false));
       } else {
         finish(true);
@@ -93,13 +104,17 @@ export function useGoogleFonts(names: string[]): {
       setLoaded({});
       return;
     }
-    Promise.all(
-      clean.map((n) =>
-        loadGoogleFont(n).then((ok) => [n.toLowerCase(), ok] as const),
-      ),
-    ).then((entries) => {
-      if (cancelled) return;
-      setLoaded(Object.fromEntries(entries));
+    // Resolve cada fonte individualmente — re-render imediato quando cada uma fica
+    // pronta (ou falha), evitando flash de fallback.
+    clean.forEach((n) => {
+      loadGoogleFont(n).then((ok) => {
+        if (cancelled) return;
+        setLoaded((prev) => {
+          const k = n.toLowerCase();
+          if (prev[k] === ok) return prev;
+          return { ...prev, [k]: ok };
+        });
+      });
     });
     return () => {
       cancelled = true;
