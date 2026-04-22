@@ -3,13 +3,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PreviewStage } from "../PreviewStage";
 import type { Asset } from "../../hooks/use-assets";
+import { getAssetSignedUrl } from "../../hooks/use-assets";
 
 // jsdom does not implement Element.scrollTo — PreviewStage calls it in an effect.
 if (!(Element.prototype as unknown as { scrollTo?: unknown }).scrollTo) {
   (Element.prototype as unknown as { scrollTo: () => void }).scrollTo = () => {};
 }
 
-// Keep getAssetSignedUrl pending so the component stays in "loading" state.
+// Mock getAssetSignedUrl. Default = pending (loading). Tests can override per-call.
 vi.mock("../../hooks/use-assets", async () => {
   const actual = await vi.importActual<typeof import("../../hooks/use-assets")>(
     "../../hooks/use-assets",
@@ -19,6 +20,8 @@ vi.mock("../../hooks/use-assets", async () => {
     getAssetSignedUrl: vi.fn(() => new Promise<string>(() => {})),
   };
 });
+
+const mockedGetSignedUrl = vi.mocked(getAssetSignedUrl);
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -77,10 +80,7 @@ describe("PreviewStage — atalhos C/D respeitam contexto de digitação e modif
       value: { writeText },
     });
     // Resolve URL imediatamente para habilitar atalhos C/D.
-    const mod = require("../../hooks/use-assets") as {
-      getAssetSignedUrl: ReturnType<typeof vi.fn>;
-    };
-    mod.getAssetSignedUrl.mockImplementationOnce(() => Promise.resolve("https://signed/url"));
+    mockedGetSignedUrl.mockImplementationOnce(() => Promise.resolve("https://signed/url"));
     render(
       <TooltipProvider>
         <PreviewStage
