@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { supabase } from "@/integrations/supabase/client";
 import { useAssetFavorites } from "../hooks/use-asset-favorites";
 import { cn } from "@/lib/utils";
+import { RelatedFavorites } from "./RelatedFavorites";
 
 interface Props {
   asset: Asset | null;
@@ -218,6 +219,12 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
               </div>
             </div>
           )}
+
+          <RelatedFavorites
+            asset={asset}
+            organizationId={currentOrgId}
+            onSelect={(a) => onSelectAsset?.(a)}
+          />
 
           {isImage && (
             <div className="space-y-2 rounded-lg border border-border p-3">
