@@ -274,6 +274,18 @@ export default function DamLibraryPage() {
     return parseBoolParam(searchParams.get("archived")) === true;
   });
   const [archivedUrlHintDismissed, setArchivedUrlHintDismissed] = useState(false);
+  // First-time-only Tooltip on the Arquivados toggle: opens once when the
+  // user toggles it for the first time this session, then never reopens.
+  const [archivedTooltipOpen, setArchivedTooltipOpen] = useState(false);
+  const [archivedTooltipShown, setArchivedTooltipShown] = useState(false);
+  const handleIncludeArchivedToggle = (next: boolean) => {
+    setIncludeArchived(next);
+    if (!archivedTooltipShown) {
+      setArchivedTooltipShown(true);
+      setArchivedTooltipOpen(true);
+      window.setTimeout(() => setArchivedTooltipOpen(false), 2500);
+    }
+  };
 
   // Copies the current full URL (including all active filters and toggles like
   // ?archived=1) to the clipboard so the user can share the exact view.
