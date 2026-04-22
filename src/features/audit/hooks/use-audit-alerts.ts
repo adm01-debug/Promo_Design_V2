@@ -81,6 +81,7 @@ export function useCreateAuditAlertRule() {
         value_query: input.value_query ?? null,
         recipients_mode: input.recipients_mode ?? "owner",
         recipient_user_ids: input.recipient_user_ids ?? [],
+        advanced_conditions: input.advanced_conditions ?? [],
       };
       const { data, error } = await supabase
         .from("audit_alert_rules" as never)
