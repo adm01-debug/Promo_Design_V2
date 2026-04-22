@@ -32,6 +32,21 @@ import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
 import { getAssetSignedUrl } from "../lib/asset-urls";
 import { wcagBoth, normalizeHex, isValidHex } from "../lib/color-contrast";
 import { copyHexToClipboard } from "../lib/copy-hex";
+import {
+  buildPaletteRows,
+  paletteToCsv,
+  paletteToJson,
+  downloadBlob,
+} from "../lib/palette-export";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { FileJson, FileSpreadsheet, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -177,6 +192,22 @@ export default function BrandGuidelinesPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleExportPalette = (format: "csv" | "json") => {
+    const rows = buildPaletteRows(primary, secondary);
+    if (rows.length === 0) {
+      toast.error("Nenhuma cor na paleta para exportar");
+      return;
+    }
+    const safe = (client?.name ?? "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const date = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      downloadBlob(paletteToCsv(rows), `palette-${safe}-${date}.csv`, "text/csv");
+    } else {
+      downloadBlob(paletteToJson(rows), `palette-${safe}-${date}.json`, "application/json");
+    }
+    toast.success(`Paleta exportada (${rows.length} cores · ${format.toUpperCase()})`);
   };
 
   const ColorList = ({
@@ -341,14 +372,32 @@ export default function BrandGuidelinesPage() {
               <Save className="w-4 h-4 mr-2" /> Salvar
             </Button>
           )}
-          <Button variant="outline" onClick={handleExportPdf} disabled={isExporting}>
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
-            )}
-            Exportar PDF
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={isExporting}>
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Brand kit completo</DropdownMenuLabel>
+              <DropdownMenuItem onClick={handleExportPdf} disabled={isExporting}>
+                <FileText className="w-4 h-4 mr-2" /> PDF (visual)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Paleta · dev handoff</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleExportPalette("csv")}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV (.csv)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportPalette("json")}>
+                <FileJson className="w-4 h-4 mr-2" /> JSON (.json)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
