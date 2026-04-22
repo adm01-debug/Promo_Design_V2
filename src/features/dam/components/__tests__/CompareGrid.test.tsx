@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { CompareGrid } from "../CompareGrid";
 import type { Asset } from "../../hooks/use-assets";
@@ -34,6 +34,10 @@ function imgTransform(): string {
 }
 
 describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de zoom", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   it("começa em fit (translate(0,0) scale(1))", async () => {
     render(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
     await act(async () => { await Promise.resolve(); });
@@ -49,7 +53,8 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
     // Zoom in via wheel (negative deltaY = zoom in)
     const stage = document.querySelectorAll('[role="application"]')[0] as HTMLElement;
     fireEvent.wheel(stage, { deltaY: -500 });
-    expect(imgTransform()).not.toBe("translate(0px, 0px) scale(1)");
+    const zoomedTransform = imgTransform();
+    expect(zoomedTransform).not.toBe("translate(0px, 0px) scale(1)");
 
     // 2 → 3 assets
     rerender(
@@ -59,6 +64,7 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
       />,
     );
     await act(async () => { await Promise.resolve(); });
+    // Combinação NOVA (a,b,c) → não há save → reset.
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
 
     // pan via teclado
@@ -75,12 +81,13 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
       />,
     );
     await act(async () => { await Promise.resolve(); });
+    // Combinação NOVA (a,b,c,d) → reset.
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
 
-    // 4 → 2 assets
+    // 4 → 2 assets (a,b): combinação JÁ vista → restaura o zoom salvo anteriormente.
     rerender(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
     await act(async () => { await Promise.resolve(); });
-    expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
+    expect(imgTransform()).toBe(zoomedTransform);
   });
 
   it("Reset, Ajustar e 100% sempre produzem um transform válido", async () => {
@@ -113,6 +120,30 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
 
     // Reset
     fireEvent.click(screen.getByRole("button", { name: /^reset$/i }));
+    expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
+  });
+
+  it("persiste zoom/pan entre desmontagens para a mesma combinação de assets", async () => {
+    // Primeira montagem: zoom in.
+    const { unmount } = render(
+      <CompareGrid assets={[makeAsset("x"), makeAsset("y")]} onRemove={() => {}} />,
+    );
+    await act(async () => { await Promise.resolve(); });
+    const stage = document.querySelectorAll('[role="application"]')[0] as HTMLElement;
+    fireEvent.wheel(stage, { deltaY: -600 });
+    const saved = imgTransform();
+    expect(saved).not.toBe("translate(0px, 0px) scale(1)");
+    unmount();
+
+    // Segunda montagem com a mesma combinação — primeira pintura já carrega o transform salvo.
+    render(<CompareGrid assets={[makeAsset("x"), makeAsset("y")]} onRemove={() => {}} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(imgTransform()).toBe(saved);
+
+    // Combinação diferente NÃO recebe o transform salvo (entrada própria, vazia → INITIAL).
+    document.body.innerHTML = "";
+    render(<CompareGrid assets={[makeAsset("x"), makeAsset("z")]} onRemove={() => {}} />);
+    await act(async () => { await Promise.resolve(); });
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
   });
 });

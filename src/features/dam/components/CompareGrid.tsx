@@ -18,6 +18,51 @@ interface Transform {
 
 const INITIAL: Transform = { scale: 1, tx: 0, ty: 0 };
 
+/** sessionStorage key for per-combination zoom/pan persistence. */
+const COMPARE_VIEW_KEY = "dam-compare-view";
+
+type SavedView = { transform: Transform; mode: "fit" | "actual" };
+
+/** Build a stable signature for the current set of assets (order-independent). */
+function viewSignature(ids: string[]): string {
+  return [...ids].sort().join(",");
+}
+
+function readSavedView(sig: string): SavedView | null {
+  try {
+    const raw = sessionStorage.getItem(COMPARE_VIEW_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Record<string, SavedView>;
+    const v = parsed?.[sig];
+    if (
+      !v ||
+      typeof v.transform?.scale !== "number" ||
+      typeof v.transform?.tx !== "number" ||
+      typeof v.transform?.ty !== "number" ||
+      (v.mode !== "fit" && v.mode !== "actual")
+    ) {
+      return null;
+    }
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedView(sig: string, view: SavedView): void {
+  try {
+    const raw = sessionStorage.getItem(COMPARE_VIEW_KEY);
+    const parsed: Record<string, SavedView> = raw ? JSON.parse(raw) : {};
+    parsed[sig] = view;
+    // Keep map bounded — last 20 distinct signatures.
+    const keys = Object.keys(parsed);
+    if (keys.length > 20) {
+      for (const k of keys.slice(0, keys.length - 20)) delete parsed[k];
+    }
+    sessionStorage.setItem(COMPARE_VIEW_KEY, JSON.stringify(parsed));
+  } catch { /* ignore quota / serialization errors */ }
+}
+
 function gridClasses(n: number): string {
   if (n === 2) return "grid-cols-2 grid-rows-1";
   if (n === 3) return "grid-cols-3 grid-rows-1";
@@ -25,18 +70,38 @@ function gridClasses(n: number): string {
 }
 
 export function CompareGrid({ assets, onRemove }: Props) {
-  const [transform, setTransform] = useState<Transform>(INITIAL);
-  const [mode, setMode] = useState<"fit" | "actual">("fit");
+  // Lazy-initialize from sessionStorage so first paint already shows the saved region.
+  const initialSig = viewSignature(assets.map((a) => a.id));
+  const initialSaved = initialSig ? readSavedView(initialSig) : null;
+  const [transform, setTransform] = useState<Transform>(initialSaved?.transform ?? INITIAL);
+  const [mode, setMode] = useState<"fit" | "actual">(initialSaved?.mode ?? "fit");
 
   // Pan/zoom step constants for keyboard nudging.
   const PAN_STEP = 40; // px per arrow press
   const ZOOM_STEP = 1.2;
 
-  // Reset transform when set of assets changes
+  // When the set of assets changes, restore the saved view for the new combination
+  // (or reset to INITIAL if there is none). Skip first run — handled by lazy init above.
+  const sig = viewSignature(assets.map((a) => a.id));
+  const lastSigRef = useRef<string>(sig);
   useEffect(() => {
-    setTransform(INITIAL);
-    setMode("fit");
-  }, [assets.map((a) => a.id).join(",")]);
+    if (lastSigRef.current === sig) return;
+    lastSigRef.current = sig;
+    const saved = readSavedView(sig);
+    if (saved) {
+      setTransform(saved.transform);
+      setMode(saved.mode);
+    } else {
+      setTransform(INITIAL);
+      setMode("fit");
+    }
+  }, [sig]);
+
+  // Persist transform/mode for the current signature on any change.
+  useEffect(() => {
+    if (!sig) return;
+    writeSavedView(sig, { transform, mode });
+  }, [sig, transform, mode]);
 
   const reset = useCallback(() => {
     setTransform(INITIAL);
