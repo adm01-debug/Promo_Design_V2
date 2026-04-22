@@ -39,7 +39,9 @@ import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 50;
+const PAGE_SIZE_KEY = "audit-page-size";
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const LS_KEY = "audit-filters-v1";
 
 const ACTION_VARIANT: Record<AuditAction, "default" | "secondary" | "destructive"> = {
@@ -101,6 +103,15 @@ const AuditLogPage = () => {
   const { toast } = useToast();
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_PAGE_SIZE;
+    const stored = Number(localStorage.getItem(PAGE_SIZE_KEY));
+    return PAGE_SIZE_OPTIONS.includes(stored) ? stored : DEFAULT_PAGE_SIZE;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
+    setPage(0);
+  }, [pageSize]);
   const [selected, setSelected] = useState<AuditEntry | null>(null);
   const [exporting, setExporting] = useState(false);
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -293,7 +304,7 @@ const AuditLogPage = () => {
     ipQuery: filterState.ipQuery,
     userAgentQuery: filterState.userAgentQuery,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize: pageSize,
   };
 
   const { data, isLoading } = useAuditLog(queryFilters);
@@ -313,7 +324,7 @@ const AuditLogPage = () => {
     });
   }, [rawRows, needsClientValueFilter, filterState.valueQuery]);
   const total = needsClientValueFilter ? rows.length : serverTotal;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   useEffect(() => {
     if (page > 0 && page >= totalPages) setPage(Math.max(0, totalPages - 1));
@@ -424,11 +435,13 @@ const AuditLogPage = () => {
             <div className="flex-1">
               <ResultsPagination
                 page={page + 1}
-                pageSize={PAGE_SIZE}
+                pageSize={pageSize}
                 total={total}
                 totalPages={totalPages}
                 onPageChange={(p) => setPage(p - 1)}
                 itemNoun="evento"
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageSizeChange={setPageSize}
               />
             </div>
             {isLoading && rows.length > 0 && (
@@ -449,7 +462,7 @@ const AuditLogPage = () => {
               <p className="text-sm">Selecione uma organização para ver a trilha de auditoria.</p>
             </div>
           ) : isLoading && rows.length === 0 ? (
-            <AuditTableSkeleton rows={Math.min(PAGE_SIZE, 8)} />
+            <AuditTableSkeleton rows={Math.min(pageSize, 8)} />
           ) : rows.length === 0 ? (
             (() => {
               const isEmptyFilters =

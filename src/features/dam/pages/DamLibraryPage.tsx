@@ -998,6 +998,7 @@ export default function DamLibraryPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="12">12</SelectItem>
               <SelectItem value="24">24</SelectItem>
               <SelectItem value="48">48</SelectItem>
               <SelectItem value="96">96</SelectItem>
@@ -1441,6 +1442,8 @@ export default function DamLibraryPage() {
             totalPages={totalPages}
             onPageChange={setPage}
             itemNoun="asset"
+            pageSizeOptions={[12, 24, 48, 96]}
+            onPageSizeChange={setPageSize}
           />
           {totalPages > 1 && (
             <p className="text-[11px] text-muted-foreground text-right">
