@@ -184,6 +184,18 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
   });
+  const [showSizeColumn, setShowSizeColumn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(LIST_SHOW_SIZE_KEY) === "1";
+  });
+  useEffect(() => {
+    try {
+      if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
+      else localStorage.removeItem(LIST_SHOW_SIZE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [showSizeColumn]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
