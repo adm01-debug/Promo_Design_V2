@@ -41,20 +41,6 @@ interface Props {
   onApply: (filters: SavedFiltersPayload) => void;
 }
 
-function filtersEqual(a: SavedFiltersPayload, b: SavedFiltersPayload): boolean {
-  return (
-    a.search.trim() === b.search.trim() &&
-    a.clientId === b.clientId &&
-    a.tagsMode === b.tagsMode &&
-    a.includeArchived === b.includeArchived &&
-    a.sort === b.sort &&
-    a.assetTypes.length === b.assetTypes.length &&
-    a.assetTypes.every((t) => b.assetTypes.includes(t)) &&
-    a.tags.length === b.tags.length &&
-    a.tags.every((t) => b.tags.includes(t))
-  );
-}
-
 const FIELD_LABELS: Record<string, string> = {
   search: "Busca",
   clientId: "Cliente",
@@ -216,7 +202,7 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             {!activeId && partialMatch && (
               <Badge
                 variant="outline"
-                className="ml-2 text-[10px] px-1.5 py-0 border-amber-500/40 text-amber-600 dark:text-amber-400"
+                className="ml-2 text-[10px] px-1.5 py-0 border-warning/40 text-warning"
                 title={`Quase: ${partialMatch.diffs.length} diferença(s)`}
               >
                 ~{partialMatch.diffs.length}
@@ -296,7 +282,7 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
                           <TooltipTrigger asChild>
                             <Badge
                               variant="outline"
-                              className="text-[10px] px-1 py-0 shrink-0 border-amber-500/40 text-amber-600 dark:text-amber-400"
+                              className="text-[10px] px-1 py-0 shrink-0 border-warning/40 text-warning"
                               aria-label={`${diffs.length} diferença(s)`}
                             >
                               ~{diffs.length}
