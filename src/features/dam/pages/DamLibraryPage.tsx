@@ -58,6 +58,7 @@ const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
 const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
 const SIZE_RANGE_KEY = "dam-size-range";
+const UPDATED_RANGE_KEY = "dam-updated-range";
 
 type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
 const SIZE_RANGE_OPTIONS: {
@@ -71,6 +72,15 @@ const SIZE_RANGE_OPTIONS: {
   { value: "1to5mb", label: "1–5 MB", min: 1 * 1024 * 1024, max: 5 * 1024 * 1024 },
   { value: "5to20mb", label: "5–20 MB", min: 5 * 1024 * 1024, max: 20 * 1024 * 1024 },
   { value: "gt20mb", label: "Acima de 20 MB", min: 20 * 1024 * 1024 },
+];
+
+type UpdatedRangeKey = "all" | "24h" | "7d" | "30d" | "90d";
+const UPDATED_RANGE_OPTIONS: { value: UpdatedRangeKey; label: string; hours?: number }[] = [
+  { value: "all", label: "Qualquer data" },
+  { value: "24h", label: "Últimas 24h", hours: 24 },
+  { value: "7d", label: "Últimos 7 dias", hours: 24 * 7 },
+  { value: "30d", label: "Últimos 30 dias", hours: 24 * 30 },
+  { value: "90d", label: "Últimos 90 dias", hours: 24 * 90 },
 ];
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
@@ -219,6 +229,22 @@ export default function DamLibraryPage() {
       /* ignore */
     }
   }, [sizeRange]);
+  const [updatedRange, setUpdatedRange] = useState<UpdatedRangeKey>(() => {
+    const fromUrl = searchParams.get("updated") as UpdatedRangeKey | null;
+    if (fromUrl && UPDATED_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    if (typeof window === "undefined") return "all";
+    const ls = localStorage.getItem(UPDATED_RANGE_KEY) as UpdatedRangeKey | null;
+    if (ls && UPDATED_RANGE_OPTIONS.some((o) => o.value === ls)) return ls;
+    return "all";
+  });
+  useEffect(() => {
+    try {
+      if (updatedRange !== "all") localStorage.setItem(UPDATED_RANGE_KEY, updatedRange);
+      else localStorage.removeItem(UPDATED_RANGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [updatedRange]);
   useEffect(() => {
     try {
       if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
@@ -269,6 +295,7 @@ export default function DamLibraryPage() {
     setSelectedTags([]);
     setIncludeArchived(false);
     setSizeRange("all");
+    setUpdatedRange("all");
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
@@ -276,6 +303,7 @@ export default function DamLibraryPage() {
     writeLS(SORT_KEY, null);
     writeLS(INCLUDE_ARCHIVED_KEY, null);
     try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(UPDATED_RANGE_KEY); } catch { /* ignore */ }
   };
 
   useEffect(() => {
@@ -376,9 +404,10 @@ export default function DamLibraryPage() {
       else next.delete("tagsMode");
       if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
       if (sizeRange !== "all") next.set("size", sizeRange); else next.delete("size");
+      if (updatedRange !== "all") next.set("updated", updatedRange); else next.delete("updated");
       return next;
     }, { replace: true });
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, setSearchParams]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, updatedRange, setSearchParams]);
 
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
@@ -389,12 +418,16 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange, updatedRange]);
 
   const filters = useMemo(
     () => {
       const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
       const range = SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange);
+      const updRange = UPDATED_RANGE_OPTIONS.find((o) => o.value === updatedRange);
+      const updatedAfter = updRange?.hours
+        ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
+        : undefined;
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -409,9 +442,10 @@ export default function DamLibraryPage() {
         pageSize,
         minSize: range?.min,
         maxSize: range?.max,
+        updatedAfter,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
@@ -899,6 +933,16 @@ export default function DamLibraryPage() {
             </SelectTrigger>
             <SelectContent>
               {SIZE_RANGE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={updatedRange} onValueChange={(v) => setUpdatedRange(v as UpdatedRangeKey)}>
+            <SelectTrigger className="w-44" aria-label="Filtrar por data de modificação">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {UPDATED_RANGE_OPTIONS.map((o) => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
               ))}
             </SelectContent>
