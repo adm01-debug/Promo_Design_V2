@@ -120,6 +120,13 @@ export default function DamLibraryPage() {
     if (fromUrl === "0") return false;
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
   });
+  const [archivedOnly, setArchivedOnly] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = searchParams.get("archivedOnly");
+    if (fromUrl === "1") return true;
+    if (fromUrl === "0") return false;
+    return localStorage.getItem(ARCHIVED_ONLY_KEY) === "1";
+  });
   const [sort, setSort] = useState<SortValue>(() => {
     const fromUrl = searchParams.get("sort") as SortValue | null;
     if (fromUrl && SORT_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
