@@ -278,6 +278,9 @@ export default function DamLibraryPage() {
   // user toggles it for the first time this session, then never reopens.
   const [archivedTooltipOpen, setArchivedTooltipOpen] = useState(false);
   const [archivedTooltipShown, setArchivedTooltipShown] = useState(false);
+  // Single source of truth for the SR-only live region. We compose a single
+  // sentence per phase so screen readers don't announce overlapping fragments.
+  const [a11yStatus, setA11yStatus] = useState<string>("");
   const handleIncludeArchivedToggle = (next: boolean) => {
     setIncludeArchived(next);
     if (!archivedTooltipShown) {
