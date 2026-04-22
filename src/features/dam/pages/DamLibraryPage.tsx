@@ -9,7 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText, HardDrive, ArrowUpDown } from "lucide-react";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText, HardDrive, ArrowUpDown, RotateCcw } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -32,6 +32,16 @@ import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -256,7 +266,56 @@ export default function DamLibraryPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
+
+  // Wipes every dam-* preference persisted in localStorage and returns all
+  // toggles/filters/pagination to factory defaults. URL search params are
+  // cleared so reload starts clean.
+  const handleResetPreferences = () => {
+    const KEYS = [
+      VIEW_MODE_KEY,
+      PAGE_SIZE_KEY,
+      PAGE_KEY,
+      TAGS_MODE_KEY,
+      INCLUDE_ARCHIVED_KEY,
+      ARCHIVED_ONLY_KEY,
+      OCR_ONLY_KEY,
+      PAGINATION_MODE_KEY,
+      SEARCH_KEY,
+      ASSET_TYPES_KEY,
+      CLIENT_ID_KEY,
+      TAGS_KEY,
+      SORT_KEY,
+      LIST_SHOW_SIZE_KEY,
+      SIZE_RANGE_KEY,
+      UPDATED_RANGE_KEY,
+    ];
+    for (const k of KEYS) {
+      try { localStorage.removeItem(k); } catch { /* ignore */ }
+    }
+    setSearch("");
+    setAssetTypes([]);
+    setClientId("all");
+    setSelectedTags([]);
+    setTagsMode("all");
+    setIncludeArchived(false);
+    setArchivedOnly(false);
+    setOcrOnly(false);
+    setSort("created_desc");
+    setPage(1);
+    setPageSize(24);
+    setPaginationMode("pages");
+    setViewMode("grid");
+    setSizeRange("all");
+    setUpdatedRange("all");
+    setShowSizeColumn(false);
+    setSearchParams(new URLSearchParams(), { replace: true });
+    setResetOpen(false);
+    toast.success("Preferências redefinidas", {
+      description: "Filtros, toggles e paginação voltaram ao padrão.",
+    });
+  };
 
   // "Continue where you left off" — last asset viewed in /dam/preview.
   // The optional `?highlight=<assetId>` URL param takes precedence over the
@@ -953,6 +1012,20 @@ export default function DamLibraryPage() {
               <ScanText className="w-4 h-4 mr-2" /> OCR em lote
             </Button>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setResetOpen(true)}
+                aria-label="Redefinir preferências da biblioteca"
+                data-testid="dam-reset-preferences"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Redefinir preferências (filtros, toggles, paginação)</TooltipContent>
+          </Tooltip>
         </div>
       </header>
 
@@ -1560,6 +1633,30 @@ export default function DamLibraryPage() {
         onOpenChange={setBatchOcrOpen}
         assets={displayedAssets}
       />
+
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redefinir preferências da biblioteca?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso limpa todas as preferências salvas neste navegador (busca, tipos,
+              cliente, tags, ordenação, paginação, modo de visualização e os toggles
+              <strong> Incluir arquivados</strong>, <strong>Apenas arquivados</strong> e
+              <strong> Apenas com OCR</strong>) e volta tudo ao padrão. Seus assets
+              não são afetados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetPreferences}
+              data-testid="dam-reset-preferences-confirm"
+            >
+              Redefinir tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
