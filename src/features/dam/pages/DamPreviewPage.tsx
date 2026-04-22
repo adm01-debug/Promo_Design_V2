@@ -691,6 +691,7 @@ export default function DamPreviewPage() {
         asset={detailAsset}
         onClose={() => setDetailAsset(null)}
         onSelectAsset={(a) => setDetailAsset(a)}
+        searchQuery={debouncedSearch.trim().length >= 2 ? debouncedSearch.trim() : undefined}
       />
     </div>
   );
