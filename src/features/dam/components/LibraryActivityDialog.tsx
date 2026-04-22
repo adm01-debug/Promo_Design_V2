@@ -25,7 +25,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useLibraryActivity,
-  type LibraryActivityAction,
   type LibraryActivityEntry,
 } from "../hooks/use-library-activity";
 
@@ -42,7 +41,7 @@ function shortId(id: string): string {
 function ActionBadge({ entry }: { entry: LibraryActivityEntry }) {
   if (entry.is_restore) {
     return (
-      <Badge variant="default" className="text-[10px] gap-1 bg-emerald-600 hover:bg-emerald-600">
+      <Badge variant="default" className="text-[10px] gap-1">
         <ArchiveRestore className="w-3 h-3" /> Restaurado
       </Badge>
     );
