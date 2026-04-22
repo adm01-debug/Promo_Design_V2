@@ -183,6 +183,14 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
   });
 
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("assets").update({ is_archived: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
+  });
+
   const remove = useMutation({
     mutationFn: async (asset: Asset) => {
       const paths = [asset.file_path];
@@ -205,6 +213,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     create,
     update,
     archive,
+    restore,
     remove,
   };
 }
