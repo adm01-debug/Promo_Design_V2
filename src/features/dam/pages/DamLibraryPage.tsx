@@ -1290,8 +1290,8 @@ export default function DamLibraryPage() {
                 variant="outline"
                 aria-label={
                   includeArchived
-                    ? "Ocultar itens arquivados (preferência lembrada entre sessões)"
-                    : "Mostrar itens arquivados (preferência lembrada entre sessões)"
+                    ? "Ocultar itens arquivados (atalho: A · preferência lembrada entre sessões)"
+                    : "Mostrar itens arquivados (atalho: A · preferência lembrada entre sessões)"
                 }
                 data-testid="dam-archived-toggle"
                 data-state-persisted="true"
