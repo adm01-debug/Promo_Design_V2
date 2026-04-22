@@ -476,6 +476,27 @@ export function AssetUploadDialog({
                     <div className="text-xs text-muted-foreground">
                       {(e.file.size / 1024).toFixed(1)} KB
                     </div>
+                    {e.kind === "pdf" && e.status !== "done" && e.status !== "uploading" && (
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <Label htmlFor={`pdf-page-${e.id}`} className="m-0 text-[11px]">
+                          Página da thumb:
+                        </Label>
+                        <Input
+                          id={`pdf-page-${e.id}`}
+                          type="number"
+                          min={1}
+                          max={e.pdfPageCount ?? undefined}
+                          value={e.pdfPage ?? 1}
+                          onChange={(ev) => changePdfPage(e.id, Number(ev.target.value))}
+                          className="h-7 w-16 text-xs"
+                          disabled={isUploading}
+                          aria-label="Número da página para gerar thumbnail"
+                        />
+                        <span className="tabular-nums">
+                          {e.pdfPageCount ? `de ${e.pdfPageCount}` : "carregando…"}
+                        </span>
+                      </div>
+                    )}
                     {e.status === "error" && e.error && (
                       <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
                     )}
