@@ -196,7 +196,7 @@ export function CompareGrid({ assets, onRemove }: Props) {
     <div className="flex-1 flex flex-col bg-muted/10 min-w-0">
       <div className="border-b border-border px-3 py-2 flex items-center gap-2 shrink-0">
         <span className="text-xs text-muted-foreground mr-auto">
-          Zoom/pan sincronizado · scroll/pinch zoom · arraste/1 dedo move
+          Sincronizado · scroll/pinch · arraste/1 dedo · setas movem · +/- zoom · 0 reset · 1 100% · ⌫ remove
         </span>
         <Button variant="ghost" size="sm" onClick={reset} className="h-8 px-2 text-xs gap-1">
           <RotateCcw className="w-3.5 h-3.5" /> Reset
