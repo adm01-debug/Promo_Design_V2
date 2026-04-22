@@ -461,7 +461,9 @@ export default function DamLibraryPage() {
     assetTypes.length > 0 ||
     clientId !== "all" ||
     selectedTags.length > 0 ||
-    includeArchived;
+    includeArchived ||
+    customSize !== null ||
+    sizeRange !== "all";
 
   const canUpload = can(["owner", "admin", "designer"]);
 
@@ -473,6 +475,7 @@ export default function DamLibraryPage() {
     setIncludeArchived(false);
     setSizeRange("all");
     setUpdatedRange("all");
+    setCustomSize(null);
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
@@ -481,6 +484,7 @@ export default function DamLibraryPage() {
     writeLS(INCLUDE_ARCHIVED_KEY, null);
     try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(UPDATED_RANGE_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(CUSTOM_SIZE_KEY); } catch { /* ignore */ }
   };
 
   useEffect(() => {
