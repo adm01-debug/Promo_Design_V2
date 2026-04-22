@@ -41,6 +41,8 @@ export interface UploadOptions {
   parentAsset?: Asset | null;
   /** Optional callback invoked whenever the pipeline transitions phases. */
   onPhase?: (phase: UploadPhase) => void;
+  /** For PDFs: which page to rasterize as the thumbnail (1-indexed). Defaults to 1. */
+  pdfPage?: number;
 }
 
 interface FileMeta {
@@ -115,6 +117,7 @@ async function processRasterImage(file: File): Promise<FileMeta | null> {
 async function processFile(
   file: File,
   onPhase?: (phase: UploadPhase) => void,
+  pdfPage = 1,
 ): Promise<FileMeta | null> {
   const kind = detectFileKind(file);
   if (kind === "image") {
@@ -123,7 +126,7 @@ async function processFile(
   }
   if (kind === "pdf") {
     onPhase?.("rendering-pdf");
-    const r = await rasterizePdfFirstPage(file, 512);
+    const r = await rasterizePdfFirstPage(file, 512, "image/jpeg", 0.85, pdfPage);
     if (!r) return null;
     if (r.url) URL.revokeObjectURL(r.url);
     return {
@@ -163,7 +166,7 @@ export function useAssetUpload(organizationId: string | null) {
     const emit = (p: UploadPhase) => options.onPhase?.(p);
     emit("analyzing");
     try {
-      const meta = await processFile(file, emit);
+      const meta = await processFile(file, emit, options.pdfPage ?? 1);
       setProgress(35);
       const assetId = crypto.randomUUID();
       const folder = `${options.organizationId}/${options.clientId ?? "_org"}/${assetId}`;

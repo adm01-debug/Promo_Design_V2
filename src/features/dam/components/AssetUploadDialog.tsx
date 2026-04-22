@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History, RotateCw, FileType, Loader2, AlertTriangle } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ import {
   detectFileKind,
   buildSvgPreviewUrl,
   rasterizePdfFirstPage,
+  getPdfPageCount,
   type FileKind,
 } from "../lib/file-preview";
 
@@ -95,8 +97,10 @@ interface FileEntry {
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   phase?: UploadPhase;
-  /** Set when PDF/SVG preview rendering failed. Upload still proceeds. */
-  previewError?: string;
+  /** For PDFs: which page is rendered as thumb (1-indexed). */
+  pdfPage?: number;
+  /** Detected total pages for PDFs (null while loading). */
+  pdfPageCount?: number | null;
 }
 
 export function AssetUploadDialog({
@@ -206,6 +210,8 @@ export function AssetUploadDialog({
         previewLoading: kind === "pdf" || kind === "svg",
         progress: 0,
         status: "pending",
+        pdfPage: kind === "pdf" ? 1 : undefined,
+        pdfPageCount: kind === "pdf" ? null : undefined,
       });
     }
     setEntries((prev) => (isVersionMode ? next : [...prev, ...next]));
@@ -213,55 +219,50 @@ export function AssetUploadDialog({
     next.forEach((entry) => {
       if (entry.kind === "svg") {
         buildSvgPreviewUrl(entry.file)
-          .then((url) =>
-            updatePreview(
-              entry.id,
-              url,
-              url ? undefined : "Falha ao gerar preview do SVG",
-            ),
-          )
-          .catch((err: unknown) =>
-            updatePreview(
-              entry.id,
-              null,
-              err instanceof Error && err.message
-                ? `SVG: ${err.message}`
-                : "Falha ao gerar preview do SVG",
-            ),
-          );
+          .then((url) => updatePreview(entry.id, url))
+          .catch(() => updatePreview(entry.id, null));
       } else if (entry.kind === "pdf") {
-        rasterizePdfFirstPage(entry.file, 256)
-          .then((r) =>
-            updatePreview(
-              entry.id,
-              r?.url ?? null,
-              r?.url ? undefined : "Falha ao renderizar PDF",
+        rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, 1)
+          .then((r) => updatePreview(entry.id, r?.url ?? null))
+          .catch(() => updatePreview(entry.id, null));
+        getPdfPageCount(entry.file)
+          .then((count) =>
+            setEntries((prev) =>
+              prev.map((e) => (e.id === entry.id ? { ...e, pdfPageCount: count } : e)),
             ),
           )
-          .catch((err: unknown) =>
-            updatePreview(
-              entry.id,
-              null,
-              err instanceof Error && err.message
-                ? `PDF: ${err.message}`
-                : "Falha ao renderizar PDF",
-            ),
-          );
+          .catch(() => undefined);
       }
     });
   };
 
-  const updatePreview = (id: string, url: string | null, previewError?: string) => {
-    if (previewError) {
-      // Surface to console for diagnostics. Upload itself is not blocked.
-      console.warn(`[AssetUpload] preview generation failed for entry ${id}:`, previewError);
-    }
+  const changePdfPage = (id: string, page: number) => {
+    setEntries((prev) => {
+      const target = prev.find((e) => e.id === id);
+      if (!target || target.kind !== "pdf") return prev;
+      const max = target.pdfPageCount ?? page;
+      const safe = Math.min(Math.max(1, Math.floor(page || 1)), Math.max(1, max));
+      if (safe === target.pdfPage) return prev;
+      return prev.map((e) =>
+        e.id === id ? { ...e, pdfPage: safe, previewLoading: true } : e,
+      );
+    });
+    const entry = entries.find((e) => e.id === id);
+    if (!entry || entry.kind !== "pdf") return;
+    const max = entry.pdfPageCount ?? page;
+    const safe = Math.min(Math.max(1, Math.floor(page || 1)), Math.max(1, max));
+    rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, safe)
+      .then((r) => updatePreview(id, r?.url ?? null))
+      .catch(() => updatePreview(id, null));
+  };
+
+  const updatePreview = (id: string, url: string | null) => {
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
         // Revoke any prior url that we own (raster image used file URL too)
         if (e.preview && e.preview !== url) URL.revokeObjectURL(e.preview);
-        return { ...e, preview: url, previewLoading: false, previewError };
+        return { ...e, preview: url, previewLoading: false };
       })
     );
   };
@@ -304,6 +305,7 @@ export function AssetUploadDialog({
           assetType,
           tags: cleanTags,
           parentAsset: parentAsset ?? undefined,
+          pdfPage: entry.pdfPage,
           onPhase: (phase) => {
             // Map qualitative phase to a coarse progress percentage so the bar
             // also moves while the user reads the label.
@@ -448,18 +450,6 @@ export function AssetUploadDialog({
                     >
                       <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                     </div>
-                  ) : e.previewError && (e.kind === "pdf" || e.kind === "svg") ? (
-                    <div
-                      className="relative w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
-                      title={`${e.kind.toUpperCase()} — ${e.previewError}`}
-                      aria-label={`Preview indisponível: ${e.previewError}`}
-                    >
-                      <FileType className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
-                        {e.kind}
-                      </span>
-                      <AlertTriangle className="absolute -top-1 -right-1 w-3.5 h-3.5 text-destructive bg-card rounded-full p-[1px]" />
-                    </div>
                   ) : e.kind === "ai" || e.kind === "psd" ? (
                     <div
                       className="w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
@@ -486,17 +476,29 @@ export function AssetUploadDialog({
                     <div className="text-xs text-muted-foreground">
                       {(e.file.size / 1024).toFixed(1)} KB
                     </div>
+                    {e.kind === "pdf" && e.status !== "done" && e.status !== "uploading" && (
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <Label htmlFor={`pdf-page-${e.id}`} className="m-0 text-[11px]">
+                          Página da thumb:
+                        </Label>
+                        <Input
+                          id={`pdf-page-${e.id}`}
+                          type="number"
+                          min={1}
+                          max={e.pdfPageCount ?? undefined}
+                          value={e.pdfPage ?? 1}
+                          onChange={(ev) => changePdfPage(e.id, Number(ev.target.value))}
+                          className="h-7 w-16 text-xs"
+                          disabled={isUploading}
+                          aria-label="Número da página para gerar thumbnail"
+                        />
+                        <span className="tabular-nums">
+                          {e.pdfPageCount ? `de ${e.pdfPageCount}` : "carregando…"}
+                        </span>
+                      </div>
+                    )}
                     {e.status === "error" && e.error && (
                       <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
-                    )}
-                    {e.status !== "error" && e.previewError && (
-                      <div
-                        className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1"
-                        title={e.previewError}
-                      >
-                        <AlertTriangle className="w-3 h-3 shrink-0" />
-                        Preview indisponível — o arquivo será enviado mesmo assim.
-                      </div>
                     )}
                     {e.status === "uploading" && (
                       <div className="mt-1 space-y-1">
