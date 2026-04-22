@@ -10,27 +10,53 @@ function escape(value: string): string {
   return value;
 }
 
-const BASE_HEADERS = [
-  "id", "name", "type", "client", "version", "file_size", "mime_type",
-  "tags", "colors", "is_archived", "created_at", "updated_at", "storage_path",
+/** All available CSV columns. Order here defines default column order. */
+export const CSV_COLUMNS = [
+  { id: "id",            label: "ID",             get: (a: Asset) => a.id },
+  { id: "name",          label: "Nome",           get: (a: Asset) => a.name },
+  { id: "type",          label: "Tipo",           get: (a: Asset) => a.asset_type },
+  { id: "client",        label: "Cliente",        get: (a: Asset, c: string) => c },
+  { id: "version",       label: "Versão",         get: (a: Asset) => String(a.version ?? "") },
+  { id: "file_size",     label: "Tamanho (bytes)", get: (a: Asset) => a.file_size != null ? String(a.file_size) : "" },
+  { id: "mime_type",     label: "MIME",           get: (a: Asset) => a.mime_type ?? "" },
+  { id: "tags",          label: "Tags",           get: (a: Asset) => (a.tags ?? []).join("|") },
+  { id: "colors",        label: "Cores dominantes", get: (a: Asset) => (a.dominant_colors ?? []).join("|") },
+  { id: "width",         label: "Largura (px)",   get: (a: Asset) => a.width != null ? String(a.width) : "" },
+  { id: "height",        label: "Altura (px)",    get: (a: Asset) => a.height != null ? String(a.height) : "" },
+  { id: "description",   label: "Descrição",      get: (a: Asset) => a.description ?? "" },
+  { id: "ocr_status",    label: "OCR status",     get: (a: Asset) => a.ocr_status ?? "" },
+  { id: "is_archived",   label: "Arquivado",      get: (a: Asset) => a.is_archived ? "true" : "false" },
+  { id: "created_at",    label: "Criado em",      get: (a: Asset) => a.created_at },
+  { id: "updated_at",    label: "Atualizado em",  get: (a: Asset) => a.updated_at },
+  { id: "storage_path",  label: "Caminho",        get: (a: Asset) => a.file_path },
 ] as const;
 
-function rowFor(asset: Asset, clientName: string): string[] {
-  return [
-    asset.id,
-    asset.name,
-    asset.asset_type,
-    clientName,
-    String(asset.version ?? ""),
-    asset.file_size != null ? String(asset.file_size) : "",
-    asset.mime_type ?? "",
-    (asset.tags ?? []).join("|"),
-    (asset.dominant_colors ?? []).join("|"),
-    asset.is_archived ? "true" : "false",
-    asset.created_at,
-    asset.updated_at,
-    asset.file_path,
-  ];
+export type CsvColumnId = (typeof CSV_COLUMNS)[number]["id"];
+
+/** Default column selection — matches the original BASE_HEADERS order. */
+export const DEFAULT_CSV_COLUMNS: CsvColumnId[] = [
+  "id", "name", "type", "client", "version", "file_size", "mime_type",
+  "tags", "colors", "is_archived", "created_at", "updated_at", "storage_path",
+];
+
+function pickColumns(ids: CsvColumnId[]): typeof CSV_COLUMNS[number][] {
+  const map = new Map(CSV_COLUMNS.map((c) => [c.id, c] as const));
+  const picked: typeof CSV_COLUMNS[number][] = [];
+  for (const id of ids) {
+    const col = map.get(id);
+    if (col) picked.push(col);
+  }
+  return picked.length > 0 ? picked : [...CSV_COLUMNS];
+}
+
+function rowFor(asset: Asset, clientName: string, cols?: CsvColumnId[]): string[] {
+  const columns = pickColumns(cols ?? DEFAULT_CSV_COLUMNS);
+  return columns.map((c) => c.get(asset, clientName));
+}
+
+function headersFor(cols?: CsvColumnId[]): string[] {
+  const columns = pickColumns(cols ?? DEFAULT_CSV_COLUMNS);
+  return columns.map((c) => c.id);
 }
 
 function clientName(asset: Asset, clientMap: Map<string, string>): string {
@@ -38,10 +64,10 @@ function clientName(asset: Asset, clientMap: Map<string, string>): string {
   return clientMap.get(asset.client_id) ?? "";
 }
 
-export function buildAssetsCsv(assets: Asset[], clients: Client[]): string {
+export function buildAssetsCsv(assets: Asset[], clients: Client[], columns?: CsvColumnId[]): string {
   const map = new Map(clients.map((c) => [c.id, c.name]));
-  const header = BASE_HEADERS.join(",");
-  const lines = assets.map((a) => rowFor(a, clientName(a, map)).map(escape).join(","));
+  const header = headersFor(columns).join(",");
+  const lines = assets.map((a) => rowFor(a, clientName(a, map), columns).map(escape).join(","));
   return [header, ...lines].join("\n");
 }
 
