@@ -262,7 +262,7 @@ export function AssetUploadDialog({
     let lastUploaded: Asset | null = null;
     for (const entry of targets) {
       if (entry.status === "done") { okCount++; continue; }
-      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined } : e));
+      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined, phase: "analyzing" } : e));
       try {
         const created = await uploadFile(entry.file, {
           organizationId,
@@ -270,10 +270,31 @@ export function AssetUploadDialog({
           assetType,
           tags: cleanTags,
           parentAsset: parentAsset ?? undefined,
+          onPhase: (phase) => {
+            // Map qualitative phase to a coarse progress percentage so the bar
+            // also moves while the user reads the label.
+            const phaseProgress: Record<UploadPhase, number> = {
+              "analyzing": 10,
+              "rendering-pdf": 25,
+              "rasterizing-svg": 25,
+              "processing-image": 25,
+              "uploading-file": 55,
+              "uploading-thumb": 80,
+              "saving-record": 92,
+              "done": 100,
+            };
+            setEntries((prev) =>
+              prev.map((e) =>
+                e.id === entry.id
+                  ? { ...e, phase, progress: Math.max(e.progress, phaseProgress[phase] ?? e.progress) }
+                  : e,
+              ),
+            );
+          },
         });
         lastUploaded = created ?? null;
         if (created) onUploaded?.(created);
-        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100 } : e));
+        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e));
         okCount++;
       } catch (err) {
         const msg = (err as Error).message;
