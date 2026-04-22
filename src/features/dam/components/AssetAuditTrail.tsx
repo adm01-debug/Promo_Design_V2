@@ -110,6 +110,34 @@ export function AssetAuditTrail({ asset }: Props) {
   const hasExtraFilters =
     userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
 
+  // Reset visible window whenever the resulting list changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [actionFilter, userFilter, fieldFilter, sortDir, data]);
+
+  const visibleEntries = useMemo(
+    () => filteredEntries.slice(0, visibleCount),
+    [filteredEntries, visibleCount],
+  );
+  const hasMore = visibleEntries.length < filteredEntries.length;
+
+  // Auto-load next page when sentinel becomes visible
+  useEffect(() => {
+    if (!open || !hasMore) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => c + PAGE_SIZE);
+        }
+      },
+      { root: null, rootMargin: "200px 0px", threshold: 0 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [open, hasMore, visibleEntries.length]);
+
   const counts = useMemo(() => {
     const c = { INSERT: 0, UPDATE: 0, DELETE: 0 } as Record<AssetAuditEntry["action"], number>;
     for (const e of entries) c[e.action]++;
