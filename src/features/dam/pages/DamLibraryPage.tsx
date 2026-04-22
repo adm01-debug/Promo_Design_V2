@@ -1261,7 +1261,7 @@ export default function DamLibraryPage() {
         })()}
       </div>
 
-      {isLoading && displayedAssets.length === 0 ? (
+      {(isLoading && displayedAssets.length === 0) || isPaginating ? (
         viewMode === "list" ? (
           <div className="space-y-2">
             {Array.from({ length: Math.min(pageSize, 24) }).map((_, i) => (
