@@ -427,6 +427,58 @@ export default function DamLibraryPage() {
   const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
 
+  // Keyboard navigation for Quick Preview: ↑/↓ moves selection, Space pins, Enter opens details.
+  // Active only when Quick Preview is enabled and the user isn't typing in an input/textarea.
+  useEffect(() => {
+    if (!quickPreview.enabled) return;
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (displayedAssets.length === 0) return;
+
+      const activeId = quickPreview.activeAsset?.id ?? null;
+      const currentIdx = activeId ? displayedAssets.findIndex((a) => a.id === activeId) : -1;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const delta = e.key === "ArrowDown" ? 1 : -1;
+        const nextIdx =
+          currentIdx === -1
+            ? e.key === "ArrowDown" ? 0 : displayedAssets.length - 1
+            : Math.min(displayedAssets.length - 1, Math.max(0, currentIdx + delta));
+        const nextAsset = displayedAssets[nextIdx];
+        if (nextAsset) {
+          quickPreview.setActiveAsset(nextAsset);
+          // Bring the card into view so the keyboard selection is always visible
+          requestAnimationFrame(() => {
+            const el = document.querySelector<HTMLElement>(`[data-asset-id="${nextAsset.id}"]`);
+            el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          });
+        }
+        return;
+      }
+
+      if (e.key === " " || e.code === "Space") {
+        if (!quickPreview.activeAsset) return;
+        e.preventDefault();
+        quickPreview.togglePin(quickPreview.activeAsset);
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (!quickPreview.activeAsset) return;
+        e.preventDefault();
+        setSelected(quickPreview.activeAsset);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [quickPreview, displayedAssets]);
+
   const lastPreviewAsset = useMemo(
     () => (lastPreviewAssetId ? displayedAssets.find((a) => a.id === lastPreviewAssetId) ?? null : null),
     [displayedAssets, lastPreviewAssetId],
