@@ -42,39 +42,63 @@ export function buildAssetsPdf(
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
   const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
 
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text("Biblioteca de Assets — Exportação", 40, 40);
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const MARGIN_X = 40;
+  const FOOTER_Y = pageH - 24;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(110);
-  doc.text(`Gerado em ${generatedAt}`, 40, 56);
-
-  // Filters summary
-  const lines: string[] = [];
-  if (filters.search) lines.push(`Busca: "${filters.search}"`);
+  // Build filter summary lines (rendered on every page header)
+  const filterLines: string[] = [];
+  if (filters.search) filterLines.push(`Busca: "${filters.search}"`);
   if (filters.assetTypes && filters.assetTypes.length > 0) {
-    lines.push(`Tipos: ${filters.assetTypes.map((t) => TYPE_LABEL[t] ?? t).join(", ")}`);
+    filterLines.push(`Tipos: ${filters.assetTypes.map((t) => TYPE_LABEL[t] ?? t).join(", ")}`);
   }
-  if (filters.clientName) lines.push(`Cliente: ${filters.clientName}`);
+  if (filters.clientName) filterLines.push(`Cliente: ${filters.clientName}`);
   if (filters.tags && filters.tags.length > 0) {
-    lines.push(`Tags (${filters.tagsMode === "any" ? "qualquer" : "todas"}): ${filters.tags.join(", ")}`);
+    filterLines.push(`Tags (${filters.tagsMode === "any" ? "qualquer" : "todas"}): ${filters.tags.join(", ")}`);
   }
-  if (filters.includeArchived) lines.push("Inclui arquivados");
-  if (filters.sortLabel) lines.push(`Ordenação: ${filters.sortLabel}`);
-  lines.push(`Resultados: ${filters.shown} de ${filters.total}`);
+  if (filters.includeArchived) filterLines.push("Inclui arquivados");
+  if (filters.sortLabel) filterLines.push(`Ordenação: ${filters.sortLabel}`);
+  filterLines.push(`Resultados: ${filters.shown} de ${filters.total}`);
 
-  doc.setFontSize(9);
-  doc.setTextColor(60);
-  let y = 74;
-  for (const line of lines) {
-    doc.text(line, 40, y);
-    y += 12;
-  }
+  // Compose summary into wrapped text (one paragraph, "•" separators) so the
+  // header height stays predictable even with many filters active.
+  const summaryParagraph = filterLines.join("  •  ");
+  const SUMMARY_MAX_WIDTH = pageW - MARGIN_X * 2;
+  const summaryWrapped = doc.splitTextToSize(summaryParagraph, SUMMARY_MAX_WIDTH) as string[];
 
-  // Table
+  // Vertical anchors for the repeating header
+  const HEADER_TITLE_Y = 38;
+  const HEADER_META_Y = 52;
+  const SUMMARY_START_Y = 68;
+  const SUMMARY_LINE_H = 11;
+  const HEADER_BOTTOM_PAD = 8;
+  const headerHeight = SUMMARY_START_Y + summaryWrapped.length * SUMMARY_LINE_H + HEADER_BOTTOM_PAD;
+
+  /** Repaints the fixed header on every page (called by autoTable's didDrawPage). */
+  const drawHeader = () => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(20);
+    doc.text("Biblioteca de Assets — Exportação", MARGIN_X, HEADER_TITLE_Y);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(110);
+    doc.text(`Gerado em ${generatedAt}`, pageW - MARGIN_X, HEADER_TITLE_Y, { align: "right" });
+
+    doc.setDrawColor(220);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN_X, HEADER_META_Y - 6, pageW - MARGIN_X, HEADER_META_Y - 6);
+
+    doc.setFontSize(8.5);
+    doc.setTextColor(70);
+    doc.text(summaryWrapped, MARGIN_X, SUMMARY_START_Y);
+    doc.setTextColor(0);
+  };
+
+  // Table — column widths are computed from the available page width so the
+  // layout adapts to A4 landscape regardless of jsPDF's measurements.
   const head = [["Nome", "Tipo", "Cliente", "Versão", "Tamanho", "Tags", "Criado em"]];
   const body = assets.map((a) => [
     a.name,
@@ -82,40 +106,91 @@ export function buildAssetsPdf(
     a.client_id ? clientMap.get(a.client_id) ?? "—" : "—",
     String(a.version ?? ""),
     formatBytes(a.file_size),
-    (a.tags ?? []).slice(0, 5).join(", "),
+    // Show up to 8 tags, then "+N" if truncated. autoTable will wrap as needed.
+    (() => {
+      const tags = a.tags ?? [];
+      const shown = tags.slice(0, 8).join(", ");
+      return tags.length > 8 ? `${shown} +${tags.length - 8}` : shown;
+    })(),
     a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy") : "—",
   ]);
+
+  // Distribute remaining width between Nome (flex) and Tags (flex) so that
+  // long names/tag lists wrap into multi-line cells instead of being clipped.
+  const tableWidth = pageW - MARGIN_X * 2;
+  const fixedCols = { tipo: 56, versao: 46, tamanho: 64, criado: 68 } as const;
+  const fixedTotal = fixedCols.tipo + fixedCols.versao + fixedCols.tamanho + fixedCols.criado;
+  // Cliente takes ~18% of remaining flex room, Nome ~32%, Tags ~50%.
+  const flexRoom = Math.max(360, tableWidth - fixedTotal);
+  const clienteW = Math.round(flexRoom * 0.22);
+  const nomeW = Math.round(flexRoom * 0.32);
+  const tagsW = flexRoom - clienteW - nomeW;
 
   autoTable(doc, {
     head,
     body,
-    startY: y + 6,
-    styles: { font: "helvetica", fontSize: 8, cellPadding: 4, overflow: "linebreak" },
-    headStyles: { fillColor: [30, 30, 30], textColor: 255, fontStyle: "bold" },
+    // First page also reserves space for the header.
+    startY: headerHeight,
+    // `margin.top` ensures every page break leaves room for the repeated header.
+    margin: { left: MARGIN_X, right: MARGIN_X, top: headerHeight, bottom: 36 },
+    // pageBreak: 'auto' + rowPageBreak: 'avoid' keeps rows from being split mid-cell.
+    pageBreak: "auto",
+    rowPageBreak: "avoid",
+    showHead: "everyPage",
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      cellPadding: { top: 4, right: 5, bottom: 4, left: 5 },
+      overflow: "linebreak",
+      valign: "top",
+      lineColor: [225, 225, 230],
+      lineWidth: 0.25,
+    },
+    headStyles: {
+      fillColor: [30, 30, 30],
+      textColor: 255,
+      fontStyle: "bold",
+      halign: "left",
+    },
     alternateRowStyles: { fillColor: [245, 245, 247] },
     columnStyles: {
-      0: { cellWidth: 200 },
-      1: { cellWidth: 60 },
-      2: { cellWidth: 130 },
-      3: { cellWidth: 50, halign: "right" },
-      4: { cellWidth: 70, halign: "right" },
-      5: { cellWidth: 200 },
-      6: { cellWidth: 70 },
+      0: { cellWidth: nomeW, fontStyle: "bold" },
+      1: { cellWidth: fixedCols.tipo },
+      2: { cellWidth: clienteW },
+      3: { cellWidth: fixedCols.versao, halign: "right" },
+      4: { cellWidth: fixedCols.tamanho, halign: "right" },
+      5: { cellWidth: tagsW, textColor: [80, 80, 90] },
+      6: { cellWidth: fixedCols.criado, halign: "right" },
     },
-    margin: { left: 40, right: 40 },
     didDrawPage: (data) => {
-      const pageSize = doc.internal.pageSize;
-      const pageHeight = pageSize.height ?? pageSize.getHeight();
-      const pageWidth = pageSize.width ?? pageSize.getWidth();
+      // Repeat header on every page so context (filters, generated-at) is never lost.
+      drawHeader();
+
+      // Footer divider + page counter (rendered later with totals).
+      doc.setDrawColor(230);
+      doc.setLineWidth(0.5);
+      doc.line(MARGIN_X, FOOTER_Y - 8, pageW - MARGIN_X, FOOTER_Y - 8);
       doc.setFontSize(8);
       doc.setTextColor(140);
       doc.text(
-        `Página ${data.pageNumber}`,
-        pageWidth - 60,
-        pageHeight - 20,
+        `Biblioteca de Assets · ${filters.shown} de ${filters.total}`,
+        MARGIN_X,
+        FOOTER_Y,
       );
+      // Page number is filled in below once the total is known.
+      void data;
     },
   });
+
+  // Pass 2: render "Página X de Y" once we know the total page count.
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text(`Página ${i} de ${totalPages}`, pageW - MARGIN_X, FOOTER_Y, { align: "right" });
+  }
+  doc.setTextColor(0);
 
   return doc;
 }
