@@ -417,7 +417,10 @@ export default function DamPreviewPage() {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       const inEditable = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
-      // When the detail drawer is open, let Radix handle Esc/focus; skip our shortcuts.
+      // When the detail drawer is open, let Radix `Sheet` own ALL keys (Esc closes
+      // the drawer via onOpenChange → onClose → setDetailAsset(null), focus returns
+      // to the previous trigger). Skipping here prevents Esc from both closing the
+      // drawer AND navigating away from /dam/preview in the same keypress.
       if (detailAsset) return;
 
       // Esc has special handling — even inside inputs we want to blur first.
