@@ -1002,8 +1002,6 @@ export type Database = {
               width: number
             }[]
           }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
