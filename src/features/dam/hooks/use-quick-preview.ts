@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Asset } from "./use-assets";
 
 const ENABLED_KEY = "dam-quickpreview-enabled";
+const PINNED_ID_KEY = "dam-quickpreview-pinned-id";
 const HOVER_DEBOUNCE_MS = 150;
 
 function readEnabled(): boolean {
@@ -10,6 +11,25 @@ function readEnabled(): boolean {
     return localStorage.getItem(ENABLED_KEY) === "1";
   } catch {
     return false;
+  }
+}
+
+function readPinnedId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(PINNED_ID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writePinnedId(id: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (id) localStorage.setItem(PINNED_ID_KEY, id);
+    else localStorage.removeItem(PINNED_ID_KEY);
+  } catch {
+    /* ignore */
   }
 }
 
