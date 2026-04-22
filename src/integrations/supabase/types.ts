@@ -122,6 +122,8 @@ export type Database = {
           is_active: boolean
           name: string
           organization_id: string
+          recipient_user_ids: string[]
+          recipients_mode: string
           table_names: string[]
           target_user_id: string | null
           updated_at: string
@@ -136,6 +138,8 @@ export type Database = {
           is_active?: boolean
           name: string
           organization_id: string
+          recipient_user_ids?: string[]
+          recipients_mode?: string
           table_names?: string[]
           target_user_id?: string | null
           updated_at?: string
@@ -150,6 +154,8 @@ export type Database = {
           is_active?: boolean
           name?: string
           organization_id?: string
+          recipient_user_ids?: string[]
+          recipients_mode?: string
           table_names?: string[]
           target_user_id?: string | null
           updated_at?: string
