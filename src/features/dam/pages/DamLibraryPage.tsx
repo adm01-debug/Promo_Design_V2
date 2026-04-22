@@ -268,6 +268,34 @@ export default function DamLibraryPage() {
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Copies the current full URL (including all active filters and toggles like
+  // ?archived=1) to the clipboard so the user can share the exact view.
+  const handleCopyLink = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopiedLink(true);
+      toast.success("Link copiado", {
+        description: "URL com filtros atuais copiada para a área de transferência.",
+      });
+      setTimeout(() => setCopiedLink(false), 1800);
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
 
   // Wipes every dam-* preference persisted in localStorage and returns all
   // toggles/filters/pagination to factory defaults. URL search params are
