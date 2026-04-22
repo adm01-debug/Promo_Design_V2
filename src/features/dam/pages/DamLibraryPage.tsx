@@ -1241,6 +1241,7 @@ export default function DamLibraryPage() {
               onApplyTag={(tag) => {
                 setSelectedTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
               }}
+              sortLabel={SORT_OPTIONS.find((o) => o.value === sort)?.label}
             />
           )}
         </div>
