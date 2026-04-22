@@ -735,6 +735,108 @@ export default function DamLibraryPage() {
               <SelectItem value="96">96</SelectItem>
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-9 gap-2",
+                  (minSizeMB || maxSizeMB) && "border-primary/50 text-primary",
+                )}
+                aria-label="Filtrar por tamanho de arquivo"
+              >
+                <FileBox className="w-4 h-4" />
+                Tamanho
+                {(minSizeMB || maxSizeMB) && (
+                  <Badge variant="secondary" className="text-[10px] ml-0.5">
+                    {minSizeMB && maxSizeMB
+                      ? `${minSizeMB}–${maxSizeMB}MB`
+                      : minSizeMB
+                      ? `≥${minSizeMB}MB`
+                      : `≤${maxSizeMB}MB`}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 p-3 space-y-3">
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium">Tamanho do arquivo</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Em megabytes (MB). Aplicado no servidor.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="dam-min-mb" className="text-[11px] text-muted-foreground">
+                    Mínimo
+                  </Label>
+                  <Input
+                    id="dam-min-mb"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={0.1}
+                    placeholder="ex: 0.5"
+                    value={minSizeMB}
+                    onChange={(e) => setMinSizeMB(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="dam-max-mb" className="text-[11px] text-muted-foreground">
+                    Máximo
+                  </Label>
+                  <Input
+                    id="dam-max-mb"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={0.1}
+                    placeholder="ex: 5"
+                    value={maxSizeMB}
+                    onChange={(e) => setMaxSizeMB(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex gap-1 flex-wrap">
+                  {[
+                    { label: "≤ 1MB", min: "", max: "1" },
+                    { label: "1–10MB", min: "1", max: "10" },
+                    { label: "≥ 10MB", min: "10", max: "" },
+                  ].map((p) => (
+                    <Button
+                      key={p.label}
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => {
+                        setMinSizeMB(p.min);
+                        setMaxSizeMB(p.max);
+                      }}
+                    >
+                      {p.label}
+                    </Button>
+                  ))}
+                </div>
+                {(minSizeMB || maxSizeMB) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={() => {
+                      setMinSizeMB("");
+                      setMaxSizeMB("");
+                    }}
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
