@@ -4,17 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PreviewStage } from "../PreviewStage";
 import type { Asset } from "../../hooks/use-assets";
 
-// Hold the signed-URL promise so we can keep the component in "loading" state.
-let resolveUrl: (v: string) => void;
+// Keep getAssetSignedUrl pending so the component stays in "loading" state.
 vi.mock("../../hooks/use-assets", async () => {
   const actual = await vi.importActual<typeof import("../../hooks/use-assets")>(
     "../../hooks/use-assets",
   );
   return {
     ...actual,
-    getAssetSignedUrl: vi.fn(
-      () => new Promise<string>((res) => { resolveUrl = res; }),
-    ),
+    getAssetSignedUrl: vi.fn(() => new Promise<string>(() => {})),
   };
 });
 
@@ -51,10 +48,6 @@ function setup() {
 }
 
 describe("PreviewStage — Detalhes durante loading da URL assinada", () => {
-  beforeEach(() => {
-    resolveUrl = () => {};
-  });
-
   it("permite acionar onOpenDetails pelo botão mesmo enquanto a URL está carregando", () => {
     const { onOpenDetails } = setup();
     // URL ainda não resolvida → estado "loading", botões Copiar/Baixar disabled.
