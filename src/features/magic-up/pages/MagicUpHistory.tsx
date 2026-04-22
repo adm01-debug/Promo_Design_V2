@@ -41,22 +41,25 @@ const MagicUpHistory = () => {
   );
   const [selectedItem, setSelectedItem] = useState<MagicUpHistoryItem | null>(null);
 
-  // Keep URL in sync with all filter state so links can be shared/bookmarked
-  // and refreshes preserve the active view.
+  // Keep URL in sync with all filter state.
+  //
+  // We deliberately build the *desired* params from state alone (no `searchParams`
+  // in the deps) and compare against the live `window.location.search`. This avoids
+  // a feedback loop where a `setSearchParams` call would yield a new `searchParams`
+  // identity and re-trigger the effect even when the serialized value is identical.
   useEffect(() => {
-    const next = new URLSearchParams(searchParams);
-    const setOrDel = (key: string, value: string | null | undefined) => {
-      if (value && value.length > 0) next.set(key, value);
-      else next.delete(key);
-    };
-    setOrDel("fav", filterFavorites ? "1" : null);
-    setOrDel("q", search.trim() || null);
-    setOrDel("product", filterProduct);
-    setOrDel("from", dateFrom ? dateFrom.toISOString().slice(0, 10) : null);
-    setOrDel("to", dateTo ? dateTo.toISOString().slice(0, 10) : null);
-    if (next.toString() === searchParams.toString()) return;
+    const next = new URLSearchParams();
+    if (filterFavorites) next.set("fav", "1");
+    const q = search.trim();
+    if (q) next.set("q", q);
+    if (filterProduct) next.set("product", filterProduct);
+    if (dateFrom) next.set("from", dateFrom.toISOString().slice(0, 10));
+    if (dateTo) next.set("to", dateTo.toISOString().slice(0, 10));
+    const desired = next.toString();
+    const current = window.location.search.replace(/^\?/, "");
+    if (desired === current) return;
     setSearchParams(next, { replace: true });
-  }, [filterFavorites, search, filterProduct, dateFrom, dateTo, searchParams, setSearchParams]);
+  }, [filterFavorites, search, filterProduct, dateFrom, dateTo, setSearchParams]);
 
   const clearFavoritesFilter = useCallback(() => setFilterFavorites(false), []);
 
