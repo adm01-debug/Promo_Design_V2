@@ -229,6 +229,22 @@ export default function DamLibraryPage() {
       /* ignore */
     }
   }, [sizeRange]);
+  const [updatedRange, setUpdatedRange] = useState<UpdatedRangeKey>(() => {
+    const fromUrl = searchParams.get("updated") as UpdatedRangeKey | null;
+    if (fromUrl && UPDATED_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
+    if (typeof window === "undefined") return "all";
+    const ls = localStorage.getItem(UPDATED_RANGE_KEY) as UpdatedRangeKey | null;
+    if (ls && UPDATED_RANGE_OPTIONS.some((o) => o.value === ls)) return ls;
+    return "all";
+  });
+  useEffect(() => {
+    try {
+      if (updatedRange !== "all") localStorage.setItem(UPDATED_RANGE_KEY, updatedRange);
+      else localStorage.removeItem(UPDATED_RANGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [updatedRange]);
   useEffect(() => {
     try {
       if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
