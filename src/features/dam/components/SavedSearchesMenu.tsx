@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useRef } from "react";
 import { Bookmark, Pin, PinOff, Pencil, Trash2, Plus, Check, Download, Upload } from "lucide-react";
+import { toast as sonnerToast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useAuth } from "@/hooks/use-auth";
@@ -219,10 +230,29 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   };
 
   const handleDelete = async (id: string) => {
+    const target = items.find((s) => s.id === id);
+    if (!target) return;
     try {
       await remove.mutateAsync(id);
-      toast({ title: "Excluído" });
       setConfirmDeleteId(null);
+      sonnerToast.success(`"${target.name}" excluído`, {
+        duration: 6000,
+        action: {
+          label: "Desfazer",
+          onClick: async () => {
+            try {
+              await create.mutateAsync({
+                name: target.name,
+                filters: target.filters,
+                is_pinned: target.is_pinned,
+              });
+              sonnerToast.success(`"${target.name}" restaurado`);
+            } catch (e) {
+              sonnerToast.error(`Falha ao restaurar: ${(e as Error).message}`);
+            }
+          },
+        },
+      });
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
     }
@@ -293,7 +323,6 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             const diffs = match?.diffs ?? [];
             const isPartial = !isActive && diffs.length > 0 && diffs.length <= 2;
             const isRenaming = renameId === s.id;
-            const isConfirmingDelete = confirmDeleteId === s.id;
             return (
               <div key={s.id} className="px-1 py-0.5">
                 {isRenaming ? (
@@ -312,18 +341,6 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRename(s.id)} aria-label="Confirmar">
                       <Check className="w-3.5 h-3.5" />
                     </Button>
-                  </div>
-                ) : isConfirmingDelete ? (
-                  <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
-                    <span>Excluir "{s.name}"?</span>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="destructive" className="h-6 px-2 text-[11px]" onClick={() => handleDelete(s.id)}>
-                        Sim
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setConfirmDeleteId(null)}>
-                        Não
-                      </Button>
-                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 group">
@@ -436,6 +453,39 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir filtro salvo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const target = items.find((s) => s.id === confirmDeleteId);
+                return target
+                  ? `"${target.name}" será removido. Você terá alguns segundos para desfazer.`
+                  : "Esta ação não poderá ser desfeita após o tempo de undo.";
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmDeleteId) handleDelete(confirmDeleteId);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={remove.isPending}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
