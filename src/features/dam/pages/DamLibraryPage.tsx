@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,6 +33,7 @@ import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
 import { parseBoolParam } from "../lib/parse-bool-param";
 import { JumpToPage } from "../components/JumpToPage";
+import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1605,23 +1605,7 @@ export default function DamLibraryPage() {
       </div>
 
       {(isLoading && displayedAssets.length === 0) || isPaginating ? (
-        viewMode === "list" ? (
-          <div className="space-y-2">
-            {Array.from({ length: Math.min(pageSize, 24) }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {Array.from({ length: Math.min(pageSize, 30) }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-square w-full" />
-                <Skeleton className="h-3 w-2/3" />
-                <Skeleton className="h-3 w-1/3" />
-              </div>
-            ))}
-          </div>
-        )
+        <AssetGridSkeleton viewMode={viewMode} count={pageSize} />
       ) : displayedAssets.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -1696,18 +1680,21 @@ export default function DamLibraryPage() {
           <div
             className={cn(
               "flex-1 min-w-0 relative transition-opacity duration-200",
-              isFetching && !isLoading && "opacity-60 pointer-events-none",
+              isFetching && !isLoading && !isPaginating && "pointer-events-none",
             )}
             aria-busy={isFetching && !isLoading}
           >
-            {isFetching && !isLoading && (
-              <div
-                className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border"
-                aria-hidden="true"
-              >
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Carregando…
-              </div>
+            {/* Background revalidation: overlay reusable skeleton on top of
+                the cached list so the user perceives the refresh consistently
+                without unmounting current data. The cold-start case is handled
+                above (AssetGridSkeleton, no overlay). */}
+            {isFetching && !isLoading && !isPaginating && (
+              <AssetGridSkeleton
+                viewMode={viewMode}
+                count={Math.min(displayedAssets.length || pageSize, pageSize)}
+                overlay
+                label="Atualizando lista de assets"
+              />
             )}
             {viewMode === "list" ? (
               <AssetListView
