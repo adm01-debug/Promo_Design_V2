@@ -8,6 +8,27 @@ import {
   rasterizeSvg,
 } from "../lib/file-preview";
 
+export type UploadPhase =
+  | "analyzing"
+  | "rendering-pdf"
+  | "rasterizing-svg"
+  | "processing-image"
+  | "uploading-file"
+  | "uploading-thumb"
+  | "saving-record"
+  | "done";
+
+export const UPLOAD_PHASE_LABELS: Record<UploadPhase, string> = {
+  "analyzing": "Analisando arquivo…",
+  "rendering-pdf": "Renderizando PDF…",
+  "rasterizing-svg": "Rastreando SVG…",
+  "processing-image": "Processando imagem…",
+  "uploading-file": "Enviando arquivo…",
+  "uploading-thumb": "Enviando thumbnail…",
+  "saving-record": "Salvando metadados…",
+  "done": "Concluído",
+};
+
 export interface UploadOptions {
   organizationId: string;
   clientId?: string | null;
@@ -18,6 +39,8 @@ export interface UploadOptions {
   parentAssetId?: string | null;
   /** When provided, upload becomes a new version of this asset. */
   parentAsset?: Asset | null;
+  /** Optional callback invoked whenever the pipeline transitions phases. */
+  onPhase?: (phase: UploadPhase) => void;
 }
 
 interface FileMeta {
@@ -89,10 +112,17 @@ async function processRasterImage(file: File): Promise<FileMeta | null> {
   });
 }
 
-async function processFile(file: File): Promise<FileMeta | null> {
+async function processFile(
+  file: File,
+  onPhase?: (phase: UploadPhase) => void,
+): Promise<FileMeta | null> {
   const kind = detectFileKind(file);
-  if (kind === "image") return processRasterImage(file);
+  if (kind === "image") {
+    onPhase?.("processing-image");
+    return processRasterImage(file);
+  }
   if (kind === "pdf") {
+    onPhase?.("rendering-pdf");
     const r = await rasterizePdfFirstPage(file, 512);
     if (!r) return null;
     if (r.url) URL.revokeObjectURL(r.url);
@@ -104,6 +134,7 @@ async function processFile(file: File): Promise<FileMeta | null> {
     };
   }
   if (kind === "svg") {
+    onPhase?.("rasterizing-svg");
     const r = await rasterizeSvg(file, 256);
     if (!r) return null;
     if (r.url) URL.revokeObjectURL(r.url);
@@ -129,14 +160,17 @@ export function useAssetUpload(organizationId: string | null) {
   async function uploadFile(file: File, options: UploadOptions) {
     setIsUploading(true);
     setProgress(10);
+    const emit = (p: UploadPhase) => options.onPhase?.(p);
+    emit("analyzing");
     try {
-      const meta = await processFile(file);
+      const meta = await processFile(file, emit);
       setProgress(35);
       const assetId = crypto.randomUUID();
       const folder = `${options.organizationId}/${options.clientId ?? "_org"}/${assetId}`;
       const filename = sanitize(file.name);
       const filePath = `${folder}/${filename}`;
 
+      emit("uploading-file");
       const { error: upErr } = await supabase.storage
         .from("assets")
         .upload(filePath, file, { contentType: file.type, upsert: false });
@@ -145,6 +179,7 @@ export function useAssetUpload(organizationId: string | null) {
 
       let thumbnailPath: string | null = null;
       if (meta?.thumbnailBlob) {
+        emit("uploading-thumb");
         thumbnailPath = `${folder}/thumb_${filename.replace(/\.[^.]+$/, "")}.jpg`;
         const { error: thErr } = await supabase.storage
           .from("assets")
@@ -161,6 +196,7 @@ export function useAssetUpload(organizationId: string | null) {
         options.name ??
         (parent ? `${parent.name.replace(/\s+v\d+$/, "")} v${nextVersion}` : file.name);
 
+      emit("saving-record");
       const asset = await create.mutateAsync({
         organization_id: options.organizationId,
         client_id: options.clientId ?? parent?.client_id ?? null,
@@ -179,6 +215,7 @@ export function useAssetUpload(organizationId: string | null) {
         version: nextVersion,
       });
       setProgress(100);
+      emit("done");
 
       // Fire-and-forget OCR for images <= 10MB
       const OCR_MAX_BYTES = 10 * 1024 * 1024;
