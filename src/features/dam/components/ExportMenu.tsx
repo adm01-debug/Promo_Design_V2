@@ -345,6 +345,15 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
           </>
         )}
         <DropdownMenuLabel className="text-xs">CSV de metadados</DropdownMenuLabel>
+        <DropdownMenuItem
+          onClick={() => setCsvDialog({ open: true, scope: assets, label: "filtrados", kind: "filtered" })}
+          disabled={total === 0 && selDisabled}
+          className="text-xs text-muted-foreground"
+        >
+          <Settings2 className="w-4 h-4" />
+          <span className="flex-1">Configurar colunas…</span>
+          <span className="text-[10px]">{csvColumns.length}/{CSV_COLUMNS.length}</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => exportCsv(assets, "filtrados", "filtered")} disabled={total === 0}>
           <FileSpreadsheet className="w-4 h-4" />
           <span className="flex-1">CSV — Filtrados</span>
@@ -390,6 +399,13 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
         </DropdownMenuItem>
       </DropdownMenuContent>
       </DropdownMenu>
+      <CsvColumnsDialog
+        open={csvDialog?.open ?? false}
+        onOpenChange={(open) => setCsvDialog((s) => (s ? { ...s, open } : null))}
+        value={csvColumns}
+        assetCount={csvDialog?.scope.length ?? 0}
+        onConfirm={handleCsvDialogConfirm}
+      />
     </div>
   );
 }
