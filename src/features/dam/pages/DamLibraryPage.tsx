@@ -9,7 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText, HardDrive, ArrowUpDown, RotateCcw } from "lucide-react";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText, HardDrive, ArrowUpDown, RotateCcw, Check, Copy } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -268,6 +268,34 @@ export default function DamLibraryPage() {
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Copies the current full URL (including all active filters and toggles like
+  // ?archived=1) to the clipboard so the user can share the exact view.
+  const handleCopyLink = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopiedLink(true);
+      toast.success("Link copiado", {
+        description: "URL com filtros atuais copiada para a área de transferência.",
+      });
+      setTimeout(() => setCopiedLink(false), 1800);
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
 
   // Wipes every dam-* preference persisted in localStorage and returns all
   // toggles/filters/pagination to factory defaults. URL search params are
@@ -1025,6 +1053,22 @@ export default function DamLibraryPage() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>Redefinir preferências (filtros, toggles, paginação)</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopyLink}
+                aria-label="Copiar link da visualização atual"
+                data-testid="dam-copy-link"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {copiedLink ? "Copiado!" : "Copiar link com filtros atuais"}
+            </TooltipContent>
           </Tooltip>
         </div>
       </header>
