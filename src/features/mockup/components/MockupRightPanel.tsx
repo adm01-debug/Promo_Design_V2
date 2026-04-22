@@ -329,7 +329,6 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
           try {
             const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
             handleLogoUpload(file);
-            toast.success("Logo carregado da biblioteca");
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível carregar o logo.");
           } finally {
