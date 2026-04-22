@@ -913,47 +913,91 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
-      search_assets_ranked: {
-        Args: {
-          _asset_types?: Database["public"]["Enums"]["asset_type"][]
-          _client_id?: string
-          _include_archived?: boolean
-          _limit?: number
-          _offset?: number
-          _org_id: string
-          _query: string
-          _tags?: string[]
-          _tags_mode?: string
-        }
-        Returns: {
-          asset_type: Database["public"]["Enums"]["asset_type"]
-          client_id: string
-          created_at: string
-          created_by: string
-          description: string
-          dominant_colors: string[]
-          file_path: string
-          file_size: number
-          height: number
-          id: string
-          is_archived: boolean
-          metadata: Json
-          mime_type: string
-          name: string
-          ocr_match: boolean
-          ocr_status: string
-          ocr_text: string
-          organization_id: string
-          parent_asset_id: string
-          rank: number
-          tags: string[]
-          thumbnail_path: string
-          total_count: number
-          updated_at: string
-          version: number
-          width: number
-        }[]
-      }
+      search_assets_ranked:
+        | {
+            Args: {
+              _asset_types?: Database["public"]["Enums"]["asset_type"][]
+              _client_id?: string
+              _include_archived?: boolean
+              _limit?: number
+              _offset?: number
+              _org_id: string
+              _query: string
+              _tags?: string[]
+              _tags_mode?: string
+            }
+            Returns: {
+              asset_type: Database["public"]["Enums"]["asset_type"]
+              client_id: string
+              created_at: string
+              created_by: string
+              description: string
+              dominant_colors: string[]
+              file_path: string
+              file_size: number
+              height: number
+              id: string
+              is_archived: boolean
+              metadata: Json
+              mime_type: string
+              name: string
+              ocr_match: boolean
+              ocr_status: string
+              ocr_text: string
+              organization_id: string
+              parent_asset_id: string
+              rank: number
+              tags: string[]
+              thumbnail_path: string
+              total_count: number
+              updated_at: string
+              version: number
+              width: number
+            }[]
+          }
+        | {
+            Args: {
+              _asset_types?: Database["public"]["Enums"]["asset_type"][]
+              _client_id?: string
+              _include_archived?: boolean
+              _limit?: number
+              _max_size?: number
+              _min_size?: number
+              _offset?: number
+              _org_id: string
+              _query: string
+              _tags?: string[]
+              _tags_mode?: string
+            }
+            Returns: {
+              asset_type: Database["public"]["Enums"]["asset_type"]
+              client_id: string
+              created_at: string
+              created_by: string
+              description: string
+              dominant_colors: string[]
+              file_path: string
+              file_size: number
+              height: number
+              id: string
+              is_archived: boolean
+              metadata: Json
+              mime_type: string
+              name: string
+              ocr_match: boolean
+              ocr_status: string
+              ocr_text: string
+              organization_id: string
+              parent_asset_id: string
+              rank: number
+              tags: string[]
+              thumbnail_path: string
+              total_count: number
+              updated_at: string
+              version: number
+              width: number
+            }[]
+          }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
