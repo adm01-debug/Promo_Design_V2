@@ -193,7 +193,7 @@ const ChartTooltipContent = React.forwardRef<
                 )}
               >
                 {formatter && hasValue && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload ?? {})
+                  formatter(item.value as string | number, item.name, item, index, item.payload ?? {})
                 ) : (
                   <>
                     {itemConfig?.icon ? (
