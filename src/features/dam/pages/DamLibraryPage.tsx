@@ -9,7 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText } from "lucide-react";
+import { Archive, ArchiveRestore, FolderArchive, LayoutGrid, List, Plus, Eye, ChevronDown, Loader2, FilterX, PanelRight, History, X, AlertCircle, Link2, ScanText, HardDrive } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -56,6 +56,7 @@ const ASSET_TYPES_KEY = "dam-asset-types";
 const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
+const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 
@@ -183,6 +184,18 @@ export default function DamLibraryPage() {
     if (typeof window === "undefined") return "grid";
     return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
   });
+  const [showSizeColumn, setShowSizeColumn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(LIST_SHOW_SIZE_KEY) === "1";
+  });
+  useEffect(() => {
+    try {
+      if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
+      else localStorage.removeItem(LIST_SHOW_SIZE_KEY);
+    } catch {
+      /* ignore */
+    }
+  }, [showSizeColumn]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
@@ -952,6 +965,23 @@ export default function DamLibraryPage() {
               <List className="w-4 h-4" />
             </ToggleGroupItem>
           </ToggleGroup>
+          {viewMode === "list" && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Toggle
+                  size="sm"
+                  pressed={showSizeColumn}
+                  onPressedChange={setShowSizeColumn}
+                  aria-label="Mostrar coluna Tamanho"
+                >
+                  <HardDrive className="w-4 h-4" />
+                </Toggle>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {showSizeColumn ? "Ocultar coluna Tamanho" : "Mostrar coluna Tamanho"}
+              </TooltipContent>
+            </Tooltip>
+          )}
           <ToggleGroup
             type="single"
             value={paginationMode}
@@ -1204,6 +1234,15 @@ export default function DamLibraryPage() {
                 clients={clients}
                 onSelect={setSelected}
                 onRestore={canUpload ? handleRestore : undefined}
+                showSize={showSizeColumn}
+                sizeSortDir={
+                  sort === "size_desc" ? "desc" : sort === "size_asc" ? "asc" : null
+                }
+                onToggleSizeSort={() => {
+                  setSort((prev) =>
+                    prev === "size_desc" ? "size_asc" : "size_desc",
+                  );
+                }}
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
