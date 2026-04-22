@@ -222,7 +222,11 @@ export function AuditSavedViewsMenu({
                   key={v.id}
                   onSelect={(e) => {
                     e.preventDefault();
-                    onApply(fromFiltersPayload(v.filters ?? {}));
+                    const f = v.filters ?? {};
+                    onApply(fromFiltersPayload(f), {
+                      page: typeof f.page === "number" ? f.page : 0,
+                      pageSize: typeof f.pageSize === "number" ? f.pageSize : undefined,
+                    });
                   }}
                   data-testid={`audit-view-${v.id}`}
                   className="flex items-center justify-between gap-2"
