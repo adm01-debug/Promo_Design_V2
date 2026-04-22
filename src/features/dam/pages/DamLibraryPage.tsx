@@ -216,11 +216,15 @@ export default function DamLibraryPage() {
     setClientId("all");
     setSelectedTags([]);
     setIncludeArchived(false);
+    setMinSizeMB("");
+    setMaxSizeMB("");
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
     writeLS(TAGS_KEY, null);
     writeLS(SORT_KEY, null);
+    writeLS(MIN_SIZE_KEY, null);
+    writeLS(MAX_SIZE_KEY, null);
   };
 
   useEffect(() => {
