@@ -164,6 +164,7 @@ export default function DamLibraryPage() {
   });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
+  const [batchOcrOpen, setBatchOcrOpen] = useState(false);
   const quickPreview = useQuickPreview();
 
   // "Continue where you left off" — last asset viewed in /dam/preview.
