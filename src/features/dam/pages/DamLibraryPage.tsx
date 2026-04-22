@@ -746,7 +746,7 @@ export default function DamLibraryPage() {
                 className={cn(
                   "gap-2 transition-colors",
                   archivedOnly &&
-                    "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/15 data-[state=on]:bg-amber-500/10",
+                    "bg-destructive/10 text-destructive border-destructive/40 hover:bg-destructive/15 data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive",
                 )}
               >
                 <Archive className="w-4 h-4" />
