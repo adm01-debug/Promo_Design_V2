@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2, ArrowDownWideNarrow, ArrowUpWideNarrow, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +64,9 @@ export function AssetAuditTrail({ asset }: Props) {
   const [userFilter, setUserFilter] = useState<string>("ALL");
   const [fieldFilter, setFieldFilter] = useState<TrackedField[]>([]);
   const [sortDir, setSortDir] = useState<"desc" | "asc">("desc");
+  const PAGE_SIZE = 25;
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Apply selected sort direction over a copy of the data
   const entries = useMemo(() => {
@@ -106,6 +109,34 @@ export function AssetAuditTrail({ asset }: Props) {
   };
   const hasExtraFilters =
     userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
+
+  // Reset visible window whenever the resulting list changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [actionFilter, userFilter, fieldFilter, sortDir, data]);
+
+  const visibleEntries = useMemo(
+    () => filteredEntries.slice(0, visibleCount),
+    [filteredEntries, visibleCount],
+  );
+  const hasMore = visibleEntries.length < filteredEntries.length;
+
+  // Auto-load next page when sentinel becomes visible
+  useEffect(() => {
+    if (!open || !hasMore) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisibleCount((c) => c + PAGE_SIZE);
+        }
+      },
+      { root: null, rootMargin: "200px 0px", threshold: 0 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [open, hasMore, visibleEntries.length]);
 
   const counts = useMemo(() => {
     const c = { INSERT: 0, UPDATE: 0, DELETE: 0 } as Record<AssetAuditEntry["action"], number>;
@@ -266,7 +297,7 @@ export function AssetAuditTrail({ asset }: Props) {
             </div>
           ) : (
           <ul className="space-y-2">
-            {filteredEntries.map((e) => {
+            {visibleEntries.map((e) => {
               const meta = ACTION_META[e.action];
               const Icon = meta.icon;
               const prev = prevSnapshots.get(e.id) ?? null;
@@ -328,6 +359,26 @@ export function AssetAuditTrail({ asset }: Props) {
               );
             })}
           </ul>
+          )}
+          {hasMore && (
+            <div
+              ref={sentinelRef}
+              className="pt-2 flex flex-col items-center gap-1 text-[11px] text-muted-foreground"
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              >
+                Carregar mais ({filteredEntries.length - visibleEntries.length} restantes)
+              </Button>
+            </div>
+          )}
+          {!hasMore && filteredEntries.length > PAGE_SIZE && (
+            <div className="pt-1 text-center text-[11px] text-muted-foreground">
+              Mostrando todos os {filteredEntries.length} registros
+            </div>
           )}
           </>
         )}
