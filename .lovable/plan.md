@@ -1,94 +1,62 @@
 
 
-## Testes E2E para alertas de auditoria
+## Teste E2E — atalhos de teclado em `/audit`
 
-Vamos adicionar uma suíte Playwright que valida o fluxo completo: login → criar regra de alerta no Audit Trail → disparar um evento que case com a regra → confirmar que a notificação `audit_alert` aparece no `NotificationPanel`.
+Adicionar um arquivo Playwright que valide os dois atalhos já implementados em `AuditLogPage`:
+- `/` → foca o input de busca por ID do registro
+- `Esc` → limpa todos os filtros aplicados
 
-### Pré-requisito (bloqueante)
+### Arquivo novo: `e2e/audit-shortcuts.spec.ts`
 
-A funcionalidade de **regras de alerta** ainda não foi implementada (o plano anterior foi apresentado mas não aprovado/codificado). Para os testes terem o que validar, precisamos primeiro implementar:
+Segue o mesmo padrão de `e2e/audit-alerts.spec.ts`: skip automático quando faltam credenciais, mas mantém um smoke test (redirecionamento para `/auth` sem sessão) para nunca passar com 0 testes.
 
-1. Migração: tabela `audit_alert_rules` + função/trigger `notify_audit_alert` + RLS.
-2. Frontend: `useAuditAlerts`, `AuditAlertsManager` (Sheet), `AuditAlertRuleForm` (Dialog), botão "Alertas" no header de `/audit`.
-3. `NotificationPanel`: tratamento visual do `event_type='audit_alert'`.
+**Setup**
+- Reutiliza `PLAYWRIGHT_TEST_EMAIL` / `PLAYWRIGHT_TEST_PASSWORD` (mesmo helper `login(page)` da suíte de alertas).
+- `test.describe.serial` com `test.setTimeout(45_000)`.
 
-Esta etapa é coberta pelo plano anterior — vamos executá-la junto deste, num único loop.
+**Cenário 1 — smoke (sem credenciais)**
+- `goto('/audit')` → espera redirect para `/auth`.
 
-### Estrutura dos testes E2E
+**Cenário 2 — `/` foca o input de ID**
+1. `login(page)` → `goto('/audit')`.
+2. Garantir que o foco inicial não está no input (clicar no `<h1>` da página).
+3. `page.keyboard.press('/')`.
+4. Asserir `expect(page.locator('#audit-id-search')).toBeFocused()` (ou via `data-testid` se o id não existir — verificar em `AuditFilters.tsx`).
+5. Caso o input alvo não tenha id estável, o plano inclui adicionar `data-testid="audit-id-search-input"` no campo correspondente em `AuditFilters.tsx` (ajuste mínimo, sem mudança de comportamento).
 
-**Arquivo novo: `e2e/audit-alerts.spec.ts`**
+**Cenário 3 — `Esc` limpa filtros**
+1. `goto('/audit?action=INSERT&table=service_orders&recordId=abc123')` (hidrata filtros via URL).
+2. Asserir que a URL contém os params e que os chips/inputs refletem os filtros (ex.: badge `INSERT` visível, input de ID com `abc123`).
+3. Tirar foco de qualquer input (`page.locator('h1').click()` — o handler de `Esc` ignora quando o foco está em input/textarea).
+4. `page.keyboard.press('Escape')`.
+5. Asserir:
+   - URL não contém mais `action`, `table`, `recordId` (apenas `/audit` ou query vazia).
+   - Input de ID está vazio.
+   - Nenhum chip de ação/tabela visível.
 
-Premissas (alinhadas com `e2e/auth.spec.ts` / `e2e/service-orders.spec.ts` existentes):
-- Usuário de teste já autenticado por helper compartilhado (reutilizar padrão atual de login).
-- Organização ativa com pelo menos 1 membro (o próprio usuário).
-- Fixture: `playwright-fixture.ts` exporta `test/expect`.
+**Cenário 4 — `Esc` é ignorado quando foco está em input**
+1. `goto('/audit?action=INSERT')`.
+2. Focar o input de ID (`page.locator('#audit-id-search').focus()`).
+3. `page.keyboard.press('Escape')`.
+4. Asserir que `action=INSERT` ainda está na URL (o atalho global não dispara dentro de inputs, conforme `useKeyboardShortcuts`).
 
-**Cenário 1 — Criar regra de alerta a partir de filtros atuais**
-1. `goto('/audit')`.
-2. Aplicar filtro: ação `INSERT`, tabela `service_orders` (via `AuditFilters`).
-3. Clicar botão `Alertas` no header → abre `Sheet`.
-4. Clicar `Nova regra` → abre `Dialog` com filtros pré-preenchidos.
-5. Preencher nome `E2E - INSERT em service_orders`.
-6. Salvar → confirmar toast de sucesso e regra na lista do Sheet com chips corretos (`INSERT`, `service_orders`).
+### Ajuste mínimo no código (se necessário)
 
-**Cenário 2 — Disparar evento e validar notificação**
-1. Garantir que a regra do cenário 1 está ativa (toggle on).
-2. Em outra aba/contexto, navegar para `/service-orders/new` e criar uma OS mínima → submeter.
-3. Voltar à primeira aba, abrir `NotificationPanel` (clicar sino no header).
-4. Aguardar até 20s (cobre os 15s de polling) → asserir presença de item com:
-   - badge/ícone âmbar de `audit_alert`
-   - texto contendo `INSERT em service_orders`
-   - rótulo da regra `E2E - INSERT em service_orders`
-5. Clicar no item → asserir navegação para `/audit?...` com filtros aplicados.
+Verificar em `AuditFilters.tsx` se o input de ID tem `id="audit-id-search"` (referenciado em `AuditLogPage.tsx` no handler do atalho `/`). Se não tiver, adicionar:
+- `id="audit-id-search"` + `data-testid="audit-id-search-input"` no `<Input>` correspondente.
 
-**Cenário 3 — Toggle desliga sem perder a regra**
-1. Em `/audit`, abrir Sheet de alertas, desativar toggle da regra E2E.
-2. Criar nova OS.
-3. Após 20s, asserir que **nenhuma** notificação nova de `audit_alert` para essa regra apareceu (contador permanece igual ao snapshot inicial).
-
-**Cenário 4 — Cleanup**
-1. `afterAll`: deletar a regra E2E e qualquer notificação `audit_alert` criada (via `supabase` client direto com chave de teste, padrão usado em `service-orders.spec.ts`).
-2. Deletar a OS de teste criada.
-
-### Helpers/utilitários
-
-Adicionar `e2e/helpers/audit-alerts.ts` com:
-- `createTestAlertRule(page, { name, actions, tables })` — abstrai cliques.
-- `waitForAuditAlertNotification(page, ruleName, timeout = 20_000)` — polling do painel.
-- `cleanupAuditTestData(supabase, ruleName)` — usa service-role no Node test runner para garantir limpeza determinística.
-
-Garantir IDs/data-testids estáveis nos componentes novos para os testes não dependerem de texto:
-- Botão "Alertas": `data-testid="audit-alerts-button"`
-- Sheet: `data-testid="audit-alerts-sheet"`
-- Item da lista: `data-testid="audit-alert-rule-{id}"` + `data-testid="audit-alert-rule-toggle-{id}"`
-- Notificação: `data-testid="notification-item-{id}"` com `data-event-type="audit_alert"`
-
-### Configuração de teste
-
-- Usar `test.describe.serial` para os 3 cenários (compartilham regra + OS).
-- Polling no painel: `expect.poll(...).toBeTruthy()` com timeout `20_000` e intervalo `1500ms` para encaixar com o `useVisibilityPolling` (15s).
-- `playwright.config.ts`: aumentar `timeout` global do arquivo para `60_000` apenas para esta suíte via `test.setTimeout(60_000)` no `describe`.
-
-### Arquivos tocados
-
-**Implementação base (pré-requisito do plano anterior — a executar junto):**
-- Migração nova: `audit_alert_rules` + trigger `notify_audit_alert`.
-- `src/features/audit/hooks/use-audit-alerts.ts` (novo)
-- `src/features/audit/components/AuditAlertsManager.tsx` (novo)
-- `src/features/audit/components/AuditAlertRuleForm.tsx` (novo)
-- `src/features/audit/pages/AuditLogPage.tsx` (botão Alertas + data-testids)
-- `src/components/NotificationPanel.tsx` (render `audit_alert` + data-testids)
-
-**Testes E2E (foco deste plano):**
-- `e2e/audit-alerts.spec.ts` (novo, 3 cenários + cleanup)
-- `e2e/helpers/audit-alerts.ts` (novo)
+Sem alterações em hooks, lógica de filtros ou comportamento do usuário.
 
 ### Critérios de aceite
 
-- `bunx playwright test e2e/audit-alerts.spec.ts` passa em CI local.
-- Cenário 2 confirma notificação `audit_alert` no painel após criação de OS, dentro de 20s.
-- Cenário 3 confirma que toggle desativado bloqueia novas notificações.
-- Cleanup remove 100% dos dados criados (regra, notificações, OS).
-- Sem regressão em `e2e/auth.spec.ts`, `e2e/navigation.spec.ts`, `e2e/service-orders.spec.ts`.
-- Componentes novos expõem `data-testid` estáveis para os testes não dependerem de texto traduzido.
+- `bunx playwright test e2e/audit-shortcuts.spec.ts` passa localmente.
+- Smoke test sempre roda (mesmo sem credenciais).
+- Cenários 2–4 cobrem foco, limpeza e o caso negativo (Esc dentro de input).
+- Nenhuma regressão em `e2e/audit-alerts.spec.ts`, `e2e/auth.spec.ts`, `e2e/navigation.spec.ts`.
+- Seletores estáveis (`id` + `data-testid`), sem dependência de texto traduzido.
+
+### Arquivos tocados
+
+- `e2e/audit-shortcuts.spec.ts` (novo)
+- `src/features/audit/components/AuditFilters.tsx` (ajuste mínimo de `id`/`data-testid` no input de ID, apenas se ainda não existir)
 
