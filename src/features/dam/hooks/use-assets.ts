@@ -50,6 +50,8 @@ export interface AssetFilters {
   minSize?: number | null;
   /** Maximum file size in bytes (inclusive). */
   maxSize?: number | null;
+  /** Filter to assets updated at or after this ISO timestamp. */
+  updatedAfter?: string | null;
 }
 
 export interface AssetInsert {
