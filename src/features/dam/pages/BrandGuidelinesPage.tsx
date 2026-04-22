@@ -336,11 +336,6 @@ export default function BrandGuidelinesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {editable && (
-            <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
-              <Save className="w-4 h-4 mr-2" /> Salvar
-            </Button>
-          )}
           <Button variant="outline" onClick={handleExportPdf} disabled={isExporting}>
             {isExporting ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -349,6 +344,11 @@ export default function BrandGuidelinesPage() {
             )}
             Exportar PDF
           </Button>
+          {editable && (
+            <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
+              <Save className="w-4 h-4 mr-2" /> Salvar
+            </Button>
+          )}
         </div>
       </div>
 
