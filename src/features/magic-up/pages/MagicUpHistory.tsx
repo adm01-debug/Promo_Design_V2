@@ -16,25 +16,47 @@ const CHART_COLORS = ["hsl(190, 95%, 55%)", "hsl(260, 60%, 60%)", "hsl(330, 80%,
 const MagicUpHistory = () => {
   const { items, toggleFavorite, deleteItem } = useMagicUpHistory();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [filterFavorites, setFilterFavorites] = useState<boolean>(
     () => searchParams.get("fav") === "1",
   );
-  const [filterProduct, setFilterProduct] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<Date | undefined>();
-  const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterProduct, setFilterProduct] = useState<string | null>(
+    () => searchParams.get("product") ?? null,
+  );
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => {
+    const v = searchParams.get("from");
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  });
+  const [dateTo, setDateTo] = useState<Date | undefined>(() => {
+    const v = searchParams.get("to");
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  });
+  // Open the filters panel automatically when the URL already has product/date filters.
+  const [showFilters, setShowFilters] = useState(
+    () => !!(searchParams.get("product") || searchParams.get("from") || searchParams.get("to")),
+  );
   const [selectedItem, setSelectedItem] = useState<MagicUpHistoryItem | null>(null);
 
-  // Keep URL in sync: add ?fav=1 when active, remove it when off
+  // Keep URL in sync with all filter state so links can be shared/bookmarked
+  // and refreshes preserve the active view.
   useEffect(() => {
-    const current = searchParams.get("fav") === "1";
-    if (current === filterFavorites) return;
     const next = new URLSearchParams(searchParams);
-    if (filterFavorites) next.set("fav", "1");
-    else next.delete("fav");
+    const setOrDel = (key: string, value: string | null | undefined) => {
+      if (value && value.length > 0) next.set(key, value);
+      else next.delete(key);
+    };
+    setOrDel("fav", filterFavorites ? "1" : null);
+    setOrDel("q", search.trim() || null);
+    setOrDel("product", filterProduct);
+    setOrDel("from", dateFrom ? dateFrom.toISOString().slice(0, 10) : null);
+    setOrDel("to", dateTo ? dateTo.toISOString().slice(0, 10) : null);
+    if (next.toString() === searchParams.toString()) return;
     setSearchParams(next, { replace: true });
-  }, [filterFavorites, searchParams, setSearchParams]);
+  }, [filterFavorites, search, filterProduct, dateFrom, dateTo, searchParams, setSearchParams]);
 
   const clearFavoritesFilter = useCallback(() => setFilterFavorites(false), []);
 
