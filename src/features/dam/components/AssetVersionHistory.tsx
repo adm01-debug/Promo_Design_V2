@@ -37,7 +37,20 @@ const DEFAULT_FILTERS: VersionFilters = {
 };
 
 const STORAGE_KEY = "dam:version-history-filters";
+const VIEW_STORAGE_KEY = "dam:version-history-view";
 const PAGE_SIZE = 10;
+
+type ViewMode = "list" | "timeline";
+
+function loadView(): ViewMode {
+  if (typeof window === "undefined") return "list";
+  try {
+    const raw = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    return raw === "timeline" ? "timeline" : "list";
+  } catch {
+    return "list";
+  }
+}
 
 function loadFilters(): VersionFilters {
   if (typeof window === "undefined") return DEFAULT_FILTERS;
@@ -85,6 +98,15 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
 
   const [filters, setFilters] = useState<VersionFilters>(() => loadFilters());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [view, setView] = useState<ViewMode>(() => loadView());
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {
+      // ignore
+    }
+  }, [view]);
 
   useEffect(() => {
     try {
