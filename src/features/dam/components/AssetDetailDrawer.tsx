@@ -377,3 +377,71 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
     </Sheet>
   );
 }
+
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightTokens(text: string, query: string): React.ReactNode[] {
+  const tokens = Array.from(
+    new Set(
+      query
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length >= 2),
+    ),
+  );
+  if (tokens.length === 0) return [text];
+  const re = new RegExp(`(${tokens.map(escapeRegExp).join("|")})`, "gi");
+  const parts = text.split(re);
+  return parts.map((part, i) =>
+    re.test(part) ? (
+      <mark key={i} className="bg-primary/30 text-foreground rounded px-0.5">
+        {part}
+      </mark>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
+function OcrSnippet({ text, query }: { text: string; query: string }) {
+  const tokens = query
+    .split(/\s+/)
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => t.length >= 2);
+  const lower = text.toLowerCase();
+  let idx = -1;
+  for (const t of tokens) {
+    const i = lower.indexOf(t);
+    if (i !== -1) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx === -1) return null;
+  const radius = 80;
+  const start = Math.max(0, idx - radius);
+  const end = Math.min(text.length, idx + radius);
+  const snippet =
+    (start > 0 ? "… " : "") + text.slice(start, end) + (end < text.length ? " …" : "");
+  return (
+    <div className="rounded bg-primary/5 border border-primary/20 p-2 text-xs leading-relaxed">
+      <div className="text-[10px] uppercase tracking-wide text-primary/80 mb-1">
+        Trecho com correspondência
+      </div>
+      <div className="whitespace-pre-wrap break-words">
+        {highlightTokens(snippet, query)}
+      </div>
+    </div>
+  );
+}
+
+function HighlightedPre({ text, query }: { text: string; query: string }) {
+  const hasQuery = query.split(/\s+/).some((t) => t.trim().length >= 2);
+  return (
+    <pre className="text-xs whitespace-pre-wrap bg-muted rounded p-2 max-h-40 overflow-y-auto font-mono">
+      {hasQuery ? highlightTokens(text, query) : text}
+    </pre>
+  );
+}
