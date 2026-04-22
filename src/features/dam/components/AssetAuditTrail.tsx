@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { format } from "date-fns";
-import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2, ArrowDownWideNarrow, ArrowUpWideNarrow, X } from "lucide-react";
+import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2, ArrowDownWideNarrow, ArrowUpWideNarrow, X, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -85,7 +87,9 @@ interface Props {
 
 export function AssetAuditTrail({ asset }: Props) {
   const { data, isLoading } = useAssetAudit(asset);
-  const [open, setOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const auditParam = searchParams.get("audit");
+  const [open, setOpen] = useState(!!auditParam);
   const [diff, setDiff] = useState<AssetAuditEntry | null>(null);
   const [actionFilter, setActionFilter] = useState<AssetAuditEntry["action"] | "ALL">("ALL");
   const [userFilter, setUserFilter] = useState<string>("ALL");
@@ -136,6 +140,50 @@ export function AssetAuditTrail({ asset }: Props) {
   };
   const hasExtraFilters =
     userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
+
+  // Open the diff dialog automatically when ?audit=<id> is present
+  useEffect(() => {
+    if (!auditParam || !data) return;
+    const target = data.find((e) => e.id === auditParam);
+    if (target) {
+      setOpen(true);
+      setDiff(target);
+    } else {
+      toast.error("Evento de auditoria não encontrado neste asset");
+      const next = new URLSearchParams(searchParams);
+      next.delete("audit");
+      setSearchParams(next, { replace: true });
+    }
+    // We intentionally only react to data + param changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auditParam, data]);
+
+  const openDiff = (e: AssetAuditEntry) => {
+    setDiff(e);
+    const next = new URLSearchParams(searchParams);
+    next.set("audit", e.id);
+    setSearchParams(next, { replace: true });
+  };
+
+  const closeDiff = () => {
+    setDiff(null);
+    if (searchParams.has("audit")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("audit");
+      setSearchParams(next, { replace: true });
+    }
+  };
+
+  const copyDeepLink = async (e: AssetAuditEntry) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("audit", e.id);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      toast.success("Link do diff copiado");
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
 
   // Reset visible window whenever the resulting list changes
   useEffect(() => {
@@ -353,15 +401,27 @@ export function AssetAuditTrail({ asset }: Props) {
                       </span>
                     </div>
                     {canCompare && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setDiff(e)}
-                      >
-                        <GitCompare className="w-3 h-3 mr-1" />
-                        Comparar
-                      </Button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => openDiff(e)}
+                        >
+                          <GitCompare className="w-3 h-3 mr-1" />
+                          Comparar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => copyDeepLink(e)}
+                          title="Copiar link direto deste diff"
+                          aria-label="Copiar link direto deste diff"
+                        >
+                          <Link2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                   {e.action === "UPDATE" && e.changed_fields.length > 0 && (
@@ -452,7 +512,7 @@ export function AssetAuditTrail({ asset }: Props) {
 
       <AssetMetadataDiffDialog
         open={!!diff}
-        onClose={() => setDiff(null)}
+        onClose={closeDiff}
         previousValues={diff ? prevSnapshots.get(diff.id) ?? null : null}
         currentValues={diff?.new_values ?? null}
         changedFields={diff?.changed_fields ?? []}
