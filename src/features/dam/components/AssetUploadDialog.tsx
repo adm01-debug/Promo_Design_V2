@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw, FileType, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
 import { cn } from "@/lib/utils";
@@ -95,6 +95,8 @@ interface FileEntry {
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   phase?: UploadPhase;
+  /** Set when PDF/SVG preview rendering failed. Upload still proceeds. */
+  previewError?: string;
 }
 
 export function AssetUploadDialog({
