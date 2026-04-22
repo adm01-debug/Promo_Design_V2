@@ -1012,6 +1012,20 @@ export default function DamLibraryPage() {
               <ScanText className="w-4 h-4 mr-2" /> OCR em lote
             </Button>
           )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setResetOpen(true)}
+                aria-label="Redefinir preferências da biblioteca"
+                data-testid="dam-reset-preferences"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Redefinir preferências (filtros, toggles, paginação)</TooltipContent>
+          </Tooltip>
         </div>
       </header>
 
