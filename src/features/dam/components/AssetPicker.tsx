@@ -19,9 +19,7 @@ import { cn } from "@/lib/utils";
  * AssetPicker — modal reutilizável para escolher um (ou vários) asset(s) do DAM.
  *
  * Props principais:
- * - `defaultClientId` pré-seleciona o filtro de cliente (não trava — use `lockClient` para isso).
- * - `clientId` (legado) mantido por compatibilidade; equivalente a `defaultClientId`.
- *   Se ambos forem passados, `defaultClientId` tem precedência.
+ * - `clientId` pré-seleciona o filtro de cliente (não trava — use `lockClient` para isso).
  * - `lockClient` esconde o seletor de cliente (útil em telas com cliente fixo, ex. brand kit).
  * - `defaultAssetType` pré-filtra por tipo (logo/art/photo/...).
  * - `excludeAssetIds` esconde assets já vinculados (filtro client-side, sem round-trip).
@@ -50,7 +48,7 @@ type MultiSelectProps = {
 type CommonProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  /** Pré-seleciona o filtro de cliente (editável pelo usuário, salvo se `lockClient`). */
+  /** Pré-seleciona o filtro de cliente (editável, salvo se `lockClient`). */
   defaultClientId?: string | null;
   /** @deprecated Use `defaultClientId`. Mantido por compatibilidade. */
   clientId?: string | null;
@@ -76,19 +74,8 @@ const PAGE_SIZE = 24;
 
 export function AssetPicker(props: AssetPickerProps) {
   const { open, onOpenChange, defaultClientId, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
-  // `defaultClientId` é o nome canônico; `clientId` permanece como fallback (legado).
   const initialClientId = defaultClientId ?? clientId ?? "all";
   const multiSelect = props.multiSelect === true;
-
-  // Validação dev-only: garante que `onSelect` casa com o modo selecionado.
-  if (import.meta.env.DEV && typeof props.onSelect !== "function") {
-    // eslint-disable-next-line no-console
-    console.error(
-      `[AssetPicker] prop \`onSelect\` deve ser uma função. ` +
-        `Em multiSelect=${multiSelect ? "true" : "false"}, espera-se ` +
-        `\`(${multiSelect ? "assets: Asset[]" : "asset: Asset"}) => void\`.`,
-    );
-  }
 
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
