@@ -195,6 +195,13 @@ function RuleSection({
                   {r.value_key} ⊃ {r.value_query}
                 </Badge>
               )}
+              <Badge variant="outline" className="text-[10px]">
+                {r.recipients_mode === "organization"
+                  ? "👥 toda a organização"
+                  : r.recipients_mode === "users"
+                    ? `👥 ${r.recipient_user_ids?.length ?? 0} usuário(s)`
+                    : "👤 apenas dono"}
+              </Badge>
             </div>
             {isOwner && (
               <div className="flex justify-end">
