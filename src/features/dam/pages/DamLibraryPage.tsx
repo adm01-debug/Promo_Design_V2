@@ -1239,6 +1239,11 @@ export default function DamLibraryPage() {
         onOpenChange={setActivityOpen}
         organizationId={currentOrgId}
       />
+      <BatchOcrDialog
+        open={batchOcrOpen}
+        onOpenChange={setBatchOcrOpen}
+        assets={displayedAssets}
+      />
     </div>
   );
 }
