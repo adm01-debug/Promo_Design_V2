@@ -252,6 +252,16 @@ export default function DamLibraryPage() {
   }, [archivedOnly, setSearchParams]);
 
   useEffect(() => {
+    try { localStorage.setItem(OCR_ONLY_KEY, ocrOnly ? "1" : "0"); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (ocrOnly) next.set("ocrOnly", "1");
+      else next.delete("ocrOnly");
+      return next;
+    }, { replace: true });
+  }, [ocrOnly, setSearchParams]);
+
+  useEffect(() => {
     try { localStorage.setItem(PAGINATION_MODE_KEY, paginationMode); } catch { /* ignore */ }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
