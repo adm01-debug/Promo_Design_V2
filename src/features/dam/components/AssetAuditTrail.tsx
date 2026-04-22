@@ -400,27 +400,35 @@ export function AssetAuditTrail({ asset }: Props) {
                         {shortId(e.user_id)}
                       </span>
                     </div>
-                    {canCompare && (
+                    {e.action === "UPDATE" && (
                       <div className="flex items-center gap-0.5 shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-7 px-2 text-xs"
                           onClick={() => openDiff(e)}
+                          disabled={!canCompare}
+                          title={
+                            canCompare
+                              ? "Comparar metadados com a versão anterior"
+                              : "Sem versão anterior para comparar"
+                          }
                         >
                           <GitCompare className="w-3 h-3 mr-1" />
-                          Comparar
+                          Comparar com anterior
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => copyDeepLink(e)}
-                          title="Copiar link direto deste diff"
-                          aria-label="Copiar link direto deste diff"
-                        >
-                          <Link2 className="w-3 h-3" />
-                        </Button>
+                        {canCompare && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => copyDeepLink(e)}
+                            title="Copiar link direto deste diff"
+                            aria-label="Copiar link direto deste diff"
+                          >
+                            <Link2 className="w-3 h-3" />
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
