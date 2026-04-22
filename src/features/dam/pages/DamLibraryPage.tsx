@@ -937,6 +937,16 @@ export default function DamLibraryPage() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={updatedRange} onValueChange={(v) => setUpdatedRange(v as UpdatedRangeKey)}>
+            <SelectTrigger className="w-44" aria-label="Filtrar por data de modificação">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {UPDATED_RANGE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={sort} onValueChange={(v) => setSort(v as SortValue)}>
             <SelectTrigger className="w-44">
               <SelectValue />
