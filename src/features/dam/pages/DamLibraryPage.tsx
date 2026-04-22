@@ -30,6 +30,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryExportMenu } from "../components/LibraryExportMenu";
+import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -85,6 +86,7 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [activityOpen, setActivityOpen] = useState(false);
   const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? readLS(SEARCH_KEY) ?? "");
   const debouncedSearch = useDebounce(search, 300);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>(() => {
@@ -516,6 +518,15 @@ export default function DamLibraryPage() {
         </div>
         <div className="flex items-center gap-2">
           <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActivityOpen(true)}
+            title="Atividade recente da biblioteca"
+          >
+            <History className="w-4 h-4 mr-2" />
+            Atividade
+          </Button>
           <LibraryExportMenu
             assets={assets}
             clients={clients}
@@ -1059,6 +1070,11 @@ export default function DamLibraryPage() {
         asset={selected}
         onClose={() => setSelected(null)}
         onSelectAsset={(a) => setSelected(a)}
+      />
+      <LibraryActivityDialog
+        open={activityOpen}
+        onOpenChange={setActivityOpen}
+        organizationId={currentOrgId}
       />
     </div>
   );
