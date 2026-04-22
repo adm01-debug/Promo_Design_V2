@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle, Settings2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle, Settings2, History, Repeat2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -65,6 +65,54 @@ const CONFIRM_THRESHOLD = 500;
 const CSV_COLS_KEY = "dam-export-csv-columns";
 const PDF_COLS_KEY = "dam-export-pdf-columns";
 
+/** localStorage key for the last-N export history (most recent first). */
+const HISTORY_KEY = "dam-export-history";
+const HISTORY_LIMIT = 5;
+
+/** Snapshot of an export — enough to repeat it with the same filters/columns. */
+interface ExportHistoryEntry {
+  id: string;
+  kind: "csv" | "pdf";
+  /** "current" = visible page; "all" = all filtered rows. */
+  scope: "current" | "all";
+  at: number;
+  rows: number;
+  filters: AssetFilters;
+  filtersSummary: Omit<AssetsPdfFiltersSummary, "shown" | "total">;
+  columns: string[];
+  /** Short human label like `CSV · Filtrados · 124 linhas`. */
+  label: string;
+}
+
+function readHistory(): ExportHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((e): e is ExportHistoryEntry =>
+      e && typeof e === "object" &&
+      (e.kind === "csv" || e.kind === "pdf") &&
+      (e.scope === "current" || e.scope === "all"),
+    ).slice(0, HISTORY_LIMIT);
+  } catch { return []; }
+}
+
+function writeHistory(items: ExportHistoryEntry[]): void {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT))); } catch { /* ignore */ }
+}
+
+function formatRelative(ts: number): string {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "agora";
+  if (m < 60) return `${m} min atrás`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h atrás`;
+  const d = Math.floor(h / 24);
+  return `${d}d atrás`;
+}
+
 function readCols<Id extends string>(key: string, allowed: readonly Id[], fallback: Id[]): Id[] {
   try {
     const raw = localStorage.getItem(key);
@@ -105,10 +153,33 @@ export function LibraryExportMenu({
   );
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [history, setHistory] = useState<ExportHistoryEntry[]>(() => readHistory());
   const count = assets.length;
   const disabled = count === 0;
   const allDisabled = !organizationId || total === 0;
   const willTruncate = total > MAX_EXPORT_ROWS;
+
+  const recordExport = (entry: Omit<ExportHistoryEntry, "id" | "at" | "label">) => {
+    const scopeLabel = entry.scope === "all" ? "Todos filtrados" : "Página atual";
+    const label = `${entry.kind.toUpperCase()} · ${scopeLabel} · ${entry.rows.toLocaleString("pt-BR")} linhas`;
+    const full: ExportHistoryEntry = {
+      ...entry,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      at: Date.now(),
+      label,
+    };
+    setHistory((prev) => {
+      const next = [full, ...prev].slice(0, HISTORY_LIMIT);
+      writeHistory(next);
+      return next;
+    });
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    writeHistory([]);
+    toast.success("Histórico de exportações limpo");
+  };
 
   const handleCsv = () => {
     if (disabled) {
@@ -122,6 +193,7 @@ export function LibraryExportMenu({
     }, csvCols);
     const ts = format(new Date(), "yyyyMMdd-HHmmss");
     downloadCsv(`dam-assets-${ts}.csv`, csv);
+    recordExport({ kind: "csv", scope: "current", rows: count, filters, filtersSummary, columns: csvCols });
     toast.success(`CSV exportado (${count} assets)`);
   };
 
@@ -134,6 +206,7 @@ export function LibraryExportMenu({
     try {
       await new Promise((r) => setTimeout(r, 0));
       downloadAssetsPdf(assets, clients, { ...filtersSummary, shown: count, total }, pdfCols);
+      recordExport({ kind: "pdf", scope: "current", rows: count, filters, filtersSummary, columns: pdfCols });
       toast.success(`PDF exportado (${count} assets)`);
     } catch (e) {
       toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
@@ -168,12 +241,14 @@ export function LibraryExportMenu({
         }, csvCols);
         const ts = format(new Date(), "yyyyMMdd-HHmmss");
         downloadCsv(`dam-assets-todos-${ts}.csv`, csv);
+        recordExport({ kind: "csv", scope: "all", rows: all.length, filters, filtersSummary, columns: csvCols });
       } else {
         downloadAssetsPdf(all, clients, {
           ...filtersSummary,
           shown: all.length,
           total: totalReported || all.length,
         }, pdfCols);
+        recordExport({ kind: "pdf", scope: "all", rows: all.length, filters, filtersSummary, columns: pdfCols });
       }
 
       const msg = truncated
@@ -202,8 +277,40 @@ export function LibraryExportMenu({
     void runAllExport(kind);
   };
 
+  /** Re-runs an export from history using the saved filters/columns/scope. */
+  const repeatExport = async (entry: ExportHistoryEntry) => {
+    // Restore the column selection that was used previously.
+    if (entry.kind === "csv") {
+      const cols = entry.columns.filter((c): c is CsvColumnId => (csvAllIds as string[]).includes(c));
+      if (cols.length > 0) { setCsvCols(cols); writeCols(CSV_COLS_KEY, cols); }
+    } else {
+      const cols = entry.columns.filter((c): c is PdfColumnId => (pdfAllIds as string[]).includes(c));
+      if (cols.length > 0) { setPdfCols(cols); writeCols(PDF_COLS_KEY, cols); }
+    }
+    if (entry.scope === "all") {
+      // Defer to the same confirm flow so large repeats still get a heads-up.
+      triggerAllExport(entry.kind);
+      return;
+    }
+    if (entry.kind === "csv") handleCsv(); else await handlePdf();
+  };
+
   return (
     <>
+      {history[0] && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 mr-1"
+          disabled={busy}
+          onClick={() => { void repeatExport(history[0]); }}
+          title={`Repetir: ${history[0].label} (${formatRelative(history[0].at)})`}
+          aria-label={`Repetir última exportação: ${history[0].label}`}
+        >
+          <Repeat2 className="w-4 h-4" />
+          Repetir {history[0].kind.toUpperCase()}
+        </Button>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5" disabled={busy}>
@@ -214,6 +321,36 @@ export function LibraryExportMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72">
+          {history.length > 0 && (
+            <>
+              <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
+                <History className="w-3 h-3" />
+                Histórico recente
+              </DropdownMenuLabel>
+              {history.map((h) => (
+                <DropdownMenuItem
+                  key={h.id}
+                  onClick={() => { void repeatExport(h); }}
+                  disabled={busy}
+                  title={`Repetir ${h.label}`}
+                >
+                  <Repeat2 className="w-4 h-4" />
+                  <span className="flex-1 truncate">{h.label}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {formatRelative(h.at)}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem
+                onClick={clearHistory}
+                className="text-xs text-muted-foreground"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Limpar histórico
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuLabel className="text-xs">Página atual</DropdownMenuLabel>
           <DropdownMenuItem onClick={handleCsv} disabled={disabled || busy}>
             <FileSpreadsheet className="w-4 h-4" />
