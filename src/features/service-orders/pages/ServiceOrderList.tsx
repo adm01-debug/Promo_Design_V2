@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
   Package, Calendar, ArrowUpDown, CheckCircle2,
-  ChevronLeft, ChevronRight, Download, Loader2
+  ChevronLeft, ChevronRight, Download, Loader2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format as formatDate } from "date-fns";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger
@@ -38,12 +43,61 @@ const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [
 
 const ServiceOrderList = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
-  const [sortDesc, setSortDesc] = useState(true);
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Hydrate every filter from URL so deep links restore the exact view.
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [statusFilter, setStatusFilter] = useState<OsStatus | "all">(() => {
+    const v = searchParams.get("status") as OsStatus | "all" | null;
+    return v && STATUS_FILTERS.some((f) => f.value === v) ? v : "all";
+  });
+  const [sortDesc, setSortDesc] = useState(() => searchParams.get("sort") !== "asc");
+  const [page, setPage] = useState(() => {
+    const p = Number(searchParams.get("page"));
+    return Number.isFinite(p) && p > 0 ? p : 1;
+  });
+  const [productQuery, setProductQuery] = useState(() => searchParams.get("product") ?? "");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => {
+    const v = searchParams.get("from");
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  });
+  const [dateTo, setDateTo] = useState<Date | undefined>(() => {
+    const v = searchParams.get("to");
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  });
   const [exporting, setExporting] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<PdfProgress | null>(null);
+
+  // Convert local Date -> inclusive day range ISO bounds for the query.
+  const dateFromIso = useMemo(() => {
+    if (!dateFrom) return undefined;
+    const d = new Date(dateFrom);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, [dateFrom]);
+  const dateToIso = useMemo(() => {
+    if (!dateTo) return undefined;
+    const d = new Date(dateTo);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }, [dateTo]);
+
+  // Persist all filters in the URL so refresh/back-button restore the view.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (search.trim()) next.set("q", search.trim());
+    if (statusFilter !== "all") next.set("status", statusFilter);
+    if (!sortDesc) next.set("sort", "asc");
+    if (page > 1) next.set("page", String(page));
+    if (productQuery.trim()) next.set("product", productQuery.trim());
+    if (dateFrom) next.set("from", formatDate(dateFrom, "yyyy-MM-dd"));
+    if (dateTo) next.set("to", formatDate(dateTo, "yyyy-MM-dd"));
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, searchParams, setSearchParams]);
 
   const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
     page,
@@ -51,6 +105,9 @@ const ServiceOrderList = () => {
     search,
     status: statusFilter,
     sortAsc: !sortDesc,
+    productQuery,
+    dateFrom: dateFromIso,
+    dateTo: dateToIso,
   });
 
   // Also fetch total unfiltered count for display
@@ -153,6 +210,16 @@ const ServiceOrderList = () => {
   // Reset page when filters change
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
   const handleFilterChange = (v: OsStatus | "all") => { setStatusFilter(v); setPage(1); };
+  const handleProductChange = (v: string) => { setProductQuery(v); setPage(1); };
+  const handleDateFromChange = (d: Date | undefined) => { setDateFrom(d); setPage(1); };
+  const handleDateToChange = (d: Date | undefined) => { setDateTo(d); setPage(1); };
+  const hasAdvancedFilters = !!(productQuery || dateFrom || dateTo);
+  const clearAdvancedFilters = () => {
+    setProductQuery("");
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,6 +267,55 @@ const ServiceOrderList = () => {
               <ArrowUpDown className="w-4 h-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Advanced filters: product + creation date range — all URL-synced */}
+        <div className="flex flex-wrap items-end gap-2 mt-3">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Produto</label>
+            <div className="relative">
+              <Package className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                value={productQuery}
+                onChange={(e) => handleProductChange(e.target.value)}
+                placeholder="Nome ou SKU…"
+                className="h-8 w-[200px] pl-7 text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Criada de</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 w-[160px] justify-start text-left text-xs font-normal", !dateFrom && "text-muted-foreground")}>
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  {dateFrom ? formatDate(dateFrom, "dd/MM/yyyy") : "Selecionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent mode="single" selected={dateFrom} onSelect={handleDateFromChange} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Criada até</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("h-8 w-[160px] justify-start text-left text-xs font-normal", !dateTo && "text-muted-foreground")}>
+                  <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                  {dateTo ? formatDate(dateTo, "dd/MM/yyyy") : "Selecionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent mode="single" selected={dateTo} onSelect={handleDateToChange} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+          </div>
+          {hasAdvancedFilters && (
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground" onClick={clearAdvancedFilters}>
+              <X className="w-3.5 h-3.5" /> Limpar avançados
+            </Button>
+          )}
         </div>
       </div>
 

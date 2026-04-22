@@ -106,15 +106,24 @@ export interface UseServiceOrdersOptions {
   search?: string;
   status?: OsStatus | "all";
   sortAsc?: boolean;
+  /** Optional product name/SKU substring filter (case-insensitive). */
+  productQuery?: string;
+  /** Lower bound (inclusive) for `created_at`, ISO string. */
+  dateFrom?: string;
+  /** Upper bound (inclusive) for `created_at`, ISO string. */
+  dateTo?: string;
 }
 
 export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
-  const { page = 1, pageSize = 20, search = "", status = "all", sortAsc = false } = options;
+  const {
+    page = 1, pageSize = 20, search = "", status = "all", sortAsc = false,
+    productQuery = "", dateFrom, dateTo,
+  } = options;
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["service-orders", user?.id, page, pageSize, search, status, sortAsc],
+    queryKey: ["service-orders", user?.id, page, pageSize, search, status, sortAsc, productQuery, dateFrom, dateTo],
     queryFn: async () => {
       if (!user) return { orders: [] as StoredServiceOrder[], total: 0 };
 
@@ -131,6 +140,16 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
           `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
         );
       }
+
+      if (productQuery && productQuery.trim()) {
+        const term = productQuery.trim().replace(/[%(),]/g, "");
+        query = query.or(
+          `product_name.ilike.%${term}%,product_sku.ilike.%${term}%`,
+        );
+      }
+
+      if (dateFrom) query = query.gte("created_at", dateFrom);
+      if (dateTo) query = query.lte("created_at", dateTo);
 
       query = query.order("created_at", { ascending: sortAsc });
 
