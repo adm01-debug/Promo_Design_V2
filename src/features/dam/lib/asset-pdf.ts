@@ -28,9 +28,70 @@ export interface AssetsPdfFiltersSummary {
   tags?: string[];
   tagsMode?: "all" | "any";
   includeArchived?: boolean;
+  /** When true, the library is showing ONLY archived items (overrides includeArchived). */
+  archivedOnly?: boolean;
+  /** Client-side OCR-only filter (text matched in OCR-extracted content). */
+  ocrOnly?: boolean;
+  /** Custom size range in bytes (any/both may be present). */
+  minSize?: number;
+  maxSize?: number;
+  /** Display unit for the size range (KB/MB) — used to format min/max human-readably. */
+  sizeUnit?: "KB" | "MB";
+  /** Optional preset size label, e.g. "Pequeno (< 100 KB)". */
+  sizeRangeLabel?: string;
+  /** Label for the "updated within" preset, e.g. "Últimas 24h". */
+  updatedRangeLabel?: string;
+  /** Items per page used during browsing. */
+  pageSize?: number;
+  /** "grid" / "list" — which view mode the user was on when exporting. */
+  viewMode?: "grid" | "list";
   sortLabel?: string;
   total: number;
   shown: number;
+}
+
+/** Format a byte-size into "1.5 MB", "120 KB" etc., honoring the user's chosen unit. */
+function formatSize(bytes: number, unit?: "KB" | "MB"): string {
+  if (unit === "KB") return `${(bytes / 1024).toFixed(bytes < 1024 * 10 ? 1 : 0)} KB`;
+  if (unit === "MB") return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+/** Builds an ordered list of `[label, value]` pairs for every active filter. */
+export function buildFilterRows(filters: AssetsPdfFiltersSummary): Array<[string, string]> {
+  const rows: Array<[string, string]> = [];
+  if (filters.search) rows.push(["Busca", `"${filters.search}"`]);
+  if (filters.assetTypes && filters.assetTypes.length > 0) {
+    rows.push(["Tipos", filters.assetTypes.map((t) => TYPE_LABEL[t] ?? t).join(", ")]);
+  }
+  if (filters.clientName) rows.push(["Cliente", filters.clientName]);
+  if (filters.tags && filters.tags.length > 0) {
+    rows.push([
+      "Tags",
+      `${filters.tags.join(", ")} (modo: ${filters.tagsMode === "any" ? "qualquer" : "todas"})`,
+    ]);
+  }
+  // Size — custom range overrides preset label.
+  if (filters.minSize != null || filters.maxSize != null) {
+    const min = filters.minSize != null ? formatSize(filters.minSize, filters.sizeUnit) : "—";
+    const max = filters.maxSize != null ? formatSize(filters.maxSize, filters.sizeUnit) : "—";
+    rows.push(["Tamanho", `${min} → ${max}`]);
+  } else if (filters.sizeRangeLabel) {
+    rows.push(["Tamanho", filters.sizeRangeLabel]);
+  }
+  if (filters.updatedRangeLabel) rows.push(["Atualizado em", filters.updatedRangeLabel]);
+  // Archived state — `archivedOnly` is more specific than `includeArchived`.
+  if (filters.archivedOnly) rows.push(["Arquivados", "Apenas arquivados"]);
+  else if (filters.includeArchived) rows.push(["Arquivados", "Inclui arquivados"]);
+  if (filters.ocrOnly) rows.push(["OCR", "Apenas com OCR"]);
+  if (filters.sortLabel) rows.push(["Ordenação", filters.sortLabel]);
+  if (filters.viewMode) rows.push(["Visualização", filters.viewMode === "list" ? "Lista" : "Grade"]);
+  if (filters.pageSize) rows.push(["Itens por página", String(filters.pageSize)]);
+  rows.push(["Resultados", `${filters.shown} de ${filters.total}`]);
+  return rows;
 }
 
 export function buildAssetsPdf(
