@@ -56,6 +56,7 @@ const ASSET_TYPES_KEY = "dam-asset-types";
 const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
+const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 
