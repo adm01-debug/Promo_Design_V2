@@ -130,3 +130,98 @@ export async function downloadAssetsZip(
 
   return { ok, failed };
 }
+
+/**
+ * Downloads assets as a master ZIP that contains one nested ZIP per asset_type
+ * (e.g. `mockup.zip`, `art.zip`). Each nested ZIP carries its own manifest, and
+ * the master also includes a global `manifest.csv` covering every asset.
+ *
+ * Returns per-type counts plus aggregate totals so the UI can craft a precise toast.
+ */
+export async function downloadAssetsZipsByType(
+  assets: Asset[],
+  clients: Client[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<{
+  ok: number;
+  failed: number;
+  byType: Record<string, { ok: number; failed: number }>;
+}> {
+  const map = new Map(clients.map((c) => [c.id, c.name]));
+  const master = new JSZip();
+  const perType = new Map<string, { zip: JSZip; used: Map<string, number>; rows: string[][]; ok: number; failed: number }>();
+  const globalRows: string[][] = [];
+  let ok = 0;
+  let failed = 0;
+
+  const getBucket = (type: string) => {
+    let b = perType.get(type);
+    if (!b) {
+      b = { zip: new JSZip(), used: new Map(), rows: [], ok: 0, failed: 0 };
+      perType.set(type, b);
+    }
+    return b;
+  };
+
+  for (let i = 0; i < assets.length; i++) {
+    const asset = assets[i];
+    const type = asset.asset_type || "other";
+    const bucket = getBucket(type);
+    const ext = extFromMime(asset.mime_type, asset.file_path);
+    const base = safeName(asset.name).replace(/\.[a-zA-Z0-9]{1,8}$/, "");
+    let candidate = `${base}.${ext}`;
+    const seen = bucket.used.get(candidate) ?? 0;
+    if (seen > 0) candidate = `${base}_${seen + 1}.${ext}`;
+    bucket.used.set(`${base}.${ext}`, seen + 1);
+
+    let status = "ok";
+    let zipPath = "";
+    try {
+      const url = await getAssetSignedUrl(asset.file_path);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      bucket.zip.file(candidate, blob);
+      bucket.ok++;
+      ok++;
+      zipPath = `${type}.zip/${candidate}`;
+    } catch (e) {
+      status = `error: ${e instanceof Error ? e.message : "unknown"}`;
+      bucket.failed++;
+      failed++;
+    }
+
+    const row = [...rowFor(asset, clientName(asset, map)), status, status === "ok" ? candidate : ""];
+    bucket.rows.push(row);
+    globalRows.push([...rowFor(asset, clientName(asset, map)), status, zipPath]);
+    onProgress?.(i + 1, assets.length);
+  }
+
+  // Build per-type ZIPs (each with its own manifest).
+  const perTypeHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
+  const byType: Record<string, { ok: number; failed: number }> = {};
+  for (const [type, bucket] of perType) {
+    const manifest = [perTypeHeader, ...bucket.rows.map((r) => r.map(escape).join(","))].join("\n");
+    bucket.zip.file("manifest.csv", `\ufeff${manifest}`);
+    const nestedBlob = await bucket.zip.generateAsync({ type: "blob" });
+    master.file(`${safeName(type)}.zip`, nestedBlob);
+    byType[type] = { ok: bucket.ok, failed: bucket.failed };
+  }
+
+  // Global manifest at the top of the master ZIP.
+  const globalHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
+  const globalManifest = [globalHeader, ...globalRows.map((r) => r.map(escape).join(","))].join("\n");
+  master.file("manifest.csv", `\ufeff${globalManifest}`);
+
+  const blob = await master.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dam-assets-by-type-${format(new Date(), "yyyyMMdd-HHmmss")}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  return { ok, failed, byType };
+}
