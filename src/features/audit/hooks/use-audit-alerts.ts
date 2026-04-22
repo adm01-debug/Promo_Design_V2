@@ -12,6 +12,8 @@ export interface AuditAlertRule {
   target_user_id: string | null;
   value_key: string | null;
   value_query: string | null;
+  recipients_mode: "owner" | "organization" | "users";
+  recipient_user_ids: string[];
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +27,8 @@ export interface CreateAuditAlertRuleInput {
   value_key?: string | null;
   value_query?: string | null;
   is_active?: boolean;
+  recipients_mode?: "owner" | "organization" | "users";
+  recipient_user_ids?: string[];
 }
 
 export function useAuditAlertRules(organizationId: string | null) {
