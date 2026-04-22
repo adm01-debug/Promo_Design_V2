@@ -723,6 +723,10 @@ export default function DamPreviewPage() {
                 max={compare.max}
                 onClear={compare.clear}
                 onExit={() => setCompareMode(false)}
+                onExitAndClear={() => {
+                  compare.clear();
+                  setCompareMode(false);
+                }}
               />
               {selectedAssets.length >= 2 ? (
                 <CompareGrid assets={selectedAssets} onRemove={compare.remove} />
