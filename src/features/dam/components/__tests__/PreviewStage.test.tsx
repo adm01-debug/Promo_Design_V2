@@ -127,8 +127,10 @@ describe("PreviewStage — atalhos C/D respeitam contexto de digitação e modif
     const { writeText } = setupWithUrl();
     await Promise.resolve();
     await Promise.resolve();
+    // jsdom: forçamos isContentEditable=true diretamente já que o suporte nativo é limitado.
     const div = document.createElement("div");
-    div.contentEditable = "true";
+    div.setAttribute("contenteditable", "true");
+    Object.defineProperty(div, "isContentEditable", { configurable: true, value: true });
     document.body.appendChild(div);
     div.focus();
     fireEvent.keyDown(div, { key: "c" });
