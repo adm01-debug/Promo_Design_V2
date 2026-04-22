@@ -747,6 +747,18 @@ export default function DamPreviewPage() {
         </Popover>
       </header>
 
+      <ActiveFiltersSummaryPanel
+        state={state}
+        activeAsset={activeAsset}
+        clientNameById={clientNameById}
+        onClearAssetTypes={() => setAssetTypes([])}
+        onClearClient={() => setClientId("all")}
+        onClearTags={() => setTags([])}
+        onClearSearch={() => setSearch("")}
+        onClearArchived={() => setIncludeArchived(true)}
+        onResetAll={() => resetFilters()}
+      />
+
       <div className="flex-1 flex min-h-0">
         <PreviewSidebar
           filters={filters}
