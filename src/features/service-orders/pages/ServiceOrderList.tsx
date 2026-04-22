@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
   Package, Calendar, ArrowUpDown, CheckCircle2,
-  ChevronLeft, ChevronRight, Download, Loader2
+  ChevronLeft, ChevronRight, Download, Loader2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format as formatDate } from "date-fns";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger
@@ -38,12 +43,61 @@ const STATUS_FILTERS: { value: OsStatus | "all"; label: string }[] = [
 
 const ServiceOrderList = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<OsStatus | "all">("all");
-  const [sortDesc, setSortDesc] = useState(true);
-  const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Hydrate every filter from URL so deep links restore the exact view.
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [statusFilter, setStatusFilter] = useState<OsStatus | "all">(() => {
+    const v = searchParams.get("status") as OsStatus | "all" | null;
+    return v && STATUS_FILTERS.some((f) => f.value === v) ? v : "all";
+  });
+  const [sortDesc, setSortDesc] = useState(() => searchParams.get("sort") !== "asc");
+  const [page, setPage] = useState(() => {
+    const p = Number(searchParams.get("page"));
+    return Number.isFinite(p) && p > 0 ? p : 1;
+  });
+  const [productQuery, setProductQuery] = useState(() => searchParams.get("product") ?? "");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => {
+    const v = searchParams.get("from");
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  });
+  const [dateTo, setDateTo] = useState<Date | undefined>(() => {
+    const v = searchParams.get("to");
+    if (!v) return undefined;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? undefined : d;
+  });
   const [exporting, setExporting] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<PdfProgress | null>(null);
+
+  // Convert local Date -> inclusive day range ISO bounds for the query.
+  const dateFromIso = useMemo(() => {
+    if (!dateFrom) return undefined;
+    const d = new Date(dateFrom);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, [dateFrom]);
+  const dateToIso = useMemo(() => {
+    if (!dateTo) return undefined;
+    const d = new Date(dateTo);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }, [dateTo]);
+
+  // Persist all filters in the URL so refresh/back-button restore the view.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (search.trim()) next.set("q", search.trim());
+    if (statusFilter !== "all") next.set("status", statusFilter);
+    if (!sortDesc) next.set("sort", "asc");
+    if (page > 1) next.set("page", String(page));
+    if (productQuery.trim()) next.set("product", productQuery.trim());
+    if (dateFrom) next.set("from", formatDate(dateFrom, "yyyy-MM-dd"));
+    if (dateTo) next.set("to", formatDate(dateTo, "yyyy-MM-dd"));
+    if (next.toString() === searchParams.toString()) return;
+    setSearchParams(next, { replace: true });
+  }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, searchParams, setSearchParams]);
 
   const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
     page,
@@ -51,6 +105,9 @@ const ServiceOrderList = () => {
     search,
     status: statusFilter,
     sortAsc: !sortDesc,
+    productQuery,
+    dateFrom: dateFromIso,
+    dateTo: dateToIso,
   });
 
   // Also fetch total unfiltered count for display
