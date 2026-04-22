@@ -235,24 +235,63 @@ export default function DamPreviewPage() {
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
 
   // Hydrate compare selection from ?compare=id1,id2,... on first load when assets are available.
+  // Validates each restored id against the current asset list. If some no longer exist
+  // (deleted, archived, or filtered out), they are dropped silently from the selection
+  // and the user is informed via a toast.
   useEffect(() => {
     if (didHydrateCompareRef.current) return;
     if (assets.length === 0) return;
     // Prefer ?compare= from URL; fall back to last set persisted in sessionStorage.
-    let raw = searchParams.get("compare");
+    const fromUrl = searchParams.get("compare");
+    let raw: string | null = fromUrl;
+    let source: "url" | "session" = "url";
     if (!raw) {
       try { raw = sessionStorage.getItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
+      source = "session";
     }
     if (!raw) {
       didHydrateCompareRef.current = true;
       return;
     }
     const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
-    const valid = ids.filter((id) => assets.some((a) => a.id === id)).slice(0, compare.max);
+    const availableIds = new Set(assets.map((a) => a.id));
+    const valid = ids.filter((id) => availableIds.has(id)).slice(0, compare.max);
+    const missingCount = ids.length - valid.length;
+
     if (valid.length >= 2) {
       compare.clear();
       valid.forEach((id) => compare.toggle(id));
       setCompareMode(true);
+      if (missingCount > 0) {
+        toast.warning("Comparação ajustada", {
+          description:
+            missingCount === 1
+              ? "1 asset da seleção anterior não está mais disponível e foi removido."
+              : `${missingCount} assets da seleção anterior não estão mais disponíveis e foram removidos.`,
+        });
+      }
+    } else {
+      // Not enough valid assets to keep comparing. Drop persisted selection so we don't
+      // keep trying to restore a stale set, and warn the user when something was lost.
+      try { sessionStorage.removeItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
+      // Strip stale ?compare= from URL so back/forward and shares don't replay it.
+      if (fromUrl) {
+        const next = new URLSearchParams(searchParams);
+        next.delete("compare");
+        setSearchParams(next, { replace: true });
+      }
+      if (ids.length > 0 && missingCount === ids.length) {
+        toast.warning("Comparação não pôde ser restaurada", {
+          description:
+            source === "url"
+              ? "Os assets do link compartilhado não estão mais disponíveis."
+              : "Os assets da sua comparação anterior não estão mais disponíveis.",
+        });
+      } else if (missingCount > 0 && valid.length === 1) {
+        toast.warning("Comparação não pôde ser restaurada", {
+          description: "Apenas 1 asset da seleção anterior continua disponível (mínimo: 2).",
+        });
+      }
     }
     didHydrateCompareRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
