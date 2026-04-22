@@ -11,9 +11,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAssetVersions, type Asset, getAssetSignedUrl } from "../hooks/use-assets";
-import { History, Search, X, MessageSquare, MessageSquareDashed } from "lucide-react";
+import { History, Search, X, MessageSquare, MessageSquareDashed, Link2, Check } from "lucide-react";
 import { AssetAuditTrail } from "./AssetAuditTrail";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface Props {
   asset: Asset;
@@ -224,30 +225,35 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
             const isSelected = v.id === asset.id;
             return (
               <li key={v.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(v)}
-                  className={`w-full flex items-center gap-3 p-2 rounded-md border text-left transition-colors hover:bg-accent ${
+                <div
+                  className={`group w-full flex items-center gap-3 p-2 rounded-md border transition-colors hover:bg-accent ${
                     isSelected
                       ? "border-primary ring-2 ring-primary/40 bg-accent/50"
                       : "border-border"
                   }`}
                 >
-                  <VersionThumb asset={v} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{v.name}</span>
-                      {isCurrent && <Badge variant="default" className="text-[10px]">atual</Badge>}
-                      {isSelected && !isCurrent && (
-                        <Badge variant="outline" className="text-[10px]">aberta</Badge>
-                      )}
+                  <button
+                    type="button"
+                    onClick={() => onSelect(v)}
+                    className="flex-1 min-w-0 flex items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                  >
+                    <VersionThumb asset={v} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{v.name}</span>
+                        {isCurrent && <Badge variant="default" className="text-[10px]">atual</Badge>}
+                        {isSelected && !isCurrent && (
+                          <Badge variant="outline" className="text-[10px]">aberta</Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        v{v.version} · {new Date(v.created_at).toLocaleDateString("pt-BR")} · {shortId(v.created_by)}
+                      </div>
+                      <VersionDescription description={v.description} />
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      v{v.version} · {new Date(v.created_at).toLocaleDateString("pt-BR")} · {shortId(v.created_by)}
-                    </div>
-                    <VersionDescription description={v.description} />
-                  </div>
-                </button>
+                  </button>
+                  <CopyVersionLinkButton asset={v} />
+                </div>
               </li>
             );
           })}
@@ -256,6 +262,60 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
 
       <AssetAuditTrail asset={asset} />
     </div>
+  );
+}
+
+function CopyVersionLinkButton({ asset }: { asset: Asset }) {
+  const [copied, setCopied] = useState(false);
+
+  const buildShareValue = () => {
+    // Prefer a deep link to this exact version; fall back to a portable identifier
+    // (e.g. when running in tests or non-browser env).
+    const identifier = `asset:${asset.id}@v${asset.version}`;
+    if (typeof window === "undefined") return identifier;
+    const url = new URL(window.location.href);
+    url.searchParams.set("asset", asset.id);
+    url.searchParams.set("v", String(asset.version));
+    return url.toString();
+  };
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const value = buildShareValue();
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(`Link da v${asset.version} copiado`);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Não foi possível copiar o link");
+    }
+  };
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 shrink-0 opacity-60 hover:opacity-100"
+            onClick={handleCopy}
+            aria-label={`Copiar link da versão ${asset.version}`}
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-success" />
+            ) : (
+              <Link2 className="w-4 h-4" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="end">
+          {copied ? "Copiado!" : `Copiar link da v${asset.version}`}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
