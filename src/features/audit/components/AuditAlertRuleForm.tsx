@@ -25,7 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAuditAlertRule } from "../hooks/use-audit-alerts";
 import type { AuditAction } from "../hooks/use-audit-log";
