@@ -93,13 +93,17 @@ export function useGoogleFonts(names: string[]): {
       setLoaded({});
       return;
     }
-    Promise.all(
-      clean.map((n) =>
-        loadGoogleFont(n).then((ok) => [n.toLowerCase(), ok] as const),
-      ),
-    ).then((entries) => {
-      if (cancelled) return;
-      setLoaded(Object.fromEntries(entries));
+    // Resolve cada fonte individualmente para forçar re-render assim que cada uma
+    // estiver pronta, evitando flash de fallback no primeiro paint.
+    clean.forEach((n) => {
+      loadGoogleFont(n).then((ok) => {
+        if (cancelled) return;
+        setLoaded((prev) => {
+          const k = n.toLowerCase();
+          if (prev[k] === ok) return prev;
+          return { ...prev, [k]: ok };
+        });
+      });
     });
     return () => {
       cancelled = true;
