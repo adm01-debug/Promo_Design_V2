@@ -74,10 +74,19 @@ function extFromMime(mime?: string | null, fallbackPath?: string): string {
   return map[mime] ?? mime.split("/")[1] ?? "bin";
 }
 
+export class ExportCanceledError extends Error {
+  constructor() { super("Exportação cancelada"); this.name = "ExportCanceledError"; }
+}
+
+function checkAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new ExportCanceledError();
+}
+
 export async function downloadAssetsZip(
   assets: Asset[],
   clients: Client[],
   onProgress?: (done: number, total: number) => void,
+  signal?: AbortSignal,
 ): Promise<{ ok: number; failed: number }> {
   const zip = new JSZip();
   const map = new Map(clients.map((c) => [c.id, c.name]));
@@ -87,6 +96,7 @@ export async function downloadAssetsZip(
   let failed = 0;
 
   for (let i = 0; i < assets.length; i++) {
+    checkAborted(signal);
     const asset = assets[i];
     const ext = extFromMime(asset.mime_type, asset.file_path);
     const base = safeName(asset.name).replace(/\.[a-zA-Z0-9]{1,8}$/, "");
@@ -100,12 +110,15 @@ export async function downloadAssetsZip(
     let status = "ok";
     try {
       const url = await getAssetSignedUrl(asset.file_path);
-      const res = await fetch(url);
+      const res = await fetch(url, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       zip.file(candidate, blob);
       ok++;
     } catch (e) {
+      if (signal?.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+        throw new ExportCanceledError();
+      }
       status = `error: ${e instanceof Error ? e.message : "unknown"}`;
       failed++;
     }
@@ -114,6 +127,7 @@ export async function downloadAssetsZip(
     onProgress?.(i + 1, assets.length);
   }
 
+  checkAborted(signal);
   const header = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
   const manifest = [header, ...manifestRows.map((r) => r.map(escape).join(","))].join("\n");
   zip.file("manifest.csv", `\ufeff${manifest}`);
@@ -142,6 +156,7 @@ export async function downloadAssetsZipsByType(
   assets: Asset[],
   clients: Client[],
   onProgress?: (done: number, total: number) => void,
+  signal?: AbortSignal,
 ): Promise<{
   ok: number;
   failed: number;
@@ -164,6 +179,7 @@ export async function downloadAssetsZipsByType(
   };
 
   for (let i = 0; i < assets.length; i++) {
+    checkAborted(signal);
     const asset = assets[i];
     const type = asset.asset_type || "other";
     const bucket = getBucket(type);
@@ -178,7 +194,7 @@ export async function downloadAssetsZipsByType(
     let zipPath = "";
     try {
       const url = await getAssetSignedUrl(asset.file_path);
-      const res = await fetch(url);
+      const res = await fetch(url, { signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const blob = await res.blob();
       bucket.zip.file(candidate, blob);
@@ -186,6 +202,9 @@ export async function downloadAssetsZipsByType(
       ok++;
       zipPath = `${type}.zip/${candidate}`;
     } catch (e) {
+      if (signal?.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+        throw new ExportCanceledError();
+      }
       status = `error: ${e instanceof Error ? e.message : "unknown"}`;
       bucket.failed++;
       failed++;
@@ -197,6 +216,7 @@ export async function downloadAssetsZipsByType(
     onProgress?.(i + 1, assets.length);
   }
 
+  checkAborted(signal);
   // Build per-type ZIPs (each with its own manifest).
   const perTypeHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
   const byType: Record<string, { ok: number; failed: number }> = {};
