@@ -1165,6 +1165,9 @@ export default function DamLibraryPage() {
                 if (quickPreview.activeAsset) setSelected(quickPreview.activeAsset);
               }}
               clients={clients}
+              onApplyTag={(tag) => {
+                setSelectedTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
+              }}
             />
           )}
         </div>
