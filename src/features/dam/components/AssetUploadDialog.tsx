@@ -22,6 +22,56 @@ import {
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
 const ACCEPTED = "image/*,application/pdf,.svg,.ai,.psd";
+const DRAFT_PREFIX = "asset-upload-draft:";
+
+interface UploadDraft {
+  tags: string[];
+  tagError: string | null;
+  assetType: AssetType;
+  clientId: string | null;
+}
+
+function draftKey(orgId: string, isVersionMode: boolean): string | null {
+  // Don't persist drafts for "new version" mode — it's tied to a specific parent asset.
+  if (isVersionMode) return null;
+  return `${DRAFT_PREFIX}${orgId}`;
+}
+
+function readDraft(key: string | null): UploadDraft | null {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<UploadDraft>;
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      tags: Array.isArray(parsed.tags) ? parsed.tags.filter((t): t is string => typeof t === "string") : [],
+      tagError: typeof parsed.tagError === "string" ? parsed.tagError : null,
+      assetType: (typeof parsed.assetType === "string" ? parsed.assetType : "art") as AssetType,
+      clientId: typeof parsed.clientId === "string" ? parsed.clientId : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(key: string | null, draft: UploadDraft) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(draft));
+  } catch {
+    /* ignore quota / serialization errors */
+  }
+}
+
+function clearDraft(key: string | null) {
+  if (!key || typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
 
 interface Props {
   open: boolean;
