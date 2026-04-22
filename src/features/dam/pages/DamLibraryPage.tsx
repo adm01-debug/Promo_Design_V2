@@ -1540,7 +1540,7 @@ export default function DamLibraryPage() {
             : stable
               ? { total: stable.total, page: stable.page, pageSize: stable.pageSize, displayedLen: stable.displayedLen }
               : null;
-          if (!src) return <span>Carregando...</span>;
+          if (!src) return <span aria-hidden="true">Carregando...</span>;
           if (src.total === 0) {
             return (
               <span>
@@ -1700,7 +1700,10 @@ export default function DamLibraryPage() {
             aria-busy={isFetching && !isLoading}
           >
             {isFetching && !isLoading && (
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border">
+              <div
+                className="absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md bg-background/90 backdrop-blur px-2.5 py-1 text-xs text-muted-foreground shadow-sm border"
+                aria-hidden="true"
+              >
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Carregando…
               </div>
