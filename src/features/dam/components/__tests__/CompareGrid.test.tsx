@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { CompareGrid } from "../CompareGrid";
 import type { Asset } from "../../hooks/use-assets";
@@ -34,6 +34,10 @@ function imgTransform(): string {
 }
 
 describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de zoom", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
   it("começa em fit (translate(0,0) scale(1))", async () => {
     render(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
     await act(async () => { await Promise.resolve(); });
@@ -49,7 +53,8 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
     // Zoom in via wheel (negative deltaY = zoom in)
     const stage = document.querySelectorAll('[role="application"]')[0] as HTMLElement;
     fireEvent.wheel(stage, { deltaY: -500 });
-    expect(imgTransform()).not.toBe("translate(0px, 0px) scale(1)");
+    const zoomedTransform = imgTransform();
+    expect(zoomedTransform).not.toBe("translate(0px, 0px) scale(1)");
 
     // 2 → 3 assets
     rerender(
@@ -59,6 +64,7 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
       />,
     );
     await act(async () => { await Promise.resolve(); });
+    // Combinação NOVA (a,b,c) → não há save → reset.
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
 
     // pan via teclado
@@ -75,12 +81,13 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
       />,
     );
     await act(async () => { await Promise.resolve(); });
+    // Combinação NOVA (a,b,c,d) → reset.
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
 
-    // 4 → 2 assets
+    // 4 → 2 assets (a,b): combinação JÁ vista → restaura o zoom salvo anteriormente.
     rerender(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
     await act(async () => { await Promise.resolve(); });
-    expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
+    expect(imgTransform()).toBe(zoomedTransform);
   });
 
   it("Reset, Ajustar e 100% sempre produzem um transform válido", async () => {
