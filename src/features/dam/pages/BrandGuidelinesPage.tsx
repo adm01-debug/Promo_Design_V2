@@ -194,6 +194,22 @@ export default function BrandGuidelinesPage() {
     }
   };
 
+  const handleExportPalette = (format: "csv" | "json") => {
+    const rows = buildPaletteRows(primary, secondary);
+    if (rows.length === 0) {
+      toast.error("Nenhuma cor na paleta para exportar");
+      return;
+    }
+    const safe = (client?.name ?? "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const date = new Date().toISOString().slice(0, 10);
+    if (format === "csv") {
+      downloadBlob(paletteToCsv(rows), `palette-${safe}-${date}.csv`, "text/csv");
+    } else {
+      downloadBlob(paletteToJson(rows), `palette-${safe}-${date}.json`, "application/json");
+    }
+    toast.success(`Paleta exportada (${rows.length} cores · ${format.toUpperCase()})`);
+  };
+
   const ColorList = ({
     title,
     list,
