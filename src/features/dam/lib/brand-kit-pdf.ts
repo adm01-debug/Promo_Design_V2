@@ -154,8 +154,23 @@ export function generateBrandKitPdf(data: BrandKitData): jsPDF {
     y += 5;
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const lines = doc.splitTextToSize(data.notes, pageW - 30);
-    doc.text(lines, 15, y);
+    const lines = doc.splitTextToSize(data.notes, pageW - 30) as string[];
+    const lineH = 4.5;
+    for (const line of lines) {
+      ensureSpace(lineH);
+      doc.text(line, 15, y);
+      y += lineH;
+    }
+  }
+
+  // Footer com numeração de páginas
+  const total = doc.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text(`${i} / ${total}`, pageW - 15, 292, { align: "right" });
+    doc.setTextColor(0);
   }
 
   return doc;
