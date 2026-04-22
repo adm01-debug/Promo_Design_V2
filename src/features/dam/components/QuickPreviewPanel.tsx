@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Copy, Download, ExternalLink, Pin, PinOff, Sparkles, ImageIcon } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Copy, Download, ExternalLink, Pin, PinOff, Sparkles, ImageIcon, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -29,16 +30,26 @@ function formatBytes(bytes: number | null | undefined): string {
 
 function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: QuickPreviewPanelProps) {
   const [url, setUrl] = useState<string | null>(null);
+  const [urlLoading, setUrlLoading] = useState(false);
   const latestQuery = useLatestAssetVersion(asset?.id ?? null);
   const hasUpdate = Boolean(latestQuery.data?.hasUpdate);
+  const versionLoading = latestQuery.isLoading || latestQuery.isFetching;
 
   useEffect(() => {
     let active = true;
     setUrl(null);
-    if (!asset) return;
-    getAssetSignedUrl(asset.file_path, 3600).then((u) => {
-      if (active) setUrl(u);
-    });
+    if (!asset) {
+      setUrlLoading(false);
+      return;
+    }
+    setUrlLoading(true);
+    getAssetSignedUrl(asset.file_path, 3600)
+      .then((u) => {
+        if (active) setUrl(u);
+      })
+      .finally(() => {
+        if (active) setUrlLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -91,7 +102,13 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
           <div className="flex items-center gap-1.5 flex-wrap">
             <Badge variant="secondary" className="capitalize">{asset.asset_type}</Badge>
             {asset.version > 1 && <Badge variant="outline">v{asset.version}</Badge>}
-            {hasUpdate && (
+            {versionLoading && (
+              <Badge variant="outline" className="gap-1 text-muted-foreground" aria-label="Verificando versão">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Verificando…
+              </Badge>
+            )}
+            {!versionLoading && hasUpdate && (
               <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/15 border-primary/30">
                 <Sparkles className="w-3 h-3" /> Nova versão
               </Badge>
@@ -113,7 +130,10 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
         </Button>
       </div>
 
-      <div className="rounded-md overflow-hidden border bg-muted aspect-square">
+      <div className="rounded-md overflow-hidden border bg-muted aspect-square relative">
+        {urlLoading && !url && (
+          <Skeleton className="absolute inset-0 w-full h-full" />
+        )}
         <AssetThumbnail asset={asset} className="w-full h-full" />
       </div>
 
@@ -139,6 +159,14 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
         <dt className="text-muted-foreground">Criado</dt>
         <dd className="text-right">
           {formatDistanceToNow(new Date(asset.created_at), { addSuffix: true, locale: ptBR })}
+        </dd>
+        <dt className="text-muted-foreground">Versão atual</dt>
+        <dd className="text-right">
+          {versionLoading ? (
+            <Skeleton className="inline-block h-3 w-10 align-middle" />
+          ) : (
+            `v${latestQuery.data?.latest?.version ?? asset.version}`
+          )}
         </dd>
       </dl>
 
