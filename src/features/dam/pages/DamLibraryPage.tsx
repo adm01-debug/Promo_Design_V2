@@ -954,40 +954,68 @@ export default function DamLibraryPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
         >
-          <Card className="p-12 flex flex-col items-center text-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
-              {hasActiveFilters ? (
-                <FilterX className="w-7 h-7 text-muted-foreground" />
-              ) : (
-                <FolderArchive className="w-7 h-7 text-muted-foreground" />
-              )}
-            </div>
-            <div>
-              <h3 className="font-semibold text-base">
-                {hasActiveFilters
-                  ? "Nenhum asset corresponde aos filtros"
-                  : "Sua biblioteca está vazia"}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                {hasActiveFilters
-                  ? "Tente remover algum filtro ou ajustar a busca."
-                  : "Faça upload do seu primeiro asset para começar."}
-              </p>
-            </div>
-            {hasActiveFilters ? (
-              <Button variant="outline" onClick={clearAllFilters}>
-                <FilterX className="w-4 h-4 mr-2" /> Limpar filtros
-              </Button>
-            ) : canUpload ? (
-              <Button onClick={() => setUploadOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" /> Fazer upload
-              </Button>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Você não tem permissão para fazer upload. Solicite acesso ao administrador.
-              </p>
-            )}
-          </Card>
+          {(() => {
+            // Three distinct empty states with tailored CTAs:
+            // 1) onlyArchivedExist: library has assets but all are archived and the user is hiding them
+            // 2) hasActiveFilters: filters yield no matches
+            // 3) trulyEmpty: library has zero assets at all
+            const onlyArchivedExist =
+              !hasActiveFilters && !includeArchived && archivedCount > 0;
+            const variant: "filtered" | "archived-only" | "empty" = hasActiveFilters
+              ? "filtered"
+              : onlyArchivedExist
+                ? "archived-only"
+                : "empty";
+            const Icon =
+              variant === "empty" ? FolderArchive : variant === "filtered" ? FilterX : FolderArchive;
+            const title =
+              variant === "filtered"
+                ? "Nenhum asset corresponde aos filtros"
+                : variant === "archived-only"
+                  ? "Todos os assets estão arquivados"
+                  : "Sua biblioteca está vazia";
+            const desc =
+              variant === "filtered"
+                ? "Tente remover algum filtro ou ajustar a busca."
+                : variant === "archived-only"
+                  ? `Existem ${archivedCount} asset${archivedCount > 1 ? "s" : ""} arquivado${archivedCount > 1 ? "s" : ""}. Inclua-os para visualizar.`
+                  : "Faça upload do seu primeiro asset para começar.";
+            return (
+              <Card className="p-12 flex flex-col items-center text-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+                  <Icon className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-base">{title}</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mt-1">{desc}</p>
+                </div>
+                {variant === "filtered" ? (
+                  <Button variant="outline" onClick={clearAllFilters}>
+                    <FilterX className="w-4 h-4 mr-2" /> Limpar filtros
+                  </Button>
+                ) : variant === "archived-only" ? (
+                  <div className="flex items-center gap-2 flex-wrap justify-center">
+                    <Button variant="outline" onClick={() => setIncludeArchived(true)}>
+                      <FolderArchive className="w-4 h-4 mr-2" /> Mostrar arquivados
+                    </Button>
+                    {canUpload && (
+                      <Button onClick={() => setUploadOpen(true)}>
+                        <Plus className="w-4 h-4 mr-2" /> Fazer upload
+                      </Button>
+                    )}
+                  </div>
+                ) : canUpload ? (
+                  <Button onClick={() => setUploadOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" /> Fazer upload
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Você não tem permissão para fazer upload. Solicite acesso ao administrador.
+                  </p>
+                )}
+              </Card>
+            );
+          })()}
         </motion.div>
       ) : (
         <div className={quickPreview.enabled ? "flex gap-4 items-start" : undefined}>
