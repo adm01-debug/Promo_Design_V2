@@ -19,7 +19,9 @@ import { cn } from "@/lib/utils";
  * AssetPicker — modal reutilizável para escolher um (ou vários) asset(s) do DAM.
  *
  * Props principais:
- * - `clientId` pré-seleciona o filtro de cliente (não trava — use `lockClient` para isso).
+ * - `defaultClientId` pré-seleciona o filtro de cliente (não trava — use `lockClient` para isso).
+ * - `clientId` (legado) mantido por compatibilidade; equivalente a `defaultClientId`.
+ *   Se ambos forem passados, `defaultClientId` tem precedência.
  * - `lockClient` esconde o seletor de cliente (útil em telas com cliente fixo, ex. brand kit).
  * - `defaultAssetType` pré-filtra por tipo (logo/art/photo/...).
  * - `excludeAssetIds` esconde assets já vinculados (filtro client-side, sem round-trip).
@@ -48,6 +50,9 @@ type MultiSelectProps = {
 type CommonProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Pré-seleciona o filtro de cliente (editável pelo usuário, salvo se `lockClient`). */
+  defaultClientId?: string | null;
+  /** @deprecated Use `defaultClientId`. Mantido por compatibilidade. */
   clientId?: string | null;
   defaultAssetType?: AssetType;
   lockClient?: boolean;
