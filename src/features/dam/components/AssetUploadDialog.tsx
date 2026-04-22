@@ -305,6 +305,7 @@ export function AssetUploadDialog({
           assetType,
           tags: cleanTags,
           parentAsset: parentAsset ?? undefined,
+          pdfPage: entry.pdfPage,
           onPhase: (phase) => {
             // Map qualitative phase to a coarse progress percentage so the bar
             // also moves while the user reads the label.
