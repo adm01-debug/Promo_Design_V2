@@ -401,15 +401,27 @@ export function AssetAuditTrail({ asset }: Props) {
                       </span>
                     </div>
                     {canCompare && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setDiff(e)}
-                      >
-                        <GitCompare className="w-3 h-3 mr-1" />
-                        Comparar
-                      </Button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => openDiff(e)}
+                        >
+                          <GitCompare className="w-3 h-3 mr-1" />
+                          Comparar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => copyDeepLink(e)}
+                          title="Copiar link direto deste diff"
+                          aria-label="Copiar link direto deste diff"
+                        >
+                          <Link2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                   {e.action === "UPDATE" && e.changed_fields.length > 0 && (
@@ -500,7 +512,7 @@ export function AssetAuditTrail({ asset }: Props) {
 
       <AssetMetadataDiffDialog
         open={!!diff}
-        onClose={() => setDiff(null)}
+        onClose={closeDiff}
         previousValues={diff ? prevSnapshots.get(diff.id) ?? null : null}
         currentValues={diff?.new_values ?? null}
         changedFields={diff?.changed_fields ?? []}
