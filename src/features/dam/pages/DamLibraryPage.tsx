@@ -868,17 +868,29 @@ export default function DamLibraryPage() {
               ? { total: stable.total, page: stable.page, pageSize: stable.pageSize, displayedLen: stable.displayedLen }
               : null;
           if (!src) return <span>Carregando...</span>;
-          if (src.total === 0) return <span>Nenhum asset encontrado</span>;
+          if (src.total === 0) {
+            return (
+              <span>
+                Nenhum asset {hasActiveFilters ? "corresponde aos filtros" : "encontrado"}
+              </span>
+            );
+          }
           const fmt = (n: number) => n.toLocaleString("pt-BR");
           const from = (src.page - 1) * src.pageSize + 1;
           const to = Math.min(src.page * src.pageSize, src.total);
           const noun = src.total === 1 ? "asset" : "assets";
+          const activeCount =
+            (debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? 1 : 0) +
+            (assetTypes.length > 0 ? 1 : 0) +
+            (clientId !== "all" ? 1 : 0) +
+            (selectedTags.length > 0 ? 1 : 0) +
+            (includeArchived ? 1 : 0);
           return (
             <>
               <span data-testid="dam-results-counter" aria-live="polite">
                 {paginationMode === "loadmore"
-                  ? `Mostrando ${fmt(displayedAssets.length)} de ${fmt(src.total)} ${noun}`
-                  : `Mostrando ${fmt(from)}–${fmt(to)} de ${fmt(src.total)} ${noun}`}
+                  ? `Mostrando ${fmt(displayedAssets.length)} de ${fmt(src.total)} ${noun}${hasActiveFilters ? " (filtrados)" : ""}`
+                  : `Mostrando ${fmt(from)}–${fmt(to)} de ${fmt(src.total)} ${noun}${hasActiveFilters ? " (filtrados)" : ""}`}
                 {includeArchived && archivedCount > 0 && (
                   <>
                     {" · "}
@@ -890,7 +902,18 @@ export default function DamLibraryPage() {
                 )}
               </span>
               {hasActiveFilters && (
-                <Badge variant="secondary" className="text-[10px] h-5">filtrado</Badge>
+                <>
+                  <Badge variant="secondary" className="text-[10px] h-5">
+                    {activeCount} filtro{activeCount > 1 ? "s" : ""} ativo{activeCount > 1 ? "s" : ""}
+                  </Badge>
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-[11px] underline text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    limpar
+                  </button>
+                </>
               )}
               {isFetching && !isLoading && (
                 <span
