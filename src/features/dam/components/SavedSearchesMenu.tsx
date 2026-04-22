@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Bookmark, Pin, PinOff, Pencil, Trash2, Plus, Check } from "lucide-react";
+import { useRef } from "react";
+import { Bookmark, Pin, PinOff, Pencil, Trash2, Plus, Check, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,8 @@ import {
   type SavedSearch,
   PINNED_LIMIT,
   SAVED_SEARCH_LIMIT,
+  savedFiltersSchema,
+  SAVED_FILTERS_VERSION,
 } from "../hooks/use-saved-searches";
 
 interface Props {
@@ -89,6 +92,51 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   const [renameId, setRenameId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportFilters = () => {
+    try {
+      const payload = {
+        _v: SAVED_FILTERS_VERSION,
+        exportedAt: new Date().toISOString(),
+        filters: currentFilters,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `dam-filtros-${ts}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Filtros exportados", description: "JSON baixado com sucesso." });
+    } catch (e) {
+      toast({ title: "Erro ao exportar", description: (e as Error).message, variant: "destructive" });
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const raw = json?.filters ?? json;
+      const parsed = savedFiltersSchema.parse(raw);
+      onApply(parsed);
+      toast({ title: "Filtros importados", description: "Snapshot aplicado." });
+    } catch (e) {
+      toast({
+        title: "Arquivo inválido",
+        description: (e as Error).message ?? "JSON não corresponde ao formato esperado.",
+        variant: "destructive",
+      });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const matches = useMemo(
     () =>
@@ -216,6 +264,20 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             <Plus className="w-4 h-4 mr-2" />
             Salvar filtros atuais…
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleExportFilters} className="cursor-pointer">
+            <Download className="w-4 h-4 mr-2" />
+            Exportar filtros (JSON)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }}
+            className="cursor-pointer"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importar filtros (JSON)…
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {isLoading && (
             <div className="px-2 py-3 text-xs text-muted-foreground">Carregando…</div>
@@ -338,6 +400,17 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
       </TooltipProvider>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImportFile(file);
+        }}
+      />
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent className="sm:max-w-md">
