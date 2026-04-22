@@ -401,6 +401,17 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
       </DropdownMenu>
       </TooltipProvider>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImportFile(file);
+        }}
+      />
+
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
