@@ -240,6 +240,54 @@ export default function DamLibraryPage() {
       /* ignore */
     }
   }, [sizeRange]);
+  // Custom (advanced) size range — independent from the preset above. When set,
+  // it overrides the preset for query purposes. Persisted as JSON in
+  // localStorage and as `sizeMin`/`sizeMax` (bytes) in the URL for shareable links.
+  const [customSize, setCustomSize] = useState<CustomSizeRange | null>(() => {
+    if (typeof window === "undefined") return null;
+    const minUrl = Number(searchParams.get("sizeMin"));
+    const maxUrl = Number(searchParams.get("sizeMax"));
+    const hasMin = Number.isFinite(minUrl) && minUrl >= 0;
+    const hasMax = Number.isFinite(maxUrl) && maxUrl >= 0;
+    if (hasMin || hasMax) {
+      const unit = (searchParams.get("sizeUnit") as "KB" | "MB") === "KB" ? "KB" : "MB";
+      const factor = unit === "KB" ? 1024 : 1024 * 1024;
+      return {
+        minBytes: hasMin ? minUrl : null,
+        maxBytes: hasMax ? maxUrl : null,
+        unit,
+        minRaw: hasMin ? String(minUrl / factor) : "",
+        maxRaw: hasMax ? String(maxUrl / factor) : "",
+      };
+    }
+    try {
+      const raw = localStorage.getItem(CUSTOM_SIZE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as CustomSizeRange;
+      if (typeof parsed === "object" && parsed !== null) return parsed;
+    } catch {
+      /* ignore */
+    }
+    return null;
+  });
+  useEffect(() => {
+    try {
+      if (customSize) localStorage.setItem(CUSTOM_SIZE_KEY, JSON.stringify(customSize));
+      else localStorage.removeItem(CUSTOM_SIZE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (customSize?.minBytes != null) next.set("sizeMin", String(customSize.minBytes));
+      else next.delete("sizeMin");
+      if (customSize?.maxBytes != null) next.set("sizeMax", String(customSize.maxBytes));
+      else next.delete("sizeMax");
+      if (customSize) next.set("sizeUnit", customSize.unit);
+      else next.delete("sizeUnit");
+      return next;
+    }, { replace: true });
+  }, [customSize, setSearchParams]);
   const [updatedRange, setUpdatedRange] = useState<UpdatedRangeKey>(() => {
     const fromUrl = searchParams.get("updated") as UpdatedRangeKey | null;
     if (fromUrl && UPDATED_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
