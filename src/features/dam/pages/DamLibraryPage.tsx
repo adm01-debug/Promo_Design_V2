@@ -959,7 +959,11 @@ export default function DamLibraryPage() {
               <Button onClick={() => setUploadOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" /> Fazer upload
               </Button>
-            ) : null}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Você não tem permissão para fazer upload. Solicite acesso ao administrador.
+              </p>
+            )}
           </Card>
         </motion.div>
       ) : (
