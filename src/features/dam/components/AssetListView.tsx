@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { ScanText, ArchiveRestore } from "lucide-react";
+import { ScanText, ArchiveRestore, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AssetListViewProps {
@@ -11,9 +11,30 @@ interface AssetListViewProps {
   clients: Client[];
   onSelect: (asset: Asset) => void;
   onRestore?: (asset: Asset) => void;
+  /** When true, shows a sortable "Tamanho" column. */
+  showSize?: boolean;
+  /** Active sort direction for the size column (or null when sorting by something else). */
+  sizeSortDir?: "asc" | "desc" | null;
+  /** Called when the user clicks the size header to toggle the size sort. */
+  onToggleSizeSort?: () => void;
 }
 
-export function AssetListView({ assets, clients, onSelect, onRestore }: AssetListViewProps) {
+function formatBytes(bytes: number | null | undefined): string {
+  if (!bytes || bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+export function AssetListView({
+  assets,
+  clients,
+  onSelect,
+  onRestore,
+  showSize = false,
+  sizeSortDir = null,
+  onToggleSizeSort,
+}: AssetListViewProps) {
   const clientMap = new Map(clients.map((c) => [c.id, c.name]));
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("pt-BR");
 
@@ -28,6 +49,30 @@ export function AssetListView({ assets, clients, onSelect, onRestore }: AssetLis
             <TableHead className="w-40">Cliente</TableHead>
             <TableHead>Tags</TableHead>
             <TableHead className="w-24">Cores</TableHead>
+            {showSize && (
+              <TableHead className="w-28">
+                {onToggleSizeSort ? (
+                  <button
+                    type="button"
+                    onClick={onToggleSizeSort}
+                    className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                    aria-label="Ordenar por tamanho"
+                    title="Ordenar por tamanho"
+                  >
+                    Tamanho
+                    {sizeSortDir === "desc" ? (
+                      <ArrowDown className="w-3 h-3" />
+                    ) : sizeSortDir === "asc" ? (
+                      <ArrowUp className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                    )}
+                  </button>
+                ) : (
+                  "Tamanho"
+                )}
+              </TableHead>
+            )}
             <TableHead className="w-28">Data</TableHead>
             {onRestore && <TableHead className="w-28 text-right">Ações</TableHead>}
           </TableRow>
@@ -93,6 +138,11 @@ export function AssetListView({ assets, clients, onSelect, onRestore }: AssetLis
                   ))}
                 </div>
               </TableCell>
+              {showSize && (
+                <TableCell className="text-xs text-muted-foreground tabular-nums">
+                  {formatBytes(a.file_size)}
+                </TableCell>
+              )}
               <TableCell className="text-xs text-muted-foreground">{fmt(a.created_at)}</TableCell>
               {onRestore && (
                 <TableCell className="text-right">
