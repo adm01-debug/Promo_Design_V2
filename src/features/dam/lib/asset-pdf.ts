@@ -108,33 +108,48 @@ export function buildAssetsPdf(
   const MARGIN_X = 40;
   const FOOTER_Y = pageH - 24;
 
-  // Build filter summary lines (rendered on every page header)
-  const filterLines: string[] = [];
-  if (filters.search) filterLines.push(`Busca: "${filters.search}"`);
-  if (filters.assetTypes && filters.assetTypes.length > 0) {
-    filterLines.push(`Tipos: ${filters.assetTypes.map((t) => TYPE_LABEL[t] ?? t).join(", ")}`);
-  }
-  if (filters.clientName) filterLines.push(`Cliente: ${filters.clientName}`);
-  if (filters.tags && filters.tags.length > 0) {
-    filterLines.push(`Tags (${filters.tagsMode === "any" ? "qualquer" : "todas"}): ${filters.tags.join(", ")}`);
-  }
-  if (filters.includeArchived) filterLines.push("Inclui arquivados");
-  if (filters.sortLabel) filterLines.push(`Ordenação: ${filters.sortLabel}`);
-  filterLines.push(`Resultados: ${filters.shown} de ${filters.total}`);
+  // Build the active-filter definition list once (rendered on every page header).
+  const filterRows = buildFilterRows(filters);
 
-  // Compose summary into wrapped text (one paragraph, "•" separators) so the
-  // header height stays predictable even with many filters active.
-  const summaryParagraph = filterLines.join("  •  ");
-  const SUMMARY_MAX_WIDTH = pageW - MARGIN_X * 2;
-  const summaryWrapped = doc.splitTextToSize(summaryParagraph, SUMMARY_MAX_WIDTH) as string[];
-
-  // Vertical anchors for the repeating header
+  // Two-column layout: "Label: value" entries flow left→right, then wrap.
+  // We pre-compute wrapped text per entry so the header height is stable across pages.
   const HEADER_TITLE_Y = 38;
   const HEADER_META_Y = 52;
   const SUMMARY_START_Y = 68;
   const SUMMARY_LINE_H = 11;
-  const HEADER_BOTTOM_PAD = 8;
-  const headerHeight = SUMMARY_START_Y + summaryWrapped.length * SUMMARY_LINE_H + HEADER_BOTTOM_PAD;
+  const HEADER_BOTTOM_PAD = 10;
+  const COL_GAP = 18;
+  const COLS = 2;
+  const colWidth = (pageW - MARGIN_X * 2 - COL_GAP * (COLS - 1)) / COLS;
+
+  // For each filter, prepare the wrapped lines so we can flow them in two columns.
+  doc.setFontSize(8.5);
+  const wrappedFilterEntries = filterRows.map(([label, value]) => {
+    const text = `${label}: ${value}`;
+    return doc.splitTextToSize(text, colWidth) as string[];
+  });
+
+  // Distribute entries across COLS columns (top-down, then next column).
+  const totalLines = wrappedFilterEntries.reduce((acc, l) => acc + l.length, 0);
+  const linesPerCol = Math.ceil(totalLines / COLS);
+  const columns: Array<{ x: number; lines: string[] }> = Array.from({ length: COLS }, (_, i) => ({
+    x: MARGIN_X + i * (colWidth + COL_GAP),
+    lines: [],
+  }));
+  let colIdx = 0;
+  for (const entry of wrappedFilterEntries) {
+    if (
+      columns[colIdx].lines.length > 0 &&
+      columns[colIdx].lines.length + entry.length > linesPerCol &&
+      colIdx < COLS - 1
+    ) {
+      colIdx++;
+    }
+    columns[colIdx].lines.push(...entry);
+  }
+
+  const summaryHeight = Math.max(...columns.map((c) => c.lines.length)) * SUMMARY_LINE_H;
+  const headerHeight = SUMMARY_START_Y + summaryHeight + HEADER_BOTTOM_PAD;
 
   /** Repaints the fixed header on every page (called by autoTable's didDrawPage). */
   const drawHeader = () => {
@@ -154,7 +169,9 @@ export function buildAssetsPdf(
 
     doc.setFontSize(8.5);
     doc.setTextColor(70);
-    doc.text(summaryWrapped, MARGIN_X, SUMMARY_START_Y);
+    for (const col of columns) {
+      doc.text(col.lines, col.x, SUMMARY_START_Y);
+    }
     doc.setTextColor(0);
   };
 
