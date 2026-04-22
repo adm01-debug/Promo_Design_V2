@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw, FileType, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
 import { cn } from "@/lib/utils";
@@ -95,6 +95,8 @@ interface FileEntry {
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   phase?: UploadPhase;
+  /** Set when PDF/SVG preview rendering failed. Upload still proceeds. */
+  previewError?: string;
 }
 
 export function AssetUploadDialog({
@@ -211,23 +213,55 @@ export function AssetUploadDialog({
     next.forEach((entry) => {
       if (entry.kind === "svg") {
         buildSvgPreviewUrl(entry.file)
-          .then((url) => updatePreview(entry.id, url))
-          .catch(() => updatePreview(entry.id, null));
+          .then((url) =>
+            updatePreview(
+              entry.id,
+              url,
+              url ? undefined : "Falha ao gerar preview do SVG",
+            ),
+          )
+          .catch((err: unknown) =>
+            updatePreview(
+              entry.id,
+              null,
+              err instanceof Error && err.message
+                ? `SVG: ${err.message}`
+                : "Falha ao gerar preview do SVG",
+            ),
+          );
       } else if (entry.kind === "pdf") {
         rasterizePdfFirstPage(entry.file, 256)
-          .then((r) => updatePreview(entry.id, r?.url ?? null))
-          .catch(() => updatePreview(entry.id, null));
+          .then((r) =>
+            updatePreview(
+              entry.id,
+              r?.url ?? null,
+              r?.url ? undefined : "Falha ao renderizar PDF",
+            ),
+          )
+          .catch((err: unknown) =>
+            updatePreview(
+              entry.id,
+              null,
+              err instanceof Error && err.message
+                ? `PDF: ${err.message}`
+                : "Falha ao renderizar PDF",
+            ),
+          );
       }
     });
   };
 
-  const updatePreview = (id: string, url: string | null) => {
+  const updatePreview = (id: string, url: string | null, previewError?: string) => {
+    if (previewError) {
+      // Surface to console for diagnostics. Upload itself is not blocked.
+      console.warn(`[AssetUpload] preview generation failed for entry ${id}:`, previewError);
+    }
     setEntries((prev) =>
       prev.map((e) => {
         if (e.id !== id) return e;
         // Revoke any prior url that we own (raster image used file URL too)
         if (e.preview && e.preview !== url) URL.revokeObjectURL(e.preview);
-        return { ...e, preview: url, previewLoading: false };
+        return { ...e, preview: url, previewLoading: false, previewError };
       })
     );
   };
@@ -414,6 +448,18 @@ export function AssetUploadDialog({
                     >
                       <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                     </div>
+                  ) : e.previewError && (e.kind === "pdf" || e.kind === "svg") ? (
+                    <div
+                      className="relative w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
+                      title={`${e.kind.toUpperCase()} — ${e.previewError}`}
+                      aria-label={`Preview indisponível: ${e.previewError}`}
+                    >
+                      <FileType className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                        {e.kind}
+                      </span>
+                      <AlertTriangle className="absolute -top-1 -right-1 w-3.5 h-3.5 text-destructive bg-card rounded-full p-[1px]" />
+                    </div>
                   ) : e.kind === "ai" || e.kind === "psd" ? (
                     <div
                       className="w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
@@ -442,6 +488,15 @@ export function AssetUploadDialog({
                     </div>
                     {e.status === "error" && e.error && (
                       <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
+                    )}
+                    {e.status !== "error" && e.previewError && (
+                      <div
+                        className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1"
+                        title={e.previewError}
+                      >
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        Preview indisponível — o arquivo será enviado mesmo assim.
+                      </div>
                     )}
                     {e.status === "uploading" && (
                       <div className="mt-1 space-y-1">
