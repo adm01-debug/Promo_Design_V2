@@ -25,6 +25,10 @@ import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnos
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
 export const COMPARE_MODE_KEY = "dam-compare-mode";
+/** Last URL query string (filters + ?asset + ?compare) used in /dam/preview. */
+export const PREVIEW_QS_KEY = "dam-preview-qs";
+/** Last set of compare-selected asset ids (CSV). Used when URL has no ?compare=. */
+export const COMPARE_IDS_KEY = "dam-compare-ids";
 
 /**
  * Reads the last viewed preview asset id from localStorage, validating TTL.
