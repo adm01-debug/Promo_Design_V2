@@ -57,6 +57,21 @@ const CLIENT_ID_KEY = "dam-client-id";
 const TAGS_KEY = "dam-tags";
 const SORT_KEY = "dam-sort";
 const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
+const SIZE_RANGE_KEY = "dam-size-range";
+
+type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
+const SIZE_RANGE_OPTIONS: {
+  value: SizeRangeKey;
+  label: string;
+  min?: number;
+  max?: number;
+}[] = [
+  { value: "all", label: "Qualquer tamanho" },
+  { value: "lt1mb", label: "Até 1 MB", max: 1 * 1024 * 1024 },
+  { value: "1to5mb", label: "1–5 MB", min: 1 * 1024 * 1024, max: 5 * 1024 * 1024 },
+  { value: "5to20mb", label: "5–20 MB", min: 5 * 1024 * 1024, max: 20 * 1024 * 1024 },
+  { value: "gt20mb", label: "Acima de 20 MB", min: 20 * 1024 * 1024 },
+];
 
 const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
 
