@@ -6,7 +6,7 @@ import type { Asset } from "../hooks/use-assets";
 import type { ColorEntry, FontEntry } from "../hooks/use-brand-guidelines";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { wcagBoth, bestTextColor, type WcagLevel } from "../lib/color-contrast";
-import { toast } from "sonner";
+import { copyHexToClipboard } from "../lib/copy-hex";
 
 interface BrandPreviewCardProps {
   clientName: string;
@@ -26,14 +26,7 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
   const heroText = bestTextColor(heroColor);
   const accentText = bestTextColor(accentColor);
 
-  const copyHex = async (hex: string) => {
-    try {
-      await navigator.clipboard.writeText(hex.toUpperCase());
-      toast.success(`Copiado ${hex.toUpperCase()}`);
-    } catch {
-      toast.error("Falha ao copiar");
-    }
-  };
+  const copyHex = (hex: string) => copyHexToClipboard(hex);
 
   const levelVariant = (l: WcagLevel): "default" | "secondary" | "destructive" | "outline" =>
     l === "AAA" ? "default" : l === "AA" ? "secondary" : "destructive";
