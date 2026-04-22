@@ -7,6 +7,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export interface ResultsPaginationProps {
