@@ -637,17 +637,74 @@ export default function DamLibraryPage() {
     if (highlightedRef.current === lastPreviewAssetId) return;
     if (!lastPreviewAsset) return;
 
-    const el = document.querySelector<HTMLElement>(`[data-asset-id="${lastPreviewAssetId}"]`);
-    if (!el) return;
+    let canceled = false;
+    let removeHighlightTimer: number | undefined;
 
-    highlightedRef.current = lastPreviewAssetId;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "transition-all");
-    const t = window.setTimeout(() => {
-      el.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background");
-    }, 2000);
-    return () => window.clearTimeout(t);
-  }, [lastPreviewAssetId, lastPreviewAsset, isLoading]);
+    const highlight = (el: HTMLElement) => {
+      highlightedRef.current = lastPreviewAssetId;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background", "transition-all");
+      removeHighlightTimer = window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-background");
+      }, 2000);
+    };
+
+    /**
+     * Try to find the card; if missing, advance pagination (load-more) or jump
+     * to the right page (pages mode) so the asset becomes part of the rendered
+     * list. Polls a few times with a hard cap to avoid infinite loops.
+     */
+    const attempt = (tries: number) => {
+      if (canceled) return;
+      const el = document.querySelector<HTMLElement>(`[data-asset-id="${lastPreviewAssetId}"]`);
+      if (el) {
+        highlight(el);
+        return;
+      }
+      if (tries <= 0) return;
+
+      // Find the asset's position inside the full filtered set.
+      const idx = displayedAssets.findIndex((a) => a.id === lastPreviewAssetId);
+
+      if (paginationMode === "pages" && idx >= 0) {
+        const targetPage = Math.floor(idx / pageSize) + 1;
+        if (targetPage !== page && targetPage >= 1 && targetPage <= totalPages) {
+          setPage(targetPage);
+          // Wait for re-render then retry.
+          window.setTimeout(() => attempt(tries - 1), 200);
+          return;
+        }
+      } else if (paginationMode === "loadmore" && hasMore) {
+        // Load next batch then retry.
+        setPage((p) => p + 1);
+        window.setTimeout(() => attempt(tries - 1), 300);
+        return;
+      }
+
+      // Asset known to exist in displayedAssets but DOM not yet ready (virtualized
+      // list, late mount, etc.) — retry on next animation frame.
+      if (idx >= 0) {
+        requestAnimationFrame(() => attempt(tries - 1));
+      }
+    };
+
+    attempt(8);
+
+    return () => {
+      canceled = true;
+      if (removeHighlightTimer !== undefined) window.clearTimeout(removeHighlightTimer);
+    };
+  }, [
+    lastPreviewAssetId,
+    lastPreviewAsset,
+    isLoading,
+    displayedAssets,
+    paginationMode,
+    page,
+    pageSize,
+    totalPages,
+    hasMore,
+  ]);
 
   const dismissLastPreview = () => {
     clearLastPreviewAsset();
