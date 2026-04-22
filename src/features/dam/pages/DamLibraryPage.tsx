@@ -34,6 +34,7 @@ import { BatchOcrDialog } from "../components/BatchOcrDialog";
 import { parseBoolParam } from "../lib/parse-bool-param";
 import { JumpToPage } from "../components/JumpToPage";
 import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
+import { SizeRangeFilter, type CustomSizeRange } from "../components/SizeRangeFilter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +72,7 @@ const SORT_KEY = "dam-sort";
 const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
 const SIZE_RANGE_KEY = "dam-size-range";
 const UPDATED_RANGE_KEY = "dam-updated-range";
+const CUSTOM_SIZE_KEY = "dam-custom-size-range";
 
 type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
 const SIZE_RANGE_OPTIONS: {
@@ -238,6 +240,54 @@ export default function DamLibraryPage() {
       /* ignore */
     }
   }, [sizeRange]);
+  // Custom (advanced) size range — independent from the preset above. When set,
+  // it overrides the preset for query purposes. Persisted as JSON in
+  // localStorage and as `sizeMin`/`sizeMax` (bytes) in the URL for shareable links.
+  const [customSize, setCustomSize] = useState<CustomSizeRange | null>(() => {
+    if (typeof window === "undefined") return null;
+    const minUrl = Number(searchParams.get("sizeMin"));
+    const maxUrl = Number(searchParams.get("sizeMax"));
+    const hasMin = Number.isFinite(minUrl) && minUrl >= 0;
+    const hasMax = Number.isFinite(maxUrl) && maxUrl >= 0;
+    if (hasMin || hasMax) {
+      const unit = (searchParams.get("sizeUnit") as "KB" | "MB") === "KB" ? "KB" : "MB";
+      const factor = unit === "KB" ? 1024 : 1024 * 1024;
+      return {
+        minBytes: hasMin ? minUrl : null,
+        maxBytes: hasMax ? maxUrl : null,
+        unit,
+        minRaw: hasMin ? String(minUrl / factor) : "",
+        maxRaw: hasMax ? String(maxUrl / factor) : "",
+      };
+    }
+    try {
+      const raw = localStorage.getItem(CUSTOM_SIZE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as CustomSizeRange;
+      if (typeof parsed === "object" && parsed !== null) return parsed;
+    } catch {
+      /* ignore */
+    }
+    return null;
+  });
+  useEffect(() => {
+    try {
+      if (customSize) localStorage.setItem(CUSTOM_SIZE_KEY, JSON.stringify(customSize));
+      else localStorage.removeItem(CUSTOM_SIZE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (customSize?.minBytes != null) next.set("sizeMin", String(customSize.minBytes));
+      else next.delete("sizeMin");
+      if (customSize?.maxBytes != null) next.set("sizeMax", String(customSize.maxBytes));
+      else next.delete("sizeMax");
+      if (customSize) next.set("sizeUnit", customSize.unit);
+      else next.delete("sizeUnit");
+      return next;
+    }, { replace: true });
+  }, [customSize, setSearchParams]);
   const [updatedRange, setUpdatedRange] = useState<UpdatedRangeKey>(() => {
     const fromUrl = searchParams.get("updated") as UpdatedRangeKey | null;
     if (fromUrl && UPDATED_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
@@ -339,6 +389,7 @@ export default function DamLibraryPage() {
       LIST_SHOW_SIZE_KEY,
       SIZE_RANGE_KEY,
       UPDATED_RANGE_KEY,
+      CUSTOM_SIZE_KEY,
     ];
     for (const k of KEYS) {
       try { localStorage.removeItem(k); } catch { /* ignore */ }
@@ -358,6 +409,7 @@ export default function DamLibraryPage() {
     setViewMode("grid");
     setSizeRange("all");
     setUpdatedRange("all");
+    setCustomSize(null);
     setShowSizeColumn(false);
     setSearchParams(new URLSearchParams(), { replace: true });
     setResetOpen(false);
@@ -411,7 +463,9 @@ export default function DamLibraryPage() {
     assetTypes.length > 0 ||
     clientId !== "all" ||
     selectedTags.length > 0 ||
-    includeArchived;
+    includeArchived ||
+    customSize !== null ||
+    sizeRange !== "all";
 
   const canUpload = can(["owner", "admin", "designer"]);
 
@@ -423,6 +477,7 @@ export default function DamLibraryPage() {
     setIncludeArchived(false);
     setSizeRange("all");
     setUpdatedRange("all");
+    setCustomSize(null);
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
@@ -431,6 +486,7 @@ export default function DamLibraryPage() {
     writeLS(INCLUDE_ARCHIVED_KEY, null);
     try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
     try { localStorage.removeItem(UPDATED_RANGE_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(CUSTOM_SIZE_KEY); } catch { /* ignore */ }
   };
 
   useEffect(() => {
@@ -556,7 +612,7 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange, updatedRange]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange, updatedRange, customSize]);
 
   const filters = useMemo(
     () => {
@@ -566,6 +622,9 @@ export default function DamLibraryPage() {
       const updatedAfter = updRange?.hours
         ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
         : undefined;
+      // Custom size range overrides the preset when active.
+      const minSize = customSize ? customSize.minBytes ?? undefined : range?.min;
+      const maxSize = customSize ? customSize.maxBytes ?? undefined : range?.max;
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -578,12 +637,12 @@ export default function DamLibraryPage() {
         sortDir: opt.sortDir,
         page,
         pageSize,
-        minSize: range?.min,
-        maxSize: range?.max,
+        minSize,
+        maxSize,
         updatedAfter,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange, customSize],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
@@ -1291,8 +1350,20 @@ export default function DamLibraryPage() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 ml-auto">
-          <Select value={sizeRange} onValueChange={(v) => setSizeRange(v as SizeRangeKey)}>
-            <SelectTrigger className="w-44" aria-label="Filtrar por tamanho">
+          <Select
+            value={sizeRange}
+            onValueChange={(v) => {
+              setSizeRange(v as SizeRangeKey);
+              // Choosing a preset clears the custom range to keep one source of truth.
+              if (customSize) setCustomSize(null);
+            }}
+            disabled={customSize !== null}
+          >
+            <SelectTrigger
+              className="w-44"
+              aria-label="Filtrar por tamanho (predefinido)"
+              title={customSize ? "Filtro personalizado ativo — limpe para usar predefinidos" : undefined}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -1301,6 +1372,14 @@ export default function DamLibraryPage() {
               ))}
             </SelectContent>
           </Select>
+          <SizeRangeFilter
+            value={customSize}
+            onChange={(next) => {
+              setCustomSize(next);
+              // Choosing a custom range clears the preset to keep one source of truth.
+              if (next && sizeRange !== "all") setSizeRange("all");
+            }}
+          />
           <Select value={updatedRange} onValueChange={(v) => setUpdatedRange(v as UpdatedRangeKey)}>
             <SelectTrigger className="w-44" aria-label="Filtrar por data de modificação">
               <SelectValue />
