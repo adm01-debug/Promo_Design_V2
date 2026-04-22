@@ -226,17 +226,34 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           <span>
             {filtered.length} de {versions.length} {versions.length === 1 ? "versão" : "versões"}
           </span>
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
+          <div className="flex items-center gap-1">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+              >
+                <X className="w-3 h-3 mr-1" />
+                Limpar filtros
+              </Button>
+            )}
+            <ToggleGroup
+              type="single"
               size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => setFilters(DEFAULT_FILTERS)}
+              value={view}
+              onValueChange={(v) => v && setView(v as ViewMode)}
+              className="h-7"
+              aria-label="Modo de visualização do histórico"
             >
-              <X className="w-3 h-3 mr-1" />
-              Limpar filtros
-            </Button>
-          )}
+              <ToggleGroupItem value="list" className="h-7 px-2" aria-label="Lista">
+                <List className="w-3.5 h-3.5" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="timeline" className="h-7 px-2" aria-label="Timeline">
+                <GitCommit className="w-3.5 h-3.5" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
       </div>
 
@@ -252,6 +269,13 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
             Limpar filtros
           </Button>
         </div>
+      ) : view === "timeline" ? (
+        <VersionTimeline
+          entries={visible}
+          maxVersion={maxVersion}
+          currentAssetId={asset.id}
+          onSelect={onSelect}
+        />
       ) : (
         <ul className="space-y-2">
           {visible.map((v) => {
