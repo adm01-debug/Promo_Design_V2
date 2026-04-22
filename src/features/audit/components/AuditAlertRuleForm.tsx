@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAuditAlertRule } from "../hooks/use-audit-alerts";
 import type { AuditAction } from "../hooks/use-audit-log";
@@ -32,6 +33,8 @@ import type { AuditFilterState } from "./AuditFilters";
 
 const ALL_ACTIONS: AuditAction[] = ["INSERT", "UPDATE", "DELETE"];
 const SENTINEL_ANY = "__any__";
+
+type RecipientsMode = "owner" | "organization" | "users";
 
 interface Props {
   open: boolean;
@@ -59,6 +62,8 @@ export function AuditAlertRuleForm({
   const [targetUserId, setTargetUserId] = useState<string | undefined>(prefill?.userId);
   const [valueKey, setValueKey] = useState<string>(prefill?.valueKey ?? "");
   const [valueQuery, setValueQuery] = useState<string>(prefill?.valueQuery ?? "");
+  const [recipientsMode, setRecipientsMode] = useState<RecipientsMode>("owner");
+  const [recipientUserIds, setRecipientUserIds] = useState<string[]>([]);
 
   const reset = () => {
     setName("");
@@ -67,6 +72,8 @@ export function AuditAlertRuleForm({
     setTargetUserId(undefined);
     setValueKey("");
     setValueQuery("");
+    setRecipientsMode("owner");
+    setRecipientUserIds([]);
   };
 
   const handleSubmit = async () => {
@@ -84,6 +91,8 @@ export function AuditAlertRuleForm({
         target_user_id: targetUserId ?? null,
         value_key: valueKey.trim() || null,
         value_query: valueQuery.trim() || null,
+        recipients_mode: recipientsMode,
+        recipient_user_ids: recipientsMode === "users" ? recipientUserIds : [],
       });
       toast({ title: "Regra criada", description: trimmed });
       reset();
