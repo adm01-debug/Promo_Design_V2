@@ -22,6 +22,7 @@ import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
 import { ExportProgressPanel } from "../components/ExportProgressPanel";
 import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnosis";
+import { ActiveFiltersSummaryPanel } from "../components/ActiveFiltersSummaryPanel";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
