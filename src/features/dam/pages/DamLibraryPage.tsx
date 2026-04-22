@@ -206,6 +206,7 @@ export default function DamLibraryPage() {
     writeLS(CLIENT_ID_KEY, null);
     writeLS(TAGS_KEY, null);
     writeLS(SORT_KEY, null);
+    writeLS(INCLUDE_ARCHIVED_KEY, null);
   };
 
   useEffect(() => {
