@@ -267,6 +267,13 @@ export default function DamLibraryPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
   const [copiedLink, setCopiedLink] = useState(false);
+  // Captured ONCE at mount: was the Arquivados toggle activated through the
+  // URL (?archived=...)? Used to surface a subtle "applied via link" hint.
+  const [archivedFromUrlAtMount] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return parseBoolParam(searchParams.get("archived")) === true;
+  });
+  const [archivedUrlHintDismissed, setArchivedUrlHintDismissed] = useState(false);
 
   // Copies the current full URL (including all active filters and toggles like
   // ?archived=1) to the clipboard so the user can share the exact view.
