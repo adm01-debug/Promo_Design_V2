@@ -304,7 +304,7 @@ const AuditLogPage = () => {
     ipQuery: filterState.ipQuery,
     userAgentQuery: filterState.userAgentQuery,
     page,
-    pageSize: PAGE_SIZE,
+    pageSize: pageSize,
   };
 
   const { data, isLoading } = useAuditLog(queryFilters);
@@ -324,7 +324,7 @@ const AuditLogPage = () => {
     });
   }, [rawRows, needsClientValueFilter, filterState.valueQuery]);
   const total = needsClientValueFilter ? rows.length : serverTotal;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   useEffect(() => {
     if (page > 0 && page >= totalPages) setPage(Math.max(0, totalPages - 1));
@@ -435,7 +435,7 @@ const AuditLogPage = () => {
             <div className="flex-1">
               <ResultsPagination
                 page={page + 1}
-                pageSize={PAGE_SIZE}
+                pageSize={pageSize}
                 total={total}
                 totalPages={totalPages}
                 onPageChange={(p) => setPage(p - 1)}
@@ -460,7 +460,7 @@ const AuditLogPage = () => {
               <p className="text-sm">Selecione uma organização para ver a trilha de auditoria.</p>
             </div>
           ) : isLoading && rows.length === 0 ? (
-            <AuditTableSkeleton rows={Math.min(PAGE_SIZE, 8)} />
+            <AuditTableSkeleton rows={Math.min(pageSize, 8)} />
           ) : rows.length === 0 ? (
             (() => {
               const isEmptyFilters =
