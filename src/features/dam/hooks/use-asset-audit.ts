@@ -30,6 +30,33 @@ function isObj(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
+/**
+ * Deep-equal check that walks plain objects/arrays. Primitive comparison via
+ * `Object.is` (so NaN === NaN). Used to detect nested mutations inside
+ * `metadata` without producing false positives from key reordering.
+ */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (isObj(a) && isObj(b)) {
+    const ak = Object.keys(a);
+    const bk = Object.keys(b);
+    if (ak.length !== bk.length) return false;
+    for (const k of ak) {
+      if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+      if (!deepEqual(a[k], b[k])) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
 function diffFields(
   oldV: Record<string, unknown> | null,
   newV: Record<string, unknown> | null,
@@ -37,7 +64,13 @@ function diffFields(
   if (!oldV || !newV) return [];
   const changed: TrackedField[] = [];
   for (const k of TRACKED_FIELDS) {
-    if (JSON.stringify(oldV[k]) !== JSON.stringify(newV[k])) changed.push(k);
+    if (k === "metadata") {
+      // Walk nested metadata so we catch changes inside any sub-key
+      // (e.g. metadata.exif.iso) but only flag when something truly differs.
+      if (!deepEqual(oldV[k], newV[k])) changed.push(k);
+    } else if (!deepEqual(oldV[k], newV[k])) {
+      changed.push(k);
+    }
   }
   return changed;
 }
