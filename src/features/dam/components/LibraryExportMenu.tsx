@@ -297,6 +297,20 @@ export function LibraryExportMenu({
 
   return (
     <>
+      {history[0] && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 mr-1"
+          disabled={busy}
+          onClick={() => { void repeatExport(history[0]); }}
+          title={`Repetir: ${history[0].label} (${formatRelative(history[0].at)})`}
+          aria-label={`Repetir última exportação: ${history[0].label}`}
+        >
+          <Repeat2 className="w-4 h-4" />
+          Repetir {history[0].kind.toUpperCase()}
+        </Button>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5" disabled={busy}>
@@ -307,6 +321,36 @@ export function LibraryExportMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72">
+          {history.length > 0 && (
+            <>
+              <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
+                <History className="w-3 h-3" />
+                Histórico recente
+              </DropdownMenuLabel>
+              {history.map((h) => (
+                <DropdownMenuItem
+                  key={h.id}
+                  onClick={() => { void repeatExport(h); }}
+                  disabled={busy}
+                  title={`Repetir ${h.label}`}
+                >
+                  <Repeat2 className="w-4 h-4" />
+                  <span className="flex-1 truncate">{h.label}</span>
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {formatRelative(h.at)}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem
+                onClick={clearHistory}
+                className="text-xs text-muted-foreground"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Limpar histórico
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuLabel className="text-xs">Página atual</DropdownMenuLabel>
           <DropdownMenuItem onClick={handleCsv} disabled={disabled || busy}>
             <FileSpreadsheet className="w-4 h-4" />
