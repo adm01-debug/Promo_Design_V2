@@ -891,6 +891,16 @@ export default function DamLibraryPage() {
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 ml-auto">
+          <Select value={sizeRange} onValueChange={(v) => setSizeRange(v as SizeRangeKey)}>
+            <SelectTrigger className="w-44" aria-label="Filtrar por tamanho">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SIZE_RANGE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={sort} onValueChange={(v) => setSort(v as SortValue)}>
             <SelectTrigger className="w-44">
               <SelectValue />
