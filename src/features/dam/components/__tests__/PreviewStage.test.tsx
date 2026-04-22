@@ -4,6 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PreviewStage } from "../PreviewStage";
 import type { Asset } from "../../hooks/use-assets";
 
+// jsdom does not implement Element.scrollTo — PreviewStage calls it in an effect.
+if (!(Element.prototype as unknown as { scrollTo?: unknown }).scrollTo) {
+  (Element.prototype as unknown as { scrollTo: () => void }).scrollTo = () => {};
+}
+
 // Keep getAssetSignedUrl pending so the component stays in "loading" state.
 vi.mock("../../hooks/use-assets", async () => {
   const actual = await vi.importActual<typeof import("../../hooks/use-assets")>(
