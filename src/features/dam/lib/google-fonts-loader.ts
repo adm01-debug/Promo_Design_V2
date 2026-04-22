@@ -12,11 +12,17 @@ function prescanExisting() {
     'link[href*="fonts.googleapis.com"]',
   );
   links.forEach((link) => {
-    const match = link.href.match(/family=([^:&]+)/);
-    if (!match) return;
-    const family = decodeURIComponent(match[1].replace(/\+/g, " ")).trim().toLowerCase();
-    if (family && !cache.has(family)) {
-      cache.set(family, Promise.resolve(true));
+    // Suporta múltiplos `family=` no mesmo href e separadores `|` (API legada).
+    const matches = link.href.matchAll(/family=([^&]+)/g);
+    for (const m of matches) {
+      const raw = m[1];
+      const families = raw.split("|");
+      for (const f of families) {
+        const name = decodeURIComponent(f.split(":")[0].replace(/\+/g, " ")).trim().toLowerCase();
+        if (name && !cache.has(name)) {
+          cache.set(name, Promise.resolve(true));
+        }
+      }
     }
   });
 }
@@ -40,6 +46,20 @@ export function loadGoogleFont(
   const family = encodeFamily(trimmed);
   const wghtList = [...weights].sort((a, b) => a - b).join(";");
   const href = `https://fonts.googleapis.com/css2?family=${family}:wght@${wghtList}&display=swap`;
+
+  // Defesa extra contra corridas: se já existe um <link> para essa família,
+  // não injeta novo, apenas confirma o carregamento via FontFaceSet.
+  const existing = document.head.querySelector<HTMLLinkElement>(
+    `link[data-google-font="${key}"]`,
+  );
+  if (existing) {
+    const fontsApi = (document as Document & { fonts?: FontFaceSet }).fonts;
+    const p = fontsApi?.load
+      ? fontsApi.load(`1em "${trimmed}"`).then((f) => f.length > 0).catch(() => false)
+      : Promise.resolve(true);
+    cache.set(key, p);
+    return p;
+  }
 
   const link = document.createElement("link");
   link.rel = "stylesheet";
