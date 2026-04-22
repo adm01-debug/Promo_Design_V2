@@ -71,11 +71,12 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
                     <button
                       type="button"
                       onClick={() => copyHex(c.hex)}
-                      className="relative w-7 h-7 rounded-full border-2 border-white/30 hover:scale-110 transition-transform cursor-pointer"
+                      className="relative w-7 h-7 rounded-full border-2 border-white/30 hover:scale-110 transition-transform cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                       style={{ backgroundColor: c.hex }}
-                      aria-label={`Copiar ${c.hex}`}
+                      aria-label={`Copiar cor ${c.name || c.hex.toUpperCase()} · contraste ${w.vsWhite} vs branco`}
                     >
                       <span
+                        aria-hidden="true"
                         className="absolute -bottom-1 -right-1 text-[7px] font-bold px-1 rounded-full border border-white/40 leading-[1.1]"
                         style={{
                           backgroundColor: w.vsWhite === "FAIL" ? "#dc2626" : w.vsWhite === "AAA" ? "#16a34a" : "#2563eb",
@@ -145,23 +146,25 @@ export function BrandPreviewCard({ clientName, primary, secondary, fonts, logo }
                   <button
                     type="button"
                     onClick={() => copyHex(c.hex)}
-                    className="w-10 h-10 rounded-md border border-border shrink-0 hover:scale-105 transition-transform"
+                    className="w-10 h-10 rounded-md border border-border shrink-0 hover:scale-105 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     style={{ backgroundColor: c.hex }}
-                    aria-label={`Copiar ${c.hex}`}
+                    aria-label={`Copiar swatch ${c.name || c.hex.toUpperCase()}`}
                   />
                   <div className="min-w-0 flex-1">
                     <button
                       type="button"
                       onClick={() => copyHex(c.hex)}
-                      className="block text-left w-full truncate text-xs font-medium hover:text-primary"
+                      className="block text-left w-full truncate text-xs font-medium hover:text-primary rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       title="Clique para copiar"
+                      aria-label={`Copiar nome — ${c.name || "Sem nome"} (${c.hex.toUpperCase()})`}
                     >
                       {c.name || "Sem nome"}
                     </button>
                     <button
                       type="button"
                       onClick={() => copyHex(c.hex)}
-                      className="block text-left w-full font-mono text-[10px] text-muted-foreground hover:text-foreground"
+                      className="block text-left w-full font-mono text-[10px] text-muted-foreground hover:text-foreground rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Copiar HEX ${c.hex.toUpperCase()}`}
                     >
                       {c.hex.toUpperCase()}
                     </button>
