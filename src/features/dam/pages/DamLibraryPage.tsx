@@ -30,6 +30,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryExportMenu } from "../components/LibraryExportMenu";
+import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
