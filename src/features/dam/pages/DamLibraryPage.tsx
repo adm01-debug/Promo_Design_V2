@@ -518,6 +518,15 @@ export default function DamLibraryPage() {
         </div>
         <div className="flex items-center gap-2">
           <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActivityOpen(true)}
+            title="Atividade recente da biblioteca"
+          >
+            <History className="w-4 h-4 mr-2" />
+            Atividade
+          </Button>
           <LibraryExportMenu
             assets={assets}
             clients={clients}
