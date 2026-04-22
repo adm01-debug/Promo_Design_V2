@@ -295,6 +295,7 @@ export default function DamLibraryPage() {
     setSelectedTags([]);
     setIncludeArchived(false);
     setSizeRange("all");
+    setUpdatedRange("all");
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
@@ -302,6 +303,7 @@ export default function DamLibraryPage() {
     writeLS(SORT_KEY, null);
     writeLS(INCLUDE_ARCHIVED_KEY, null);
     try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(UPDATED_RANGE_KEY); } catch { /* ignore */ }
   };
 
   useEffect(() => {
@@ -402,9 +404,10 @@ export default function DamLibraryPage() {
       else next.delete("tagsMode");
       if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
       if (sizeRange !== "all") next.set("size", sizeRange); else next.delete("size");
+      if (updatedRange !== "all") next.set("updated", updatedRange); else next.delete("updated");
       return next;
     }, { replace: true });
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, setSearchParams]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, updatedRange, setSearchParams]);
 
   // If user clears search while sorting by relevance, fall back to "Mais recentes"
   useEffect(() => {
@@ -415,12 +418,16 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange, updatedRange]);
 
   const filters = useMemo(
     () => {
       const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
       const range = SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange);
+      const updRange = UPDATED_RANGE_OPTIONS.find((o) => o.value === updatedRange);
+      const updatedAfter = updRange?.hours
+        ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
+        : undefined;
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -435,9 +442,10 @@ export default function DamLibraryPage() {
         pageSize,
         minSize: range?.min,
         maxSize: range?.max,
+        updatedAfter,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
