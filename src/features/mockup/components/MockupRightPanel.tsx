@@ -58,6 +58,7 @@ interface MockupRightPanelProps {
 const MockupRightPanel = (props: MockupRightPanelProps) => {
   const navigate = useNavigate();
   const [damPickerOpen, setDamPickerOpen] = useState(false);
+  const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
   const {
     selectedProduct, selectedProductImage, selectedArea, colorVariants, selectedVariant, setSelectedVariant,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo, clearLogo,
@@ -113,11 +114,18 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
           <Button variant="outline" size="sm" className="text-xs" onClick={() => fileInputRef.current?.click()}>
             <Upload className="w-3.5 h-3.5 mr-1" /> Upload
           </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)}>
-            <Library className="w-3.5 h-3.5 mr-1" /> DAM
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)} disabled={isLoadingFromDam}>
+            {isLoadingFromDam ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Library className="w-3.5 h-3.5 mr-1" />}
+            {isLoadingFromDam ? "Carregando..." : "DAM"}
           </Button>
         </div>
-        {logoFile && <p className="text-[10px] text-muted-foreground truncate mt-1.5">{logoFile.name}</p>}
+        {isLoadingFromDam ? (
+          <p className="text-[10px] text-primary mt-1.5 flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Baixando logo do DAM…
+          </p>
+        ) : (
+          logoFile && <p className="text-[10px] text-muted-foreground truncate mt-1.5">{logoFile.name}</p>
+        )}
         {logoPreview && (
           <div className="flex items-center gap-1 mt-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 gap-1" onClick={() => setShowLogo(!showLogo)}>
@@ -317,12 +325,15 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
         defaultAssetType="logo"
         title="Escolher logo da biblioteca"
         onSelect={async (asset) => {
+          setIsLoadingFromDam(true);
           try {
             const file = await downloadAssetAsFile(asset.file_path, asset.name, asset.mime_type);
             handleLogoUpload(file);
             toast.success("Logo carregado da biblioteca");
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Não foi possível carregar o logo.");
+          } finally {
+            setIsLoadingFromDam(false);
           }
         }}
       />
