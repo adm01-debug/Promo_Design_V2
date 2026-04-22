@@ -268,12 +268,14 @@ export default function DamLibraryPage() {
     setClientId("all");
     setSelectedTags([]);
     setIncludeArchived(false);
+    setSizeRange("all");
     writeLS(SEARCH_KEY, null);
     writeLS(ASSET_TYPES_KEY, null);
     writeLS(CLIENT_ID_KEY, null);
     writeLS(TAGS_KEY, null);
     writeLS(SORT_KEY, null);
     writeLS(INCLUDE_ARCHIVED_KEY, null);
+    try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
   };
 
   useEffect(() => {
