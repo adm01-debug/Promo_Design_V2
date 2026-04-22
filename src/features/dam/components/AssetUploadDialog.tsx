@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { useAssetUpload } from "../hooks/use-asset-upload";
+import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
@@ -94,6 +94,7 @@ interface FileEntry {
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
+  phase?: UploadPhase;
 }
 
 export function AssetUploadDialog({
@@ -261,7 +262,7 @@ export function AssetUploadDialog({
     let lastUploaded: Asset | null = null;
     for (const entry of targets) {
       if (entry.status === "done") { okCount++; continue; }
-      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined } : e));
+      setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined, phase: "analyzing" } : e));
       try {
         const created = await uploadFile(entry.file, {
           organizationId,
@@ -269,10 +270,31 @@ export function AssetUploadDialog({
           assetType,
           tags: cleanTags,
           parentAsset: parentAsset ?? undefined,
+          onPhase: (phase) => {
+            // Map qualitative phase to a coarse progress percentage so the bar
+            // also moves while the user reads the label.
+            const phaseProgress: Record<UploadPhase, number> = {
+              "analyzing": 10,
+              "rendering-pdf": 25,
+              "rasterizing-svg": 25,
+              "processing-image": 25,
+              "uploading-file": 55,
+              "uploading-thumb": 80,
+              "saving-record": 92,
+              "done": 100,
+            };
+            setEntries((prev) =>
+              prev.map((e) =>
+                e.id === entry.id
+                  ? { ...e, phase, progress: Math.max(e.progress, phaseProgress[phase] ?? e.progress) }
+                  : e,
+              ),
+            );
+          },
         });
         lastUploaded = created ?? null;
         if (created) onUploaded?.(created);
-        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100 } : e));
+        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e));
         okCount++;
       } catch (err) {
         const msg = (err as Error).message;
@@ -421,7 +443,17 @@ export function AssetUploadDialog({
                     {e.status === "error" && e.error && (
                       <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
                     )}
-                    {e.status === "uploading" && <Progress value={e.progress} className="h-1 mt-1" />}
+                    {e.status === "uploading" && (
+                      <div className="mt-1 space-y-1">
+                        <Progress value={e.progress} className="h-1" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                          <span className="truncate">
+                            {UPLOAD_PHASE_LABELS[e.phase ?? "analyzing"]}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   {!isUploading && e.status !== "done" && (
                     <button
