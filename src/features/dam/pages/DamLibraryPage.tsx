@@ -32,6 +32,7 @@ import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
+import { parseBoolParam } from "../lib/parse-bool-param";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -168,23 +169,20 @@ export default function DamLibraryPage() {
   });
   const [includeArchived, setIncludeArchived] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    const fromUrl = searchParams.get("archived");
-    if (fromUrl === "1") return true;
-    if (fromUrl === "0") return false;
+    const fromUrl = parseBoolParam(searchParams.get("archived"));
+    if (fromUrl !== null) return fromUrl;
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
   });
   const [archivedOnly, setArchivedOnly] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    const fromUrl = searchParams.get("archivedOnly");
-    if (fromUrl === "1") return true;
-    if (fromUrl === "0") return false;
+    const fromUrl = parseBoolParam(searchParams.get("archivedOnly"));
+    if (fromUrl !== null) return fromUrl;
     return localStorage.getItem(ARCHIVED_ONLY_KEY) === "1";
   });
   const [ocrOnly, setOcrOnly] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    const fromUrl = searchParams.get("ocrOnly");
-    if (fromUrl === "1") return true;
-    if (fromUrl === "0") return false;
+    const fromUrl = parseBoolParam(searchParams.get("ocrOnly"));
+    if (fromUrl !== null) return fromUrl;
     return localStorage.getItem(OCR_ONLY_KEY) === "1";
   });
   const [sort, setSort] = useState<SortValue>(() => {

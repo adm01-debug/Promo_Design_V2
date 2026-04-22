@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { AssetType } from "./use-assets";
+import { parseBoolParam } from "../lib/parse-bool-param";
 
 const TAGS_MODE_KEY = "dam-tags-mode";
 const SEARCH_KEY = "dam-search";
@@ -95,14 +96,11 @@ export function useDamFilters() {
     const tagsMode = (params.get("tagsMode") as "all" | "any") || readInitialTagsMode();
     const clientFromUrl = params.get("client") as DamFiltersState["clientId"] | null;
     const clientFromLs = readLS(CLIENT_ID_KEY) as DamFiltersState["clientId"] | null;
-    // Standard "Arquivados" toggle resolution: URL ("1"/"0" explicit) → localStorage → default(false).
-    const archivedUrl = params.get("archived");
+    // Standard "Arquivados" toggle resolution: URL (truthy/falsy spellings)
+    // → localStorage → default(false). Accepts 1/0/true/false/yes/no/on/off.
+    const archivedFromUrl = parseBoolParam(params.get("archived"));
     const includeArchived =
-      archivedUrl === "1"
-        ? true
-        : archivedUrl === "0"
-          ? false
-          : readLS(ARCHIVED_KEY) === "1";
+      archivedFromUrl !== null ? archivedFromUrl : readLS(ARCHIVED_KEY) === "1";
     return {
       search: params.get("q") ?? readLS(SEARCH_KEY) ?? "",
       assetTypes: types,
