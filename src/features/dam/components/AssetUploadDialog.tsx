@@ -289,6 +289,7 @@ export function AssetUploadDialog({
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
           : `${okCount} asset(s) enviado(s)`
       );
+      clearDraft(persistKey);
       onOpenChange(false);
     } else if (okCount > 0 && errCount > 0) {
       toast.success(`${okCount} enviado(s) · ${errCount} com erro`);
