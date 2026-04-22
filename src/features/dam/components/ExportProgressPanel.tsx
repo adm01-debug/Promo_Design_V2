@@ -9,7 +9,7 @@ import { useState } from "react";
 
 function statusIcon(s: ExportJob["status"]) {
   if (s === "running" || s === "queued") return <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />;
-  if (s === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
+  if (s === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-primary" />;
   if (s === "canceled") return <Ban className="w-3.5 h-3.5 text-muted-foreground" />;
   return <AlertCircle className="w-3.5 h-3.5 text-destructive" />;
 }
