@@ -32,6 +32,31 @@ describe("useDamFilters — Arquivados toggle persistence", () => {
     expect(result.current.state.includeArchived).toBe(true);
   });
 
+  it.each([
+    ["true", true],
+    ["TRUE", true],
+    ["yes", true],
+    ["on", true],
+    ["false", false],
+    ["FALSE", false],
+    ["no", false],
+    ["off", false],
+  ])("hydrates includeArchived from ?archived=%s as %s", (value, expected) => {
+    if (expected === false) localStorage.setItem(ARCHIVED_KEY, "1"); // ensure URL wins
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper([`/dam/preview?archived=${value}`]),
+    });
+    expect(result.current.state.includeArchived).toBe(expected);
+  });
+
+  it("ignores invalid ?archived values and falls back to localStorage", () => {
+    localStorage.setItem(ARCHIVED_KEY, "1");
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam/preview?archived=banana"]),
+    });
+    expect(result.current.state.includeArchived).toBe(true);
+  });
+
   it("hydrates includeArchived=false when ?archived=0 even if localStorage has '1'", () => {
     localStorage.setItem(ARCHIVED_KEY, "1");
     const { result } = renderHook(() => useDamFilters(), {
