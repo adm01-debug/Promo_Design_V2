@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Asset, AssetFilters } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { buildAssetsCsv, downloadCsv } from "../lib/asset-export";
+import { buildAssetsCsvWithMetadata, downloadCsv } from "../lib/asset-export";
 import { downloadAssetsPdf, type AssetsPdfFiltersSummary } from "../lib/asset-pdf";
 import {
   fetchAllFilteredAssets,
@@ -69,7 +69,11 @@ export function LibraryExportMenu({
       toast.warning("Nenhum asset para exportar");
       return;
     }
-    const csv = buildAssetsCsv(assets, clients);
+    const csv = buildAssetsCsvWithMetadata(assets, clients, {
+      ...filtersSummary,
+      shown: count,
+      total,
+    });
     const ts = format(new Date(), "yyyyMMdd-HHmmss");
     downloadCsv(`dam-assets-${ts}.csv`, csv);
     toast.success(`CSV exportado (${count} assets)`);
@@ -111,7 +115,11 @@ export function LibraryExportMenu({
       await new Promise((r) => setTimeout(r, 0));
 
       if (kind === "csv") {
-        const csv = buildAssetsCsv(all, clients);
+        const csv = buildAssetsCsvWithMetadata(all, clients, {
+          ...filtersSummary,
+          shown: all.length,
+          total: totalReported || all.length,
+        });
         const ts = format(new Date(), "yyyyMMdd-HHmmss");
         downloadCsv(`dam-assets-todos-${ts}.csv`, csv);
       } else {
