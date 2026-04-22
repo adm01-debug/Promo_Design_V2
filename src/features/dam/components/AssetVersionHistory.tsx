@@ -271,6 +271,42 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
         </ul>
       )}
 
+      {filtered.length > 0 && remaining > 0 && (
+        <div className="flex flex-col items-center gap-1 pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+          >
+            Carregar mais ({Math.min(PAGE_SIZE, remaining)} de {remaining} restante{remaining > 1 ? "s" : ""})
+          </Button>
+          {filtered.length > PAGE_SIZE * 2 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-muted-foreground"
+              onClick={() => setVisibleCount(filtered.length)}
+            >
+              Mostrar todas ({filtered.length})
+            </Button>
+          )}
+        </div>
+      )}
+
+      {filtered.length > 0 && remaining === 0 && filtered.length > PAGE_SIZE && (
+        <div className="flex justify-center pt-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground"
+            onClick={() => setVisibleCount(PAGE_SIZE)}
+          >
+            Recolher
+          </Button>
+        </div>
+      )}
+
       <AssetAuditTrail asset={asset} />
     </div>
   );
