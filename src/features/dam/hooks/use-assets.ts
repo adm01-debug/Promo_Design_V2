@@ -41,6 +41,7 @@ export interface AssetFilters {
   tagsMode?: "all" | "any";
   search?: string;
   includeArchived?: boolean;
+  archivedOnly?: boolean;
   sortBy?: "created_at" | "updated_at" | "name" | "file_size" | "version" | "relevance";
   sortDir?: "asc" | "desc";
   page?: number;
