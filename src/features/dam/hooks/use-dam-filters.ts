@@ -95,13 +95,21 @@ export function useDamFilters() {
     const tagsMode = (params.get("tagsMode") as "all" | "any") || readInitialTagsMode();
     const clientFromUrl = params.get("client") as DamFiltersState["clientId"] | null;
     const clientFromLs = readLS(CLIENT_ID_KEY) as DamFiltersState["clientId"] | null;
+    // Standard "Arquivados" toggle resolution: URL ("1"/"0" explicit) → localStorage → default(false).
+    const archivedUrl = params.get("archived");
+    const includeArchived =
+      archivedUrl === "1"
+        ? true
+        : archivedUrl === "0"
+          ? false
+          : readLS(ARCHIVED_KEY) === "1";
     return {
       search: params.get("q") ?? readLS(SEARCH_KEY) ?? "",
       assetTypes: types,
       clientId: clientFromUrl || clientFromLs || "all",
       tags,
       tagsMode,
-      includeArchived: params.get("archived") === "1" || readLS(ARCHIVED_KEY) === "1",
+      includeArchived,
       sort,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
