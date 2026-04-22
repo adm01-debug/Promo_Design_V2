@@ -1075,6 +1075,8 @@ export default function DamLibraryPage() {
             assets={assets}
             clients={clients}
             total={total}
+            organizationId={currentOrgId}
+            filters={filters}
             filtersSummary={{
               search: debouncedSearch.trim() || undefined,
               assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
