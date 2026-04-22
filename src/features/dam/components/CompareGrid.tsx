@@ -73,6 +73,110 @@ export function CompareGrid({ assets, onRemove }: Props) {
     };
   }, []);
 
+  // ---- Touch gestures: 1 finger = pan; 2 fingers = pinch zoom + pan (synchronized) ----
+  // We track pointers globally so a gesture started in one cell pans/zooms ALL cells in sync.
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const gestureRef = useRef<{
+    mode: "pan" | "pinch";
+    startTx: number;
+    startTy: number;
+    startScale: number;
+    // pan
+    startX?: number;
+    startY?: number;
+    // pinch
+    startDist?: number;
+    startMidX?: number;
+    startMidY?: number;
+  } | null>(null);
+
+  const onTouchPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch") return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    const pts = Array.from(pointersRef.current.values());
+    if (pts.length === 1) {
+      gestureRef.current = {
+        mode: "pan",
+        startTx: transform.tx,
+        startTy: transform.ty,
+        startScale: transform.scale,
+        startX: pts[0].x,
+        startY: pts[0].y,
+      };
+    } else if (pts.length === 2) {
+      const dx = pts[1].x - pts[0].x;
+      const dy = pts[1].y - pts[0].y;
+      gestureRef.current = {
+        mode: "pinch",
+        startTx: transform.tx,
+        startTy: transform.ty,
+        startScale: transform.scale,
+        startDist: Math.hypot(dx, dy) || 1,
+        startMidX: (pts[0].x + pts[1].x) / 2,
+        startMidY: (pts[0].y + pts[1].y) / 2,
+      };
+    }
+  };
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      if (!pointersRef.current.has(e.pointerId)) return;
+      pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const g = gestureRef.current;
+      if (!g) return;
+      const pts = Array.from(pointersRef.current.values());
+      if (g.mode === "pan" && pts.length === 1 && g.startX != null && g.startY != null) {
+        const dx = pts[0].x - g.startX;
+        const dy = pts[0].y - g.startY;
+        setTransform({ scale: g.startScale, tx: g.startTx + dx, ty: g.startTy + dy });
+      } else if (g.mode === "pinch" && pts.length >= 2 && g.startDist && g.startMidX != null && g.startMidY != null) {
+        const ax = pts[0].x;
+        const ay = pts[0].y;
+        const bx = pts[1].x;
+        const by = pts[1].y;
+        const dist = Math.hypot(bx - ax, by - ay) || 1;
+        const ratio = dist / g.startDist;
+        const nextScale = Math.min(8, Math.max(0.2, g.startScale * ratio));
+        const midX = (ax + bx) / 2;
+        const midY = (ay + by) / 2;
+        const dx = midX - g.startMidX;
+        const dy = midY - g.startMidY;
+        setTransform({ scale: nextScale, tx: g.startTx + dx, ty: g.startTy + dy });
+      }
+    };
+    const onUpOrCancel = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      pointersRef.current.delete(e.pointerId);
+      const remaining = Array.from(pointersRef.current.values());
+      if (remaining.length === 0) {
+        gestureRef.current = null;
+      } else if (remaining.length === 1) {
+        // Switched from pinch → pan; rebase from current transform.
+        setTransform((t) => {
+          gestureRef.current = {
+            mode: "pan",
+            startTx: t.tx,
+            startTy: t.ty,
+            startScale: t.scale,
+            startX: remaining[0].x,
+            startY: remaining[0].y,
+          };
+          return t;
+        });
+      }
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerup", onUpOrCancel);
+    window.addEventListener("pointercancel", onUpOrCancel);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUpOrCancel);
+      window.removeEventListener("pointercancel", onUpOrCancel);
+    };
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col bg-muted/10 min-w-0">
       <div className="border-b border-border px-3 py-2 flex items-center gap-2 shrink-0">
@@ -109,6 +213,7 @@ export function CompareGrid({ assets, onRemove }: Props) {
             onRemove={() => onRemove(a.id)}
             onWheel={onWheel}
             onMouseDown={onMouseDown}
+            onPointerDown={onTouchPointerDown}
           />
         ))}
       </div>
@@ -122,9 +227,10 @@ interface CellProps {
   onRemove: () => void;
   onWheel: (e: React.WheelEvent) => void;
   onMouseDown: (e: React.MouseEvent) => void;
+  onPointerDown: (e: React.PointerEvent) => void;
 }
 
-function CompareCell({ asset, transform, onRemove, onWheel, onMouseDown }: CellProps) {
+function CompareCell({ asset, transform, onRemove, onWheel, onMouseDown, onPointerDown }: CellProps) {
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const isImage = (asset.mime_type ?? "").startsWith("image/");
@@ -159,9 +265,10 @@ function CompareCell({ asset, transform, onRemove, onWheel, onMouseDown }: CellP
         </Button>
       </div>
       <div
-        className="flex-1 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none"
+        className="flex-1 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing select-none touch-none"
         onWheel={onWheel}
         onMouseDown={onMouseDown}
+        onPointerDown={onPointerDown}
       >
         {loading ? (
           <Skeleton className="w-3/4 h-3/4" />
