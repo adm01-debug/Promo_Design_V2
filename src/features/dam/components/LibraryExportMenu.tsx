@@ -241,12 +241,14 @@ export function LibraryExportMenu({
         }, csvCols);
         const ts = format(new Date(), "yyyyMMdd-HHmmss");
         downloadCsv(`dam-assets-todos-${ts}.csv`, csv);
+        recordExport({ kind: "csv", scope: "all", rows: all.length, filters, filtersSummary, columns: csvCols });
       } else {
         downloadAssetsPdf(all, clients, {
           ...filtersSummary,
           shown: all.length,
           total: totalReported || all.length,
         }, pdfCols);
+        recordExport({ kind: "pdf", scope: "all", rows: all.length, filters, filtersSummary, columns: pdfCols });
       }
 
       const msg = truncated
