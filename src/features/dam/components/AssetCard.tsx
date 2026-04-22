@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import { cn } from "@/lib/utils";
-import { ScanText } from "lucide-react";
+import { ScanText, ArchiveRestore, Archive } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AssetCardProps {
   asset: Asset;
@@ -11,9 +12,10 @@ interface AssetCardProps {
   onHover?: () => void;
   onHoverEnd?: () => void;
   isQuickActive?: boolean;
+  onRestore?: (asset: Asset) => void;
 }
 
-export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }: AssetCardProps) {
+export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive, onRestore }: AssetCardProps) {
   return (
     <Card
       role={onClick ? "button" : undefined}
@@ -24,6 +26,7 @@ export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }
       className={cn(
         "overflow-hidden cursor-pointer hover:shadow-elegant transition-all group",
         isQuickActive && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+        asset.is_archived && "opacity-75",
       )}
     >
       <div className="relative aspect-square bg-muted">
@@ -36,6 +39,16 @@ export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }
             v{asset.version}
           </Badge>
         )}
+        {asset.is_archived && (
+          <Badge
+            variant="outline"
+            className="absolute bottom-2 right-2 gap-1 px-1.5 py-0 text-[10px] bg-background/80 backdrop-blur-sm"
+            title="Asset arquivado"
+          >
+            <Archive className="w-3 h-3" />
+            Arquivado
+          </Badge>
+        )}
         {asset.ocr_match && (
           <Badge
             variant="default"
@@ -45,6 +58,23 @@ export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive }
             <ScanText className="w-3 h-3" />
             OCR
           </Badge>
+        )}
+        {onRestore && asset.is_archived && (
+          <div className="absolute inset-x-2 top-2 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 gap-1 text-xs shadow-md"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRestore(asset);
+              }}
+              title="Restaurar asset"
+            >
+              <ArchiveRestore className="w-3.5 h-3.5" />
+              Restaurar
+            </Button>
+          </div>
         )}
       </div>
       <div className="p-3 space-y-2">

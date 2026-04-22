@@ -46,6 +46,7 @@ const PAGE_SIZE_KEY = "dam-page-size";
 const PAGE_KEY = "dam-page";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
+const ARCHIVED_ONLY_KEY = "dam-archived-only";
 const PAGINATION_MODE_KEY = "dam-pagination-mode";
 const SEARCH_KEY = "dam-search";
 const ASSET_TYPES_KEY = "dam-asset-types";
@@ -118,6 +119,13 @@ export default function DamLibraryPage() {
     if (fromUrl === "1") return true;
     if (fromUrl === "0") return false;
     return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
+  });
+  const [archivedOnly, setArchivedOnly] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = searchParams.get("archivedOnly");
+    if (fromUrl === "1") return true;
+    if (fromUrl === "0") return false;
+    return localStorage.getItem(ARCHIVED_ONLY_KEY) === "1";
   });
   const [sort, setSort] = useState<SortValue>(() => {
     const fromUrl = searchParams.get("sort") as SortValue | null;
@@ -221,6 +229,16 @@ export default function DamLibraryPage() {
   }, [includeArchived, setSearchParams]);
 
   useEffect(() => {
+    try { localStorage.setItem(ARCHIVED_ONLY_KEY, archivedOnly ? "1" : "0"); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (archivedOnly) next.set("archivedOnly", "1");
+      else next.delete("archivedOnly");
+      return next;
+    }, { replace: true });
+  }, [archivedOnly, setSearchParams]);
+
+  useEffect(() => {
     try { localStorage.setItem(PAGINATION_MODE_KEY, paginationMode); } catch { /* ignore */ }
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -288,7 +306,7 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize]);
 
   const filters = useMemo(
     () => {
@@ -298,7 +316,8 @@ export default function DamLibraryPage() {
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
         tagsMode,
-        includeArchived,
+        includeArchived: archivedOnly ? true : includeArchived,
+        archivedOnly,
         search: debouncedSearch.trim() || undefined,
         sortBy: opt.sortBy,
         sortDir: opt.sortDir,
@@ -306,10 +325,21 @@ export default function DamLibraryPage() {
         pageSize,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize],
   );
 
-  const { assets, total, totalPages, isLoading, isFetching } = useAssets(currentOrgId, filters);
+  const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
+
+  const handleRestore = async (asset: Asset) => {
+    try {
+      await restore.mutateAsync(asset.id);
+      toast.success(`"${asset.name}" restaurado`, {
+        description: "O asset voltou à biblioteca ativa.",
+      });
+    } catch (e) {
+      toast.error(`Falha ao restaurar: ${e instanceof Error ? e.message : "erro"}`);
+    }
+  };
 
   // Cache last-known totals so the counter stays stable during refetches and never
   // flickers back to "Carregando..." when paginating or filtering.
@@ -700,6 +730,37 @@ export default function DamLibraryPage() {
                 : "Mostrar também itens arquivados. Sua preferência fica salva entre sessões."}
             </TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={archivedOnly}
+                onPressedChange={setArchivedOnly}
+                size="sm"
+                variant="outline"
+                aria-label={
+                  archivedOnly
+                    ? "Sair do modo arquivados"
+                    : "Mostrar apenas itens arquivados"
+                }
+                data-testid="dam-archived-only-toggle"
+                className={cn(
+                  "gap-2 transition-colors",
+                  archivedOnly &&
+                    "bg-destructive/10 text-destructive border-destructive/40 hover:bg-destructive/15 data-[state=on]:bg-destructive/10 data-[state=on]:text-destructive",
+                )}
+              >
+                <Archive className="w-4 h-4" />
+                <span className="font-medium">
+                  {archivedOnly ? "Modo arquivados" : "Apenas arquivados"}
+                </span>
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs max-w-[240px]">
+              {archivedOnly
+                ? "Mostrando somente arquivados. Use “Restaurar” para reativar."
+                : "Filtra a biblioteca para mostrar apenas itens arquivados."}
+            </TooltipContent>
+          </Tooltip>
           <ToggleGroup
             type="single"
             value={viewMode}
@@ -905,7 +966,12 @@ export default function DamLibraryPage() {
               </div>
             )}
             {viewMode === "list" ? (
-              <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} />
+              <AssetListView
+                assets={displayedAssets}
+                clients={clients}
+                onSelect={setSelected}
+                onRestore={canUpload ? handleRestore : undefined}
+              />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {displayedAssets.map((a) => (
@@ -915,6 +981,7 @@ export default function DamLibraryPage() {
                     isQuickActive={quickPreview.enabled && quickPreview.activeAsset?.id === a.id}
                     onHover={quickPreview.enabled ? () => quickPreview.setHoverAsset(a) : undefined}
                     onHoverEnd={quickPreview.enabled ? () => quickPreview.setHoverAsset(null) : undefined}
+                    onRestore={canUpload ? handleRestore : undefined}
                     onClick={() => {
                       if (quickPreview.enabled) {
                         quickPreview.togglePin(a);

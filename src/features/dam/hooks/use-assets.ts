@@ -41,6 +41,7 @@ export interface AssetFilters {
   tagsMode?: "all" | "any";
   search?: string;
   includeArchived?: boolean;
+  archivedOnly?: boolean;
   sortBy?: "created_at" | "updated_at" | "name" | "file_size" | "version" | "relevance";
   sortDir?: "asc" | "desc";
   page?: number;
@@ -96,7 +97,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
           _org_id: organizationId!,
           _query: effectiveSearch,
           _tags_mode: filters.tagsMode ?? "all",
-          _include_archived: filters.includeArchived ?? false,
+          _include_archived: filters.archivedOnly ? true : (filters.includeArchived ?? false),
           _limit: limit,
           _offset: offset,
         };
@@ -112,9 +113,12 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
         const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
         if (error) throw error;
         const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
+        const filteredRows = filters.archivedOnly
+          ? rows.filter((r) => r.is_archived)
+          : rows;
         return {
-          rows: rows as unknown as Asset[],
-          total: rows[0]?.total_count ?? 0,
+          rows: filteredRows as unknown as Asset[],
+          total: filters.archivedOnly ? filteredRows.length : (rows[0]?.total_count ?? 0),
         };
       }
 
@@ -123,7 +127,11 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
         .select("*", hasPagination ? { count: "exact" } : {})
         .eq("organization_id", organizationId!)
         .order(sortBy === "relevance" ? "created_at" : sortBy, { ascending: sortDir === "asc" });
-      if (!filters.includeArchived) q = q.eq("is_archived", false);
+      if (filters.archivedOnly) {
+        q = q.eq("is_archived", true);
+      } else if (!filters.includeArchived) {
+        q = q.eq("is_archived", false);
+      }
       if (filters.clientId) q = q.eq("client_id", filters.clientId);
       if (filters.assetTypes && filters.assetTypes.length > 0) {
         q = q.in("asset_type", filters.assetTypes);
@@ -183,6 +191,14 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
   });
 
+  const restore = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("assets").update({ is_archived: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
+  });
+
   const remove = useMutation({
     mutationFn: async (asset: Asset) => {
       const paths = [asset.file_path];
@@ -205,6 +221,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     create,
     update,
     archive,
+    restore,
     remove,
   };
 }
