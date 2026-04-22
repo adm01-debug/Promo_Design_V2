@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   value: string[];
