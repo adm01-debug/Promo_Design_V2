@@ -86,6 +86,9 @@ const ServiceOrderList = () => {
   }, [dateTo]);
 
   // Persist all filters in the URL so refresh/back-button restore the view.
+  // We compare against `window.location.search` (not the React Router
+  // `searchParams` value) and omit it from deps so a `setSearchParams` call
+  // can't re-trigger this effect through identity changes — preventing loops.
   useEffect(() => {
     const next = new URLSearchParams();
     if (search.trim()) next.set("q", search.trim());
@@ -95,9 +98,11 @@ const ServiceOrderList = () => {
     if (productQuery.trim()) next.set("product", productQuery.trim());
     if (dateFrom) next.set("from", formatDate(dateFrom, "yyyy-MM-dd"));
     if (dateTo) next.set("to", formatDate(dateTo, "yyyy-MM-dd"));
-    if (next.toString() === searchParams.toString()) return;
+    const desired = next.toString();
+    const current = window.location.search.replace(/^\?/, "");
+    if (desired === current) return;
     setSearchParams(next, { replace: true });
-  }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, searchParams, setSearchParams]);
+  }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, setSearchParams]);
 
   const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
     page,
