@@ -46,6 +46,10 @@ export interface AssetFilters {
   sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
+  /** File size lower bound, in bytes (inclusive). */
+  minSize?: number | null;
+  /** File size upper bound, in bytes (inclusive). */
+  maxSize?: number | null;
 }
 
 export interface AssetInsert {
