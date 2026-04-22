@@ -31,6 +31,7 @@ import { RuleChips } from "../components/RuleChips";
 import { generateBrandKitPdf } from "../lib/brand-kit-pdf";
 import { getAssetSignedUrl } from "../lib/asset-urls";
 import { wcagBoth, normalizeHex, isValidHex } from "../lib/color-contrast";
+import { copyHexToClipboard } from "../lib/copy-hex";
 import { cn } from "@/lib/utils";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -187,14 +188,7 @@ export default function BrandGuidelinesPage() {
     list: ColorEntry[];
     setList: (l: ColorEntry[]) => void;
   }) => {
-    const copyHex = async (hex: string) => {
-      try {
-        await navigator.clipboard.writeText(hex.toUpperCase());
-        toast.success(`Copiado ${hex.toUpperCase()}`);
-      } catch {
-        toast.error("Falha ao copiar");
-      }
-    };
+    const copyHex = (hex: string) => copyHexToClipboard(hex);
     const updateHex = (i: number, raw: string) => {
       const next = [...list];
       next[i] = { ...list[i], hex: raw };
