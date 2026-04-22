@@ -206,24 +206,6 @@ export function buildAssetsPdf(
 
   // Table — column widths are computed from the available page width so the
   // layout adapts to A4 landscape regardless of jsPDF's measurements.
-  const head = [["Nome", "Tipo", "Cliente", "Versão", "Tamanho", "Tags", "Criado em"]];
-  const body = assets.map((a) => [
-    a.name,
-    TYPE_LABEL[a.asset_type] ?? a.asset_type,
-    a.client_id ? clientMap.get(a.client_id) ?? "—" : "—",
-    String(a.version ?? ""),
-    formatBytes(a.file_size),
-    // Show up to 8 tags, then "+N" if truncated. autoTable will wrap as needed.
-    (() => {
-      const tags = a.tags ?? [];
-      const shown = tags.slice(0, 8).join(", ");
-      return tags.length > 8 ? `${shown} +${tags.length - 8}` : shown;
-    })(),
-    a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy") : "—",
-  ]);
-
-  // Distribute remaining width between Nome (flex) and Tags (flex) so that
-  // long names/tag lists wrap into multi-line cells instead of being clipped.
   const tableWidth = pageW - MARGIN_X * 2;
   // Per-column fixed widths (only consumed if the column is active).
   const FIXED: Record<PdfColumnId, number | null> = {
