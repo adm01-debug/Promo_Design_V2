@@ -965,6 +965,23 @@ export default function DamLibraryPage() {
               <List className="w-4 h-4" />
             </ToggleGroupItem>
           </ToggleGroup>
+          {viewMode === "list" && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Toggle
+                  size="sm"
+                  pressed={showSizeColumn}
+                  onPressedChange={setShowSizeColumn}
+                  aria-label="Mostrar coluna Tamanho"
+                >
+                  <HardDrive className="w-4 h-4" />
+                </Toggle>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {showSizeColumn ? "Ocultar coluna Tamanho" : "Mostrar coluna Tamanho"}
+              </TooltipContent>
+            </Tooltip>
+          )}
           <ToggleGroup
             type="single"
             value={paginationMode}
