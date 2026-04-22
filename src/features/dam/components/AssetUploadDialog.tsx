@@ -491,7 +491,7 @@ export function AssetUploadDialog({
                     )}
                     {e.status !== "error" && e.previewError && (
                       <div
-                        className="text-[11px] text-amber-600 dark:text-amber-400 truncate mt-0.5 flex items-center gap-1"
+                        className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1"
                         title={e.previewError}
                       >
                         <AlertTriangle className="w-3 h-3 shrink-0" />
