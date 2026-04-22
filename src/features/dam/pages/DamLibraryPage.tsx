@@ -1560,7 +1560,7 @@ export default function DamLibraryPage() {
             (includeArchived ? 1 : 0);
           return (
             <>
-              <span data-testid="dam-results-counter" aria-live="polite">
+              <span data-testid="dam-results-counter">
                 {paginationMode === "loadmore"
                   ? `Mostrando ${fmt(displayedAssets.length)} de ${fmt(src.total)} ${noun}${hasActiveFilters ? " (filtrados)" : ""}`
                   : `Mostrando ${fmt(from)}–${fmt(to)} de ${fmt(src.total)} ${noun}${hasActiveFilters ? " (filtrados)" : ""}`}
@@ -1592,7 +1592,7 @@ export default function DamLibraryPage() {
                 <span
                   className="inline-flex items-center gap-1 text-muted-foreground"
                   data-testid="dam-paginating-indicator"
-                  aria-live="polite"
+                  aria-hidden="true"
                 >
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Atualizando…
