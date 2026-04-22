@@ -1798,6 +1798,13 @@ export default function DamLibraryPage() {
             onPageSizeChange={setPageSize}
           />
           {totalPages > 1 && (
+            <JumpToPage
+              currentPage={page}
+              totalPages={totalPages}
+              onJump={setPage}
+            />
+          )}
+          {totalPages > 1 && (
             <p className="text-[11px] text-muted-foreground text-right">
               Atalhos: <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">←</kbd>{" "}
               <kbd className="px-1 py-0.5 rounded border bg-muted text-[10px]">→</kbd> navegar ·{" "}
