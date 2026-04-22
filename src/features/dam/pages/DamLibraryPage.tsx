@@ -1633,6 +1633,30 @@ export default function DamLibraryPage() {
         onOpenChange={setBatchOcrOpen}
         assets={displayedAssets}
       />
+
+      <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redefinir preferências da biblioteca?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Isso limpa todas as preferências salvas neste navegador (busca, tipos,
+              cliente, tags, ordenação, paginação, modo de visualização e os toggles
+              <strong> Incluir arquivados</strong>, <strong>Apenas arquivados</strong> e
+              <strong> Apenas com OCR</strong>) e volta tudo ao padrão. Seus assets
+              não são afetados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetPreferences}
+              data-testid="dam-reset-preferences-confirm"
+            >
+              Redefinir tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
