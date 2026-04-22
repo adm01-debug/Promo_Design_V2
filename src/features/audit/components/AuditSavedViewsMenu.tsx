@@ -31,7 +31,11 @@ import type { AuditFilterState } from "./AuditFilters";
 
 const MAX_VIEWS = 50;
 
-function toFiltersPayload(s: AuditFilterState): AuditSavedViewFilters {
+function toFiltersPayload(
+  s: AuditFilterState,
+  page: number,
+  pageSize: number,
+): AuditSavedViewFilters {
   return {
     from: s.from?.toISOString(),
     to: s.to?.toISOString(),
@@ -43,6 +47,8 @@ function toFiltersPayload(s: AuditFilterState): AuditSavedViewFilters {
     valueQuery: s.valueQuery || undefined,
     ipQuery: s.ipQuery || undefined,
     userAgentQuery: s.userAgentQuery || undefined,
+    page: page > 0 ? page : undefined,
+    pageSize: pageSize,
   };
 }
 
@@ -70,7 +76,10 @@ function fromFiltersPayload(f: AuditSavedViewFilters): AuditFilterState {
 }
 
 function filtersEqual(a: AuditSavedViewFilters, b: AuditSavedViewFilters): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  // Compare only filter shape (ignore page/pageSize) so the active-view
+  // indicator stays stable while the user paginates.
+  const strip = ({ page: _p, pageSize: _ps, ...rest }: AuditSavedViewFilters) => rest;
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
 }
 
 function hasActiveFilters(s: AuditFilterState): boolean {
@@ -91,10 +100,18 @@ function hasActiveFilters(s: AuditFilterState): boolean {
 interface Props {
   organizationId: string;
   currentFilters: AuditFilterState;
-  onApply: (s: AuditFilterState) => void;
+  currentPage: number;
+  currentPageSize: number;
+  onApply: (s: AuditFilterState, opts?: { page?: number; pageSize?: number }) => void;
 }
 
-export function AuditSavedViewsMenu({ organizationId, currentFilters, onApply }: Props) {
+export function AuditSavedViewsMenu({
+  organizationId,
+  currentFilters,
+  currentPage,
+  currentPageSize,
+  onApply,
+}: Props) {
   const { toast } = useToast();
   const { data: views = [], isLoading } = useAuditSavedViews(organizationId);
   const create = useCreateAuditSavedView();
@@ -103,7 +120,10 @@ export function AuditSavedViewsMenu({ organizationId, currentFilters, onApply }:
   const [saveOpen, setSaveOpen] = useState(false);
   const [name, setName] = useState("");
 
-  const currentPayload = useMemo(() => toFiltersPayload(currentFilters), [currentFilters]);
+  const currentPayload = useMemo(
+    () => toFiltersPayload(currentFilters, currentPage, currentPageSize),
+    [currentFilters, currentPage, currentPageSize],
+  );
   const activeView = useMemo(
     () => views.find((v) => filtersEqual(v.filters ?? {}, currentPayload)),
     [views, currentPayload],
