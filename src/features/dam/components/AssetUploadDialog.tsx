@@ -106,6 +106,7 @@ export function AssetUploadDialog({
   onUploaded,
 }: Props) {
   const isVersionMode = !!parentAsset;
+  const persistKey = draftKey(organizationId, isVersionMode);
   const { uploadFile } = useAssetUpload(organizationId);
   const { clients } = useClients(organizationId);
   const { assets } = useAssets(organizationId, {});
@@ -118,6 +119,7 @@ export function AssetUploadDialog({
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
 
   // Clear stale tag validation errors when switching asset type (e.g., arte final ↔ mockup),
   // so an old error doesn't keep blocking submission after the user changed modes.
@@ -125,15 +127,36 @@ export function AssetUploadDialog({
     setTagError(null);
   }, [assetType]);
 
-  // Reset when re-opening or switching parent
+  // Reset / restore on open. In version mode we always pull from parentAsset; otherwise
+  // we restore the persisted draft (tags + last validation error + last selections) so
+  // the user doesn't lose work when they close and reopen the dialog.
   useEffect(() => {
-    if (open) {
-      setEntries([]);
+    if (!open) {
+      setDraftHydrated(false);
+      return;
+    }
+    setEntries([]);
+    if (isVersionMode) {
       setClientId(parentAsset?.client_id ?? defaultClientId);
       setAssetType(parentAsset?.asset_type ?? defaultAssetType);
       setTags(parentAsset?.tags ?? []);
+      setTagError(null);
+      setDraftHydrated(true);
+      return;
     }
-  }, [open, parentAsset, defaultClientId, defaultAssetType]);
+    const draft = readDraft(persistKey);
+    setClientId(draft?.clientId ?? defaultClientId);
+    setAssetType(draft?.assetType ?? defaultAssetType);
+    setTags(draft?.tags ?? []);
+    setTagError(draft?.tagError ?? null);
+    setDraftHydrated(true);
+  }, [open, parentAsset, defaultClientId, defaultAssetType, isVersionMode, persistKey]);
+
+  // Persist draft whenever tags / error / type / client change while the dialog is open.
+  useEffect(() => {
+    if (!open || !draftHydrated || isVersionMode) return;
+    writeDraft(persistKey, { tags, tagError, assetType, clientId });
+  }, [open, draftHydrated, isVersionMode, persistKey, tags, tagError, assetType, clientId]);
 
   // Cleanup object URLs
   useEffect(() => {
