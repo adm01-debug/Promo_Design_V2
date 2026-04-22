@@ -52,6 +52,69 @@ describe("color-contrast / wcagBoth", () => {
   });
 });
 
+describe("color-contrast / wcagBoth — casos-limite de níveis", () => {
+  // Limiares WCAG 2.1: AAA ≥ 7.0, AA ≥ 4.5, senão FAIL.
+  it("#767676 vs branco fica logo abaixo de 4.5 → FAIL vs branco", () => {
+    const w = wcagBoth("#767676");
+    expect(w.ratioWhite).toBeLessThan(4.5);
+    expect(w.vsWhite).toBe("FAIL");
+  });
+
+  it("#757575 vs branco está em ~4.54 → AA vs branco", () => {
+    const w = wcagBoth("#757575");
+    expect(w.ratioWhite).toBeGreaterThanOrEqual(4.5);
+    expect(w.ratioWhite).toBeLessThan(7);
+    expect(w.vsWhite).toBe("AA");
+  });
+
+  it("#595959 vs branco ≥ 7 → AAA vs branco", () => {
+    const w = wcagBoth("#595959");
+    expect(w.ratioWhite).toBeGreaterThanOrEqual(7);
+    expect(w.vsWhite).toBe("AAA");
+  });
+
+  it("cor clara #ababab → FAIL vs branco e ainda FAIL vs preto-ish, mas AA vs preto se clara o bastante", () => {
+    const w = wcagBoth("#ababab");
+    expect(w.vsWhite).toBe("FAIL");
+    expect(w.ratioBlack).toBeGreaterThan(w.ratioWhite);
+  });
+
+  it("preto puro: AAA vs branco (21:1) e FAIL vs preto (1:1)", () => {
+    const w = wcagBoth("#000000");
+    expect(w.ratioWhite).toBeCloseTo(21, 0);
+    expect(w.ratioBlack).toBeCloseTo(1, 5);
+    expect(w.vsWhite).toBe("AAA");
+    expect(w.vsBlack).toBe("FAIL");
+  });
+
+  it("branco puro: FAIL vs branco e AAA vs preto", () => {
+    const w = wcagBoth("#ffffff");
+    expect(w.ratioWhite).toBeCloseTo(1, 5);
+    expect(w.ratioBlack).toBeCloseTo(21, 0);
+    expect(w.vsWhite).toBe("FAIL");
+    expect(w.vsBlack).toBe("AAA");
+  });
+
+  it("ratios sempre >= 1 e <= 21 para qualquer cor válida", () => {
+    const palette = ["#000000", "#ffffff", "#3b82f6", "#facc15", "#dc2626", "#16a34a", "#777777"];
+    for (const hex of palette) {
+      const { ratioWhite, ratioBlack } = wcagBoth(hex);
+      expect(ratioWhite).toBeGreaterThanOrEqual(1);
+      expect(ratioWhite).toBeLessThanOrEqual(21.01);
+      expect(ratioBlack).toBeGreaterThanOrEqual(1);
+      expect(ratioBlack).toBeLessThanOrEqual(21.01);
+    }
+  });
+
+  it("soma simétrica: ratioWhite * ratioBlack ≈ 21 (propriedade de luminância)", () => {
+    const palette = ["#3b82f6", "#facc15", "#dc2626", "#16a34a", "#777777", "#123456"];
+    for (const hex of palette) {
+      const { ratioWhite, ratioBlack } = wcagBoth(hex);
+      expect(ratioWhite * ratioBlack).toBeCloseTo(21, 0);
+    }
+  });
+});
+
 describe("color-contrast / normalizeHex + isValidHex", () => {
   it("adiciona # quando ausente e converte para maiúsculo", () => {
     expect(normalizeHex("ff00aa")).toBe("#FF00AA");
