@@ -206,7 +206,9 @@ export default function DamLibraryPage() {
     assetTypes.length > 0 ||
     clientId !== "all" ||
     selectedTags.length > 0 ||
-    includeArchived;
+    includeArchived ||
+    minSizeMB !== "" ||
+    maxSizeMB !== "";
 
   const canUpload = can(["owner", "admin", "designer"]);
 
@@ -286,6 +288,18 @@ export default function DamLibraryPage() {
     writeLS(SORT_KEY, sort !== "created_desc" ? sort : null);
   }, [sort]);
 
+  // Persist + URL-sync size filters
+  useEffect(() => {
+    writeLS(MIN_SIZE_KEY, minSizeMB || null);
+    writeLS(MAX_SIZE_KEY, maxSizeMB || null);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (minSizeMB) next.set("minMB", minSizeMB); else next.delete("minMB");
+      if (maxSizeMB) next.set("maxMB", maxSizeMB); else next.delete("maxMB");
+      return next;
+    }, { replace: true });
+  }, [minSizeMB, maxSizeMB, setSearchParams]);
+
   // Sync page/pageSize with URL
   useEffect(() => {
     try {
@@ -327,11 +341,15 @@ export default function DamLibraryPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize]);
+  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, minSizeMB, maxSizeMB]);
 
   const filters = useMemo(
     () => {
       const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
+      const parsedMin = Number.parseFloat(minSizeMB);
+      const parsedMax = Number.parseFloat(maxSizeMB);
+      const minBytes = Number.isFinite(parsedMin) && parsedMin > 0 ? Math.floor(parsedMin * 1024 * 1024) : undefined;
+      const maxBytes = Number.isFinite(parsedMax) && parsedMax > 0 ? Math.floor(parsedMax * 1024 * 1024) : undefined;
       return {
         assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
         clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
@@ -344,9 +362,11 @@ export default function DamLibraryPage() {
         sortDir: opt.sortDir,
         page,
         pageSize,
+        minSize: minBytes,
+        maxSize: maxBytes,
       };
     },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize],
+    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, minSizeMB, maxSizeMB],
   );
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
