@@ -17,7 +17,7 @@ const TYPE_LABELS: Record<AssetType, string> = {
 };
 
 interface FilterChip {
-  kind: DiagnosisCauseKind | "size" | "updated" | "ocrOnly" | "archivedOnly";
+  kind: DiagnosisCauseKind;
   label: string;
   /** When true, this filter is most likely excluding the asset. */
   suspect: boolean;
@@ -112,19 +112,6 @@ export function ActiveFiltersSummaryPanel({
         suspect: suspectKinds.has("includeArchived"),
         onClear: onClearArchived,
       });
-    }
-
-    if (state.sizeRange && state.sizeRange !== "any") {
-      items.push({ kind: "size", label: `Tamanho: ${state.sizeRange}`, suspect: false });
-    }
-    if (state.updatedRange && state.updatedRange !== "any") {
-      items.push({ kind: "updated", label: `Atualização: ${state.updatedRange}`, suspect: false });
-    }
-    if (state.ocrOnly) {
-      items.push({ kind: "ocrOnly", label: "Apenas com OCR", suspect: false });
-    }
-    if (state.archivedOnly) {
-      items.push({ kind: "archivedOnly", label: "Apenas arquivados", suspect: false });
     }
 
     return items;
