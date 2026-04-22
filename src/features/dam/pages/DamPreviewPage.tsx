@@ -201,7 +201,11 @@ export default function DamPreviewPage() {
   useEffect(() => {
     if (didHydrateCompareRef.current) return;
     if (assets.length === 0) return;
-    const raw = searchParams.get("compare");
+    // Prefer ?compare= from URL; fall back to last set persisted in sessionStorage.
+    let raw = searchParams.get("compare");
+    if (!raw) {
+      try { raw = sessionStorage.getItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
+    }
     if (!raw) {
       didHydrateCompareRef.current = true;
       return;
