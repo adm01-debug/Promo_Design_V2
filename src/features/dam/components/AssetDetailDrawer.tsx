@@ -270,19 +270,37 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                   </Badge>
                 </div>
                 {can(["owner", "admin", "designer"]) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={runOcr}
-                    disabled={ocrLoading || ocrStatus === "pending"}
-                  >
-                    {ocrLoading || ocrStatus === "pending" ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <ScanText className="w-4 h-4 mr-2" />
+                  <div className="flex items-center gap-1">
+                    {(ocrText || ocrStatus !== "none") && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={clearOcr}
+                        disabled={ocrClearing || ocrLoading || ocrStatus === "pending"}
+                        title="Limpar OCR (texto e status)"
+                        aria-label="Limpar OCR"
+                      >
+                        {ocrClearing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Eraser className="w-4 h-4" />
+                        )}
+                      </Button>
                     )}
-                    {ocrButtonLabel}
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={runOcr}
+                      disabled={ocrLoading || ocrStatus === "pending" || ocrClearing}
+                    >
+                      {ocrLoading || ocrStatus === "pending" ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <ScanText className="w-4 h-4 mr-2" />
+                      )}
+                      {ocrButtonLabel}
+                    </Button>
+                  </div>
                 )}
               </div>
               {ocrText && ocrText.trim().length > 0 ? (
