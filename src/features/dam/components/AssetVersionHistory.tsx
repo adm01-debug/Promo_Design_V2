@@ -11,9 +11,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAssetVersions, type Asset, getAssetSignedUrl } from "../hooks/use-assets";
-import { History, Search, X, MessageSquare, MessageSquareDashed, Link2, Check } from "lucide-react";
+import { History, Search, X, MessageSquare, MessageSquareDashed, Link2, Check, List, GitCommit } from "lucide-react";
 import { AssetAuditTrail } from "./AssetAuditTrail";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
 
 interface Props {
