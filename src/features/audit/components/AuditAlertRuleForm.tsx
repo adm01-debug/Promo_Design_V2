@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2, ChevronDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +25,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAuditAlertRule } from "../hooks/use-audit-alerts";
+import type { AuditAdvancedCondition, AuditAdvancedOp } from "../hooks/use-audit-alerts";
 import type { AuditAction } from "../hooks/use-audit-log";
 import type { AuditFilterState } from "./AuditFilters";
 
@@ -34,6 +40,14 @@ const ALL_ACTIONS: AuditAction[] = ["INSERT", "UPDATE", "DELETE"];
 const SENTINEL_ANY = "__any__";
 
 type RecipientsMode = "owner" | "organization" | "users";
+
+const OP_LABEL: Record<AuditAdvancedOp, string> = {
+  contains: "contém",
+  equals: "é igual a",
+  not_equals: "diferente de",
+  starts_with: "começa com",
+  ends_with: "termina com",
+};
 
 interface Props {
   open: boolean;
@@ -63,6 +77,8 @@ export function AuditAlertRuleForm({
   const [valueQuery, setValueQuery] = useState<string>(prefill?.valueQuery ?? "");
   const [recipientsMode, setRecipientsMode] = useState<RecipientsMode>("owner");
   const [recipientUserIds, setRecipientUserIds] = useState<string[]>([]);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedConditions, setAdvancedConditions] = useState<AuditAdvancedCondition[]>([]);
 
   const reset = () => {
     setName("");
@@ -73,6 +89,8 @@ export function AuditAlertRuleForm({
     setValueQuery("");
     setRecipientsMode("owner");
     setRecipientUserIds([]);
+    setAdvancedConditions([]);
+    setAdvancedOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -92,6 +110,9 @@ export function AuditAlertRuleForm({
         value_query: valueQuery.trim() || null,
         recipients_mode: recipientsMode,
         recipient_user_ids: recipientsMode === "users" ? recipientUserIds : [],
+        advanced_conditions: advancedConditions
+          .map((c) => ({ ...c, key: c.key.trim(), value: c.value.trim() }))
+          .filter((c) => c.key.length > 0),
       });
       toast({ title: "Regra criada", description: trimmed });
       reset();
@@ -219,6 +240,111 @@ export function AuditAlertRuleForm({
               />
             </div>
           </div>
+
+          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1.5"
+                data-testid="audit-alert-rule-advanced-toggle"
+              >
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${advancedOpen ? "rotate-180" : ""}`}
+                />
+                Condições avançadas
+                {advancedConditions.length > 0 && (
+                  <Badge variant="secondary" className="h-4 text-[10px]">
+                    {advancedConditions.length}
+                  </Badge>
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-2">
+              <p className="text-[11px] text-muted-foreground">
+                Todas as condições devem ser verdadeiras (AND) para a regra disparar.
+              </p>
+              {advancedConditions.map((cond, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-[1fr_120px_1fr_auto] gap-2 items-center"
+                  data-testid={`audit-alert-rule-advanced-row-${idx}`}
+                >
+                  <Input
+                    value={cond.key}
+                    onChange={(e) =>
+                      setAdvancedConditions((prev) =>
+                        prev.map((c, i) => (i === idx ? { ...c, key: e.target.value } : c)),
+                      )
+                    }
+                    placeholder="chave"
+                    className="h-8"
+                    aria-label="Chave"
+                  />
+                  <Select
+                    value={cond.op}
+                    onValueChange={(v) =>
+                      setAdvancedConditions((prev) =>
+                        prev.map((c, i) =>
+                          i === idx ? { ...c, op: v as AuditAdvancedOp } : c,
+                        ),
+                      )
+                    }
+                  >
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(OP_LABEL) as AuditAdvancedOp[]).map((op) => (
+                        <SelectItem key={op} value={op}>
+                          {OP_LABEL[op]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    value={cond.value}
+                    onChange={(e) =>
+                      setAdvancedConditions((prev) =>
+                        prev.map((c, i) => (i === idx ? { ...c, value: e.target.value } : c)),
+                      )
+                    }
+                    placeholder="valor"
+                    className="h-8"
+                    aria-label="Valor"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() =>
+                      setAdvancedConditions((prev) => prev.filter((_, i) => i !== idx))
+                    }
+                    aria-label="Remover condição"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                onClick={() =>
+                  setAdvancedConditions((prev) => [
+                    ...prev,
+                    { key: "", op: "contains", value: "" },
+                  ])
+                }
+                data-testid="audit-alert-rule-advanced-add"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Adicionar condição
+              </Button>
+            </CollapsibleContent>
+          </Collapsible>
 
           <div className="space-y-1.5">
             <Label>Quem recebe a notificação</Label>

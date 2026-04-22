@@ -1,6 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AuditAdvancedOp =
+  | "contains"
+  | "equals"
+  | "not_equals"
+  | "starts_with"
+  | "ends_with";
+
+export interface AuditAdvancedCondition {
+  key: string;
+  op: AuditAdvancedOp;
+  value: string;
+}
+
 export interface AuditAlertRule {
   id: string;
   organization_id: string;
@@ -14,6 +27,7 @@ export interface AuditAlertRule {
   value_query: string | null;
   recipients_mode: "owner" | "organization" | "users";
   recipient_user_ids: string[];
+  advanced_conditions: AuditAdvancedCondition[];
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +43,7 @@ export interface CreateAuditAlertRuleInput {
   is_active?: boolean;
   recipients_mode?: "owner" | "organization" | "users";
   recipient_user_ids?: string[];
+  advanced_conditions?: AuditAdvancedCondition[];
 }
 
 export function useAuditAlertRules(organizationId: string | null) {
@@ -66,6 +81,7 @@ export function useCreateAuditAlertRule() {
         value_query: input.value_query ?? null,
         recipients_mode: input.recipients_mode ?? "owner",
         recipient_user_ids: input.recipient_user_ids ?? [],
+        advanced_conditions: input.advanced_conditions ?? [],
       };
       const { data, error } = await supabase
         .from("audit_alert_rules" as never)
