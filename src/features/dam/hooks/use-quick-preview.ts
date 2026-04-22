@@ -43,6 +43,9 @@ export function useQuickPreview() {
   const [enabled, setEnabled] = useState<boolean>(() => readEnabled());
   const [hoverAsset, setHoverAssetState] = useState<Asset | null>(null);
   const [pinnedAsset, setPinnedAsset] = useState<Asset | null>(null);
+  const [pendingPinnedId, setPendingPinnedId] = useState<string | null>(() =>
+    readEnabled() ? readPinnedId() : null
+  );
   const hoverTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -58,12 +61,20 @@ export function useQuickPreview() {
     if (!enabled) {
       setHoverAssetState(null);
       setPinnedAsset(null);
+      setPendingPinnedId(null);
+      writePinnedId(null);
       if (hoverTimer.current) {
         window.clearTimeout(hoverTimer.current);
         hoverTimer.current = null;
       }
     }
   }, [enabled]);
+
+  // Persist the current pin id so it survives refreshes.
+  useEffect(() => {
+    if (!enabled) return;
+    writePinnedId(pinnedAsset?.id ?? null);
+  }, [enabled, pinnedAsset]);
 
   useEffect(() => {
     return () => {
@@ -84,6 +95,7 @@ export function useQuickPreview() {
 
   const togglePin = useCallback((asset: Asset) => {
     setPinnedAsset((prev) => (prev?.id === asset.id ? null : asset));
+    setPendingPinnedId(null);
   }, []);
 
   /**
@@ -97,8 +109,27 @@ export function useQuickPreview() {
       hoverTimer.current = null;
     }
     setPinnedAsset(null);
+    setPendingPinnedId(null);
     setHoverAssetState(asset);
   }, []);
+
+  /**
+   * Restores a previously persisted pinned asset once the asset list is
+   * available. Safe to call repeatedly: only acts while a pending id exists
+   * and clears itself once the matching asset is found (or after the first
+   * non-empty list confirms it isn't visible).
+   */
+  const hydratePinFromAssets = useCallback(
+    (assets: Asset[]) => {
+      if (!enabled || !pendingPinnedId || pinnedAsset) return;
+      const found = assets.find((a) => a.id === pendingPinnedId);
+      if (found) {
+        setPinnedAsset(found);
+        setPendingPinnedId(null);
+      }
+    },
+    [enabled, pendingPinnedId, pinnedAsset]
+  );
 
   const toggleEnabled = useCallback(() => {
     setEnabled((v) => !v);
@@ -114,6 +145,10 @@ export function useQuickPreview() {
     setActiveAsset,
     pinnedId: pinnedAsset?.id ?? null,
     togglePin,
-    clearPin: () => setPinnedAsset(null),
+    clearPin: () => {
+      setPinnedAsset(null);
+      setPendingPinnedId(null);
+    },
+    hydratePinFromAssets,
   };
 }
