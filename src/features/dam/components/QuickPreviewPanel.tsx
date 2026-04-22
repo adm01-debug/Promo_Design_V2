@@ -5,13 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Download, ExternalLink, Pin, PinOff, Sparkles, ImageIcon, Loader2 } from "lucide-react";
+import { Copy, Download, ExternalLink, Pin, PinOff, Sparkles, ImageIcon, Loader2, GitCompare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { AssetThumbnail } from "./AssetThumbnail";
 import { getAssetSignedUrl, useLatestAssetVersion, type Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
+import { QuickVersionCompareDialog } from "./QuickVersionCompareDialog";
 
 interface QuickPreviewPanelProps {
   asset: Asset | null;
@@ -31,9 +32,12 @@ function formatBytes(bytes: number | null | undefined): string {
 function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: QuickPreviewPanelProps) {
   const [url, setUrl] = useState<string | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const latestQuery = useLatestAssetVersion(asset?.id ?? null);
   const hasUpdate = Boolean(latestQuery.data?.hasUpdate);
   const versionLoading = latestQuery.isLoading || latestQuery.isFetching;
+  const latestVersionNum = latestQuery.data?.latest?.version ?? asset?.version ?? 1;
+  const canCompare = !!asset && latestVersionNum > 1;
 
   useEffect(() => {
     let active = true;
@@ -205,6 +209,16 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
         <Button size="sm" onClick={onOpenDetails} className="w-full">
           <ExternalLink className="w-3.5 h-3.5 mr-2" /> Abrir detalhes
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          onClick={() => setCompareOpen(true)}
+          disabled={!canCompare}
+          title={canCompare ? "Comparar com versão anterior" : "Nenhuma versão anterior disponível"}
+        >
+          <GitCompare className="w-3.5 h-3.5 mr-2" /> Comparar versões
+        </Button>
         <div className="flex gap-1.5">
           <Button size="sm" variant="outline" className="flex-1" onClick={handleCopy} disabled={!url}>
             <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar URL
@@ -214,6 +228,12 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients }: Quick
           </Button>
         </div>
       </div>
+
+      <QuickVersionCompareDialog
+        asset={asset}
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+      />
     </div>
   );
 }
