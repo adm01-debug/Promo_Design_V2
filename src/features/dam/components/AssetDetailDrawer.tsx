@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2 } from "lucide-react";
+import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -12,6 +12,8 @@ import { AssetVersionHistory } from "./AssetVersionHistory";
 import { AssetUploadDialog } from "./AssetUploadDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
+import { useAssetFavorites } from "../hooks/use-asset-favorites";
+import { cn } from "@/lib/utils";
 
 interface Props {
   asset: Asset | null;
@@ -23,6 +25,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const { currentOrgId, can } = useOrganizations();
   const { archive, restore, remove } = useAssets(currentOrgId);
+  const { isFavorite, toggleFavorite } = useAssetFavorites(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [ocrText, setOcrText] = useState<string | null>(null);
   const [ocrStatus, setOcrStatus] = useState<string>("none");
@@ -54,6 +57,27 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
     }, 3000);
     return () => clearInterval(t);
   }, [asset, ocrStatus]);
+
+  // Keyboard shortcut: F toggles favorite for the open asset.
+  // Ignored when typing in inputs/textareas/contentEditable, or with modifier keys.
+  useEffect(() => {
+    if (!asset) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "f" && e.key !== "F") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (target.isContentEditable) return;
+      }
+      e.preventDefault();
+      const nowFav = toggleFavorite(asset.id);
+      toast.success(nowFav ? "Adicionado aos favoritos" : "Removido dos favoritos");
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [asset, toggleFavorite]);
 
   if (!asset) return null;
 
@@ -117,6 +141,27 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset }: Props) {
           <SheetTitle className="truncate flex items-center gap-2">
             <span className="truncate">{asset.name}</span>
             <Badge variant="secondary" className="shrink-0 text-[10px]">v{asset.version}</Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 shrink-0 ml-auto"
+              aria-pressed={isFavorite(asset.id)}
+              aria-label={isFavorite(asset.id) ? "Desfavoritar (F)" : "Favoritar (F)"}
+              title={isFavorite(asset.id) ? "Desfavoritar (F)" : "Favoritar (F)"}
+              onClick={() => {
+                const nowFav = toggleFavorite(asset.id);
+                toast.success(nowFav ? "Adicionado aos favoritos" : "Removido dos favoritos");
+              }}
+            >
+              <Star
+                className={cn(
+                  "w-4 h-4 transition-colors",
+                  isFavorite(asset.id)
+                    ? "fill-primary text-primary"
+                    : "text-muted-foreground",
+                )}
+              />
+            </Button>
           </SheetTitle>
         </SheetHeader>
         <Tabs defaultValue="details" className="mt-4">
