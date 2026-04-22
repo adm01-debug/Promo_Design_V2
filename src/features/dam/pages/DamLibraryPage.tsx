@@ -1285,6 +1285,17 @@ export default function DamLibraryPage() {
                 : "Mostrar também itens arquivados. Sua preferência fica salva entre sessões."}
             </TooltipContent>
           </Tooltip>
+          {includeArchived && archivedCount === 0 && displayedAssets.length > 0 && (
+            <span
+              role="status"
+              data-testid="dam-archived-zero-hint"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground rounded-md border border-dashed border-border bg-muted/30 px-2 py-1 animate-in fade-in duration-200"
+              title="Nenhum dos itens listados está arquivado. Ajuste filtros ou desative o toggle."
+            >
+              <AlertCircle className="w-3 h-3" />
+              <span>Nenhum arquivado nesta visualização</span>
+            </span>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Toggle
