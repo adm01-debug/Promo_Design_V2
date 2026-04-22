@@ -1442,6 +1442,8 @@ export default function DamLibraryPage() {
             totalPages={totalPages}
             onPageChange={setPage}
             itemNoun="asset"
+            pageSizeOptions={[12, 24, 48, 96]}
+            onPageSizeChange={setPageSize}
           />
           {totalPages > 1 && (
             <p className="text-[11px] text-muted-foreground text-right">
