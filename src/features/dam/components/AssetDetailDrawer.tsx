@@ -391,7 +391,7 @@ function highlightTokens(text: string, query: string): JSX.Element[] {
         .filter((t) => t.length >= 2),
     ),
   );
-  if (tokens.length === 0) return [text];
+  if (tokens.length === 0) return [<span key="all">{text}</span>];
   const re = new RegExp(`(${tokens.map(escapeRegExp).join("|")})`, "gi");
   const parts = text.split(re);
   return parts.map((part, i) =>
