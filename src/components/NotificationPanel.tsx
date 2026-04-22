@@ -4,6 +4,7 @@ import { Bell, CheckCheck, Trash2, ClipboardList, ArrowRight, ShieldAlert, Loade
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Popover,
   PopoverContent,
@@ -162,7 +163,7 @@ const NotificationPanel = () => {
     return () => observer.disconnect();
   }, [open, hasNextPage, isFetchingNextPage, fetchNextPage, notifications.length]);
 
-  const handleNavigate = (n: Notification) => {
+  const handleNavigate = async (n: Notification) => {
     setOpen(false);
     if (n.eventType === "audit_alert") {
       // newStatus formato: "INSERT em <table>" ; oldStatus: <table>
@@ -173,6 +174,31 @@ const NotificationPanel = () => {
         params.set("table", m[2]);
       } else if (n.oldStatus) {
         params.set("table", n.oldStatus);
+      }
+      // Enriquecer com value_key/value_query da regra (productName guarda o nome).
+      const ruleName = n.productName?.trim();
+      if (ruleName) {
+        try {
+          const { data: rules } = await supabase
+            .from("audit_alert_rules")
+            .select("value_key,value_query,actions,table_names")
+            .eq("name", ruleName)
+            .limit(1);
+          const rule = rules?.[0];
+          if (rule) {
+            if (rule.value_key) params.set("vk", rule.value_key);
+            if (rule.value_query) params.set("vq", rule.value_query);
+            // Se a regra tem ações específicas e não derivamos pelo newStatus, usa a 1ª.
+            if (!params.get("action") && Array.isArray(rule.actions) && rule.actions.length > 0) {
+              params.set("action", rule.actions.join(","));
+            }
+            if (!params.get("table") && Array.isArray(rule.table_names) && rule.table_names.length === 1) {
+              params.set("table", rule.table_names[0]);
+            }
+          }
+        } catch {
+          /* fallback silencioso: navega só com action/table derivados */
+        }
       }
       const q = params.toString();
       navigate(q ? `/audit?${q}` : "/audit");
