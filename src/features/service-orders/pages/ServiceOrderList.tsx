@@ -213,12 +213,21 @@ const ServiceOrderList = () => {
   const handleProductChange = (v: string) => { setProductQuery(v); setPage(1); };
   const handleDateFromChange = (d: Date | undefined) => { setDateFrom(d); setPage(1); };
   const handleDateToChange = (d: Date | undefined) => { setDateTo(d); setPage(1); };
-  const hasAdvancedFilters = !!(productQuery || dateFrom || dateTo);
-  const clearAdvancedFilters = () => {
+  /** True whenever any filter (basic or advanced) is active. */
+  const hasActiveFilters = !!(
+    search || statusFilter !== "all" || !sortDesc || page > 1 ||
+    productQuery || dateFrom || dateTo
+  );
+  /** Single "Clear filters" entry point — wipes URL params and resets state. */
+  const clearAllFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setSortDesc(true);
+    setPage(1);
     setProductQuery("");
     setDateFrom(undefined);
     setDateTo(undefined);
-    setPage(1);
+    setSearchParams(new URLSearchParams(), { replace: true });
   };
 
   return (
@@ -311,9 +320,15 @@ const ServiceOrderList = () => {
               </PopoverContent>
             </Popover>
           </div>
-          {hasAdvancedFilters && (
-            <Button variant="ghost" size="sm" className="h-8 gap-1 text-xs text-muted-foreground" onClick={clearAdvancedFilters}>
-              <X className="w-3.5 h-3.5" /> Limpar avançados
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 gap-1 text-xs text-muted-foreground ml-auto"
+              onClick={clearAllFilters}
+              title="Remove todos os filtros e limpa a URL"
+            >
+              <X className="w-3.5 h-3.5" /> Limpar filtros
             </Button>
           )}
         </div>
