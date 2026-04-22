@@ -9,6 +9,13 @@ import {
 } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +29,9 @@ export interface ResultsPaginationProps {
   className?: string;
   /** Singular noun used in counter (default: "resultado"). Plural is `${noun}s`. */
   itemNoun?: string;
+  /** Optional page-size selector options. When provided with `onPageSizeChange`, renders a select. */
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
 }
 
 function buildPageList(current: number, total: number): (number | "ellipsis")[] {
