@@ -448,6 +448,18 @@ export function AssetUploadDialog({
                     >
                       <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
                     </div>
+                  ) : e.previewError && (e.kind === "pdf" || e.kind === "svg") ? (
+                    <div
+                      className="relative w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
+                      title={`${e.kind.toUpperCase()} — ${e.previewError}`}
+                      aria-label={`Preview indisponível: ${e.previewError}`}
+                    >
+                      <FileType className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider leading-none mt-0.5">
+                        {e.kind}
+                      </span>
+                      <AlertTriangle className="absolute -top-1 -right-1 w-3.5 h-3.5 text-destructive bg-card rounded-full p-[1px]" />
+                    </div>
                   ) : e.kind === "ai" || e.kind === "psd" ? (
                     <div
                       className="w-10 h-10 rounded bg-muted flex flex-col items-center justify-center"
@@ -476,6 +488,15 @@ export function AssetUploadDialog({
                     </div>
                     {e.status === "error" && e.error && (
                       <div className="text-[11px] text-destructive truncate mt-0.5" title={e.error}>{e.error}</div>
+                    )}
+                    {e.status !== "error" && e.previewError && (
+                      <div
+                        className="text-[11px] text-amber-600 dark:text-amber-400 truncate mt-0.5 flex items-center gap-1"
+                        title={e.previewError}
+                      >
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        Preview indisponível — o arquivo será enviado mesmo assim.
+                      </div>
                     )}
                     {e.status === "uploading" && (
                       <div className="mt-1 space-y-1">
