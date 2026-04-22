@@ -78,7 +78,9 @@ export function buildFilterRows(filters: AssetsPdfFiltersSummary): Array<[string
   if (filters.minSize != null || filters.maxSize != null) {
     const min = filters.minSize != null ? formatSize(filters.minSize, filters.sizeUnit) : "—";
     const max = filters.maxSize != null ? formatSize(filters.maxSize, filters.sizeUnit) : "—";
-    rows.push(["Tamanho", `${min} → ${max}`]);
+    // Using ASCII arrow because Helvetica's built-in glyph table doesn't
+    // include the U+2192 arrow and renders it as a fallback box/character.
+    rows.push(["Tamanho", `${min} -> ${max}`]);
   } else if (filters.sizeRangeLabel) {
     rows.push(["Tamanho", filters.sizeRangeLabel]);
   }
