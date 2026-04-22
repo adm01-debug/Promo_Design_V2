@@ -49,6 +49,7 @@ const PAGE_KEY = "dam-page";
 const TAGS_MODE_KEY = "dam-tags-mode";
 const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
 const ARCHIVED_ONLY_KEY = "dam-archived-only";
+const OCR_ONLY_KEY = "dam-ocr-only";
 const PAGINATION_MODE_KEY = "dam-pagination-mode";
 const SEARCH_KEY = "dam-search";
 const ASSET_TYPES_KEY = "dam-asset-types";
@@ -129,6 +130,13 @@ export default function DamLibraryPage() {
     if (fromUrl === "1") return true;
     if (fromUrl === "0") return false;
     return localStorage.getItem(ARCHIVED_ONLY_KEY) === "1";
+  });
+  const [ocrOnly, setOcrOnly] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const fromUrl = searchParams.get("ocrOnly");
+    if (fromUrl === "1") return true;
+    if (fromUrl === "0") return false;
+    return localStorage.getItem(OCR_ONLY_KEY) === "1";
   });
   const [sort, setSort] = useState<SortValue>(() => {
     const fromUrl = searchParams.get("sort") as SortValue | null;
@@ -242,6 +250,16 @@ export default function DamLibraryPage() {
       return next;
     }, { replace: true });
   }, [archivedOnly, setSearchParams]);
+
+  useEffect(() => {
+    try { localStorage.setItem(OCR_ONLY_KEY, ocrOnly ? "1" : "0"); } catch { /* ignore */ }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (ocrOnly) next.set("ocrOnly", "1");
+      else next.delete("ocrOnly");
+      return next;
+    }, { replace: true });
+  }, [ocrOnly, setSearchParams]);
 
   useEffect(() => {
     try { localStorage.setItem(PAGINATION_MODE_KEY, paginationMode); } catch { /* ignore */ }
@@ -426,8 +444,13 @@ export default function DamLibraryPage() {
     }
   }, [assets, page, paginationMode, isLoading]);
 
-  const displayedAssets = paginationMode === "loadmore" ? accumulated : assets;
+  const baseAssets = paginationMode === "loadmore" ? accumulated : assets;
+  const displayedAssets = useMemo(
+    () => (ocrOnly ? baseAssets.filter((a) => a.ocr_match === true) : baseAssets),
+    [baseAssets, ocrOnly],
+  );
   const hasMore = paginationMode === "loadmore" && displayedAssets.length < total;
+  const ocrFilteredOut = ocrOnly ? baseAssets.length - displayedAssets.length : 0;
 
   // Restore previously pinned Quick Preview asset once the asset list is loaded.
   useEffect(() => {
@@ -654,6 +677,32 @@ export default function DamLibraryPage() {
             <PanelRight className="w-4 h-4 mr-2" />
             Prévia
           </Toggle>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Toggle
+                pressed={ocrOnly}
+                onPressedChange={setOcrOnly}
+                size="sm"
+                variant="outline"
+                aria-label="Apenas correspondências OCR"
+                aria-pressed={ocrOnly}
+                disabled={debouncedSearch.trim().length < MIN_SEARCH_LENGTH}
+              >
+                <ScanText className="w-4 h-4 mr-2" />
+                Só OCR
+                {ocrOnly && ocrFilteredOut > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-[10px]">
+                    -{ocrFilteredOut}
+                  </Badge>
+                )}
+              </Toggle>
+            </TooltipTrigger>
+            <TooltipContent>
+              {debouncedSearch.trim().length < MIN_SEARCH_LENGTH
+                ? "Faça uma busca para destacar correspondências por OCR"
+                : "Mostrar apenas resultados encontrados pelo texto interno (OCR)"}
+            </TooltipContent>
+          </Tooltip>
           <Button variant="outline" asChild>
             <Link
               to={(() => {
