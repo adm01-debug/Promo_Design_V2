@@ -29,6 +29,7 @@ import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
 import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
+import { LibraryExportMenu } from "../components/LibraryExportMenu";
 
 const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },
@@ -485,6 +486,25 @@ export default function DamLibraryPage() {
         </div>
         <div className="flex items-center gap-2">
           <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={applySavedFilters} />
+          <LibraryExportMenu
+            assets={assets}
+            clients={clients}
+            total={total}
+            filtersSummary={{
+              search: debouncedSearch.trim() || undefined,
+              assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
+              clientName:
+                clientId === "all"
+                  ? undefined
+                  : clientId === "none"
+                    ? "(Sem cliente)"
+                    : clients.find((c) => c.id === clientId)?.name,
+              tags: selectedTags.length > 0 ? selectedTags : undefined,
+              tagsMode,
+              includeArchived,
+              sortLabel: SORT_OPTIONS.find((s) => s.value === sort)?.label,
+            }}
+          />
           <Toggle
             pressed={quickPreview.enabled}
             onPressedChange={quickPreview.toggleEnabled}
