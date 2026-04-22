@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { History, Search, Heart, Download, Eye, Trash2, Calendar, X, SlidersHorizontal, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,28 @@ const CHART_COLORS = ["hsl(190, 95%, 55%)", "hsl(260, 60%, 60%)", "hsl(330, 80%,
 
 const MagicUpHistory = () => {
   const { items, toggleFavorite, deleteItem } = useMagicUpHistory();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [filterFavorites, setFilterFavorites] = useState(false);
+  const [filterFavorites, setFilterFavorites] = useState<boolean>(
+    () => searchParams.get("fav") === "1",
+  );
   const [filterProduct, setFilterProduct] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [showFilters, setShowFilters] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MagicUpHistoryItem | null>(null);
+
+  // Keep URL in sync: add ?fav=1 when active, remove it when off
+  useEffect(() => {
+    const current = searchParams.get("fav") === "1";
+    if (current === filterFavorites) return;
+    const next = new URLSearchParams(searchParams);
+    if (filterFavorites) next.set("fav", "1");
+    else next.delete("fav");
+    setSearchParams(next, { replace: true });
+  }, [filterFavorites, searchParams, setSearchParams]);
+
+  const clearFavoritesFilter = useCallback(() => setFilterFavorites(false), []);
 
   const productNames = useMemo(() => Array.from(new Set(items.filter(i => i.productName).map(i => i.productName!))).sort(), [items]);
 
@@ -34,7 +50,7 @@ const MagicUpHistory = () => {
   }), [items, search, filterFavorites, filterProduct, dateFrom, dateTo]);
 
   const handleDelete = (id: string) => { deleteItem(id); if (selectedItem?.id === id) setSelectedItem(null); };
-  const clearFilters = () => { setFilterFavorites(false); setFilterProduct(null); setDateFrom(undefined); setDateTo(undefined); setSearch(""); };
+  const clearFilters = () => { clearFavoritesFilter(); setFilterProduct(null); setDateFrom(undefined); setDateTo(undefined); setSearch(""); };
   const hasActiveFilters = filterFavorites || filterProduct || dateFrom || dateTo;
 
   const styleChartData = useMemo(() => {
@@ -90,7 +106,29 @@ const MagicUpHistory = () => {
       <div className="p-4 border-b border-border space-y-3 shrink-0">
         <div className="flex gap-3">
           <div className="flex-1 relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><input type="text" placeholder="Buscar por prompt, produto ou SKU..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary" /></div>
-          <Button variant={filterFavorites ? "default" : "outline"} size="sm" className="gap-1.5 text-xs" onClick={() => setFilterFavorites(!filterFavorites)}><Heart className={`w-3.5 h-3.5 ${filterFavorites ? "fill-current" : ""}`} /> Favoritos</Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant={filterFavorites ? "default" : "outline"}
+              size="sm"
+              className="gap-1.5 text-xs"
+              aria-pressed={filterFavorites}
+              onClick={() => setFilterFavorites((v) => !v)}
+            >
+              <Heart className={`w-3.5 h-3.5 ${filterFavorites ? "fill-current" : ""}`} /> Favoritos
+            </Button>
+            {filterFavorites && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                onClick={clearFavoritesFilter}
+                title='Limpar filtro "Somente favoritos"'
+                aria-label='Limpar filtro "Somente favoritos"'
+              >
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
           <Button variant={showFilters ? "default" : "outline"} size="sm" className="gap-1.5 text-xs" onClick={() => setShowFilters(!showFilters)}><SlidersHorizontal className="w-3.5 h-3.5" /> Filtros</Button>
         </div>
         <AnimatePresence>
