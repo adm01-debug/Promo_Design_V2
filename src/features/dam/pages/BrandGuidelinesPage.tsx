@@ -276,13 +276,20 @@ export default function BrandGuidelinesPage() {
                 variant="ghost"
                 type="button"
                 onClick={() => copyHex(c.hex)}
-                title="Copiar HEX"
-                aria-label="Copiar HEX"
+                title={`Copiar ${c.hex.toUpperCase()}`}
+                aria-label={`Copiar HEX ${c.hex.toUpperCase()}${c.name ? ` (${c.name})` : ""}`}
               >
                 <Copy className="w-4 h-4" />
               </Button>
               {editable && (
-                <Button size="icon" variant="ghost" onClick={() => setList(list.filter((_, idx) => idx !== i))}>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  type="button"
+                  onClick={() => setList(list.filter((_, idx) => idx !== i))}
+                  aria-label={`Remover cor ${c.name || c.hex.toUpperCase()}`}
+                  title="Remover cor"
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               )}
