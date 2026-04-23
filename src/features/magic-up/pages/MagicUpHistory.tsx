@@ -66,6 +66,39 @@ const MagicUpHistory = () => {
     setSearchParams(next, { replace: true });
   }, [filterFavorites, search, filterProduct, dateFrom, dateTo, showFilters, setSearchParams]);
 
+  // Hidrata o estado a partir da URL quando ela muda externamente (back/forward,
+  // links compartilhados). Compara campo a campo para só atualizar o que mudou —
+  // evita re-renders desnecessários e loop com o effect inverso (state → URL),
+  // que já tem guarda baseada em string (`desired === current`).
+  useEffect(() => {
+    const urlFav = searchParams.get("fav") === "1";
+    const urlSearch = searchParams.get("q") ?? "";
+    const urlProduct = searchParams.get("product");
+    const urlFromRaw = searchParams.get("from");
+    const urlToRaw = searchParams.get("to");
+    const urlFilters = searchParams.get("filters") === "1";
+
+    if (urlFav !== filterFavorites) setFilterFavorites(urlFav);
+    if (urlSearch !== search) setSearch(urlSearch);
+    if ((urlProduct ?? null) !== (filterProduct ?? null)) setFilterProduct(urlProduct);
+
+    const parseDate = (v: string | null): Date | undefined => {
+      if (!v) return undefined;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+    const nextFrom = parseDate(urlFromRaw);
+    const nextTo = parseDate(urlToRaw);
+    const sameDate = (a?: Date, b?: Date) =>
+      (!a && !b) || (!!a && !!b && a.getTime() === b.getTime());
+    if (!sameDate(nextFrom, dateFrom)) setDateFrom(nextFrom);
+    if (!sameDate(nextTo, dateTo)) setDateTo(nextTo);
+
+    const shouldShow = urlFilters || !!(urlProduct || urlFromRaw || urlToRaw);
+    if (shouldShow && !showFilters) setShowFilters(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const clearFavoritesFilter = useCallback(() => setFilterFavorites(false), []);
 
   const productNames = useMemo(() => Array.from(new Set(items.filter(i => i.productName).map(i => i.productName!))).sort(), [items]);
