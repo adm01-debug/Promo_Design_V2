@@ -1,62 +1,78 @@
 
 
-## Teste E2E — atalhos de teclado em `/audit`
+## Adicionar validações e testes para consistência do filtro de favoritos com back/forward do navegador
 
-Adicionar um arquivo Playwright que valide os dois atalhos já implementados em `AuditLogPage`:
-- `/` → foca o input de busca por ID do registro
-- `Esc` → limpa todos os filtros aplicados
+Garantir que ao usar os botões "voltar" e "avançar" do navegador na página `MagicUpHistory`, o estado do filtro `fav=1` (e demais filtros sincronizados na URL) permaneça consistente com o que é exibido no grid.
 
-### Arquivo novo: `e2e/audit-shortcuts.spec.ts`
+### Problema atual
 
-Segue o mesmo padrão de `e2e/audit-alerts.spec.ts`: skip automático quando faltam credenciais, mas mantém um smoke test (redirecionamento para `/auth` sem sessão) para nunca passar com 0 testes.
+Em `src/features/magic-up/pages/MagicUpHistory.tsx`, o estado dos filtros (`filterFavorites`, `search`, `filterProduct`, `dateFrom`, `dateTo`, `showFilters`) é inicializado **uma única vez** via `useState(() => ...)` lendo `searchParams` no mount. O `useEffect` de sincronização só escreve `state → URL`, nunca o contrário. Isso significa que ao navegar com back/forward:
 
-**Setup**
-- Reutiliza `PLAYWRIGHT_TEST_EMAIL` / `PLAYWRIGHT_TEST_PASSWORD` (mesmo helper `login(page)` da suíte de alertas).
-- `test.describe.serial` com `test.setTimeout(45_000)`.
+- A URL muda (ex.: `?fav=1` → sem params)
+- O React Router atualiza `searchParams`
+- Mas o estado local não é atualizado → o grid continua mostrando o estado antigo (inconsistência)
 
-**Cenário 1 — smoke (sem credenciais)**
-- `goto('/audit')` → espera redirect para `/auth`.
+### Mudanças propostas
 
-**Cenário 2 — `/` foca o input de ID**
-1. `login(page)` → `goto('/audit')`.
-2. Garantir que o foco inicial não está no input (clicar no `<h1>` da página).
-3. `page.keyboard.press('/')`.
-4. Asserir `expect(page.locator('#audit-id-search')).toBeFocused()` (ou via `data-testid` se o id não existir — verificar em `AuditFilters.tsx`).
-5. Caso o input alvo não tenha id estável, o plano inclui adicionar `data-testid="audit-id-search-input"` no campo correspondente em `AuditFilters.tsx` (ajuste mínimo, sem mudança de comportamento).
+#### 1. Hidratar o estado a partir da URL em mudanças de `location` (`MagicUpHistory.tsx`)
 
-**Cenário 3 — `Esc` limpa filtros**
-1. `goto('/audit?action=INSERT&table=service_orders&recordId=abc123')` (hidrata filtros via URL).
-2. Asserir que a URL contém os params e que os chips/inputs refletem os filtros (ex.: badge `INSERT` visível, input de ID com `abc123`).
-3. Tirar foco de qualquer input (`page.locator('h1').click()` — o handler de `Esc` ignora quando o foco está em input/textarea).
-4. `page.keyboard.press('Escape')`.
-5. Asserir:
-   - URL não contém mais `action`, `table`, `recordId` (apenas `/audit` ou query vazia).
-   - Input de ID está vazio.
-   - Nenhum chip de ação/tabela visível.
+Adicionar um `useEffect` que escuta mudanças em `searchParams` e re-hidrata o estado **apenas quando a URL diverge do estado atual** (evitando o loop). Isso cobre back/forward sem reintroduzir o feedback loop que motivou a refatoração anterior.
 
-**Cenário 4 — `Esc` é ignorado quando foco está em input**
-1. `goto('/audit?action=INSERT')`.
-2. Focar o input de ID (`page.locator('#audit-id-search').focus()`).
-3. `page.keyboard.press('Escape')`.
-4. Asserir que `action=INSERT` ainda está na URL (o atalho global não dispara dentro de inputs, conforme `useKeyboardShortcuts`).
+Estratégia:
+- Computar o "estado derivado da URL" a cada mudança de `searchParams`.
+- Comparar campo a campo com o estado atual; só chamar setters quando houver diferença real.
+- Manter o effect existente (state → URL) intacto, com a mesma comparação string-based para evitar ciclo.
 
-### Ajuste mínimo no código (se necessário)
+#### 2. Testes unitários (`MagicUpHistory.test.tsx`)
 
-Verificar em `AuditFilters.tsx` se o input de ID tem `id="audit-id-search"` (referenciado em `AuditLogPage.tsx` no handler do atalho `/`). Se não tiver, adicionar:
-- `id="audit-id-search"` + `data-testid="audit-id-search-input"` no `<Input>` correspondente.
+Criar `src/features/magic-up/pages/__tests__/MagicUpHistory.test.tsx` cobrindo:
 
-Sem alterações em hooks, lógica de filtros ou comportamento do usuário.
+- **Hidratação inicial**: montar com `?fav=1` e verificar que o botão "Favoritos" aparece pressionado (`aria-pressed="true"`) e que o grid filtra corretamente.
+- **Back/forward simulado**: usar `MemoryRouter` + manipular o histórico (`window.history.back/forward` ou re-render com nova `initialEntries`) para validar:
+  - URL `?fav=1` → estado sincroniza, botão pressionado, grid filtrado.
+  - Voltar para URL sem params → estado limpo, botão não pressionado, grid mostra todos os itens.
+  - Avançar de novo para `?fav=1` → estado volta a aplicar o filtro.
+- **Limpar filtros**: clicar em "Limpar filtros" remove `fav=1` da URL e o grid mostra todos.
+- **Sem loop**: garantir que hidratar a partir da URL não dispara escrita redundante (verificar via spy em `setSearchParams` ou contagem de re-renders).
 
-### Critérios de aceite
+Mockar `useMagicUpHistory` para retornar uma lista controlada com itens `favorite: true` e `false`.
 
-- `bunx playwright test e2e/audit-shortcuts.spec.ts` passa localmente.
-- Smoke test sempre roda (mesmo sem credenciais).
-- Cenários 2–4 cobrem foco, limpeza e o caso negativo (Esc dentro de input).
-- Nenhuma regressão em `e2e/audit-alerts.spec.ts`, `e2e/auth.spec.ts`, `e2e/navigation.spec.ts`.
-- Seletores estáveis (`id` + `data-testid`), sem dependência de texto traduzido.
+#### 3. Teste E2E Playwright (`e2e/magic-up-history-back-forward.spec.ts`)
 
-### Arquivos tocados
+Criar um spec que:
+- Faz login (reutilizando helpers de `e2e/auth.spec.ts` se existirem).
+- Navega para `/magic-up/history?fav=1` → valida URL e contagem do grid (`X de Y`).
+- Navega para `/magic-up/history` (sem params) via `page.goto` ou click em "Limpar filtros" → valida estado limpo.
+- Usa `page.goBack()` → valida que `?fav=1` retorna E que o grid reflete o filtro.
+- Usa `page.goForward()` → valida que volta ao estado limpo.
+- Repete o ciclo back/forward 2-3 vezes para garantir estabilidade.
 
-- `e2e/audit-shortcuts.spec.ts` (novo)
-- `src/features/audit/components/AuditFilters.tsx` (ajuste mínimo de `id`/`data-testid` no input de ID, apenas se ainda não existir)
+### Arquivos afetados
+
+- **Modificar**: `src/features/magic-up/pages/MagicUpHistory.tsx` (adicionar effect de URL → state).
+- **Criar**: `src/features/magic-up/pages/__tests__/MagicUpHistory.test.tsx`.
+- **Criar**: `e2e/magic-up-history-back-forward.spec.ts`.
+
+### Detalhes técnicos do effect URL → state
+
+```typescript
+// Hidrata o estado a partir da URL quando ela muda externamente (back/forward, links).
+// Compara campo a campo para só atualizar o que mudou — evita re-renders e loop com o
+// effect inverso (state → URL), que já tem guarda baseada em string.
+useEffect(() => {
+  const urlFav = searchParams.get("fav") === "1";
+  const urlSearch = searchParams.get("q") ?? "";
+  const urlProduct = searchParams.get("product");
+  const urlFrom = searchParams.get("from");
+  const urlTo = searchParams.get("to");
+  const urlFilters = searchParams.get("filters") === "1";
+
+  if (urlFav !== filterFavorites) setFilterFavorites(urlFav);
+  if (urlSearch !== search) setSearch(urlSearch);
+  if ((urlProduct ?? null) !== filterProduct) setFilterProduct(urlProduct);
+  // ...mesmo padrão para datas e showFilters
+}, [searchParams]);
+```
+
+A guarda "só seta se diferente" + a guarda string-based no effect inverso garantem que não haja loop: a primeira hidratação dispara setters, que disparam o effect inverso, que vê `desired === current` e retorna sem chamar `setSearchParams`.
 
