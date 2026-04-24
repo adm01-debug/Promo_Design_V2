@@ -233,6 +233,20 @@ export function AssetUploadDialog({
     writeDraft(persistKey, { tags, tagError, assetType, clientId });
   }, [open, draftHydrated, persistKey, tags, tagError, assetType, clientId]);
 
+  /**
+   * Close the dialog. When closing WITHOUT a successful upload (cancel button,
+   * ESC, click outside), wipe the persisted draft so the next open starts
+   * fresh — no stale tags, no stale validation error.
+   *
+   * Successful uploads already clear the draft inline before closing, so
+   * passing `discardDraft` here is a no-op in that path.
+   */
+  const requestClose = (discardDraft: boolean) => {
+    if (isUploading) return;
+    if (discardDraft) clearDraft(persistKey);
+    onOpenChange(false);
+  };
+
   // Cleanup object URLs
   useEffect(() => {
     return () => entries.forEach((e) => e.preview && URL.revokeObjectURL(e.preview));
@@ -479,7 +493,18 @@ export function AssetUploadDialog({
   const allDone = entries.length > 0 && doneCount === entries.length;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !isUploading && onOpenChange(v)}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (isUploading) return;
+        if (!v) {
+          // Closed via ESC / overlay click → discard draft like an explicit cancel.
+          requestClose(true);
+        } else {
+          onOpenChange(v);
+        }
+      }}
+    >
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -752,7 +777,7 @@ export function AssetUploadDialog({
               {doneCount} enviado(s){errorCount > 0 ? ` · ${errorCount} com erro` : ""}
             </div>
           )}
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
+          <Button variant="ghost" onClick={() => requestClose(true)} disabled={isUploading}>
             Cancelar
           </Button>
           {errorCount > 0 && !isUploading && (
@@ -762,7 +787,7 @@ export function AssetUploadDialog({
             </Button>
           )}
           {allDone && errorCount === 0 ? (
-            <Button onClick={() => onOpenChange(false)}>Concluir</Button>
+            <Button onClick={() => requestClose(false)}>Concluir</Button>
           ) : (
             <Button
               onClick={handleSubmit}
