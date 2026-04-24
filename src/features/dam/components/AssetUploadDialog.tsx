@@ -543,6 +543,32 @@ export function AssetUploadDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {draftRestored && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-[11px] text-muted-foreground"
+            >
+              <span className="flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                Rascunho recuperado: tags e seleções da última sessão.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  clearDraft(persistKey);
+                  setTags(isVersionMode ? (parentAsset?.tags ?? []) : []);
+                  setAssetType(isVersionMode ? (parentAsset?.asset_type ?? defaultAssetType) : defaultAssetType);
+                  setClientId(isVersionMode ? (parentAsset?.client_id ?? defaultClientId) : defaultClientId);
+                  setTagError(null);
+                  setDraftRestored(false);
+                }}
+                className="text-[11px] text-primary hover:underline shrink-0"
+              >
+                Descartar
+              </button>
+            </div>
+          )}
           <div
             onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
