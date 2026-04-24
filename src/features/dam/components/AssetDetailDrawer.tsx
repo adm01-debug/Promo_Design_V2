@@ -16,6 +16,7 @@ import { useAssetFavorites } from "../hooks/use-asset-favorites";
 import { cn } from "@/lib/utils";
 import { RelatedFavorites } from "./RelatedFavorites";
 import { TagChipsInput } from "./TagChipsInput";
+import { TagCounter } from "@/components/ui/tag-counter";
 
 interface Props {
   asset: Asset | null;
@@ -243,20 +244,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                 <div className="text-xs text-muted-foreground">Tags</div>
                 <div className="flex items-center gap-2">
                   {editingTags && (
-                    <span
-                      className={cn(
-                        "text-[11px] tabular-nums font-mono transition-colors",
-                        tagsDraft.length >= 20
-                          ? "text-destructive font-semibold"
-                          : tagsDraft.length >= 16
-                            ? "text-warning"
-                            : "text-muted-foreground",
-                      )}
-                      aria-live="polite"
-                      aria-label={`${tagsDraft.length} de 20 tags utilizadas`}
-                    >
-                      {tagsDraft.length}/20
-                    </span>
+                    <TagCounter count={tagsDraft.length} max={20} />
                   )}
                   {canEditTags && !editingTags && (
                     <Button
