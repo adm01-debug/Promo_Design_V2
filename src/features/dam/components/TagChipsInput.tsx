@@ -15,6 +15,26 @@ interface Props {
 const TAG_REGEX = /^[a-z0-9\-_ ]{1,30}$/;
 const normalize = (raw: string) => raw.trim().toLowerCase().replace(/\s+/g, " ");
 
+/**
+ * Validate a full array of tags against the same rules used by TagChipsInput.
+ * Returns the first violation message, or `null` if the array is valid.
+ *
+ * Exported so that callers (e.g. dialog hosts) can re-validate eagerly when
+ * they hydrate `value` from external sources (drafts, parent assets, etc.).
+ */
+export function validateTags(tags: string[], maxTags = 20): string | null {
+  if (tags.length > maxTags) return `Máximo de ${maxTags} tags`;
+  const seen = new Set<string>();
+  for (const raw of tags) {
+    const tag = normalize(raw);
+    if (!tag) return "Tag não pode ser vazia";
+    if (!TAG_REGEX.test(tag)) return "Use letras, números, - ou _ (1–30 caracteres)";
+    if (seen.has(tag)) return "Tag duplicada";
+    seen.add(tag);
+  }
+  return null;
+}
+
 export function TagChipsInput({
   value,
   onChange,
