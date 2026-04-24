@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star, Eraser } from "lucide-react";
+import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star, Eraser, Pencil, Check, X } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAssetFavorites } from "../hooks/use-asset-favorites";
 import { cn } from "@/lib/utils";
 import { RelatedFavorites } from "./RelatedFavorites";
+import { TagChipsInput } from "./TagChipsInput";
 
 interface Props {
   asset: Asset | null;
@@ -26,7 +27,7 @@ interface Props {
 export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const { currentOrgId, can } = useOrganizations();
-  const { archive, restore, remove } = useAssets(currentOrgId);
+  const { archive, restore, remove, update, assets } = useAssets(currentOrgId);
   const { isFavorite, toggleFavorite } = useAssetFavorites(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [ocrText, setOcrText] = useState<string | null>(null);
@@ -34,6 +35,18 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [ocrClearing, setOcrClearing] = useState(false);
+  const [editingTags, setEditingTags] = useState(false);
+  const [tagsDraft, setTagsDraft] = useState<string[]>([]);
+  const [tagError, setTagError] = useState<string | null>(null);
+  const [savingTags, setSavingTags] = useState(false);
+
+  const tagSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    (assets ?? []).forEach((a) => a.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [assets]);
+
+  const canEditTags = can(["owner", "admin", "designer"]);
 
   useEffect(() => {
     if (!asset) return;
@@ -42,6 +55,9 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
     setOcrStatus(asset.ocr_status ?? "none");
     // Auto-open OCR section when arriving from a search that matched OCR text.
     setOcrOpen(Boolean(asset.ocr_match && (searchQuery ?? "").trim().length >= 2));
+    setEditingTags(false);
+    setTagsDraft(asset.tags ?? []);
+    setTagError(null);
   }, [asset]);
 
   // Poll once if OCR is pending
