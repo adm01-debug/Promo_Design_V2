@@ -613,6 +613,11 @@ export function AssetUploadDialog({
               suggestions={tagSuggestions}
               onValidationChange={setTagError}
             />
+            {tags.length > 20 && (
+              <p className="mt-1.5 text-[11px] text-destructive font-medium" role="alert">
+                Limite excedido: {tags.length}/20 tags. Remova {tags.length - 20} para enviar.
+              </p>
+            )}
           </div>
             </>
           )}
