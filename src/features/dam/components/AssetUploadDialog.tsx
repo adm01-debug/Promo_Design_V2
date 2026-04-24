@@ -11,7 +11,7 @@ import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { TagChipsInput } from "./TagChipsInput";
+import { TagChipsInput, validateTags } from "./TagChipsInput";
 import { TagCounter } from "@/components/ui/tag-counter";
 import { cn } from "@/lib/utils";
 import {
@@ -179,13 +179,6 @@ export function AssetUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
-  /**
-   * True when the dialog opened and we restored a non-empty draft from
-   * localStorage. Surfaces an inline banner so the user notices that
-   * previous work was recovered (vs. starting from scratch).
-   * Cleared when the user dismisses the banner or discards the draft.
-   */
-  const [draftRestored, setDraftRestored] = useState(false);
 
   // Scope draft persistence by org + (parent asset OR selected client/project),
   // so switching project or editing a different parent never mixes tag drafts
@@ -195,10 +188,14 @@ export function AssetUploadDialog({
     [organizationId, clientId, parentAsset?.id],
   );
 
-  // Clear stale tag validation errors when switching asset type (e.g., arte final ↔ mockup),
-  // so an old error doesn't keep blocking submission after the user changed modes.
+  // Re-validate tags whenever the asset type changes (e.g. arte final ↔ mockup).
+  // We always recompute against the current tag list so the surfaced error is
+  // accurate for the active mode — never a stale one from the previous type.
   useEffect(() => {
-    setTagError(null);
+    setTagError(validateTags(tags, MAX_TAGS));
+    // Intentionally only depending on assetType: per-keystroke tag edits already
+    // run their own validation inside TagChipsInput.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetType]);
 
   // Reset / restore on open. Version mode seeds from parent first, then layers any
@@ -207,7 +204,6 @@ export function AssetUploadDialog({
   useEffect(() => {
     if (!open) {
       setDraftHydrated(false);
-      setDraftRestored(false);
       return;
     }
     setEntries([]);
@@ -216,16 +212,11 @@ export function AssetUploadDialog({
       const draft = readDraft(parentDraftKey);
       setClientId(parentAsset?.client_id ?? defaultClientId);
       setAssetType(draft?.assetType ?? parentAsset?.asset_type ?? defaultAssetType);
-      setTags(draft?.tags ?? parentAsset?.tags ?? []);
-      setTagError(draft?.tagError ?? null);
-      // In version mode, "restored" means the draft diverged from the parent's
-      // baseline (different tags/type), not just that a draft existed.
-      const parentTags = parentAsset?.tags ?? [];
-      const restored = !!draft && (
-        (Array.isArray(draft.tags) && (draft.tags.length !== parentTags.length || draft.tags.some((t, i) => t !== parentTags[i])))
-        || (!!draft.assetType && draft.assetType !== parentAsset?.asset_type)
-      );
-      setDraftRestored(restored);
+      const restoredTags = draft?.tags ?? parentAsset?.tags ?? [];
+      setTags(restoredTags);
+      // Re-run validation on restore: the persisted `tagError` may be stale
+      // (e.g. the rule limit changed, or a duplicate was edited away).
+      setTagError(validateTags(restoredTags, MAX_TAGS));
       setDraftHydrated(true);
       return;
     }
@@ -234,15 +225,9 @@ export function AssetUploadDialog({
     const draft = readDraft(initialKey);
     setClientId(draft?.clientId ?? defaultClientId);
     setAssetType(draft?.assetType ?? defaultAssetType);
-    setTags(draft?.tags ?? []);
-    setTagError(draft?.tagError ?? null);
-    // For new assets, any non-empty saved tags/client/non-default type counts as restored.
-    const restored = !!draft && (
-      (Array.isArray(draft.tags) && draft.tags.length > 0)
-      || !!draft.clientId
-      || (!!draft.assetType && draft.assetType !== defaultAssetType)
-    );
-    setDraftRestored(restored);
+    const restoredTags = draft?.tags ?? [];
+    setTags(restoredTags);
+    setTagError(validateTags(restoredTags, MAX_TAGS));
     setDraftHydrated(true);
     // Intentionally NOT depending on persistKey: we want hydration to run only when
     // the dialog opens, not whenever the user changes the project mid-edit.
@@ -543,32 +528,6 @@ export function AssetUploadDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {draftRestored && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-[11px] text-muted-foreground"
-            >
-              <span className="flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                Rascunho recuperado: tags e seleções da última sessão.
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  clearDraft(persistKey);
-                  setTags(isVersionMode ? (parentAsset?.tags ?? []) : []);
-                  setAssetType(isVersionMode ? (parentAsset?.asset_type ?? defaultAssetType) : defaultAssetType);
-                  setClientId(isVersionMode ? (parentAsset?.client_id ?? defaultClientId) : defaultClientId);
-                  setTagError(null);
-                  setDraftRestored(false);
-                }}
-                className="text-[11px] text-primary hover:underline shrink-0"
-              >
-                Descartar
-              </button>
-            </div>
-          )}
           <div
             onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
