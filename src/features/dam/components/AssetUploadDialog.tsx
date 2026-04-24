@@ -74,10 +74,22 @@ interface UploadDraft {
   clientId: string | null;
 }
 
-function draftKey(orgId: string, isVersionMode: boolean): string | null {
-  // Don't persist drafts for "new version" mode — it's tied to a specific parent asset.
-  if (isVersionMode) return null;
-  return `${DRAFT_PREFIX}${orgId}`;
+/**
+ * Build a scoped draft key so different upload contexts don't share state.
+ *
+ * Scopes:
+ *  - new asset, no client selected            → org-level draft
+ *  - new asset, with client (project)         → org+client draft
+ *  - new version of an existing parent asset  → org+parent draft (independent of client)
+ *
+ * The key is recomputed when context changes; switching project or parent loads
+ * the appropriate draft and never mixes tags/errors between uploads.
+ */
+function draftKey(orgId: string, clientId: string | null, parentAssetId: string | null): string | null {
+  if (!orgId) return null;
+  if (parentAssetId) return `${DRAFT_PREFIX}${orgId}:parent:${parentAssetId}`;
+  if (clientId) return `${DRAFT_PREFIX}${orgId}:client:${clientId}`;
+  return `${DRAFT_PREFIX}${orgId}:org`;
 }
 
 function readDraft(key: string | null): UploadDraft | null {
