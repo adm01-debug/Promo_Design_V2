@@ -687,6 +687,45 @@ export function AssetUploadDialog({
                 Limite excedido: {tags.length}/20 tags. Remova {tags.length - 20} para enviar.
               </p>
             )}
+            {autoSuggestions.length > 0 && tags.length < MAX_TAGS && (
+              <div className="mt-2 rounded-md border border-dashed border-border p-2">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    Sugestões automáticas (do nome + tipo)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={addAllAutoTags}
+                    className="text-[11px] text-primary hover:underline disabled:opacity-50"
+                    disabled={remainingSlots === 0}
+                  >
+                    Adicionar todas ({Math.min(autoSuggestions.length, remainingSlots)})
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {autoSuggestions.slice(0, remainingSlots + 4).map((t) => {
+                    const disabled = tags.length >= MAX_TAGS;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => addAutoTag(t)}
+                        disabled={disabled}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] transition-colors",
+                          disabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-accent hover:text-accent-foreground hover:border-primary/40",
+                        )}
+                        aria-label={`Adicionar tag ${t}`}
+                      >
+                        + {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
             </>
           )}
