@@ -357,6 +357,10 @@ export function AssetUploadDialog({
 
   const handleSubmit = async () => {
     if (entries.length === 0) return;
+    if (tags.length > 20) {
+      toast.error(`Limite de tags excedido: ${tags.length}/20. Remova ${tags.length - 20} tag(s) para continuar.`);
+      return;
+    }
     if (tagError) {
       toast.error("Corrija as tags antes de enviar");
       return;
@@ -609,6 +613,11 @@ export function AssetUploadDialog({
               suggestions={tagSuggestions}
               onValidationChange={setTagError}
             />
+            {tags.length > 20 && (
+              <p className="mt-1.5 text-[11px] text-destructive font-medium" role="alert">
+                Limite excedido: {tags.length}/20 tags. Remova {tags.length - 20} para enviar.
+              </p>
+            )}
           </div>
             </>
           )}
@@ -624,7 +633,7 @@ export function AssetUploadDialog({
             Cancelar
           </Button>
           {errorCount > 0 && !isUploading && (
-            <Button variant="outline" onClick={handleRetry} disabled={!!tagError}>
+            <Button variant="outline" onClick={handleRetry} disabled={!!tagError || tags.length > 20}>
               <RotateCw className="w-4 h-4" />
               Tentar novamente ({errorCount})
             </Button>
@@ -632,7 +641,11 @@ export function AssetUploadDialog({
           {allDone && errorCount === 0 ? (
             <Button onClick={() => onOpenChange(false)}>Concluir</Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={isUploading || entries.length === 0 || !!tagError || (doneCount > 0 && errorCount === 0)}>
+            <Button
+              onClick={handleSubmit}
+              disabled={isUploading || entries.length === 0 || !!tagError || tags.length > 20 || (doneCount > 0 && errorCount === 0)}
+              title={tags.length > 20 ? `Limite de tags excedido (${tags.length}/20)` : undefined}
+            >
               {isUploading
                 ? "Enviando..."
                 : isVersionMode
