@@ -396,7 +396,18 @@ export function AssetUploadDialog({
   const allDone = entries.length > 0 && doneCount === entries.length;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !isUploading && onOpenChange(v)}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (isUploading) return;
+        if (!v) {
+          // Closed via ESC / overlay click → discard draft like an explicit cancel.
+          requestClose(true);
+        } else {
+          onOpenChange(v);
+        }
+      }}
+    >
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
