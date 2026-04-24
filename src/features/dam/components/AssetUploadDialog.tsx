@@ -179,6 +179,13 @@ export function AssetUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
+  /**
+   * True when the dialog opened and we restored a non-empty draft from
+   * localStorage. Surfaces an inline banner so the user notices that
+   * previous work was recovered (vs. starting from scratch).
+   * Cleared when the user dismisses the banner or discards the draft.
+   */
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // Scope draft persistence by org + (parent asset OR selected client/project),
   // so switching project or editing a different parent never mixes tag drafts
@@ -200,6 +207,7 @@ export function AssetUploadDialog({
   useEffect(() => {
     if (!open) {
       setDraftHydrated(false);
+      setDraftRestored(false);
       return;
     }
     setEntries([]);
@@ -210,6 +218,14 @@ export function AssetUploadDialog({
       setAssetType(draft?.assetType ?? parentAsset?.asset_type ?? defaultAssetType);
       setTags(draft?.tags ?? parentAsset?.tags ?? []);
       setTagError(draft?.tagError ?? null);
+      // In version mode, "restored" means the draft diverged from the parent's
+      // baseline (different tags/type), not just that a draft existed.
+      const parentTags = parentAsset?.tags ?? [];
+      const restored = !!draft && (
+        (Array.isArray(draft.tags) && (draft.tags.length !== parentTags.length || draft.tags.some((t, i) => t !== parentTags[i])))
+        || (!!draft.assetType && draft.assetType !== parentAsset?.asset_type)
+      );
+      setDraftRestored(restored);
       setDraftHydrated(true);
       return;
     }
@@ -220,6 +236,13 @@ export function AssetUploadDialog({
     setAssetType(draft?.assetType ?? defaultAssetType);
     setTags(draft?.tags ?? []);
     setTagError(draft?.tagError ?? null);
+    // For new assets, any non-empty saved tags/client/non-default type counts as restored.
+    const restored = !!draft && (
+      (Array.isArray(draft.tags) && draft.tags.length > 0)
+      || !!draft.clientId
+      || (!!draft.assetType && draft.assetType !== defaultAssetType)
+    );
+    setDraftRestored(restored);
     setDraftHydrated(true);
     // Intentionally NOT depending on persistKey: we want hydration to run only when
     // the dialog opens, not whenever the user changes the project mid-edit.
