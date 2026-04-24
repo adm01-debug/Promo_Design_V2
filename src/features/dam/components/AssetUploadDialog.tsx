@@ -166,7 +166,6 @@ export function AssetUploadDialog({
   onUploaded,
 }: Props) {
   const isVersionMode = !!parentAsset;
-  const persistKey = draftKey(organizationId, isVersionMode);
   const { uploadFile } = useAssetUpload(organizationId);
   const { clients } = useClients(organizationId);
   const { assets } = useAssets(organizationId, {});
@@ -181,15 +180,23 @@ export function AssetUploadDialog({
   const [tagError, setTagError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
 
+  // Scope draft persistence by org + (parent asset OR selected client/project),
+  // so switching project or editing a different parent never mixes tag drafts
+  // or stale validation errors between uploads.
+  const persistKey = useMemo(
+    () => draftKey(organizationId, clientId, parentAsset?.id ?? null),
+    [organizationId, clientId, parentAsset?.id],
+  );
+
   // Clear stale tag validation errors when switching asset type (e.g., arte final ↔ mockup),
   // so an old error doesn't keep blocking submission after the user changed modes.
   useEffect(() => {
     setTagError(null);
   }, [assetType]);
 
-  // Reset / restore on open. In version mode we always pull from parentAsset; otherwise
-  // we restore the persisted draft (tags + last validation error + last selections) so
-  // the user doesn't lose work when they close and reopen the dialog.
+  // Reset / restore on open. Version mode seeds from parent first, then layers any
+  // saved draft for that specific parent on top so re-opening the dialog restores
+  // exactly what was being typed for THAT parent (not a sibling upload).
   useEffect(() => {
     if (!open) {
       setDraftHydrated(false);
@@ -197,26 +204,34 @@ export function AssetUploadDialog({
     }
     setEntries([]);
     if (isVersionMode) {
+      const parentDraftKey = draftKey(organizationId, parentAsset?.client_id ?? null, parentAsset?.id ?? null);
+      const draft = readDraft(parentDraftKey);
       setClientId(parentAsset?.client_id ?? defaultClientId);
-      setAssetType(parentAsset?.asset_type ?? defaultAssetType);
-      setTags(parentAsset?.tags ?? []);
-      setTagError(null);
+      setAssetType(draft?.assetType ?? parentAsset?.asset_type ?? defaultAssetType);
+      setTags(draft?.tags ?? parentAsset?.tags ?? []);
+      setTagError(draft?.tagError ?? null);
       setDraftHydrated(true);
       return;
     }
-    const draft = readDraft(persistKey);
+    // For new assets, hydrate from the org/client-scoped draft.
+    const initialKey = draftKey(organizationId, defaultClientId, null);
+    const draft = readDraft(initialKey);
     setClientId(draft?.clientId ?? defaultClientId);
     setAssetType(draft?.assetType ?? defaultAssetType);
     setTags(draft?.tags ?? []);
     setTagError(draft?.tagError ?? null);
     setDraftHydrated(true);
-  }, [open, parentAsset, defaultClientId, defaultAssetType, isVersionMode, persistKey]);
+    // Intentionally NOT depending on persistKey: we want hydration to run only when
+    // the dialog opens, not whenever the user changes the project mid-edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, parentAsset, defaultClientId, defaultAssetType, isVersionMode, organizationId]);
 
-  // Persist draft whenever tags / error / type / client change while the dialog is open.
+  // Persist draft on every relevant change. The key is scoped, so each
+  // (org, client/project) or (org, parent) combination gets its own slot.
   useEffect(() => {
-    if (!open || !draftHydrated || isVersionMode) return;
+    if (!open || !draftHydrated) return;
     writeDraft(persistKey, { tags, tagError, assetType, clientId });
-  }, [open, draftHydrated, isVersionMode, persistKey, tags, tagError, assetType, clientId]);
+  }, [open, draftHydrated, persistKey, tags, tagError, assetType, clientId]);
 
   // Cleanup object URLs
   useEffect(() => {
