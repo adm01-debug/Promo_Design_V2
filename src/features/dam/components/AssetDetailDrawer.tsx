@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star, Eraser } from "lucide-react";
+import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, ScanText, Loader2, Star, Eraser, Pencil, Check, X } from "lucide-react";
 import { getAssetSignedUrl, useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAssetFavorites } from "../hooks/use-asset-favorites";
 import { cn } from "@/lib/utils";
 import { RelatedFavorites } from "./RelatedFavorites";
+import { TagChipsInput } from "./TagChipsInput";
 
 interface Props {
   asset: Asset | null;
@@ -26,7 +27,7 @@ interface Props {
 export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const { currentOrgId, can } = useOrganizations();
-  const { archive, restore, remove } = useAssets(currentOrgId);
+  const { archive, restore, remove, update, assets } = useAssets(currentOrgId);
   const { isFavorite, toggleFavorite } = useAssetFavorites(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [ocrText, setOcrText] = useState<string | null>(null);
@@ -34,6 +35,18 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrOpen, setOcrOpen] = useState(false);
   const [ocrClearing, setOcrClearing] = useState(false);
+  const [editingTags, setEditingTags] = useState(false);
+  const [tagsDraft, setTagsDraft] = useState<string[]>([]);
+  const [tagError, setTagError] = useState<string | null>(null);
+  const [savingTags, setSavingTags] = useState(false);
+
+  const tagSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    (assets ?? []).forEach((a) => a.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [assets]);
+
+  const canEditTags = can(["owner", "admin", "designer"]);
 
   useEffect(() => {
     if (!asset) return;
@@ -42,6 +55,9 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
     setOcrStatus(asset.ocr_status ?? "none");
     // Auto-open OCR section when arriving from a search that matched OCR text.
     setOcrOpen(Boolean(asset.ocr_match && (searchQuery ?? "").trim().length >= 2));
+    setEditingTags(false);
+    setTagsDraft(asset.tags ?? []);
+    setTagError(null);
   }, [asset]);
 
   // Poll once if OCR is pending
@@ -221,12 +237,99 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
             </div>
           </div>
 
-          {asset.tags.length > 0 && (
+          {(asset.tags.length > 0 || canEditTags) && (
             <div>
-              <div className="text-xs text-muted-foreground mb-1">Tags</div>
-              <div className="flex flex-wrap gap-1">
-                {asset.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <div className="text-xs text-muted-foreground">Tags</div>
+                <div className="flex items-center gap-2">
+                  {editingTags && (
+                    <span
+                      className={cn(
+                        "text-[11px] tabular-nums font-mono transition-colors",
+                        tagsDraft.length >= 20
+                          ? "text-destructive font-semibold"
+                          : tagsDraft.length >= 16
+                            ? "text-warning"
+                            : "text-muted-foreground",
+                      )}
+                      aria-live="polite"
+                      aria-label={`${tagsDraft.length} de 20 tags utilizadas`}
+                    >
+                      {tagsDraft.length}/20
+                    </span>
+                  )}
+                  {canEditTags && !editingTags && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => {
+                        setTagsDraft(asset.tags ?? []);
+                        setTagError(null);
+                        setEditingTags(true);
+                      }}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" /> Editar
+                    </Button>
+                  )}
+                </div>
               </div>
+              {editingTags ? (
+                <div className="space-y-2">
+                  <TagChipsInput
+                    value={tagsDraft}
+                    onChange={setTagsDraft}
+                    suggestions={tagSuggestions}
+                    onValidationChange={setTagError}
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7"
+                      disabled={savingTags}
+                      onClick={() => {
+                        setEditingTags(false);
+                        setTagsDraft(asset.tags ?? []);
+                        setTagError(null);
+                      }}
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" /> Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7"
+                      disabled={savingTags || !!tagError}
+                      onClick={async () => {
+                        if (tagError) return;
+                        setSavingTags(true);
+                        try {
+                          await update.mutateAsync({ id: asset.id, patch: { tags: tagsDraft } });
+                          toast.success("Tags atualizadas");
+                          setEditingTags(false);
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Falha ao salvar tags");
+                        } finally {
+                          setSavingTags(false);
+                        }
+                      }}
+                    >
+                      {savingTags ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : asset.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {asset.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">Sem tags</div>
+              )}
             </div>
           )}
 
