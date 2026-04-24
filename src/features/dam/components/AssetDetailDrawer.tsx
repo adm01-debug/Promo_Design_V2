@@ -237,12 +237,99 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
             </div>
           </div>
 
-          {asset.tags.length > 0 && (
+          {(asset.tags.length > 0 || canEditTags) && (
             <div>
-              <div className="text-xs text-muted-foreground mb-1">Tags</div>
-              <div className="flex flex-wrap gap-1">
-                {asset.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <div className="text-xs text-muted-foreground">Tags</div>
+                <div className="flex items-center gap-2">
+                  {editingTags && (
+                    <span
+                      className={cn(
+                        "text-[11px] tabular-nums font-mono transition-colors",
+                        tagsDraft.length >= 20
+                          ? "text-destructive font-semibold"
+                          : tagsDraft.length >= 16
+                            ? "text-warning"
+                            : "text-muted-foreground",
+                      )}
+                      aria-live="polite"
+                      aria-label={`${tagsDraft.length} de 20 tags utilizadas`}
+                    >
+                      {tagsDraft.length}/20
+                    </span>
+                  )}
+                  {canEditTags && !editingTags && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => {
+                        setTagsDraft(asset.tags ?? []);
+                        setTagError(null);
+                        setEditingTags(true);
+                      }}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" /> Editar
+                    </Button>
+                  )}
+                </div>
               </div>
+              {editingTags ? (
+                <div className="space-y-2">
+                  <TagChipsInput
+                    value={tagsDraft}
+                    onChange={setTagsDraft}
+                    suggestions={tagSuggestions}
+                    onValidationChange={setTagError}
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7"
+                      disabled={savingTags}
+                      onClick={() => {
+                        setEditingTags(false);
+                        setTagsDraft(asset.tags ?? []);
+                        setTagError(null);
+                      }}
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" /> Cancelar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7"
+                      disabled={savingTags || !!tagError}
+                      onClick={async () => {
+                        if (tagError) return;
+                        setSavingTags(true);
+                        try {
+                          await update.mutateAsync({ id: asset.id, patch: { tags: tagsDraft } });
+                          toast.success("Tags atualizadas");
+                          setEditingTags(false);
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Falha ao salvar tags");
+                        } finally {
+                          setSavingTags(false);
+                        }
+                      }}
+                    >
+                      {savingTags ? (
+                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5 mr-1" />
+                      )}
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              ) : asset.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {asset.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground italic">Sem tags</div>
+              )}
             </div>
           )}
 
