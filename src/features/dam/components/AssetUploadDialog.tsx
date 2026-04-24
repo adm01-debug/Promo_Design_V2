@@ -25,6 +25,46 @@ const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
 const ACCEPTED = "image/*,application/pdf,.svg,.ai,.psd";
 const DRAFT_PREFIX = "asset-upload-draft:";
+const MAX_TAGS = 20;
+
+const TAG_REGEX = /^[a-z0-9\-_ ]{1,30}$/;
+const normalizeTag = (raw: string) => raw.trim().toLowerCase().replace(/\s+/g, " ");
+
+// Stopwords PT/EN comuns + extensões — descartadas das sugestões automáticas.
+const STOPWORDS = new Set<string>([
+  "de", "da", "do", "das", "dos", "e", "ou", "para", "com", "sem", "em", "um", "uma",
+  "the", "a", "an", "of", "and", "or", "for", "with", "to", "in",
+  "final", "v1", "v2", "v3", "rev", "copy", "copia", "cópia",
+  "jpg", "jpeg", "png", "gif", "webp", "svg", "pdf", "ai", "psd", "tif", "tiff",
+]);
+
+function tagsFromFileName(name: string): string[] {
+  const base = name.replace(/\.[^.]+$/, "");
+  return base
+    .split(/[\s_\-.()[\]{},]+/g)
+    .map((t) => normalizeTag(t))
+    .filter((t) => t.length >= 3 && t.length <= 30 && !STOPWORDS.has(t) && TAG_REGEX.test(t) && !/^\d+$/.test(t));
+}
+
+function buildAutoSuggestions(entries: { file: File }[], assetType: AssetType, currentTags: string[]): string[] {
+  const current = new Set(currentTags.map(normalizeTag));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  // Asset type primeiro — sempre relevante.
+  if (!current.has(assetType)) {
+    out.push(assetType);
+    seen.add(assetType);
+  }
+  for (const e of entries) {
+    for (const t of tagsFromFileName(e.file.name)) {
+      if (current.has(t) || seen.has(t)) continue;
+      seen.add(t);
+      out.push(t);
+      if (out.length >= 12) return out;
+    }
+  }
+  return out;
+}
 
 interface UploadDraft {
   tags: string[];
@@ -176,6 +216,35 @@ export function AssetUploadDialog({
     assets.forEach((a) => a.tags.forEach((t) => set.add(t)));
     return Array.from(set).sort();
   }, [assets]);
+
+  const autoSuggestions = useMemo(
+    () => buildAutoSuggestions(entries, assetType, tags),
+    [entries, assetType, tags],
+  );
+  const remainingSlots = Math.max(0, MAX_TAGS - tags.length);
+
+  const addAutoTag = (t: string) => {
+    if (tags.length >= MAX_TAGS) {
+      toast.error(`Máximo de ${MAX_TAGS} tags atingido`);
+      return;
+    }
+    if (tags.includes(t)) return;
+    setTags([...tags, t]);
+  };
+
+  const addAllAutoTags = () => {
+    if (autoSuggestions.length === 0) return;
+    const slots = MAX_TAGS - tags.length;
+    if (slots <= 0) {
+      toast.error(`Máximo de ${MAX_TAGS} tags atingido`);
+      return;
+    }
+    const toAdd = autoSuggestions.slice(0, slots);
+    setTags([...tags, ...toAdd]);
+    if (autoSuggestions.length > slots) {
+      toast.info(`Adicionadas ${toAdd.length} tags. ${autoSuggestions.length - slots} ignoradas (limite ${MAX_TAGS}).`);
+    }
+  };
 
   const validateFile = (f: File): string | null => {
     if (f.size > MAX_SIZE_MB * 1024 * 1024) return `Arquivo > ${MAX_SIZE_MB}MB`;
@@ -617,6 +686,45 @@ export function AssetUploadDialog({
               <p className="mt-1.5 text-[11px] text-destructive font-medium" role="alert">
                 Limite excedido: {tags.length}/20 tags. Remova {tags.length - 20} para enviar.
               </p>
+            )}
+            {autoSuggestions.length > 0 && tags.length < MAX_TAGS && (
+              <div className="mt-2 rounded-md border border-dashed border-border p-2">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    Sugestões automáticas (do nome + tipo)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={addAllAutoTags}
+                    className="text-[11px] text-primary hover:underline disabled:opacity-50"
+                    disabled={remainingSlots === 0}
+                  >
+                    Adicionar todas ({Math.min(autoSuggestions.length, remainingSlots)})
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {autoSuggestions.slice(0, remainingSlots + 4).map((t) => {
+                    const disabled = tags.length >= MAX_TAGS;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => addAutoTag(t)}
+                        disabled={disabled}
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] transition-colors",
+                          disabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-accent hover:text-accent-foreground hover:border-primary/40",
+                        )}
+                        aria-label={`Adicionar tag ${t}`}
+                      >
+                        + {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
             </>
