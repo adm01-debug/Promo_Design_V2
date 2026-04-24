@@ -165,6 +165,20 @@ export function AssetUploadDialog({
     writeDraft(persistKey, { tags, tagError, assetType, clientId });
   }, [open, draftHydrated, isVersionMode, persistKey, tags, tagError, assetType, clientId]);
 
+  /**
+   * Close the dialog. When closing WITHOUT a successful upload (cancel button,
+   * ESC, click outside), wipe the persisted draft so the next open starts
+   * fresh — no stale tags, no stale validation error.
+   *
+   * Successful uploads already clear the draft inline before closing, so
+   * passing `discardDraft` here is a no-op in that path.
+   */
+  const requestClose = (discardDraft: boolean) => {
+    if (isUploading) return;
+    if (discardDraft) clearDraft(persistKey);
+    onOpenChange(false);
+  };
+
   // Cleanup object URLs
   useEffect(() => {
     return () => entries.forEach((e) => e.preview && URL.revokeObjectURL(e.preview));
