@@ -217,6 +217,35 @@ export function AssetUploadDialog({
     return Array.from(set).sort();
   }, [assets]);
 
+  const autoSuggestions = useMemo(
+    () => buildAutoSuggestions(entries, assetType, tags),
+    [entries, assetType, tags],
+  );
+  const remainingSlots = Math.max(0, MAX_TAGS - tags.length);
+
+  const addAutoTag = (t: string) => {
+    if (tags.length >= MAX_TAGS) {
+      toast.error(`Máximo de ${MAX_TAGS} tags atingido`);
+      return;
+    }
+    if (tags.includes(t)) return;
+    setTags([...tags, t]);
+  };
+
+  const addAllAutoTags = () => {
+    if (autoSuggestions.length === 0) return;
+    const slots = MAX_TAGS - tags.length;
+    if (slots <= 0) {
+      toast.error(`Máximo de ${MAX_TAGS} tags atingido`);
+      return;
+    }
+    const toAdd = autoSuggestions.slice(0, slots);
+    setTags([...tags, ...toAdd]);
+    if (autoSuggestions.length > slots) {
+      toast.info(`Adicionadas ${toAdd.length} tags. ${autoSuggestions.length - slots} ignoradas (limite ${MAX_TAGS}).`);
+    }
+  };
+
   const validateFile = (f: File): string | null => {
     if (f.size > MAX_SIZE_MB * 1024 * 1024) return `Arquivo > ${MAX_SIZE_MB}MB`;
     return null;
