@@ -654,7 +654,7 @@ export function AssetUploadDialog({
               {doneCount} enviado(s){errorCount > 0 ? ` · ${errorCount} com erro` : ""}
             </div>
           )}
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isUploading}>
+          <Button variant="ghost" onClick={() => requestClose(true)} disabled={isUploading}>
             Cancelar
           </Button>
           {errorCount > 0 && !isUploading && (
@@ -664,7 +664,7 @@ export function AssetUploadDialog({
             </Button>
           )}
           {allDone && errorCount === 0 ? (
-            <Button onClick={() => onOpenChange(false)}>Concluir</Button>
+            <Button onClick={() => requestClose(false)}>Concluir</Button>
           ) : (
             <Button
               onClick={handleSubmit}
