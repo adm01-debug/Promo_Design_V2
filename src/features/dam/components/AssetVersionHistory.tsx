@@ -517,6 +517,25 @@ function VersionDescription({ description }: { description: string | null }) {
 }
 
 interface VersionTimelineProps {
+
+function VersionNodePreview({ asset, isCurrent }: { asset: Asset; isCurrent: boolean }) {
+  const text = (asset.description ?? "").trim();
+  const hasText = text.length > 0;
+  return (
+    <div className="space-y-1 text-xs">
+      <div className="flex items-center gap-1.5 font-medium">
+        <span>v{asset.version}</span>
+        {isCurrent && <span className="text-[10px] uppercase tracking-wide opacity-80">atual</span>}
+      </div>
+      <div className="opacity-80">{formatDateTime(asset.created_at)}</div>
+      <div className={hasText ? "whitespace-pre-wrap" : "italic opacity-70"}>
+        {hasText ? text : "Sem comentário"}
+      </div>
+    </div>
+  );
+}
+
+interface VersionTimelineProps {
   entries: Asset[];
   maxVersion: number;
   currentAssetId: string;
