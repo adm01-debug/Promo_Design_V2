@@ -128,6 +128,58 @@ function clearDraft(key: string | null) {
   }
 }
 
+/**
+ * Per-file PDF thumb-page memory.
+ *
+ * Persists the chosen page across sessions and across cancellations of the
+ * upload dialog (so it is intentionally NOT cleared by clearDraft). Keyed by a
+ * lightweight fingerprint of name + size + lastModified so re-selecting the
+ * same file restores the user's choice without comparing bytes.
+ */
+const PDF_PAGE_MEMORY_KEY = "dam:upload:pdf-thumb-pages";
+const PDF_PAGE_MEMORY_LIMIT = 200;
+
+function pdfFingerprint(f: File): string {
+  return `${f.name}::${f.size}::${f.lastModified}`;
+}
+
+function readPdfPageMemory(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(PDF_PAGE_MEMORY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getRememberedPdfPage(f: File): number | null {
+  const map = readPdfPageMemory();
+  const v = map[pdfFingerprint(f)];
+  return typeof v === "number" && v >= 1 ? Math.floor(v) : null;
+}
+
+function rememberPdfPage(f: File, page: number) {
+  if (typeof window === "undefined") return;
+  const safe = Math.max(1, Math.floor(page || 1));
+  try {
+    const map = readPdfPageMemory();
+    map[pdfFingerprint(f)] = safe;
+    // Cap entries (FIFO-ish) to avoid unbounded localStorage growth.
+    const keys = Object.keys(map);
+    if (keys.length > PDF_PAGE_MEMORY_LIMIT) {
+      for (const k of keys.slice(0, keys.length - PDF_PAGE_MEMORY_LIMIT)) {
+        delete map[k];
+      }
+    }
+    localStorage.setItem(PDF_PAGE_MEMORY_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore quota / serialization errors */
+  }
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -321,6 +373,8 @@ export function AssetUploadDialog({
       const kind = detectFileKind(f);
       const isRasterImage =
         kind === "image" && (f.type || "").startsWith("image/");
+      const rememberedPage = kind === "pdf" ? getRememberedPdfPage(f) : null;
+      const initialPdfPage = kind === "pdf" ? rememberedPage ?? 1 : undefined;
       next.push({
         id: crypto.randomUUID(),
         file: f,
@@ -329,7 +383,7 @@ export function AssetUploadDialog({
         previewLoading: kind === "pdf" || kind === "svg",
         progress: 0,
         status: "pending",
-        pdfPage: kind === "pdf" ? 1 : undefined,
+        pdfPage: initialPdfPage,
         pdfPageCount: kind === "pdf" ? null : undefined,
       });
     }
@@ -341,15 +395,30 @@ export function AssetUploadDialog({
           .then((url) => updatePreview(entry.id, url))
           .catch(() => updatePreview(entry.id, null));
       } else if (entry.kind === "pdf") {
-        rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, 1)
+        const page = entry.pdfPage ?? 1;
+        rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, page)
           .then((r) => updatePreview(entry.id, r?.url ?? null))
           .catch(() => updatePreview(entry.id, null));
         getPdfPageCount(entry.file)
-          .then((count) =>
+          .then((count) => {
+            const safeCount = typeof count === "number" && count > 0 ? count : null;
             setEntries((prev) =>
-              prev.map((e) => (e.id === entry.id ? { ...e, pdfPageCount: count } : e)),
-            ),
-          )
+              prev.map((e) => {
+                if (e.id !== entry.id) return e;
+                const current = e.pdfPage ?? 1;
+                if (safeCount === null) return { ...e, pdfPageCount: count };
+                const clamped = Math.min(Math.max(1, current), safeCount);
+                if (clamped !== current) {
+                  rememberPdfPage(entry.file, clamped);
+                  rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, clamped)
+                    .then((r) => updatePreview(entry.id, r?.url ?? null))
+                    .catch(() => updatePreview(entry.id, null));
+                  return { ...e, pdfPageCount: count, pdfPage: clamped, previewLoading: true };
+                }
+                return { ...e, pdfPageCount: count };
+              }),
+            );
+          })
           .catch(() => undefined);
       }
     });
@@ -362,6 +431,7 @@ export function AssetUploadDialog({
       const max = target.pdfPageCount ?? page;
       const safe = Math.min(Math.max(1, Math.floor(page || 1)), Math.max(1, max));
       if (safe === target.pdfPage) return prev;
+      rememberPdfPage(target.file, safe);
       return prev.map((e) =>
         e.id === id ? { ...e, pdfPage: safe, previewLoading: true } : e,
       );
@@ -384,6 +454,7 @@ export function AssetUploadDialog({
         (e.pdfPage ?? 1) !== 1,
     );
     if (targets.length === 0) return;
+    for (const t of targets) rememberPdfPage(t.file, 1);
     setEntries((prev) =>
       prev.map((e) =>
         targets.some((t) => t.id === e.id)
