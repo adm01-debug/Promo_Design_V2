@@ -481,6 +481,8 @@ interface VersionTimelineProps {
   maxVersion: number;
   currentAssetId: string;
   onSelect: (a: Asset) => void;
+  followSort?: boolean;
+  sort?: SortKey;
 }
 
 function formatDateTime(iso: string): string {
@@ -494,12 +496,18 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function groupByMonth(entries: Asset[]): Array<{ key: string; label: string; items: Asset[] }> {
-  // Display the timeline newest-first regardless of the user's sort direction —
-  // a chronological story always reads top-down from latest activity.
-  const sorted = [...entries].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+function groupByMonth(
+  entries: Asset[],
+  options?: { followSort?: boolean; sort?: SortKey },
+): Array<{ key: string; label: string; items: Asset[] }> {
+  // By default the timeline reads newest-first (chronological story). When the
+  // user opts in to "follow sort", we preserve the order coming from `entries`
+  // so the grouping mirrors the active sort (date or version, asc or desc).
+  const sorted = options?.followSort
+    ? [...entries]
+    : [...entries].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
   const groups = new Map<string, { key: string; label: string; items: Asset[] }>();
   for (const v of sorted) {
     const d = new Date(v.created_at);
@@ -512,8 +520,8 @@ function groupByMonth(entries: Asset[]): Array<{ key: string; label: string; ite
   return Array.from(groups.values());
 }
 
-function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect }: VersionTimelineProps) {
-  const groups = useMemo(() => groupByMonth(entries), [entries]);
+function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort }: VersionTimelineProps) {
+  const groups = useMemo(() => groupByMonth(entries, { followSort, sort }), [entries, followSort, sort]);
 
   return (
     <div className="relative">
