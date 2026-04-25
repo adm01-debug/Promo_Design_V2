@@ -128,6 +128,58 @@ function clearDraft(key: string | null) {
   }
 }
 
+/**
+ * Per-file PDF thumb-page memory.
+ *
+ * Persists the chosen page across sessions and across cancellations of the
+ * upload dialog (so it is intentionally NOT cleared by clearDraft). Keyed by a
+ * lightweight fingerprint of name + size + lastModified so re-selecting the
+ * same file restores the user's choice without comparing bytes.
+ */
+const PDF_PAGE_MEMORY_KEY = "dam:upload:pdf-thumb-pages";
+const PDF_PAGE_MEMORY_LIMIT = 200;
+
+function pdfFingerprint(f: File): string {
+  return `${f.name}::${f.size}::${f.lastModified}`;
+}
+
+function readPdfPageMemory(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(PDF_PAGE_MEMORY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getRememberedPdfPage(f: File): number | null {
+  const map = readPdfPageMemory();
+  const v = map[pdfFingerprint(f)];
+  return typeof v === "number" && v >= 1 ? Math.floor(v) : null;
+}
+
+function rememberPdfPage(f: File, page: number) {
+  if (typeof window === "undefined") return;
+  const safe = Math.max(1, Math.floor(page || 1));
+  try {
+    const map = readPdfPageMemory();
+    map[pdfFingerprint(f)] = safe;
+    // Cap entries (FIFO-ish) to avoid unbounded localStorage growth.
+    const keys = Object.keys(map);
+    if (keys.length > PDF_PAGE_MEMORY_LIMIT) {
+      for (const k of keys.slice(0, keys.length - PDF_PAGE_MEMORY_LIMIT)) {
+        delete map[k];
+      }
+    }
+    localStorage.setItem(PDF_PAGE_MEMORY_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore quota / serialization errors */
+  }
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
