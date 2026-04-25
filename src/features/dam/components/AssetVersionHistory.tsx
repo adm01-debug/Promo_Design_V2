@@ -124,6 +124,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [view, setView] = useState<ViewMode>(() => loadView());
   const [timelineFollowSort, setTimelineFollowSort] = useState<boolean>(() => loadTimelineFollowSort());
+  const [timelineGrouping, setTimelineGrouping] = useState<TimelineGrouping>(() => loadTimelineGrouping());
 
   useEffect(() => {
     try {
@@ -140,6 +141,14 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
       // ignore
     }
   }, [timelineFollowSort]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TIMELINE_GROUPING_KEY, timelineGrouping);
+    } catch {
+      // ignore
+    }
+  }, [timelineGrouping]);
 
   useEffect(() => {
     try {
@@ -289,16 +298,34 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           </div>
         </div>
         {view === "timeline" && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Switch
-              id="timeline-follow-sort"
-              checked={timelineFollowSort}
-              onCheckedChange={setTimelineFollowSort}
-              className="scale-75 origin-left"
-            />
-            <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
-              Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
-            </Label>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="timeline-follow-sort"
+                checked={timelineFollowSort}
+                onCheckedChange={setTimelineFollowSort}
+                className="scale-75 origin-left"
+              />
+              <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
+                Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
+              </Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px]">Agrupar por:</span>
+              <ToggleGroup
+                type="single"
+                size="sm"
+                value={timelineGrouping}
+                onValueChange={(v) => v && setTimelineGrouping(v as TimelineGrouping)}
+                className="h-7"
+                aria-label="Granularidade do agrupamento da timeline"
+              >
+                <ToggleGroupItem value="auto" className="h-7 px-2 text-[11px]">Auto</ToggleGroupItem>
+                <ToggleGroupItem value="month" className="h-7 px-2 text-[11px]">Mês</ToggleGroupItem>
+                <ToggleGroupItem value="week" className="h-7 px-2 text-[11px]">Semana</ToggleGroupItem>
+                <ToggleGroupItem value="day" className="h-7 px-2 text-[11px]">Dia</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           </div>
         )}
       </div>
@@ -323,6 +350,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           onSelect={onSelect}
           followSort={timelineFollowSort}
           sort={filters.sort}
+          grouping={timelineGrouping}
         />
       ) : (
         <ul className="space-y-2">
