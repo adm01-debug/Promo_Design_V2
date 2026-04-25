@@ -206,6 +206,8 @@ interface FileEntry {
   pdfPage?: number;
   /** Detected total pages for PDFs (null while loading). */
   pdfPageCount?: number | null;
+  /** Validation error for the chosen PDF thumb page (e.g. out of range). */
+  pdfPageError?: string | null;
 }
 
 export function AssetUploadDialog({
