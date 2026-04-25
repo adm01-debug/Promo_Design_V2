@@ -1133,5 +1133,16 @@ export function AssetUploadDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {pageSelectorEntry && pageSelectorEntry.kind === "pdf" && (
+      <PdfPageSelectorDialog
+        open={!!pageSelectorEntryId}
+        onOpenChange={(v) => !v && setPageSelectorEntryId(null)}
+        file={pageSelectorEntry.file}
+        totalPages={pageSelectorEntry.pdfPageCount ?? null}
+        initialPages={pageSelectorEntry.pdfPages ?? [pageSelectorEntry.pdfPage ?? 1]}
+        onConfirm={(pages) => applyPdfPagesSelection(pageSelectorEntry.id, pages)}
+      />
+    )}
+    </>
   );
 }
