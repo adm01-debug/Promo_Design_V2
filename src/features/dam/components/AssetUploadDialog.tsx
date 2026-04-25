@@ -454,6 +454,7 @@ export function AssetUploadDialog({
         (e.pdfPage ?? 1) !== 1,
     );
     if (targets.length === 0) return;
+    for (const t of targets) rememberPdfPage(t.file, 1);
     setEntries((prev) =>
       prev.map((e) =>
         targets.some((t) => t.id === e.id)
