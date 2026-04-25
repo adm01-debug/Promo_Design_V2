@@ -523,6 +523,7 @@ interface VersionTimelineProps {
   onSelect: (a: Asset) => void;
   followSort?: boolean;
   sort?: SortKey;
+  grouping?: TimelineGrouping;
 }
 
 function formatDateTime(iso: string): string {
@@ -536,9 +537,51 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function groupByMonth(
+type ResolvedGranularity = "month" | "week" | "day";
+
+function startOfWeek(d: Date): Date {
+  // ISO week starts on Monday
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay(); // 0=Sun..6=Sat
+  const diff = (day + 6) % 7; // days since Monday
+  x.setDate(x.getDate() - diff);
+  return x;
+}
+
+function resolveGranularity(entries: Asset[], grouping: TimelineGrouping): ResolvedGranularity {
+  if (grouping !== "auto") return grouping;
+  if (entries.length < 2) return "month";
+  const times = entries.map((e) => new Date(e.created_at).getTime());
+  const spanDays = (Math.max(...times) - Math.min(...times)) / 86_400_000;
+  if (spanDays <= 7) return "day";
+  if (spanDays <= 60) return "week";
+  return "month";
+}
+
+function bucketFor(date: Date, gran: ResolvedGranularity): { key: string; label: string } {
+  if (gran === "day") {
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const label = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    return { key, label };
+  }
+  if (gran === "week") {
+    const start = startOfWeek(date);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const key = `W-${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+    const fmt = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    const label = `Semana de ${fmt(start)} – ${fmt(end)} ${start.getFullYear()}`;
+    return { key, label };
+  }
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  const label = date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  return { key, label };
+}
+
+function groupEntries(
   entries: Asset[],
-  options?: { followSort?: boolean; sort?: SortKey },
+  options?: { followSort?: boolean; sort?: SortKey; grouping?: TimelineGrouping },
 ): Array<{ key: string; label: string; items: Asset[] }> {
   // By default the timeline reads newest-first (chronological story). When the
   // user opts in to "follow sort", we preserve the order coming from `entries`
@@ -548,11 +591,11 @@ function groupByMonth(
     : [...entries].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
+  const gran = resolveGranularity(entries, options?.grouping ?? "auto");
   const groups = new Map<string, { key: string; label: string; items: Asset[] }>();
   for (const v of sorted) {
     const d = new Date(v.created_at);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const { key, label } = bucketFor(d, gran);
     const existing = groups.get(key);
     if (existing) existing.items.push(v);
     else groups.set(key, { key, label, items: [v] });
@@ -560,8 +603,11 @@ function groupByMonth(
   return Array.from(groups.values());
 }
 
-function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort }: VersionTimelineProps) {
-  const groups = useMemo(() => groupByMonth(entries, { followSort, sort }), [entries, followSort, sort]);
+function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort, grouping }: VersionTimelineProps) {
+  const groups = useMemo(
+    () => groupEntries(entries, { followSort, sort, grouping }),
+    [entries, followSort, sort, grouping],
+  );
 
   return (
     <div className="relative">
