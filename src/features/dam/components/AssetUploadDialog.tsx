@@ -431,6 +431,7 @@ export function AssetUploadDialog({
       const max = target.pdfPageCount ?? page;
       const safe = Math.min(Math.max(1, Math.floor(page || 1)), Math.max(1, max));
       if (safe === target.pdfPage) return prev;
+      rememberPdfPage(target.file, safe);
       return prev.map((e) =>
         e.id === id ? { ...e, pdfPage: safe, previewLoading: true } : e,
       );
