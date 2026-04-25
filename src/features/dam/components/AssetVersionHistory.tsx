@@ -632,17 +632,28 @@ function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, follow
                 const isSelected = v.id === currentAssetId;
                 return (
                   <li key={v.id} className="relative pl-10">
-                    {/* Node dot */}
-                    <span
-                      className={`absolute left-[8px] top-3 w-4 h-4 rounded-full border-2 ${
-                        isSelected
-                          ? "bg-primary border-primary ring-4 ring-primary/20"
-                          : isCurrent
-                            ? "bg-background border-primary"
-                            : "bg-background border-border"
-                      }`}
-                      aria-hidden="true"
-                    />
+                    {/* Node dot — hover/focus para preview rápido */}
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            tabIndex={0}
+                            aria-label={`Pré-visualização da versão ${v.version}`}
+                            className={`absolute left-[8px] top-3 w-4 h-4 rounded-full border-2 cursor-default focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                              isSelected
+                                ? "bg-primary border-primary ring-4 ring-primary/20"
+                                : isCurrent
+                                  ? "bg-background border-primary"
+                                  : "bg-background border-border"
+                            }`}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" align="start" className="max-w-xs">
+                          <VersionNodePreview asset={v} isCurrent={isCurrent} />
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     <div
                       className={`group rounded-md border p-2 transition-colors hover:bg-accent ${
                         isSelected
