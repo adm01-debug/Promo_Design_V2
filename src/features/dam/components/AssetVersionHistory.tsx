@@ -41,9 +41,11 @@ const DEFAULT_FILTERS: VersionFilters = {
 const STORAGE_KEY = "dam:version-history-filters";
 const VIEW_STORAGE_KEY = "dam:version-history-view";
 const TIMELINE_FOLLOW_SORT_KEY = "dam:version-history-timeline-follow-sort";
+const TIMELINE_GROUPING_KEY = "dam:version-history-timeline-grouping";
 const PAGE_SIZE = 10;
 
 type ViewMode = "list" | "timeline";
+type TimelineGrouping = "auto" | "month" | "week" | "day";
 
 function loadView(): ViewMode {
   if (typeof window === "undefined") return "list";
@@ -61,6 +63,16 @@ function loadTimelineFollowSort(): boolean {
     return window.localStorage.getItem(TIMELINE_FOLLOW_SORT_KEY) === "1";
   } catch {
     return false;
+  }
+}
+
+function loadTimelineGrouping(): TimelineGrouping {
+  if (typeof window === "undefined") return "auto";
+  try {
+    const raw = window.localStorage.getItem(TIMELINE_GROUPING_KEY);
+    return raw === "month" || raw === "week" || raw === "day" || raw === "auto" ? raw : "auto";
+  } catch {
+    return "auto";
   }
 }
 
@@ -112,6 +124,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [view, setView] = useState<ViewMode>(() => loadView());
   const [timelineFollowSort, setTimelineFollowSort] = useState<boolean>(() => loadTimelineFollowSort());
+  const [timelineGrouping, setTimelineGrouping] = useState<TimelineGrouping>(() => loadTimelineGrouping());
 
   useEffect(() => {
     try {
@@ -128,6 +141,14 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
       // ignore
     }
   }, [timelineFollowSort]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TIMELINE_GROUPING_KEY, timelineGrouping);
+    } catch {
+      // ignore
+    }
+  }, [timelineGrouping]);
 
   useEffect(() => {
     try {
@@ -277,16 +298,34 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           </div>
         </div>
         {view === "timeline" && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Switch
-              id="timeline-follow-sort"
-              checked={timelineFollowSort}
-              onCheckedChange={setTimelineFollowSort}
-              className="scale-75 origin-left"
-            />
-            <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
-              Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
-            </Label>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="timeline-follow-sort"
+                checked={timelineFollowSort}
+                onCheckedChange={setTimelineFollowSort}
+                className="scale-75 origin-left"
+              />
+              <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
+                Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
+              </Label>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px]">Agrupar por:</span>
+              <ToggleGroup
+                type="single"
+                size="sm"
+                value={timelineGrouping}
+                onValueChange={(v) => v && setTimelineGrouping(v as TimelineGrouping)}
+                className="h-7"
+                aria-label="Granularidade do agrupamento da timeline"
+              >
+                <ToggleGroupItem value="auto" className="h-7 px-2 text-[11px]">Auto</ToggleGroupItem>
+                <ToggleGroupItem value="month" className="h-7 px-2 text-[11px]">Mês</ToggleGroupItem>
+                <ToggleGroupItem value="week" className="h-7 px-2 text-[11px]">Semana</ToggleGroupItem>
+                <ToggleGroupItem value="day" className="h-7 px-2 text-[11px]">Dia</ToggleGroupItem>
+              </ToggleGroup>
+            </div>
           </div>
         )}
       </div>
@@ -311,6 +350,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           onSelect={onSelect}
           followSort={timelineFollowSort}
           sort={filters.sort}
+          grouping={timelineGrouping}
         />
       ) : (
         <ul className="space-y-2">
@@ -483,6 +523,7 @@ interface VersionTimelineProps {
   onSelect: (a: Asset) => void;
   followSort?: boolean;
   sort?: SortKey;
+  grouping?: TimelineGrouping;
 }
 
 function formatDateTime(iso: string): string {
@@ -496,9 +537,51 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function groupByMonth(
+type ResolvedGranularity = "month" | "week" | "day";
+
+function startOfWeek(d: Date): Date {
+  // ISO week starts on Monday
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay(); // 0=Sun..6=Sat
+  const diff = (day + 6) % 7; // days since Monday
+  x.setDate(x.getDate() - diff);
+  return x;
+}
+
+function resolveGranularity(entries: Asset[], grouping: TimelineGrouping): ResolvedGranularity {
+  if (grouping !== "auto") return grouping;
+  if (entries.length < 2) return "month";
+  const times = entries.map((e) => new Date(e.created_at).getTime());
+  const spanDays = (Math.max(...times) - Math.min(...times)) / 86_400_000;
+  if (spanDays <= 7) return "day";
+  if (spanDays <= 60) return "week";
+  return "month";
+}
+
+function bucketFor(date: Date, gran: ResolvedGranularity): { key: string; label: string } {
+  if (gran === "day") {
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const label = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    return { key, label };
+  }
+  if (gran === "week") {
+    const start = startOfWeek(date);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const key = `W-${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+    const fmt = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    const label = `Semana de ${fmt(start)} – ${fmt(end)} ${start.getFullYear()}`;
+    return { key, label };
+  }
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  const label = date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  return { key, label };
+}
+
+function groupEntries(
   entries: Asset[],
-  options?: { followSort?: boolean; sort?: SortKey },
+  options?: { followSort?: boolean; sort?: SortKey; grouping?: TimelineGrouping },
 ): Array<{ key: string; label: string; items: Asset[] }> {
   // By default the timeline reads newest-first (chronological story). When the
   // user opts in to "follow sort", we preserve the order coming from `entries`
@@ -508,11 +591,11 @@ function groupByMonth(
     : [...entries].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
+  const gran = resolveGranularity(entries, options?.grouping ?? "auto");
   const groups = new Map<string, { key: string; label: string; items: Asset[] }>();
   for (const v of sorted) {
     const d = new Date(v.created_at);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const { key, label } = bucketFor(d, gran);
     const existing = groups.get(key);
     if (existing) existing.items.push(v);
     else groups.set(key, { key, label, items: [v] });
@@ -520,8 +603,11 @@ function groupByMonth(
   return Array.from(groups.values());
 }
 
-function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort }: VersionTimelineProps) {
-  const groups = useMemo(() => groupByMonth(entries, { followSort, sort }), [entries, followSort, sort]);
+function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort, grouping }: VersionTimelineProps) {
+  const groups = useMemo(
+    () => groupEntries(entries, { followSort, sort, grouping }),
+    [entries, followSort, sort, grouping],
+  );
 
   return (
     <div className="relative">
