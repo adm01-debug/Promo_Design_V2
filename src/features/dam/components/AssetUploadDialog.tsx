@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw, FileType, Loader2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput, validateTags } from "./TagChipsInput";
 import { TagCounter } from "@/components/ui/tag-counter";
@@ -21,6 +21,8 @@ import {
   getPdfPageCount,
   type FileKind,
 } from "../lib/file-preview";
+import { clampPages, formatPagesString } from "../lib/pdf-pages";
+import { PdfPageSelectorDialog } from "./PdfPageSelectorDialog";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -143,30 +145,47 @@ function pdfFingerprint(f: File): string {
   return `${f.name}::${f.size}::${f.lastModified}`;
 }
 
-function readPdfPageMemory(): Record<string, number> {
+/**
+ * Per-file memory entry. Historically a single number (the chosen page).
+ * Now upgraded to support multiple pages while staying backward compatible
+ * with the legacy shape that lives in users' localStorage today.
+ */
+type PdfMemoryEntry = number | number[];
+
+function readPdfPageMemory(): Record<string, PdfMemoryEntry> {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(PDF_PAGE_MEMORY_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, PdfMemoryEntry>) : {};
   } catch {
     return {};
   }
 }
 
-function getRememberedPdfPage(f: File): number | null {
+function getRememberedPdfPages(f: File): number[] | null {
   const map = readPdfPageMemory();
   const v = map[pdfFingerprint(f)];
-  return typeof v === "number" && v >= 1 ? Math.floor(v) : null;
+  if (Array.isArray(v)) {
+    const cleaned = v.filter((n) => typeof n === "number" && n >= 1).map((n) => Math.floor(n));
+    return cleaned.length ? cleaned : null;
+  }
+  if (typeof v === "number" && v >= 1) return [Math.floor(v)];
+  return null;
 }
 
-function rememberPdfPage(f: File, page: number) {
+function rememberPdfPages(f: File, pages: number[]) {
   if (typeof window === "undefined") return;
-  const safe = Math.max(1, Math.floor(page || 1));
+  const safe = pages
+    .filter((p) => typeof p === "number" && p >= 1)
+    .map((p) => Math.floor(p));
+  if (safe.length === 0) return;
   try {
     const map = readPdfPageMemory();
-    map[pdfFingerprint(f)] = safe;
+    // Single-page selections persist as a plain number to keep the file
+    // compatible with older clients that read the legacy shape.
+    map[pdfFingerprint(f)] = safe.length === 1 ? safe[0] : safe;
     // Cap entries (FIFO-ish) to avoid unbounded localStorage growth.
     const keys = Object.keys(map);
     if (keys.length > PDF_PAGE_MEMORY_LIMIT) {
@@ -202,8 +221,17 @@ interface FileEntry {
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   phase?: UploadPhase;
-  /** For PDFs: which page is rendered as thumb (1-indexed). */
+  /**
+   * For PDFs: which page is rendered as the PRIMARY thumb (1-indexed).
+   * Mirrors `pdfPages[0]` for legacy code paths that read a single page.
+   */
   pdfPage?: number;
+  /**
+   * For PDFs: ordered list of selected pages (1-indexed). The first entry is
+   * the primary thumb; additional entries spawn extra assets at submit time
+   * (one upload per page, all sharing the original PDF bytes).
+   */
+  pdfPages?: number[];
   /** Detected total pages for PDFs (null while loading). */
   pdfPageCount?: number | null;
   /** Validation error for the chosen PDF thumb page (e.g. out of range). */
@@ -233,6 +261,11 @@ export function AssetUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
+  const [pageSelectorEntryId, setPageSelectorEntryId] = useState<string | null>(null);
+  const pageSelectorEntry = useMemo(
+    () => (pageSelectorEntryId ? entries.find((e) => e.id === pageSelectorEntryId) ?? null : null),
+    [pageSelectorEntryId, entries],
+  );
 
   // Scope draft persistence by org + (parent asset OR selected client/project),
   // so switching project or editing a different parent never mixes tag drafts
@@ -375,8 +408,9 @@ export function AssetUploadDialog({
       const kind = detectFileKind(f);
       const isRasterImage =
         kind === "image" && (f.type || "").startsWith("image/");
-      const rememberedPage = kind === "pdf" ? getRememberedPdfPage(f) : null;
-      const initialPdfPage = kind === "pdf" ? rememberedPage ?? 1 : undefined;
+      const rememberedPages = kind === "pdf" ? getRememberedPdfPages(f) : null;
+      const initialPdfPages = kind === "pdf" ? rememberedPages ?? [1] : undefined;
+      const initialPdfPage = initialPdfPages?.[0];
       next.push({
         id: crypto.randomUUID(),
         file: f,
@@ -386,6 +420,7 @@ export function AssetUploadDialog({
         progress: 0,
         status: "pending",
         pdfPage: initialPdfPage,
+        pdfPages: initialPdfPages,
         pdfPageCount: kind === "pdf" ? null : undefined,
       });
     }
@@ -409,13 +444,26 @@ export function AssetUploadDialog({
                 if (e.id !== entry.id) return e;
                 const current = e.pdfPage ?? 1;
                 if (safeCount === null) return { ...e, pdfPageCount: count };
-                const clamped = Math.min(Math.max(1, current), safeCount);
-                if (clamped !== current) {
-                  rememberPdfPage(entry.file, clamped);
+                const currentPages = e.pdfPages ?? [current];
+                const clampedList = clampPages(currentPages, safeCount);
+                const finalPages = clampedList.length ? clampedList : [1];
+                const clamped = finalPages[0];
+                const changed =
+                  clamped !== current ||
+                  finalPages.length !== currentPages.length ||
+                  finalPages.some((p, i) => p !== currentPages[i]);
+                if (changed) {
+                  rememberPdfPages(entry.file, finalPages);
                   rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, clamped)
                     .then((r) => updatePreview(entry.id, r?.url ?? null))
                     .catch(() => updatePreview(entry.id, null));
-                  return { ...e, pdfPageCount: count, pdfPage: clamped, previewLoading: true };
+                  return {
+                    ...e,
+                    pdfPageCount: count,
+                    pdfPage: clamped,
+                    pdfPages: finalPages,
+                    previewLoading: true,
+                  };
                 }
                 return { ...e, pdfPageCount: count };
               }),
@@ -450,10 +498,20 @@ export function AssetUploadDialog({
       const target = prev.find((e) => e.id === id);
       if (!target || target.kind !== "pdf") return prev;
       if (requested === target.pdfPage && !target.pdfPageError) return prev;
-      rememberPdfPage(target.file, requested);
+      // Editing the numeric input changes ONLY the primary page. Any extra
+      // pages selected in the grid are preserved; we only swap the head.
+      const restPages = (target.pdfPages ?? []).filter((p) => p !== requested);
+      const nextPages = [requested, ...restPages];
+      rememberPdfPages(target.file, nextPages);
       return prev.map((e) =>
         e.id === id
-          ? { ...e, pdfPage: requested, pdfPageError: null, previewLoading: true }
+          ? {
+              ...e,
+              pdfPage: requested,
+              pdfPages: nextPages,
+              pdfPageError: null,
+              previewLoading: true,
+            }
           : e,
       );
     });
@@ -462,20 +520,57 @@ export function AssetUploadDialog({
       .catch(() => updatePreview(id, null));
   };
 
+  /**
+   * Apply a multi-page selection coming from the dedicated picker dialog.
+   * The first page becomes the primary thumb (preview is regenerated to match).
+   */
+  const applyPdfPagesSelection = (id: string, pages: number[]) => {
+    const entry = entries.find((e) => e.id === id);
+    if (!entry || entry.kind !== "pdf" || pages.length === 0) return;
+    const total = entry.pdfPageCount ?? null;
+    const cleaned = clampPages(pages, total);
+    if (cleaned.length === 0) return;
+    const primary = cleaned[0];
+    rememberPdfPages(entry.file, cleaned);
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              pdfPage: primary,
+              pdfPages: cleaned,
+              pdfPageError: null,
+              previewLoading: primary !== e.pdfPage,
+            }
+          : e,
+      ),
+    );
+    if (primary !== entry.pdfPage) {
+      rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, primary)
+        .then((r) => updatePreview(id, r?.url ?? null))
+        .catch(() => updatePreview(id, null));
+    }
+    if (cleaned.length > 1) {
+      toast.success(
+        `${cleaned.length} páginas selecionadas — gerarão ${cleaned.length} assets a partir de "${entry.file.name}".`,
+      );
+    }
+  };
+
   const resetAllPdfsToPage1 = () => {
     const targets = entries.filter(
       (e) =>
         e.kind === "pdf" &&
         e.status !== "done" &&
         e.status !== "uploading" &&
-        (e.pdfPage ?? 1) !== 1,
+        ((e.pdfPage ?? 1) !== 1 || (e.pdfPages?.length ?? 1) > 1),
     );
     if (targets.length === 0) return;
-    for (const t of targets) rememberPdfPage(t.file, 1);
+    for (const t of targets) rememberPdfPages(t.file, [1]);
     setEntries((prev) =>
       prev.map((e) =>
         targets.some((t) => t.id === e.id)
-          ? { ...e, pdfPage: 1, previewLoading: true }
+          ? { ...e, pdfPage: 1, pdfPages: [1], pdfPageError: null, previewLoading: true }
           : e,
       ),
     );
@@ -525,57 +620,91 @@ export function AssetUploadDialog({
     let okCount = 0;
     let errCount = 0;
     let lastUploaded: Asset | null = null;
+    let extraCount = 0;
     for (const entry of targets) {
       if (entry.status === "done") { okCount++; continue; }
       setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined, phase: "analyzing" } : e));
+      // Determine how many uploads this entry expands into. PDFs with multiple
+      // selected pages produce one asset per page, sharing the same source file
+      // but with distinct thumbs and names. Version-mode is excluded — a new
+      // version always corresponds to exactly one upload.
+      const pages =
+        !isVersionMode && entry.kind === "pdf" && (entry.pdfPages?.length ?? 0) > 1
+          ? entry.pdfPages!
+          : [entry.pdfPage ?? 1];
+      const baseName = entry.file.name.replace(/\.[^.]+$/, "");
+      const ext = entry.file.name.match(/\.[^.]+$/)?.[0] ?? "";
+      let entryFailed = false;
       try {
-        const created = await uploadFile(entry.file, {
-          organizationId,
-          clientId,
-          assetType,
-          tags: cleanTags,
-          parentAsset: parentAsset ?? undefined,
-          pdfPage: entry.pdfPage,
-          onPhase: (phase) => {
-            // Map qualitative phase to a coarse progress percentage so the bar
-            // also moves while the user reads the label.
-            const phaseProgress: Record<UploadPhase, number> = {
-              "analyzing": 10,
-              "rendering-pdf": 25,
-              "rasterizing-svg": 25,
-              "processing-image": 25,
-              "uploading-file": 55,
-              "uploading-thumb": 80,
-              "saving-record": 92,
-              "done": 100,
-            };
-            setEntries((prev) =>
-              prev.map((e) =>
-                e.id === entry.id
-                  ? { ...e, phase, progress: Math.max(e.progress, phaseProgress[phase] ?? e.progress) }
-                  : e,
-              ),
-            );
-          },
-        });
-        lastUploaded = created ?? null;
-        if (created) onUploaded?.(created);
-        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e));
+        for (let i = 0; i < pages.length; i++) {
+          const page = pages[i];
+          const isMulti = pages.length > 1;
+          const overrideName = isMulti ? `${baseName} — pág. ${page}${ext}` : undefined;
+          const created = await uploadFile(entry.file, {
+            organizationId,
+            clientId,
+            assetType,
+            tags: cleanTags,
+            parentAsset: parentAsset ?? undefined,
+            pdfPage: page,
+            name: overrideName,
+            onPhase: (phase) => {
+              // Coarse progress: when expanding into N uploads, scale phase
+              // progress so the bar advances across the whole batch instead of
+              // resetting back to 10% on each page.
+              const phaseProgress: Record<UploadPhase, number> = {
+                "analyzing": 10,
+                "rendering-pdf": 25,
+                "rasterizing-svg": 25,
+                "processing-image": 25,
+                "uploading-file": 55,
+                "uploading-thumb": 80,
+                "saving-record": 92,
+                "done": 100,
+              };
+              const local = phaseProgress[phase] ?? 0;
+              const scaled = Math.round(((i + local / 100) / pages.length) * 100);
+              setEntries((prev) =>
+                prev.map((e) =>
+                  e.id === entry.id
+                    ? {
+                        ...e,
+                        phase,
+                        pdfPage: page,
+                        progress: Math.max(e.progress, scaled),
+                      }
+                    : e,
+                ),
+              );
+            },
+          });
+          lastUploaded = created ?? null;
+          if (created) onUploaded?.(created);
+          if (i > 0) extraCount++;
+        }
+        setEntries((prev) =>
+          prev.map((e) => (e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e)),
+        );
         okCount++;
       } catch (err) {
+        entryFailed = true;
         const msg = (err as Error).message;
-        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "error", error: msg } : e));
+        setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, status: "error", error: msg } : e)));
         toast.error(`${entry.file.name}: ${msg}`);
         errCount++;
       }
+      if (entryFailed) continue;
     }
     setIsUploading(false);
 
     if (okCount > 0 && errCount === 0) {
+      const totalAssets = okCount + extraCount;
       toast.success(
         isVersionMode
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
-          : `${okCount} asset(s) enviado(s)`
+          : extraCount > 0
+            ? `${totalAssets} asset(s) enviado(s) · ${extraCount} a partir de páginas extras`
+            : `${okCount} asset(s) enviado(s)`,
       );
       clearDraft(persistKey);
       onOpenChange(false);
@@ -612,6 +741,7 @@ export function AssetUploadDialog({
   const allDone = entries.length > 0 && doneCount === entries.length;
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(v) => {
@@ -780,7 +910,29 @@ export function AssetUploadDialog({
                           <span className="tabular-nums">
                             {e.pdfPageCount ? `de ${e.pdfPageCount}` : "carregando…"}
                           </span>
+                          {!isVersionMode && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-[11px] ml-auto"
+                              onClick={() => setPageSelectorEntryId(e.id)}
+                              disabled={isUploading || !e.pdfPageCount}
+                              title="Selecionar várias páginas (uma thumb por página, gera assets adicionais)"
+                            >
+                              <Layers className="w-3 h-3 mr-1" />
+                              {(e.pdfPages?.length ?? 1) > 1
+                                ? `${e.pdfPages!.length} páginas`
+                                : "Selecionar páginas…"}
+                            </Button>
+                          )}
                         </div>
+                        {!isVersionMode && (e.pdfPages?.length ?? 1) > 1 && (
+                          <div className="text-[11px] text-muted-foreground">
+                            Páginas: <span className="tabular-nums">{formatPagesString(e.pdfPages!)}</span>
+                            {" — "}gerará {e.pdfPages!.length} assets (primária: pág. {e.pdfPages![0]}).
+                          </div>
+                        )}
                         {e.pdfPageError && (
                           <div
                             id={`pdf-page-err-${e.id}`}
@@ -982,5 +1134,16 @@ export function AssetUploadDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {pageSelectorEntry && pageSelectorEntry.kind === "pdf" && (
+      <PdfPageSelectorDialog
+        open={!!pageSelectorEntryId}
+        onOpenChange={(v) => !v && setPageSelectorEntryId(null)}
+        file={pageSelectorEntry.file}
+        totalPages={pageSelectorEntry.pdfPageCount ?? null}
+        initialPages={pageSelectorEntry.pdfPages ?? [pageSelectorEntry.pdfPage ?? 1]}
+        onConfirm={(pages) => applyPdfPagesSelection(pageSelectorEntry.id, pages)}
+      />
+    )}
+    </>
   );
 }
