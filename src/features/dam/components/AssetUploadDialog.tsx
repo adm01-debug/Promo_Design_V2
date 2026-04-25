@@ -591,6 +591,39 @@ export function AssetUploadDialog({
           </div>
 
           {entries.length > 0 && (
+            <>
+            {(() => {
+              const eligiblePdfs = entries.filter(
+                (e) =>
+                  e.kind === "pdf" &&
+                  e.status !== "done" &&
+                  e.status !== "uploading",
+              );
+              const needsReset = eligiblePdfs.filter((e) => (e.pdfPage ?? 1) !== 1).length;
+              if (eligiblePdfs.length < 2) return null;
+              return (
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    {eligiblePdfs.length} PDFs no lote
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={resetAllPdfsToPage1}
+                    disabled={needsReset === 0}
+                    title={
+                      needsReset === 0
+                        ? "Todos os PDFs já usam a página 1"
+                        : `Definir página 1 como thumb em ${needsReset} PDF(s)`
+                    }
+                  >
+                    Usar página 1 em todos
+                  </Button>
+                </div>
+              );
+            })()}
             <ul className="space-y-2 max-h-56 overflow-y-auto">
               {entries.map((e) => (
                 <li key={e.id} className="flex items-center gap-3 p-2 rounded-md border bg-card">
@@ -682,6 +715,7 @@ export function AssetUploadDialog({
                 </li>
               ))}
             </ul>
+            </>
           )}
 
           {isVersionMode ? (
