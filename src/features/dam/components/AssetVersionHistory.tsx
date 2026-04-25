@@ -41,9 +41,11 @@ const DEFAULT_FILTERS: VersionFilters = {
 const STORAGE_KEY = "dam:version-history-filters";
 const VIEW_STORAGE_KEY = "dam:version-history-view";
 const TIMELINE_FOLLOW_SORT_KEY = "dam:version-history-timeline-follow-sort";
+const TIMELINE_GROUPING_KEY = "dam:version-history-timeline-grouping";
 const PAGE_SIZE = 10;
 
 type ViewMode = "list" | "timeline";
+type TimelineGrouping = "auto" | "month" | "week" | "day";
 
 function loadView(): ViewMode {
   if (typeof window === "undefined") return "list";
@@ -61,6 +63,16 @@ function loadTimelineFollowSort(): boolean {
     return window.localStorage.getItem(TIMELINE_FOLLOW_SORT_KEY) === "1";
   } catch {
     return false;
+  }
+}
+
+function loadTimelineGrouping(): TimelineGrouping {
+  if (typeof window === "undefined") return "auto";
+  try {
+    const raw = window.localStorage.getItem(TIMELINE_GROUPING_KEY);
+    return raw === "month" || raw === "week" || raw === "day" || raw === "auto" ? raw : "auto";
+  } catch {
+    return "auto";
   }
 }
 
