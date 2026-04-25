@@ -395,15 +395,28 @@ export function AssetUploadDialog({
           .then((url) => updatePreview(entry.id, url))
           .catch(() => updatePreview(entry.id, null));
       } else if (entry.kind === "pdf") {
-        rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, 1)
+        const page = entry.pdfPage ?? 1;
+        rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, page)
           .then((r) => updatePreview(entry.id, r?.url ?? null))
           .catch(() => updatePreview(entry.id, null));
         getPdfPageCount(entry.file)
-          .then((count) =>
+          .then((count) => {
             setEntries((prev) =>
-              prev.map((e) => (e.id === entry.id ? { ...e, pdfPageCount: count } : e)),
-            ),
-          )
+              prev.map((e) => {
+                if (e.id !== entry.id) return e;
+                const current = e.pdfPage ?? 1;
+                const clamped = Math.min(Math.max(1, current), Math.max(1, count));
+                if (clamped !== current) {
+                  rememberPdfPage(entry.file, clamped);
+                  rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, clamped)
+                    .then((r) => updatePreview(entry.id, r?.url ?? null))
+                    .catch(() => updatePreview(entry.id, null));
+                  return { ...e, pdfPageCount: count, pdfPage: clamped, previewLoading: true };
+                }
+                return { ...e, pdfPageCount: count };
+              }),
+            );
+          })
           .catch(() => undefined);
       }
     });
