@@ -15,6 +15,8 @@ import { History, Search, X, MessageSquare, MessageSquareDashed, Link2, Check, L
 import { AssetAuditTrail } from "./AssetAuditTrail";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface Props {
@@ -38,6 +40,7 @@ const DEFAULT_FILTERS: VersionFilters = {
 
 const STORAGE_KEY = "dam:version-history-filters";
 const VIEW_STORAGE_KEY = "dam:version-history-view";
+const TIMELINE_FOLLOW_SORT_KEY = "dam:version-history-timeline-follow-sort";
 const PAGE_SIZE = 10;
 
 type ViewMode = "list" | "timeline";
@@ -49,6 +52,15 @@ function loadView(): ViewMode {
     return raw === "timeline" ? "timeline" : "list";
   } catch {
     return "list";
+  }
+}
+
+function loadTimelineFollowSort(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(TIMELINE_FOLLOW_SORT_KEY) === "1";
+  } catch {
+    return false;
   }
 }
 
@@ -99,6 +111,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   const [filters, setFilters] = useState<VersionFilters>(() => loadFilters());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [view, setView] = useState<ViewMode>(() => loadView());
+  const [timelineFollowSort, setTimelineFollowSort] = useState<boolean>(() => loadTimelineFollowSort());
 
   useEffect(() => {
     try {
@@ -107,6 +120,14 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
       // ignore
     }
   }, [view]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TIMELINE_FOLLOW_SORT_KEY, timelineFollowSort ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [timelineFollowSort]);
 
   useEffect(() => {
     try {
@@ -275,6 +296,8 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           maxVersion={maxVersion}
           currentAssetId={asset.id}
           onSelect={onSelect}
+          followSort={timelineFollowSort}
+          sort={filters.sort}
         />
       ) : (
         <ul className="space-y-2">
