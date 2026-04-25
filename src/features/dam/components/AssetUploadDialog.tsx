@@ -401,11 +401,13 @@ export function AssetUploadDialog({
           .catch(() => updatePreview(entry.id, null));
         getPdfPageCount(entry.file)
           .then((count) => {
+            const safeCount = typeof count === "number" && count > 0 ? count : null;
             setEntries((prev) =>
               prev.map((e) => {
                 if (e.id !== entry.id) return e;
                 const current = e.pdfPage ?? 1;
-                const clamped = Math.min(Math.max(1, current), Math.max(1, count));
+                if (safeCount === null) return { ...e, pdfPageCount: count };
+                const clamped = Math.min(Math.max(1, current), safeCount);
                 if (clamped !== current) {
                   rememberPdfPage(entry.file, clamped);
                   rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, clamped)
