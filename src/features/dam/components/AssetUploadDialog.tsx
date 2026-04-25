@@ -375,6 +375,29 @@ export function AssetUploadDialog({
       .catch(() => updatePreview(id, null));
   };
 
+  const resetAllPdfsToPage1 = () => {
+    const targets = entries.filter(
+      (e) =>
+        e.kind === "pdf" &&
+        e.status !== "done" &&
+        e.status !== "uploading" &&
+        (e.pdfPage ?? 1) !== 1,
+    );
+    if (targets.length === 0) return;
+    setEntries((prev) =>
+      prev.map((e) =>
+        targets.some((t) => t.id === e.id)
+          ? { ...e, pdfPage: 1, previewLoading: true }
+          : e,
+      ),
+    );
+    for (const t of targets) {
+      rasterizePdfFirstPage(t.file, 256, "image/jpeg", 0.85, 1)
+        .then((r) => updatePreview(t.id, r?.url ?? null))
+        .catch(() => updatePreview(t.id, null));
+    }
+  };
+
   const updatePreview = (id: string, url: string | null) => {
     setEntries((prev) =>
       prev.map((e) => {
