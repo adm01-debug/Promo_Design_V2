@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useAssetUpload, UPLOAD_PHASE_LABELS, type UploadPhase } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, X, FileImage, History, RotateCw, FileType, Loader2 } from "lucide-react";
+import { Upload, X, FileImage, History, RotateCw, FileType, Loader2, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput, validateTags } from "./TagChipsInput";
 import { TagCounter } from "@/components/ui/tag-counter";
@@ -21,6 +21,12 @@ import {
   getPdfPageCount,
   type FileKind,
 } from "../lib/file-preview";
+import {
+  clampPages,
+  formatPagesString,
+  MAX_PDF_PAGES_PER_ASSET,
+} from "../lib/pdf-pages";
+import { PdfPageSelectorDialog } from "./PdfPageSelectorDialog";
 
 const MAX_FILES = 10;
 const MAX_SIZE_MB = 20;
@@ -143,30 +149,47 @@ function pdfFingerprint(f: File): string {
   return `${f.name}::${f.size}::${f.lastModified}`;
 }
 
-function readPdfPageMemory(): Record<string, number> {
+/**
+ * Per-file memory entry. Historically a single number (the chosen page).
+ * Now upgraded to support multiple pages while staying backward compatible
+ * with the legacy shape that lives in users' localStorage today.
+ */
+type PdfMemoryEntry = number | number[];
+
+function readPdfPageMemory(): Record<string, PdfMemoryEntry> {
   if (typeof window === "undefined") return {};
   try {
     const raw = localStorage.getItem(PDF_PAGE_MEMORY_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, PdfMemoryEntry>) : {};
   } catch {
     return {};
   }
 }
 
-function getRememberedPdfPage(f: File): number | null {
+function getRememberedPdfPages(f: File): number[] | null {
   const map = readPdfPageMemory();
   const v = map[pdfFingerprint(f)];
-  return typeof v === "number" && v >= 1 ? Math.floor(v) : null;
+  if (Array.isArray(v)) {
+    const cleaned = v.filter((n) => typeof n === "number" && n >= 1).map((n) => Math.floor(n));
+    return cleaned.length ? cleaned : null;
+  }
+  if (typeof v === "number" && v >= 1) return [Math.floor(v)];
+  return null;
 }
 
-function rememberPdfPage(f: File, page: number) {
+function rememberPdfPages(f: File, pages: number[]) {
   if (typeof window === "undefined") return;
-  const safe = Math.max(1, Math.floor(page || 1));
+  const safe = pages
+    .filter((p) => typeof p === "number" && p >= 1)
+    .map((p) => Math.floor(p));
+  if (safe.length === 0) return;
   try {
     const map = readPdfPageMemory();
-    map[pdfFingerprint(f)] = safe;
+    // Single-page selections persist as a plain number to keep the file
+    // compatible with older clients that read the legacy shape.
+    map[pdfFingerprint(f)] = safe.length === 1 ? safe[0] : safe;
     // Cap entries (FIFO-ish) to avoid unbounded localStorage growth.
     const keys = Object.keys(map);
     if (keys.length > PDF_PAGE_MEMORY_LIMIT) {
@@ -202,8 +225,17 @@ interface FileEntry {
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
   phase?: UploadPhase;
-  /** For PDFs: which page is rendered as thumb (1-indexed). */
+  /**
+   * For PDFs: which page is rendered as the PRIMARY thumb (1-indexed).
+   * Mirrors `pdfPages[0]` for legacy code paths that read a single page.
+   */
   pdfPage?: number;
+  /**
+   * For PDFs: ordered list of selected pages (1-indexed). The first entry is
+   * the primary thumb; additional entries spawn extra assets at submit time
+   * (one upload per page, all sharing the original PDF bytes).
+   */
+  pdfPages?: number[];
   /** Detected total pages for PDFs (null while loading). */
   pdfPageCount?: number | null;
   /** Validation error for the chosen PDF thumb page (e.g. out of range). */
@@ -233,6 +265,7 @@ export function AssetUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
+  const [pageSelectorEntryId, setPageSelectorEntryId] = useState<string | null>(null);
 
   // Scope draft persistence by org + (parent asset OR selected client/project),
   // so switching project or editing a different parent never mixes tag drafts
@@ -375,8 +408,9 @@ export function AssetUploadDialog({
       const kind = detectFileKind(f);
       const isRasterImage =
         kind === "image" && (f.type || "").startsWith("image/");
-      const rememberedPage = kind === "pdf" ? getRememberedPdfPage(f) : null;
-      const initialPdfPage = kind === "pdf" ? rememberedPage ?? 1 : undefined;
+      const rememberedPages = kind === "pdf" ? getRememberedPdfPages(f) : null;
+      const initialPdfPages = kind === "pdf" ? rememberedPages ?? [1] : undefined;
+      const initialPdfPage = initialPdfPages?.[0];
       next.push({
         id: crypto.randomUUID(),
         file: f,
@@ -386,6 +420,7 @@ export function AssetUploadDialog({
         progress: 0,
         status: "pending",
         pdfPage: initialPdfPage,
+        pdfPages: initialPdfPages,
         pdfPageCount: kind === "pdf" ? null : undefined,
       });
     }
@@ -409,13 +444,26 @@ export function AssetUploadDialog({
                 if (e.id !== entry.id) return e;
                 const current = e.pdfPage ?? 1;
                 if (safeCount === null) return { ...e, pdfPageCount: count };
-                const clamped = Math.min(Math.max(1, current), safeCount);
-                if (clamped !== current) {
-                  rememberPdfPage(entry.file, clamped);
+                const currentPages = e.pdfPages ?? [current];
+                const clampedList = clampPages(currentPages, safeCount);
+                const finalPages = clampedList.length ? clampedList : [1];
+                const clamped = finalPages[0];
+                const changed =
+                  clamped !== current ||
+                  finalPages.length !== currentPages.length ||
+                  finalPages.some((p, i) => p !== currentPages[i]);
+                if (changed) {
+                  rememberPdfPages(entry.file, finalPages);
                   rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, clamped)
                     .then((r) => updatePreview(entry.id, r?.url ?? null))
                     .catch(() => updatePreview(entry.id, null));
-                  return { ...e, pdfPageCount: count, pdfPage: clamped, previewLoading: true };
+                  return {
+                    ...e,
+                    pdfPageCount: count,
+                    pdfPage: clamped,
+                    pdfPages: finalPages,
+                    previewLoading: true,
+                  };
                 }
                 return { ...e, pdfPageCount: count };
               }),
@@ -450,10 +498,20 @@ export function AssetUploadDialog({
       const target = prev.find((e) => e.id === id);
       if (!target || target.kind !== "pdf") return prev;
       if (requested === target.pdfPage && !target.pdfPageError) return prev;
-      rememberPdfPage(target.file, requested);
+      // Editing the numeric input changes ONLY the primary page. Any extra
+      // pages selected in the grid are preserved; we only swap the head.
+      const restPages = (target.pdfPages ?? []).filter((p) => p !== requested);
+      const nextPages = [requested, ...restPages];
+      rememberPdfPages(target.file, nextPages);
       return prev.map((e) =>
         e.id === id
-          ? { ...e, pdfPage: requested, pdfPageError: null, previewLoading: true }
+          ? {
+              ...e,
+              pdfPage: requested,
+              pdfPages: nextPages,
+              pdfPageError: null,
+              previewLoading: true,
+            }
           : e,
       );
     });
@@ -462,20 +520,57 @@ export function AssetUploadDialog({
       .catch(() => updatePreview(id, null));
   };
 
+  /**
+   * Apply a multi-page selection coming from the dedicated picker dialog.
+   * The first page becomes the primary thumb (preview is regenerated to match).
+   */
+  const applyPdfPagesSelection = (id: string, pages: number[]) => {
+    const entry = entries.find((e) => e.id === id);
+    if (!entry || entry.kind !== "pdf" || pages.length === 0) return;
+    const total = entry.pdfPageCount ?? null;
+    const cleaned = clampPages(pages, total);
+    if (cleaned.length === 0) return;
+    const primary = cleaned[0];
+    rememberPdfPages(entry.file, cleaned);
+    setEntries((prev) =>
+      prev.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              pdfPage: primary,
+              pdfPages: cleaned,
+              pdfPageError: null,
+              previewLoading: primary !== e.pdfPage,
+            }
+          : e,
+      ),
+    );
+    if (primary !== entry.pdfPage) {
+      rasterizePdfFirstPage(entry.file, 256, "image/jpeg", 0.85, primary)
+        .then((r) => updatePreview(id, r?.url ?? null))
+        .catch(() => updatePreview(id, null));
+    }
+    if (cleaned.length > 1) {
+      toast.success(
+        `${cleaned.length} páginas selecionadas — gerarão ${cleaned.length} assets a partir de "${entry.file.name}".`,
+      );
+    }
+  };
+
   const resetAllPdfsToPage1 = () => {
     const targets = entries.filter(
       (e) =>
         e.kind === "pdf" &&
         e.status !== "done" &&
         e.status !== "uploading" &&
-        (e.pdfPage ?? 1) !== 1,
+        ((e.pdfPage ?? 1) !== 1 || (e.pdfPages?.length ?? 1) > 1),
     );
     if (targets.length === 0) return;
-    for (const t of targets) rememberPdfPage(t.file, 1);
+    for (const t of targets) rememberPdfPages(t.file, [1]);
     setEntries((prev) =>
       prev.map((e) =>
         targets.some((t) => t.id === e.id)
-          ? { ...e, pdfPage: 1, previewLoading: true }
+          ? { ...e, pdfPage: 1, pdfPages: [1], pdfPageError: null, previewLoading: true }
           : e,
       ),
     );
