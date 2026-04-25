@@ -909,7 +909,29 @@ export function AssetUploadDialog({
                           <span className="tabular-nums">
                             {e.pdfPageCount ? `de ${e.pdfPageCount}` : "carregando…"}
                           </span>
+                          {!isVersionMode && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-[11px] ml-auto"
+                              onClick={() => setPageSelectorEntryId(e.id)}
+                              disabled={isUploading || !e.pdfPageCount}
+                              title="Selecionar várias páginas (uma thumb por página, gera assets adicionais)"
+                            >
+                              <Layers className="w-3 h-3 mr-1" />
+                              {(e.pdfPages?.length ?? 1) > 1
+                                ? `${e.pdfPages!.length} páginas`
+                                : "Selecionar páginas…"}
+                            </Button>
+                          )}
                         </div>
+                        {!isVersionMode && (e.pdfPages?.length ?? 1) > 1 && (
+                          <div className="text-[11px] text-muted-foreground">
+                            Páginas: <span className="tabular-nums">{formatPagesString(e.pdfPages!)}</span>
+                            {" — "}gerará {e.pdfPages!.length} assets (primária: pág. {e.pdfPages![0]}).
+                          </div>
+                        )}
                         {e.pdfPageError && (
                           <div
                             id={`pdf-page-err-${e.id}`}
