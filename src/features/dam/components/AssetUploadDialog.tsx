@@ -741,6 +741,7 @@ export function AssetUploadDialog({
   const allDone = entries.length > 0 && doneCount === entries.length;
 
   return (
+    <>
     <Dialog
       open={open}
       onOpenChange={(v) => {
