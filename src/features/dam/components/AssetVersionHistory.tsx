@@ -276,6 +276,19 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
             </ToggleGroup>
           </div>
         </div>
+        {view === "timeline" && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch
+              id="timeline-follow-sort"
+              checked={timelineFollowSort}
+              onCheckedChange={setTimelineFollowSort}
+              className="scale-75 origin-left"
+            />
+            <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
+              Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
+            </Label>
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
