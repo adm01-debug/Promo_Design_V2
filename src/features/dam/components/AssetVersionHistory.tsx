@@ -15,6 +15,8 @@ import { History, Search, X, MessageSquare, MessageSquareDashed, Link2, Check, L
 import { AssetAuditTrail } from "./AssetAuditTrail";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface Props {
@@ -38,6 +40,7 @@ const DEFAULT_FILTERS: VersionFilters = {
 
 const STORAGE_KEY = "dam:version-history-filters";
 const VIEW_STORAGE_KEY = "dam:version-history-view";
+const TIMELINE_FOLLOW_SORT_KEY = "dam:version-history-timeline-follow-sort";
 const PAGE_SIZE = 10;
 
 type ViewMode = "list" | "timeline";
@@ -49,6 +52,15 @@ function loadView(): ViewMode {
     return raw === "timeline" ? "timeline" : "list";
   } catch {
     return "list";
+  }
+}
+
+function loadTimelineFollowSort(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(TIMELINE_FOLLOW_SORT_KEY) === "1";
+  } catch {
+    return false;
   }
 }
 
@@ -99,6 +111,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   const [filters, setFilters] = useState<VersionFilters>(() => loadFilters());
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [view, setView] = useState<ViewMode>(() => loadView());
+  const [timelineFollowSort, setTimelineFollowSort] = useState<boolean>(() => loadTimelineFollowSort());
 
   useEffect(() => {
     try {
@@ -107,6 +120,14 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
       // ignore
     }
   }, [view]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TIMELINE_FOLLOW_SORT_KEY, timelineFollowSort ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [timelineFollowSort]);
 
   useEffect(() => {
     try {
@@ -255,6 +276,19 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
             </ToggleGroup>
           </div>
         </div>
+        {view === "timeline" && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Switch
+              id="timeline-follow-sort"
+              checked={timelineFollowSort}
+              onCheckedChange={setTimelineFollowSort}
+              className="scale-75 origin-left"
+            />
+            <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
+              Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
+            </Label>
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -275,6 +309,8 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
           maxVersion={maxVersion}
           currentAssetId={asset.id}
           onSelect={onSelect}
+          followSort={timelineFollowSort}
+          sort={filters.sort}
         />
       ) : (
         <ul className="space-y-2">
@@ -445,6 +481,8 @@ interface VersionTimelineProps {
   maxVersion: number;
   currentAssetId: string;
   onSelect: (a: Asset) => void;
+  followSort?: boolean;
+  sort?: SortKey;
 }
 
 function formatDateTime(iso: string): string {
@@ -458,12 +496,18 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function groupByMonth(entries: Asset[]): Array<{ key: string; label: string; items: Asset[] }> {
-  // Display the timeline newest-first regardless of the user's sort direction —
-  // a chronological story always reads top-down from latest activity.
-  const sorted = [...entries].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+function groupByMonth(
+  entries: Asset[],
+  options?: { followSort?: boolean; sort?: SortKey },
+): Array<{ key: string; label: string; items: Asset[] }> {
+  // By default the timeline reads newest-first (chronological story). When the
+  // user opts in to "follow sort", we preserve the order coming from `entries`
+  // so the grouping mirrors the active sort (date or version, asc or desc).
+  const sorted = options?.followSort
+    ? [...entries]
+    : [...entries].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
   const groups = new Map<string, { key: string; label: string; items: Asset[] }>();
   for (const v of sorted) {
     const d = new Date(v.created_at);
@@ -476,8 +520,8 @@ function groupByMonth(entries: Asset[]): Array<{ key: string; label: string; ite
   return Array.from(groups.values());
 }
 
-function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect }: VersionTimelineProps) {
-  const groups = useMemo(() => groupByMonth(entries), [entries]);
+function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort }: VersionTimelineProps) {
+  const groups = useMemo(() => groupByMonth(entries, { followSort, sort }), [entries, followSort, sort]);
 
   return (
     <div className="relative">
