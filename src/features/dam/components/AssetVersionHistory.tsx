@@ -516,8 +516,6 @@ function VersionDescription({ description }: { description: string | null }) {
   );
 }
 
-interface VersionTimelineProps {
-
 function VersionNodePreview({ asset, isCurrent }: { asset: Asset; isCurrent: boolean }) {
   const text = (asset.description ?? "").trim();
   const hasText = text.length > 0;
