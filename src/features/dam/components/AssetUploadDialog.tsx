@@ -373,6 +373,8 @@ export function AssetUploadDialog({
       const kind = detectFileKind(f);
       const isRasterImage =
         kind === "image" && (f.type || "").startsWith("image/");
+      const rememberedPage = kind === "pdf" ? getRememberedPdfPage(f) : null;
+      const initialPdfPage = kind === "pdf" ? rememberedPage ?? 1 : undefined;
       next.push({
         id: crypto.randomUUID(),
         file: f,
@@ -381,7 +383,7 @@ export function AssetUploadDialog({
         previewLoading: kind === "pdf" || kind === "svg",
         progress: 0,
         status: "pending",
-        pdfPage: kind === "pdf" ? 1 : undefined,
+        pdfPage: initialPdfPage,
         pdfPageCount: kind === "pdf" ? null : undefined,
       });
     }
