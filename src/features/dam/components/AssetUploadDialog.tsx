@@ -21,11 +21,7 @@ import {
   getPdfPageCount,
   type FileKind,
 } from "../lib/file-preview";
-import {
-  clampPages,
-  formatPagesString,
-  MAX_PDF_PAGES_PER_ASSET,
-} from "../lib/pdf-pages";
+import { clampPages, formatPagesString } from "../lib/pdf-pages";
 import { PdfPageSelectorDialog } from "./PdfPageSelectorDialog";
 
 const MAX_FILES = 10;
@@ -266,6 +262,10 @@ export function AssetUploadDialog({
   const [tagError, setTagError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [pageSelectorEntryId, setPageSelectorEntryId] = useState<string | null>(null);
+  const pageSelectorEntry = useMemo(
+    () => (pageSelectorEntryId ? entries.find((e) => e.id === pageSelectorEntryId) ?? null : null),
+    [pageSelectorEntryId, entries],
+  );
 
   // Scope draft persistence by org + (parent asset OR selected client/project),
   // so switching project or editing a different parent never mixes tag drafts
@@ -620,57 +620,91 @@ export function AssetUploadDialog({
     let okCount = 0;
     let errCount = 0;
     let lastUploaded: Asset | null = null;
+    let extraCount = 0;
     for (const entry of targets) {
       if (entry.status === "done") { okCount++; continue; }
       setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "uploading", progress: 10, error: undefined, phase: "analyzing" } : e));
+      // Determine how many uploads this entry expands into. PDFs with multiple
+      // selected pages produce one asset per page, sharing the same source file
+      // but with distinct thumbs and names. Version-mode is excluded — a new
+      // version always corresponds to exactly one upload.
+      const pages =
+        !isVersionMode && entry.kind === "pdf" && (entry.pdfPages?.length ?? 0) > 1
+          ? entry.pdfPages!
+          : [entry.pdfPage ?? 1];
+      const baseName = entry.file.name.replace(/\.[^.]+$/, "");
+      const ext = entry.file.name.match(/\.[^.]+$/)?.[0] ?? "";
+      let entryFailed = false;
       try {
-        const created = await uploadFile(entry.file, {
-          organizationId,
-          clientId,
-          assetType,
-          tags: cleanTags,
-          parentAsset: parentAsset ?? undefined,
-          pdfPage: entry.pdfPage,
-          onPhase: (phase) => {
-            // Map qualitative phase to a coarse progress percentage so the bar
-            // also moves while the user reads the label.
-            const phaseProgress: Record<UploadPhase, number> = {
-              "analyzing": 10,
-              "rendering-pdf": 25,
-              "rasterizing-svg": 25,
-              "processing-image": 25,
-              "uploading-file": 55,
-              "uploading-thumb": 80,
-              "saving-record": 92,
-              "done": 100,
-            };
-            setEntries((prev) =>
-              prev.map((e) =>
-                e.id === entry.id
-                  ? { ...e, phase, progress: Math.max(e.progress, phaseProgress[phase] ?? e.progress) }
-                  : e,
-              ),
-            );
-          },
-        });
-        lastUploaded = created ?? null;
-        if (created) onUploaded?.(created);
-        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e));
+        for (let i = 0; i < pages.length; i++) {
+          const page = pages[i];
+          const isMulti = pages.length > 1;
+          const overrideName = isMulti ? `${baseName} — pág. ${page}${ext}` : undefined;
+          const created = await uploadFile(entry.file, {
+            organizationId,
+            clientId,
+            assetType,
+            tags: cleanTags,
+            parentAsset: parentAsset ?? undefined,
+            pdfPage: page,
+            name: overrideName,
+            onPhase: (phase) => {
+              // Coarse progress: when expanding into N uploads, scale phase
+              // progress so the bar advances across the whole batch instead of
+              // resetting back to 10% on each page.
+              const phaseProgress: Record<UploadPhase, number> = {
+                "analyzing": 10,
+                "rendering-pdf": 25,
+                "rasterizing-svg": 25,
+                "processing-image": 25,
+                "uploading-file": 55,
+                "uploading-thumb": 80,
+                "saving-record": 92,
+                "done": 100,
+              };
+              const local = phaseProgress[phase] ?? 0;
+              const scaled = Math.round(((i + local / 100) / pages.length) * 100);
+              setEntries((prev) =>
+                prev.map((e) =>
+                  e.id === entry.id
+                    ? {
+                        ...e,
+                        phase,
+                        pdfPage: page,
+                        progress: Math.max(e.progress, scaled),
+                      }
+                    : e,
+                ),
+              );
+            },
+          });
+          lastUploaded = created ?? null;
+          if (created) onUploaded?.(created);
+          if (i > 0) extraCount++;
+        }
+        setEntries((prev) =>
+          prev.map((e) => (e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e)),
+        );
         okCount++;
       } catch (err) {
+        entryFailed = true;
         const msg = (err as Error).message;
-        setEntries((prev) => prev.map((e) => e.id === entry.id ? { ...e, status: "error", error: msg } : e));
+        setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, status: "error", error: msg } : e)));
         toast.error(`${entry.file.name}: ${msg}`);
         errCount++;
       }
+      if (entryFailed) continue;
     }
     setIsUploading(false);
 
     if (okCount > 0 && errCount === 0) {
+      const totalAssets = okCount + extraCount;
       toast.success(
         isVersionMode
           ? `Nova versão criada (v${(parentAsset?.version ?? 1) + 1})`
-          : `${okCount} asset(s) enviado(s)`
+          : extraCount > 0
+            ? `${totalAssets} asset(s) enviado(s) · ${extraCount} a partir de páginas extras`
+            : `${okCount} asset(s) enviado(s)`,
       );
       clearDraft(persistKey);
       onOpenChange(false);
