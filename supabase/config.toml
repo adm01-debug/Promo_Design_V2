@@ -1,7 +1,1 @@
-project_id = "ntthcrdfywvzeyqyqofp"
-
-[functions.mockup-ai]
-verify_jwt = false
-
-[functions.asset-ocr]
-verify_jwt = true
+project_id = "qmwvvvrdufjpgkcorjeb"
