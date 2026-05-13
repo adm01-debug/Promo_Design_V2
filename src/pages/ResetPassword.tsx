@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Lock, Loader2, CheckCircle, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import PasswordStrength from "@/components/PasswordStrength";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -72,9 +73,10 @@ const ResetPassword = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
                     required
-                    minLength={6}
+                    minLength={10}
                   />
                 </div>
+                <PasswordStrength password={password} />
               </div>
               <Button type="submit" disabled={loading} className="w-full bg-gradient-primary text-primary-foreground">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar nova senha"}
