@@ -47,11 +47,15 @@ serve(async (req) => {
     return new Response(null, { headers: getCorsHeaders(req) });
   }
 
+  const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  console.log(`[${requestId}] mockup-ai started`);
+
   try {
     // ─── Auth check ────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Unauthorized" }, 401, req);
+      console.warn(`[${requestId}] Unauthorized: missing bearer token`);
+      return jsonResponse({ error: "Unauthorized", requestId }, 401, req);
     }
 
     const supabase = createClient(
