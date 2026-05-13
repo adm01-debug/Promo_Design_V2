@@ -18,20 +18,8 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 
-export type SizeUnit = "KB" | "MB";
-
-export interface CustomSizeRange {
-  /** Inclusive minimum, in bytes. null = no lower bound. */
-  minBytes: number | null;
-  /** Inclusive maximum, in bytes. null = no upper bound. */
-  maxBytes: number | null;
-  /** Last unit chosen by the user; preserved so the popover restores the same UX. */
-  unit: SizeUnit;
-  /** Raw min input value (string) — kept so the popover restores exactly. */
-  minRaw: string;
-  /** Raw max input value (string) — kept so the popover restores exactly. */
-  maxRaw: string;
-}
+import { type CustomSizeRange, type SizeUnit } from "../lib/dam-constants";
+export { type CustomSizeRange };
 
 const numberSchema = z
   .string()
