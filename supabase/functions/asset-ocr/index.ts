@@ -103,10 +103,9 @@ serve(async (req) => {
     const { data: signed, error: signErr } = await adminClient.storage
       .from("assets")
       .createSignedUrl(filePath, 60 * 60);
-    if (signErr || !signed?.signedUrl) {
+      console.error(`[${requestId}] Failed to generate signed URL:`, signErr);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao gerar URL assinada" }, 500, req);
-    }
+      return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
 
     const imgRes = await fetch(signed.signedUrl);
     if (!imgRes.ok) {
