@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMoodboardStore } from "@/hooks/use-moodboard-preferences";
