@@ -35,6 +35,13 @@ const Dashboard = () => {
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
   const { widgetOrder, updateOrder, resetOrder, isDefault } = useWidgetLayout();
+  const { currentOrgId } = useOrganizations();
+  const { invites, acceptInvite } = useOrganizationInvites(null); // Fetch all invites for current user email
+  
+  const userInvites = useMemo(() => {
+    if (!user?.email) return [];
+    return invites.filter(i => i.email.toLowerCase() === user.email?.toLowerCase() && !i.accepted_at);
+  }, [invites, user?.email]);
 
   const greeting = getGreeting();
   const firstName = getUserFirstName(user?.email ?? undefined);
