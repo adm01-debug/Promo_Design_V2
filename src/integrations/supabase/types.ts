@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage_log: {
+        Row: {
+          cost_estimate: number | null
+          created_at: string
+          feature_name: string
+          id: string
+          metadata: Json | null
+          model_name: string
+          organization_id: string | null
+          tokens_in: number | null
+          tokens_out: number | null
+          user_id: string | null
+        }
+        Insert: {
+          cost_estimate?: number | null
+          created_at?: string
+          feature_name: string
+          id?: string
+          metadata?: Json | null
+          model_name: string
+          organization_id?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          cost_estimate?: number | null
+          created_at?: string
+          feature_name?: string
+          id?: string
+          metadata?: Json | null
+          model_name?: string
+          organization_id?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assets: {
         Row: {
           asset_type: Database["public"]["Enums"]["asset_type"]
@@ -695,6 +742,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          ai_monthly_quota: number | null
           created_at: string
           created_by: string
           id: string
@@ -703,6 +751,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_monthly_quota?: number | null
           created_at?: string
           created_by: string
           id?: string
@@ -711,6 +760,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_monthly_quota?: number | null
           created_at?: string
           created_by?: string
           id?: string
@@ -901,6 +951,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_ai_quota: {
+        Args: { _org_id: string; _required_cost?: number }
+        Returns: boolean
+      }
       current_user_orgs: { Args: never; Returns: string[] }
       explain_search_assets_ranked: {
         Args: { _org_id: string; _query?: string }
