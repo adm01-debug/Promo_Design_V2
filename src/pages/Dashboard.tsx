@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FolderOpen, ClipboardList, Sparkles, Clock, Settings2, RotateCcw, Building2, Check, Loader2 } from "lucide-react";
 import {
