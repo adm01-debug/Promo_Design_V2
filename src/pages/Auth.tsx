@@ -17,7 +17,7 @@ type AuthMode = "login" | "signup" | "forgot";
 
 const Auth = () => {
   const { user, loading: authLoading } = useAuth();
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode | "mfa">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
