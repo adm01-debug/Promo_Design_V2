@@ -292,9 +292,9 @@ Suggest the best placement for a logo on this product, considering:
 
     return jsonResponse({ error: `Unknown action: ${(body as { action: string }).action}` }, 400, req);
   } catch (e) {
-    console.error("mockup-ai error:", e);
+    console.error(`[${requestId}] mockup-ai fatal error:`, e);
     return jsonResponse(
-      { error: e instanceof Error ? e.message : "Unknown error" },
+      { error: e instanceof Error ? e.message : "Unknown error", requestId },
       500,
       req
     );
