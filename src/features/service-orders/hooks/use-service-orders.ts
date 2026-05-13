@@ -270,7 +270,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
         .from("service_orders")
         .update(dbUpdates)
         .eq("id", id)
-        .eq("lock_version", dbUpdates.lock_version || 0) // Explicit lock check
+        .eq("lock_version", (dbUpdates.lock_version as number) || 0) // Explicit lock check
         .select();
 
       if (error) throw error;
