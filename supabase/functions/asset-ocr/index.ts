@@ -60,7 +60,8 @@ serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return jsonResponse({ error: "AI gateway não configurado" }, 500, req);
+      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
+      return jsonResponse({ error: "AI gateway não configurado", requestId }, 500, req);
     }
 
     // User-scoped client validates JWT and respects RLS
