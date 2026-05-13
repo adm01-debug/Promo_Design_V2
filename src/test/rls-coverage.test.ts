@@ -24,7 +24,7 @@ describe("RLS Coverage", () => {
   it("should have at least 2 policies per sensitive table", async () => {
     // This is a heuristic test. Tables like 'audit_log' should have at least 
     // SELECT and INSERT policies.
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("audit_log")
       .select("id")
       .limit(1);
