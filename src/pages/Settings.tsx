@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ErrorLogger, type LogEntry } from "@/lib/error-logger";
 import { usePollingMetrics } from "@/hooks/use-visibility-polling";
+import { useAuth } from "@/hooks/use-auth";
 
 const levelColor: Record<string, string> = {
   debug: "bg-muted text-muted-foreground",
