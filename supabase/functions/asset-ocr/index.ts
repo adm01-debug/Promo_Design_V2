@@ -179,7 +179,21 @@ serve(async (req) => {
     }
 
     const aiJson = await aiRes.json();
+    const usage = aiJson?.usage || {};
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
+    
+    // Log usage
+    await adminClient.from("ai_usage_log").insert({
+      organization_id: asset.organization_id,
+      user_id: userData.user.id,
+      feature_name: "asset-ocr",
+      model_name: "google/gemini-3-flash-preview",
+      tokens_in: usage.prompt_tokens || 0,
+      tokens_out: usage.completion_tokens || 0,
+      cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003), // Approximate
+      metadata: { assetId }
+    });
+
     let extractedText = "";
     let hasText = false;
     if (toolCall?.function?.arguments) {

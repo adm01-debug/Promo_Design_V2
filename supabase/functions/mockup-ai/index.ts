@@ -60,11 +60,27 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsError || !claimsData?.claims) {
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
       return jsonResponse({ error: "Unauthorized" }, 401, req);
+    }
+
+    // Fetch user's organization (assuming first one for simplicity or logic needs improvement)
+    const { data: orgData } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", userData.user.id)
+      .limit(1)
+      .maybeSingle();
+
+    const orgId = orgData?.organization_id;
+
+    // Check quota before call
+    if (orgId) {
+      const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
+      if (hasQuota === false) {
+        return jsonResponse({ error: "Quota de IA da organização atingida para este mês." }, 403, req);
+      }
     }
 
     // ─── API Key ───────────────────────────────────────────
@@ -132,7 +148,22 @@ serve(async (req) => {
       }
 
       const data = await response.json();
+      const usage = data.usage || {};
       const resultImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+      // Log usage
+      if (orgId) {
+        await supabase.from("ai_usage_log").insert({
+          organization_id: orgId,
+          user_id: userData.user.id,
+          feature_name: "mockup-ai:remove-bg",
+          model_name: "google/gemini-2.5-flash-image",
+          tokens_in: usage.prompt_tokens || 0,
+          tokens_out: usage.completion_tokens || 0,
+          cost_estimate: 0.01, // Flat estimate for image removal
+          metadata: { action: body.action }
+        });
+      }
 
       if (!resultImage) {
         return jsonResponse({ error: "IA não retornou imagem processada" }, 500, req);
@@ -220,7 +251,23 @@ Suggest the best placement for a logo on this product, considering:
       }
 
       const data = await response.json();
+      const usage = data.usage || {};
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+
+      // Log usage
+      if (orgId) {
+        await supabase.from("ai_usage_log").insert({
+          organization_id: orgId,
+          user_id: userData.user.id,
+          feature_name: "mockup-ai:suggest-placement",
+          model_name: "google/gemini-3-flash-preview",
+          tokens_in: usage.prompt_tokens || 0,
+          tokens_out: usage.completion_tokens || 0,
+          cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003),
+          metadata: { action: body.action }
+        });
+      }
+
       if (!toolCall) {
         return jsonResponse({ error: "IA não retornou sugestão" }, 500, req);
       }
