@@ -91,7 +91,10 @@ serve(async (req) => {
 
     // ─── API Key ───────────────────────────────────────────
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
 
     // ─── Input Validation ──────────────────────────────────
     let rawBody: unknown;
