@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,6 @@ import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
 import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
 import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
-import { readLastPreviewAsset } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
@@ -27,7 +26,7 @@ import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
 import { useDamFilters } from "../hooks/use-dam-filters";
 import { useDamLibraryResults } from "../hooks/use-dam-library-results";
 import { DamLibraryHeader } from "../components/DamLibraryHeader";
-import { TYPES } from "../lib/dam-constants";
+import { TYPES, SORT_OPTIONS } from "../lib/dam-constants";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +44,7 @@ export default function DamLibraryPage() {
   const filters = useDamFilters();
   const { 
     state, setSearch, setAssetTypes, setClientId, setTags, setTagsMode, 
-    setIncludeArchived, setSort, setPage, setViewMode, reset: resetFilters 
+    setIncludeArchived, setPage, setViewMode, reset: resetFilters 
   } = filters;
   const { 
     search, assetTypes, clientId, tags, tagsMode, includeArchived, 
@@ -80,6 +79,8 @@ export default function DamLibraryPage() {
   };
 
   if (!currentOrgId) return <div className="p-6 text-center"><Card className="p-8">Selecione uma organização</Card></div>;
+
+  const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label;
 
   return (
     <div className="p-6 space-y-6">
@@ -164,13 +165,28 @@ export default function DamLibraryPage() {
               </div>
             )}
           </div>
-          {quickPreview.enabled && <QuickPreviewPanel asset={quickPreview.activeAsset} />}
+          {quickPreview.enabled && (
+            <QuickPreviewPanel 
+              asset={quickPreview.activeAsset} 
+              pinned={Boolean(quickPreview.activeAsset && quickPreview.pinnedId === quickPreview.activeAsset.id)}
+              onTogglePin={() => quickPreview.activeAsset && quickPreview.togglePin(quickPreview.activeAsset)}
+              onOpenDetails={() => quickPreview.activeAsset && setSelected(quickPreview.activeAsset)}
+              clients={clients}
+              sortLabel={sortLabel}
+            />
+          )}
         </div>
       )}
 
       {paginationMode === "pages" && totalPages > 1 && (
         <div className="flex justify-center pt-6">
-          <ResultsPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <ResultsPagination 
+            page={page} 
+            pageSize={pageSize}
+            total={total}
+            totalPages={totalPages} 
+            onPageChange={setPage} 
+          />
         </div>
       )}
 
@@ -184,7 +200,7 @@ export default function DamLibraryPage() {
       )}
 
       <AssetUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} organizationId={currentOrgId} />
-      {selected && <AssetDetailDrawer asset={selected} organizationId={currentOrgId} onOpenChange={(o) => !o && setSelected(null)} />}
+      {selected && <AssetDetailDrawer asset={selected} onClose={() => setSelected(null)} searchQuery={debouncedSearch} />}
       <LibraryActivityDialog open={activityOpen} onOpenChange={setActivityOpen} organizationId={currentOrgId} />
       <BatchOcrDialog open={batchOcrOpen} onOpenChange={setBatchOcrOpen} assets={assets} />
 
@@ -203,3 +219,4 @@ export default function DamLibraryPage() {
     </div>
   );
 }
+

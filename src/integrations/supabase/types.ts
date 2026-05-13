@@ -74,6 +74,7 @@ export type Database = {
           height: number | null
           id: string
           is_archived: boolean
+          lock_version: number
           metadata: Json | null
           mime_type: string | null
           name: string
@@ -99,6 +100,7 @@ export type Database = {
           height?: number | null
           id?: string
           is_archived?: boolean
+          lock_version?: number
           metadata?: Json | null
           mime_type?: string | null
           name: string
@@ -124,6 +126,7 @@ export type Database = {
           height?: number | null
           id?: string
           is_archived?: boolean
+          lock_version?: number
           metadata?: Json | null
           mime_type?: string | null
           name?: string
@@ -817,6 +820,7 @@ export type Database = {
           gravacao_detalhe: string | null
           id: string
           identificacao_caixa: string | null
+          lock_version: number
           material_evento: boolean | null
           mockup_image_url: string | null
           observations: string | null
@@ -855,6 +859,7 @@ export type Database = {
           gravacao_detalhe?: string | null
           id?: string
           identificacao_caixa?: string | null
+          lock_version?: number
           material_evento?: boolean | null
           mockup_image_url?: string | null
           observations?: string | null
@@ -893,6 +898,7 @@ export type Database = {
           gravacao_detalhe?: string | null
           id?: string
           identificacao_caixa?: string | null
+          lock_version?: number
           material_evento?: boolean | null
           mockup_image_url?: string | null
           observations?: string | null

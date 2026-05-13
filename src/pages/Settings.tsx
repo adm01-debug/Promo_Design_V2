@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity } from "lucide-react";
+import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity, Shield, QrCode, Smartphone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,6 +188,44 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Alterne entre tema claro e escuro</p>
             </div>
             <ThemeToggle />
+          </div>
+        </section>
+        <section className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Segurança</h3>
+          </div>
+          <div className="space-y-4">
+            <div className="flex items-start gap-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Smartphone className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider">Autenticação de Dois Fatores (2FA)</h4>
+                  <Badge variant="outline" className="text-[10px] text-muted-foreground border-dashed">Recomendado</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Adicione uma camada extra de segurança à sua conta usando um aplicativo de autenticação (Google Authenticator, Authy, etc.).
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-2" disabled>
+                    <QrCode className="w-3.5 h-3.5" /> Configurar 2FA
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2 italic">
+                  * A configuração de 2FA requer validação manual pelo administrador do sistema no momento.
+                </p>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg border border-border bg-background/50">
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-2">Política de Senha</h4>
+              <ul className="text-[10px] text-muted-foreground space-y-1.5 list-disc pl-4">
+                <li>Mínimo de 10 caracteres (obrigatório).</li>
+                <li>Verificação contra senhas vazadas (HIBP) ativada.</li>
+                <li>Recomendamos o uso de caracteres especiais e números.</li>
+              </ul>
+            </div>
           </div>
         </section>
 
