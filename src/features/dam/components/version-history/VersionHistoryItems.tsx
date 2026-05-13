@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { MessageSquare, MessageSquareDashed, Link2, Check } from "lucide-react";
