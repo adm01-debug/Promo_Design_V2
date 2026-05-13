@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FolderOpen, ClipboardList, Sparkles, Clock, Settings2, RotateCcw, Building2, Check, ExternalLink } from "lucide-react";
+import { FolderOpen, ClipboardList, Sparkles, Clock, Settings2, RotateCcw, Building2, Check, Loader2 } from "lucide-react";
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
