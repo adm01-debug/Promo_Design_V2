@@ -72,8 +72,8 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
                   aria-pressed={active}
                   className="cursor-pointer select-none text-xs"
                   onClick={() =>
-                    setAssetTypes((prev) =>
-                      prev.includes(t.value) ? prev.filter((x) => x !== t.value) : [...prev, t.value],
+                    setAssetTypes((prev: AssetType[]) =>
+                      prev.includes(t.value as AssetType) ? prev.filter((x: AssetType) => x !== t.value) : [...prev, t.value as AssetType],
                     )
                   }
                 >
