@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Wand2, Target, MessageSquare, Users, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
