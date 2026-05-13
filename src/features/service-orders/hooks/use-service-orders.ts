@@ -178,7 +178,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["service-orders"] });
 
   const addMutation = useMutation({
-    mutationFn: async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+    mutationFn: async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt">) => {
       const { data, error } = await supabase
         .from("service_orders")
         .insert({
