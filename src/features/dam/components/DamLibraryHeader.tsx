@@ -9,7 +9,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { MIN_SEARCH_LENGTH } from "../hooks/use-assets";
 import { SORT_OPTIONS } from "../lib/dam-constants";
 import type { UseDamFiltersReturn } from "../hooks/use-dam-filters";
-import type { Asset, AssetType } from "../hooks/use-assets";
+import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
 
 interface Props {
