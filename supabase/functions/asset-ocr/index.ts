@@ -84,7 +84,8 @@ serve(async (req) => {
       .eq("id", assetId)
       .maybeSingle();
     if (assetErr || !asset) {
-      return jsonResponse({ error: "Asset não encontrado ou sem permissão" }, 404, req);
+      console.warn(`[${requestId}] Asset not found or permission denied: ${assetId}`, assetErr);
+      return jsonResponse({ error: "Asset não encontrado ou sem permissão", requestId }, 404, req);
     }
 
     // Skip non-image
