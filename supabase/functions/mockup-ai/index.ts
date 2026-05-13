@@ -47,11 +47,15 @@ serve(async (req) => {
     return new Response(null, { headers: getCorsHeaders(req) });
   }
 
+  const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  console.log(`[${requestId}] mockup-ai started`);
+
   try {
     // ─── Auth check ────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Unauthorized" }, 401, req);
+      console.warn(`[${requestId}] Unauthorized: missing bearer token`);
+      return jsonResponse({ error: "Unauthorized", requestId }, 401, req);
     }
 
     const supabase = createClient(
@@ -62,7 +66,8 @@ serve(async (req) => {
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData?.user) {
-      return jsonResponse({ error: "Unauthorized" }, 401, req);
+      console.warn(`[${requestId}] Invalid session:`, userErr);
+      return jsonResponse({ error: "Unauthorized", requestId }, 401, req);
     }
 
     // Fetch user's organization (assuming first one for simplicity or logic needs improvement)
@@ -79,13 +84,17 @@ serve(async (req) => {
     if (orgId) {
       const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
       if (hasQuota === false) {
-        return jsonResponse({ error: "Quota de IA da organização atingida para este mês." }, 403, req);
+        console.warn(`[${requestId}] Quota exceeded for org ${orgId}`);
+        return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
       }
     }
 
     // ─── API Key ───────────────────────────────────────────
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
 
     // ─── Input Validation ──────────────────────────────────
     let rawBody: unknown;
@@ -97,8 +106,9 @@ serve(async (req) => {
 
     const parsed = RequestSchema.safeParse(rawBody);
     if (!parsed.success) {
+      console.warn(`[${requestId}] Validation failed:`, parsed.error.flatten().fieldErrors);
       return jsonResponse(
-        { error: "Validação falhou", details: parsed.error.flatten().fieldErrors },
+        { error: "Validação falhou", details: parsed.error.flatten().fieldErrors, requestId },
         400,
         req
       );
@@ -136,15 +146,15 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
+        const t = await response.text().catch(() => "");
+        console.error(`[${requestId}] AI gateway error (remove-bg):`, response.status, t);
         if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }, 429, req);
+          return jsonResponse({ error: "Limite de requisições excedido. Tente novamente em alguns segundos.", requestId }, 429, req);
         }
         if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso." }, 402, req);
+          return jsonResponse({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.", requestId }, 402, req);
         }
-        const t = await response.text();
-        console.error("AI gateway error:", response.status, t);
-        return jsonResponse({ error: "Erro no serviço de IA" }, 500, req);
+        return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
 
       const data = await response.json();
@@ -166,10 +176,12 @@ serve(async (req) => {
       }
 
       if (!resultImage) {
-        return jsonResponse({ error: "IA não retornou imagem processada" }, 500, req);
+        console.warn(`[${requestId}] AI did not return a processed image`);
+        return jsonResponse({ error: "IA não retornou imagem processada", requestId }, 500, req);
       }
 
-      return jsonResponse({ imageBase64: resultImage }, 200, req);
+      console.log(`[${requestId}] remove-bg completed successfully`);
+      return jsonResponse({ imageBase64: resultImage, requestId }, 200, req);
     }
 
     // ─── Action: Suggest Placement ──────────────────────────
@@ -239,15 +251,15 @@ Suggest the best placement for a logo on this product, considering:
       });
 
       if (!response.ok) {
+        const t = await response.text().catch(() => "");
+        console.error(`[${requestId}] AI gateway error (suggest-placement):`, response.status, t);
         if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido." }, 429, req);
+          return jsonResponse({ error: "Limite de requisições excedido.", requestId }, 429, req);
         }
         if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados." }, 402, req);
+          return jsonResponse({ error: "Créditos de IA esgotados.", requestId }, 402, req);
         }
-        const t = await response.text();
-        console.error("AI gateway error:", response.status, t);
-        return jsonResponse({ error: "Erro no serviço de IA" }, 500, req);
+        return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
 
       const data = await response.json();
@@ -269,18 +281,20 @@ Suggest the best placement for a logo on this product, considering:
       }
 
       if (!toolCall) {
-        return jsonResponse({ error: "IA não retornou sugestão" }, 500, req);
+        console.warn(`[${requestId}] AI did not return a suggestion`);
+        return jsonResponse({ error: "IA não retornou sugestão", requestId }, 500, req);
       }
 
       const suggestion = JSON.parse(toolCall.function.arguments);
-      return jsonResponse(suggestion, 200, req);
+      console.log(`[${requestId}] suggest-placement completed successfully`);
+      return jsonResponse({ ...suggestion, requestId }, 200, req);
     }
 
     return jsonResponse({ error: `Unknown action: ${(body as { action: string }).action}` }, 400, req);
   } catch (e) {
-    console.error("mockup-ai error:", e);
+    console.error(`[${requestId}] mockup-ai fatal error:`, e);
     return jsonResponse(
-      { error: e instanceof Error ? e.message : "Unknown error" },
+      { error: e instanceof Error ? e.message : "Unknown error", requestId },
       500,
       req
     );

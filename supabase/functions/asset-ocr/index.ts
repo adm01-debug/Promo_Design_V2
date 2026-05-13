@@ -36,18 +36,23 @@ function jsonResponse(data: unknown, status = 200, req?: Request) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
+  const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  console.log(`[${requestId}] asset-ocr started`);
+
   try {
     // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Não autorizado" }, 401, req);
+      console.warn(`[${requestId}] Unauthorized: missing bearer token`);
+      return jsonResponse({ error: "Não autorizado", requestId }, 401, req);
     }
 
     // Parse + validate
     const raw = await req.json().catch(() => null);
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten() }, 400, req);
+      console.warn(`[${requestId}] Invalid parameters:`, parsed.error.flatten());
+      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400, req);
     }
     const { assetId, filePath, mimeType } = parsed.data;
 
@@ -55,7 +60,8 @@ serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return jsonResponse({ error: "AI gateway não configurado" }, 500, req);
+      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
+      return jsonResponse({ error: "AI gateway não configurado", requestId }, 500, req);
     }
 
     // User-scoped client validates JWT and respects RLS
@@ -64,7 +70,8 @@ serve(async (req) => {
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
-      return jsonResponse({ error: "Sessão inválida" }, 401, req);
+      console.warn(`[${requestId}] Invalid session:`, userErr);
+      return jsonResponse({ error: "Sessão inválida", requestId }, 401, req);
     }
 
     // Service-role client to update OCR fields after RLS check
@@ -77,11 +84,12 @@ serve(async (req) => {
       .eq("id", assetId)
       .maybeSingle();
     if (assetErr || !asset) {
-      return jsonResponse({ error: "Asset não encontrado ou sem permissão" }, 404, req);
+      console.warn(`[${requestId}] Asset not found or permission denied: ${assetId}`, assetErr);
+      return jsonResponse({ error: "Asset não encontrado ou sem permissão", requestId }, 404, req);
     }
 
-    // Skip non-image
     if (!mimeType.startsWith("image/")) {
+      console.log(`[${requestId}] Skipping non-image mime type: ${mimeType}`);
       await adminClient
         .from("assets")
         .update({ ocr_status: "skipped", ocr_text: null })
@@ -96,16 +104,14 @@ serve(async (req) => {
     const { data: signed, error: signErr } = await adminClient.storage
       .from("assets")
       .createSignedUrl(filePath, 60 * 60);
-    if (signErr || !signed?.signedUrl) {
+      console.error(`[${requestId}] Failed to generate signed URL:`, signErr);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao gerar URL assinada" }, 500, req);
-    }
+      return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
 
     const imgRes = await fetch(signed.signedUrl);
-    if (!imgRes.ok) {
+      console.error(`[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao baixar imagem" }, 500, req);
-    }
+      return jsonResponse({ error: "Falha ao baixar imagem", requestId }, 500, req);
     const imgBuffer = new Uint8Array(await imgRes.arrayBuffer());
     // Base64 encode
     let binary = "";
@@ -163,19 +169,19 @@ serve(async (req) => {
 
     if (!aiRes.ok) {
       const errText = await aiRes.text().catch(() => "");
-      console.error("AI gateway error:", aiRes.status, errText);
+      console.error(`[${requestId}] AI gateway error:`, aiRes.status, errText);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       if (aiRes.status === 429) {
-        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes." }, 429, req);
+        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes.", requestId }, 429, req);
       }
       if (aiRes.status === 402) {
         return jsonResponse(
-          { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage." },
+          { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage.", requestId },
           402,
           req
         );
       }
-      return jsonResponse({ error: "Falha no AI Gateway" }, 502, req);
+      return jsonResponse({ error: "Falha no AI Gateway", requestId }, 502, req);
     }
 
     const aiJson = await aiRes.json();
@@ -214,16 +220,17 @@ serve(async (req) => {
       .update({ ocr_text: finalText, ocr_status: "done" })
       .eq("id", assetId);
     if (updErr) {
-      console.error("Falha ao salvar OCR:", updErr);
+      console.error(`[${requestId}] Failed to save OCR:`, updErr);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao salvar texto extraído" }, 500, req);
+      return jsonResponse({ error: "Falha ao salvar texto extraído", requestId }, 500, req);
     }
 
-    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText }, 200, req);
+    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}`);
+    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId }, 200, req);
   } catch (e) {
-    console.error("asset-ocr error:", e);
+    console.error(`[${requestId}] asset-ocr fatal error:`, e);
     return jsonResponse(
-      { error: e instanceof Error ? e.message : "Erro desconhecido" },
+      { error: e instanceof Error ? e.message : "Erro desconhecido", requestId },
       500,
       req
     );

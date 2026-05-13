@@ -960,10 +960,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_ai_quota: {
-        Args: { _org_id: string; _required_cost?: number }
-        Returns: boolean
-      }
+      check_ai_quota:
+        | { Args: { _org_id: string }; Returns: boolean }
+        | {
+            Args: { _org_id: string; _required_cost?: number }
+            Returns: boolean
+          }
       current_user_orgs: { Args: never; Returns: string[] }
       explain_search_assets_ranked: {
         Args: { _org_id: string; _query?: string }
