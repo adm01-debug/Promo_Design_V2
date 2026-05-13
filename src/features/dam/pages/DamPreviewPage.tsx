@@ -310,6 +310,7 @@ export default function DamPreviewPage() {
       case "tags": return "Remover filtro de tags";
       case "search": return "Limpar busca";
       case "includeArchived": return "Incluir arquivados";
+      default: return "Limpar filtro";
     }
   };
 
