@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FolderArchive, Keyboard, Layers, Link2, AlertCircle, Share2, Check } from "lucide-react";
+import { ArrowLeft, FolderArchive, Keyboard, Layers, Share2, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -17,13 +16,15 @@ import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { CompareGrid } from "../components/CompareGrid";
-import { CompareTopBar } from "../components/CompareTopBar";
 import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
 import { ExportProgressPanel } from "../components/ExportProgressPanel";
 import { ActiveFiltersSummaryPanel } from "../components/ActiveFiltersSummaryPanel";
 import { usePreviewSync } from "../hooks/use-preview-sync";
 import { usePreviewDiagnosis } from "../hooks/use-preview-diagnosis";
+import { usePreviewShortcuts } from "../hooks/use-preview-shortcuts";
+import { usePreviewShare } from "../hooks/use-preview-share";
+import { usePreviewNavigation } from "../hooks/use-preview-navigation";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
@@ -40,9 +41,7 @@ export function readLastPreviewAsset(): string | null {
     if (!parsed?.id || typeof parsed.ts !== "number") return null;
     if (Date.now() - parsed.ts > LAST_ASSET_TTL_MS) return null;
     return parsed.id;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 export function clearLastPreviewAsset(): void {
@@ -59,36 +58,22 @@ export function peekLastPreviewAssetRaw(): { id: string | null; expired: boolean
     if (!parsed?.id || typeof parsed.ts !== "number") return { id: null, expired: false };
     const expired = Date.now() - parsed.ts > LAST_ASSET_TTL_MS;
     return { id: expired ? null : parsed.id, expired };
-  } catch {
-    return { id: null, expired: false };
-  }
+  } catch { return { id: null, expired: false }; }
 }
 
 export default function DamPreviewPage() {
-  const navigate = useNavigate();
+  
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const {
-    state,
-    queryString,
-    setSort,
-    reset: resetFilters,
-    setAssetTypes,
-    setClientId,
-    setTags,
-    setSearch,
-    setIncludeArchived,
+  const { 
+    state, queryString, setSort, reset: resetFilters, setAssetTypes, setClientId, setTags, setSearch, setIncludeArchived 
   } = filters;
   const [searchParams, setSearchParams] = useSearchParams();
   const assetIdParam = searchParams.get("asset");
   const didInitRef = useRef(false);
-  const userNavRef = useRef(false);
   const didShowExpiredToastRef = useRef(false);
   const didShowFallbackToastRef = useRef(false);
-  const lastUserSelectedIdRef = useRef<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const copiedTimeoutRef = useRef<number | null>(null);
   const didHydrateCompareRef = useRef(false);
 
   const compare = useCompareSelection();
@@ -100,17 +85,14 @@ export default function DamPreviewPage() {
     if (expired) {
       didShowExpiredToastRef.current = true;
       clearLastPreviewAsset();
-      toast("Sessão de pré-visualização expirada", {
-        description: "Sua última sessão tem mais de 24h. Começando do início.",
-        duration: 4000,
-      });
+      toast("Sessão de pré-visualização expirada", { description: "Sua última sessão tem mais de 24h. Começando do início.", duration: 4000 });
     }
   }, []);
 
   const debouncedSearch = useDebounce(state.search, 300);
-
   const previousSortRef = useRef<SortValue | null>(null);
   const lastAutoSortRef = useRef<SortValue | null>(null);
+
   useEffect(() => {
     const hasSearch = debouncedSearch.trim().length >= MIN_SEARCH_LENGTH;
     if (hasSearch) {
@@ -119,31 +101,24 @@ export default function DamPreviewPage() {
         lastAutoSortRef.current = "relevance";
         setSort("relevance");
       }
+    } else if (state.sort === "relevance") {
+      const restore = previousSortRef.current ?? "created_desc";
+      lastAutoSortRef.current = restore;
+      previousSortRef.current = null;
+      setSort(restore);
     } else {
-      if (state.sort === "relevance") {
-        const restore = previousSortRef.current ?? "created_desc";
-        lastAutoSortRef.current = restore;
-        previousSortRef.current = null;
-        setSort(restore);
-      } else {
-        lastAutoSortRef.current = null;
-      }
+      lastAutoSortRef.current = null;
     }
   }, [debouncedSearch, state.sort, setSort]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [detailAsset, setDetailAsset] = useState<Asset | null>(null);
   const [compareMode, setCompareMode] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem(COMPARE_MODE_KEY) === "1";
-    } catch {
-      return false;
-    }
+    try { return sessionStorage.getItem(COMPARE_MODE_KEY) === "1"; } catch { return false; }
   });
+
   useEffect(() => {
-    try {
-      sessionStorage.setItem(COMPARE_MODE_KEY, compareMode ? "1" : "0");
-    } catch { /* ignore */ }
+    try { sessionStorage.setItem(COMPARE_MODE_KEY, compareMode ? "1" : "0"); } catch { /* ignore */ }
   }, [compareMode]);
 
   const prevCompareModeRef = useRef(compareMode);
@@ -151,14 +126,10 @@ export default function DamPreviewPage() {
   useEffect(() => {
     const wasOff = !prevCompareModeRef.current;
     prevCompareModeRef.current = compareMode;
-    if (!wasOff || !compareMode) return;
-    if (didShowRestoreToastRef.current) return;
+    if (!wasOff || !compareMode || didShowRestoreToastRef.current) return;
     if (compare.selectedIds.length >= 2) {
       didShowRestoreToastRef.current = true;
-      toast("Comparação restaurada", {
-        description: `${compare.selectedIds.length} assets carregados da sua seleção anterior.`,
-        duration: 2500,
-      });
+      toast("Comparação restaurada", { description: `${compare.selectedIds.length} assets carregados da sua seleção anterior.`, duration: 2500 });
     }
   }, [compareMode, compare.selectedIds.length]);
 
@@ -166,52 +137,42 @@ export default function DamPreviewPage() {
     const opt = SORT_OPTIONS.find((s) => s.value === state.sort) ?? SORT_OPTIONS[1];
     return {
       assetTypes: state.assetTypes.length > 0 ? state.assetTypes : undefined,
-      clientId:
-        state.clientId === "all" ? undefined : state.clientId === "none" ? null : state.clientId,
+      clientId: state.clientId === "all" ? undefined : state.clientId === "none" ? null : state.clientId,
       tags: state.tags.length > 0 ? state.tags : undefined,
       tagsMode: state.tagsMode,
       includeArchived: state.includeArchived,
       search: debouncedSearch.trim() || undefined,
-      sortBy: opt.sortBy,
-      sortDir: opt.sortDir,
-      page: 1,
-      pageSize: 50,
+      sortBy: opt.sortBy, sortDir: opt.sortDir,
+      page: 1, pageSize: 50,
     };
   }, [state, debouncedSearch]);
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
 
+  const { activeAsset, goPrev, goNext, selectAssetAt } = usePreviewNavigation({
+    assets, activeIndex, setActiveIndex, searchParams, setSearchParams
+  });
+
+  const { copied, handleCopyShareLink } = usePreviewShare({ activeAsset, searchParams, compareMode, compare });
+
+  usePreviewShortcuts({
+    detailAsset, queryString, compareMode, setCompareMode, activeAsset, compare, goPrev, goNext,
+    onOpenDetails: () => activeAsset && setDetailAsset(activeAsset)
+  });
+
   useEffect(() => {
-    if (didHydrateCompareRef.current) return;
-    if (assets.length === 0) return;
+    if (didHydrateCompareRef.current || assets.length === 0) return;
     const fromUrl = searchParams.get("compare");
-    let raw: string | null = fromUrl;
-    let source: "url" | "session" = "url";
+    let raw = fromUrl;
     if (!raw) {
       try { raw = sessionStorage.getItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
-      source = "session";
     }
-    if (!raw) {
-      didHydrateCompareRef.current = true;
-      return;
-    }
-    const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
-    const availableIds = new Set(assets.map((a) => a.id));
-    const valid = ids.filter((id) => availableIds.has(id)).slice(0, compare.max);
-    const missingCount = ids.length - valid.length;
-
+    if (!raw) { didHydrateCompareRef.current = true; return; }
+    const ids = raw.split(",").map(s => s.trim()).filter(Boolean);
+    const availableIds = new Set(assets.map(a => a.id));
+    const valid = ids.filter(id => availableIds.has(id)).slice(0, compare.max);
     if (valid.length >= 2) {
-      compare.clear();
-      valid.forEach((id) => compare.toggle(id));
-      setCompareMode(true);
-      if (missingCount > 0) {
-        toast.warning("Comparação ajustada", {
-          description:
-            missingCount === 1
-              ? "1 asset da seleção anterior não está mais disponível e foi removido."
-              : `${missingCount} assets da seleção anterior não estão mais disponíveis e foram removidos.`,
-        });
-      }
+      compare.clear(); valid.forEach(id => compare.toggle(id)); setCompareMode(true);
     } else {
       try { sessionStorage.removeItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
       if (fromUrl) {
@@ -219,61 +180,33 @@ export default function DamPreviewPage() {
         next.delete("compare");
         setSearchParams(next, { replace: true });
       }
-      if (ids.length > 0 && missingCount === ids.length) {
-        toast.warning("Comparação não pôde ser restaurada", {
-          description:
-            source === "url"
-              ? "Os assets do link compartilhado não estão mais disponíveis."
-              : "Os assets da sua comparação anterior não estão mais disponíveis.",
-        });
-      } else if (missingCount > 0 && valid.length === 1) {
-        toast.warning("Comparação não pôde ser restaurada", {
-          description: "Apenas 1 asset da seleção anterior continua disponível (mínimo: 2).",
-        });
-      }
     }
     didHydrateCompareRef.current = true;
   }, [assets, searchParams, setSearchParams, compare]);
 
   const selectedAssets = useMemo(() => {
     if (compare.selectedIds.length === 0) return [];
-    const map = new Map(assets.map((a) => [a.id, a]));
-    return compare.selectedIds
-      .map((id) => map.get(id))
-      .filter((a): a is Asset => Boolean(a));
+    const map = new Map(assets.map(a => [a.id, a]));
+    return compare.selectedIds.map(id => map.get(id)).filter((a): a is Asset => !!a);
   }, [assets, compare.selectedIds]);
 
   useEffect(() => {
-    if (assets.length === 0) return;
-    if (!assetIdParam) return;
-    const idx = assets.findIndex((a) => a.id === assetIdParam);
-    if (idx >= 0) {
-      lastUserSelectedIdRef.current = assetIdParam;
-      if (idx !== activeIndex) setActiveIndex(idx);
-    }
+    if (assets.length === 0 || !assetIdParam) return;
+    const idx = assets.findIndex(a => a.id === assetIdParam);
+    if (idx >= 0 && idx !== activeIndex) setActiveIndex(idx);
   }, [assetIdParam, assets, activeIndex]);
 
   useEffect(() => {
-    if (didInitRef.current) return;
-    if (assets.length === 0) return;
+    if (didInitRef.current || assets.length === 0) return;
     didInitRef.current = true;
-    if (!assetIdParam) {
-      setActiveIndex(0);
-      return;
-    }
-    const idx = assets.findIndex((a) => a.id === assetIdParam);
+    if (!assetIdParam) { setActiveIndex(0); return; }
+    const idx = assets.findIndex(a => a.id === assetIdParam);
     if (idx < 0) setActiveIndex(0);
-  }, [assets.length, assetIdParam, assets]);
+  }, [assets, assetIdParam]);
 
   useEffect(() => {
-    if (activeIndex >= assets.length && assets.length > 0) {
-      setActiveIndex(0);
-    }
-  }, [assets.length, activeIndex]);
-
-  const activeAsset = assets[activeIndex] ?? null;
-  const assetMissingFromList =
-    Boolean(assetIdParam) && assets.length > 0 && !assets.some((a) => a.id === assetIdParam);
+    if (activeIndex >= assets.length && assets.length > 0) setActiveIndex(0);
+  }, [assets, activeIndex]);
 
   const clientNameById = useMemo(() => {
     const map: Record<string, string> = {};
@@ -284,14 +217,22 @@ export default function DamPreviewPage() {
   const { lastKnownAsset, removalCauses, assetRemovedByFilter } = usePreviewDiagnosis(activeAsset, assets, filters, clientNameById);
 
   useEffect(() => {
-    if (!lastKnownAsset) return;
-    if (assets.length === 0) return;
-    if (activeAsset?.id === lastKnownAsset.id) return;
-    const idx = assets.findIndex((a) => a.id === lastKnownAsset.id);
-    if (idx >= 0 && idx !== activeIndex) {
-      setActiveIndex(idx);
-    }
+    if (!lastKnownAsset || assets.length === 0 || activeAsset?.id === lastKnownAsset.id) return;
+    const idx = assets.findIndex(a => a.id === lastKnownAsset.id);
+    if (idx >= 0 && idx !== activeIndex) setActiveIndex(idx);
   }, [assets, lastKnownAsset, activeAsset, activeIndex]);
+
+  const assetMissingFromList = !!assetIdParam && assets.length > 0 && !assets.some(a => a.id === assetIdParam);
+  useEffect(() => {
+    if (!assetMissingFromList || didShowFallbackToastRef.current) return;
+    didShowFallbackToastRef.current = true;
+    const primary = removalCauses[0]?.message;
+    toast("Asset fora dos filtros atuais", {
+      description: primary ? `${primary} Mostrando o primeiro disponível.` : "O asset visualizado por último não está disponível nos filtros atuais.",
+      duration: 5000,
+      action: { label: "Limpar filtros", onClick: () => { resetFilters(); clearLastPreviewAsset(); } },
+    });
+  }, [assetMissingFromList, resetFilters, removalCauses]);
 
   const clearCause = (kind: any) => {
     switch (kind) {
@@ -314,420 +255,57 @@ export default function DamPreviewPage() {
     }
   };
 
-  useEffect(() => {
-    if (!assetMissingFromList) return;
-    if (didShowFallbackToastRef.current) return;
-    didShowFallbackToastRef.current = true;
-    const primary = removalCauses[0]?.message;
-    toast("Asset fora dos filtros atuais", {
-      description: primary
-        ? `${primary} Mostrando o primeiro disponível.`
-        : "O asset visualizado por último não está disponível nos filtros atuais. Mostrando o primeiro disponível.",
-      duration: 5000,
-      action: {
-        label: "Limpar filtros",
-        onClick: () => {
-          resetFilters();
-          clearLastPreviewAsset();
-        },
-      },
-    });
-
-  }, [assetMissingFromList, resetFilters, removalCauses]);
-
-  // Sync URL ?asset=<id> with current activeAsset.
-  // Use push when the change came from a deliberate user action (arrows/thumbs),
-  // replace when it's a passive sync (clamp/init/filter change).
-  useEffect(() => {
-    if (!activeAsset) return;
-    if (searchParams.get("asset") === activeAsset.id) return;
-    const next = new URLSearchParams(searchParams);
-    next.set("asset", activeAsset.id);
-    const replace = !userNavRef.current;
-    userNavRef.current = false;
-    setSearchParams(next, { replace });
-  }, [activeAsset, searchParams, setSearchParams]);
-
-  // Persist last viewed asset to localStorage — only when the user explicitly
-  // selected it (arrows/thumbs/URL nav). This prevents a filter-induced fallback
-  // (e.g. asset disappeared, fell back to index 0) from overwriting the user's
-  // intent in localStorage. The URL change effect updates the ref on user nav.
-  useEffect(() => {
-    if (!activeAsset) return;
-    if (lastUserSelectedIdRef.current !== activeAsset.id) return;
-    try {
-      localStorage.setItem(
-        LAST_ASSET_KEY,
-        JSON.stringify({ id: activeAsset.id, ts: Date.now() }),
-      );
-    } catch { /* ignore */ }
-  }, [activeAsset]);
-
-  const selectAssetAt = (idx: number, opts?: { pushHistory?: boolean }) => {
-    if (assets.length === 0) return;
-    if (opts?.pushHistory) userNavRef.current = true;
-    const normalized = ((idx % assets.length) + assets.length) % assets.length;
-    const target = assets[normalized];
-    if (target) lastUserSelectedIdRef.current = target.id;
-    setActiveIndex(normalized);
-  };
-  const goPrev = () => selectAssetAt(activeIndex - 1, { pushHistory: true });
-  const goNext = () => selectAssetAt(activeIndex + 1, { pushHistory: true });
-
-  const buildShareableUrl = (): string | null => {
-    if (typeof window === "undefined") return null;
-    if (!activeAsset) return null;
-    const params = new URLSearchParams(searchParams);
-    params.set("asset", activeAsset.id);
-    if (compareMode && compare.selectedIds.length >= 2) {
-      params.set("compare", compare.selectedIds.join(","));
-    } else {
-      params.delete("compare");
-    }
-    const qs = params.toString();
-    return `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ""}`;
-  };
-
-  const handleCopyShareLink = async () => {
-    const url = buildShareableUrl();
-    if (!url) return;
-    const showSuccess = () => {
-      setCopied(true);
-      if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
-      copiedTimeoutRef.current = window.setTimeout(() => setCopied(false), 1500);
-      toast.success("Link copiado", {
-        description: compareMode && compare.selectedIds.length >= 2
-          ? "Quem abrir verá a mesma comparação e filtros."
-          : "Quem abrir verá o mesmo asset e filtros.",
-        duration: 2500,
-      });
-    };
-    try {
-      await navigator.clipboard.writeText(url);
-      showSuccess();
-      return;
-    } catch { /* fallback below */ }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = url;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      if (ok) { showSuccess(); return; }
-      throw new Error("execCommand failed");
-    } catch {
-      toast.error("Não foi possível copiar", { description: url, duration: 6000 });
-    }
-  };
-
-  useEffect(() => () => {
-    if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
-  }, []);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      const inEditable = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
-      // When the detail drawer is open, let Radix `Sheet` own ALL keys (Esc closes
-      // the drawer via onOpenChange → onClose → setDetailAsset(null), focus returns
-      // to the previous trigger). Skipping here prevents Esc from both closing the
-      // drawer AND navigating away from /dam/preview in the same keypress.
-      if (detailAsset) return;
-
-      // Esc has special handling — even inside inputs we want to blur first.
-      if (e.key === "Escape") {
-        if (inEditable && target) {
-          e.preventDefault();
-          target.blur();
-          return;
-        }
-        e.preventDefault();
-        navigate(`/dam${queryString}`);
-        return;
-      }
-
-      if (inEditable) return;
-
-      if (e.key === "m" || e.key === "M") {
-        e.preventDefault();
-        setCompareMode((v) => !v);
-        return;
-      }
-      if (compareMode && e.key === " ") {
-        e.preventDefault();
-        if (activeAsset) compare.toggle(activeAsset.id);
-        return;
-      }
-      if (e.key === "ArrowLeft" || e.key === "k" || e.key === "K") {
-        e.preventDefault();
-        goPrev();
-      } else if (e.key === "ArrowRight" || e.key === "j" || e.key === "J") {
-        e.preventDefault();
-        goNext();
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        if (assets.length > 0) selectAssetAt(0, { pushHistory: true });
-      } else if (e.key === "End") {
-        e.preventDefault();
-        if (assets.length > 0) selectAssetAt(assets.length - 1, { pushHistory: true });
-      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        if (activeAsset) {
-          const params = new URLSearchParams(queryString.startsWith("?") ? queryString.slice(1) : queryString);
-          params.set("asset", activeAsset.id);
-          window.open(`/dam/preview?${params.toString()}`, "_blank", "noopener,noreferrer");
-        }
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (activeAsset) setDetailAsset(activeAsset);
-      } else if ((e.key === "C" || (e.key === "c" && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey && e.shiftKey) {
-        e.preventDefault();
-        void handleCopyShareLink();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assets.length, activeAsset, detailAsset, queryString]);
-
-  if (!currentOrgId) {
-    return (
-      <div className="p-6">
-        <Card className="p-8 text-center">
-          <FolderArchive className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-          <h2 className="text-lg font-semibold mb-1">Selecione uma organização</h2>
-          <p className="text-sm text-muted-foreground">
-            A pré-visualização de assets é por organização.
-          </p>
-        </Card>
-      </div>
-    );
-  }
+  if (!currentOrgId) return <div className="p-8 text-center"><Card className="p-12"><p className="text-muted-foreground">Selecione uma organização</p></Card></div>;
 
   return (
-    <div
-      className="h-[calc(100vh-4rem)] flex flex-col"
-      role="region"
-      aria-label="Pré-visualização de assets"
-    >
-      <header className="border-b border-border px-4 py-2 flex items-center gap-3 shrink-0">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to={`/dam${queryString}`}>
-            <ArrowLeft className="w-4 h-4 mr-1.5" />
-            Voltar à biblioteca
-          </Link>
-        </Button>
-        <div className="text-sm font-medium flex items-center gap-2">
-          <FolderArchive className="w-4 h-4" />
-          Pré-visualização rápida
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" asChild title="Voltar para a biblioteca (Esc)">
+            <Link to={`/dam${queryString}`}><ArrowLeft className="h-5 w-5" /></Link>
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary"><FolderArchive className="h-5 w-5" /></div>
+            <div><h1 className="font-bold text-sm leading-none">Pré-visualização</h1><p className="text-[10px] text-muted-foreground mt-0.5">Navegue e compare assets</p></div>
+          </div>
         </div>
-        <TooltipProvider delayDuration={200}>
-          {assets.length > 0 && (
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="secondary"
-                  className="h-6 gap-1 px-2 text-[11px] font-mono"
-                  aria-label="Posição sincronizada com a URL"
-                >
-                  <Link2 className="w-3 h-3" />
-                  {activeIndex + 1} / {assets.length}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>Sincronizado com a URL (?asset=)</TooltipContent>
+              <TooltipTrigger asChild><Badge variant="outline" className="hidden lg:flex items-center gap-1 font-mono text-[10px] opacity-60"><Keyboard className="h-3 w-3" /> M · Espaço · Enter</Badge></TooltipTrigger>
+              <TooltipContent className="text-xs">
+                <div className="space-y-1"><div><kbd className="font-mono">M</kbd> alternar comparação</div><div><kbd className="font-mono">Espaço</kbd> selecionar para comparar</div><div><kbd className="font-mono">Enter</kbd> abrir detalhes</div></div>
+              </TooltipContent>
             </Tooltip>
-          )}
-          {(assetMissingFromList || assetRemovedByFilter) && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-transparent px-2 h-6 text-[11px] text-warning hover:bg-warning/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Asset removido pelos filtros — ver motivos"
-                >
-                  <AlertCircle className="w-3 h-3" />
-                  Asset removido pelos filtros
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-80 text-xs space-y-3">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">Por que sumiu?</div>
-                  <div className="text-muted-foreground">
-                    {lastKnownAsset
-                      ? <>O asset <span className="font-medium text-foreground">{lastKnownAsset.name}</span> não está mais nos resultados.</>
-                      : "O asset visualizado por último não está mais nos resultados."}
-                  </div>
-                </div>
-                {removalCauses.length > 0 ? (
-                  <ul className="space-y-2">
-                    {removalCauses.map((c) => (
-                      <li key={c.kind} className="space-y-1.5">
-                        <div className="leading-snug">{c.message}</div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[11px]"
-                          onClick={() => clearCause(c.kind)}
-                        >
-                          {causeActionLabel(c.kind)}
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-muted-foreground">
-                    Não foi possível identificar o motivo exato — pode ter sido arquivado ou excluído.
-                  </div>
-                )}
-                <div className="pt-1 border-t border-border">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full h-7 text-[11px]"
-                    onClick={() => resetFilters()}
-                  >
-                    Limpar todos os filtros
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-        </TooltipProvider>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void handleCopyShareLink()}
-          disabled={!activeAsset || assets.length === 0}
-          className="ml-auto h-8 gap-1.5"
-          aria-label={
-            compareMode && compare.selectedIds.length >= 2
-              ? "Copiar link compartilhável da comparação atual"
-              : "Copiar link compartilhável do asset atual"
-          }
-          title="Copiar link (Shift+C)"
-        >
-          {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-          <span className="hidden sm:inline">{copied ? "Copiado" : "Copiar link"}</span>
-        </Button>
-        <span className="sr-only" role="status" aria-live="polite">
-          {copied ? "Link copiado para a área de transferência" : ""}
-        </span>
-        <Button
-          variant={compareMode ? "default" : "outline"}
-          size="sm"
-          onClick={() => setCompareMode((v) => !v)}
-          className="h-8 gap-1.5"
-          aria-pressed={compareMode}
-          title="Modo comparação (M)"
-        >
-          <Layers className="w-3.5 h-3.5" />
-          Compare
-          {compare.count > 0 && (
-            <Badge variant="secondary" className="h-4 px-1.5 text-[10px] ml-0.5">
-              {compare.count}
-            </Badge>
-          )}
-        </Button>
-        <ExportMenu
-          assets={assets}
-          selectedAssets={selectedAssets}
-          clients={clients}
-          compareMode={compareMode}
-        />
-        <div className="text-xs text-muted-foreground hidden md:block">
-          ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Shift+C link · M compare · Espaço selecionar · Esc voltar
+          </TooltipProvider>
+          <div className="h-4 w-px bg-border mx-1" />
+          <Button variant={compareMode ? "default" : "outline"} size="sm" onClick={() => setCompareMode(!compareMode)} className="h-8 gap-2">
+            <Layers className="h-4 w-4" /> {compareMode ? "Comparando" : "Comparar"}
+            {compare.selectedIds.length > 0 && <Badge variant="secondary" className="h-4 px-1 min-w-[1.25rem] text-[10px] ml-0.5">{compare.selectedIds.length}</Badge>}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopyShareLink} className="h-8 gap-2" disabled={!activeAsset}>
+            {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />} {copied ? "Copiado" : "Compartilhar"}
+          </Button>
+          <ExportMenu assets={assets} organizationId={currentOrgId} filters={queryFilters} filtersSummary={{}} />
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden h-8 w-8"
-              aria-label="Atalhos de teclado"
-            >
-              <Keyboard className="w-4 h-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-64 text-xs">
-            ← / → (j/k) navegar · Home/End extremos · Enter detalhes · Ctrl+Enter nova aba · Z zoom · C copiar · D baixar · Shift+C link · M compare · Espaço selecionar (no compare) · Esc voltar
-          </PopoverContent>
-        </Popover>
       </header>
 
-      <ActiveFiltersSummaryPanel
-        state={state}
-        activeAsset={activeAsset}
-        clientNameById={clientNameById}
-        onClearAssetTypes={() => setAssetTypes([])}
-        onClearClient={() => setClientId("all")}
-        onClearTags={() => setTags([])}
-        onClearSearch={() => setSearch("")}
-        onClearArchived={() => setIncludeArchived(true)}
-        onResetAll={() => resetFilters()}
-      />
-
-      <div className="flex-1 flex min-h-0">
-        <PreviewSidebar
-          filters={filters}
-          clients={clients}
-          assets={assets}
-          total={total}
-          isLoading={isLoading}
-        />
-
-        <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex overflow-hidden">
+        <PreviewSidebar assets={assets} activeIndex={activeIndex} onSelect={(idx) => selectAssetAt(idx, { pushHistory: true })} isLoading={isLoading} compareMode={compareMode} compare={compare} />
+        <main className="flex-1 relative flex flex-col bg-muted/20 overflow-hidden">
           {compareMode ? (
-            <>
-              <CompareTopBar
-                count={compare.count}
-                max={compare.max}
-                onClear={compare.clear}
-                onExit={() => setCompareMode(false)}
-                onExitAndClear={() => {
-                  compare.clear();
-                  setCompareMode(false);
-                }}
-              />
-              {selectedAssets.length >= 2 ? (
-                <CompareGrid assets={selectedAssets} onRemove={compare.remove} />
-              ) : (
-                <div className="flex-1 flex items-center justify-center bg-muted/10 text-sm text-muted-foreground p-6 text-center">
-                  Selecione ao menos 2 assets do strip abaixo (até {compare.max}) para comparar lado a lado.
-                </div>
-              )}
-            </>
+            <CompareGrid assets={selectedAssets} max={compare.max} onRemove={(id) => compare.toggle(id)} onClear={compare.clear} onOpenDetails={(a) => setDetailAsset(a)} />
           ) : (
-            <PreviewStage
-              asset={activeAsset}
-              index={activeIndex}
-              total={assets.length}
-              onPrev={goPrev}
-              onNext={goNext}
-              onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)}
-            />
+            <PreviewStage asset={activeAsset} isLoading={isLoading} onPrev={goPrev} onNext={goNext} onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)} />
           )}
-          <PreviewThumbStrip
-            assets={assets}
-            activeIndex={activeIndex}
-            onSelect={(i) => selectAssetAt(i, { pushHistory: true })}
-            selectionMode={compareMode}
-            selectedIds={compare.selectedIds}
-            onToggleSelect={compare.toggle}
-          />
-        </div>
+          {assetRemovedByFilter && (
+            <ActiveFiltersSummaryPanel causes={removalCauses} onClearCause={clearCause} actionLabel={causeActionLabel} />
+          )}
+          <PreviewThumbStrip assets={assets} activeIndex={activeIndex} onSelect={(idx) => selectAssetAt(idx, { pushHistory: true })} compare={compare} />
+        </main>
       </div>
 
-      <AssetDetailDrawer
-        asset={detailAsset}
-        onClose={() => setDetailAsset(null)}
-        onSelectAsset={(a) => setDetailAsset(a)}
-        searchQuery={debouncedSearch.trim().length >= 2 ? debouncedSearch.trim() : undefined}
-      />
+      {detailAsset && <AssetDetailDrawer asset={detailAsset} onClose={() => setDetailAsset(null)} searchQuery={debouncedSearch} onSelectAsset={(a) => { setDetailAsset(null); const idx = assets.findIndex(x => x.id === a.id); if (idx >= 0) selectAssetAt(idx, { pushHistory: true }); }} />}
       <ExportProgressPanel />
     </div>
   );
