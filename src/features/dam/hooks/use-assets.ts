@@ -201,7 +201,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       const { data, error } = await q.select().single();
       if (error) {
         if (error.code === "PGRST116") {
-          throw new Error("Conflito de concorrência: o registro foi alterado ou excluído.");
+          throw new Error("Conflito de concorrência: o registro foi alterado ou excluído por outro usuário.");
         }
         throw error;
       }
