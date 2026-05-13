@@ -1,4 +1,4 @@
-import { Download, Share2, Image, FileImage } from "lucide-react";
+import { Download, Share2, Image as ImageIcon, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
