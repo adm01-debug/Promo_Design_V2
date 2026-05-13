@@ -13,7 +13,6 @@ import { useMockupDrafts } from "@/features/mockup";
 import { useAuth } from "@/hooks/use-auth";
 import DashboardWidgetWrapper from "@/components/DashboardWidgetWrapper";
 import { useWidgetLayout, type WidgetId } from "@/hooks/use-widget-layout";
-import { useOrganizations } from "@/hooks/use-organization";
 import { useOrganizationInvites } from "@/features/organization/hooks/use-invites";
 import heroMockup from "@/assets/hero-mockup.jpg";
 import mockupCard from "@/assets/mockup-card.jpg";
