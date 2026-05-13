@@ -147,7 +147,7 @@ export default function DamPreviewPage() {
     };
   }, [state, debouncedSearch]);
 
-  const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
+  const { assets, isLoading } = useAssets(currentOrgId, queryFilters);
 
   const { activeAsset, goPrev, goNext, selectAssetAt } = usePreviewNavigation({
     assets, activeIndex, setActiveIndex, searchParams, setSearchParams
@@ -234,26 +234,6 @@ export default function DamPreviewPage() {
     });
   }, [assetMissingFromList, resetFilters, removalCauses]);
 
-  const clearCause = (kind: any) => {
-    switch (kind) {
-      case "assetTypes": setAssetTypes([]); break;
-      case "clientId": setClientId("all"); break;
-      case "tags": setTags([]); break;
-      case "search": setSearch(""); break;
-      case "includeArchived": setIncludeArchived(true); break;
-    }
-  };
-
-  const causeActionLabel = (kind: any): string => {
-    switch (kind) {
-      case "assetTypes": return "Remover filtro de tipo";
-      case "clientId": return "Remover filtro de cliente";
-      case "tags": return "Remover filtro de tags";
-      case "search": return "Limpar busca";
-      case "includeArchived": return "Incluir arquivados";
-      default: return "Limpar filtro";
-    }
-  };
 
   if (!currentOrgId) return <div className="p-8 text-center"><Card className="p-12"><p className="text-muted-foreground">Selecione uma organização</p></Card></div>;
 
@@ -286,22 +266,57 @@ export default function DamPreviewPage() {
           <Button variant="outline" size="sm" onClick={handleCopyShareLink} className="h-8 gap-2" disabled={!activeAsset}>
             {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />} {copied ? "Copiado" : "Compartilhar"}
           </Button>
-          <ExportMenu assets={assets} organizationId={currentOrgId} filters={queryFilters} filtersSummary={{}} />
+          <ExportMenu 
+            assets={assets} 
+            selectedAssets={selectedAssets}
+            clients={clients}
+            compareMode={compareMode}
+          />
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <PreviewSidebar assets={assets} activeIndex={activeIndex} onSelect={(idx) => selectAssetAt(idx, { pushHistory: true })} isLoading={isLoading} compareMode={compareMode} compare={compare} />
+        <PreviewSidebar 
+          filters={filters} 
+          clients={clients} 
+          assets={assets} 
+          total={assets.length} 
+          isLoading={isLoading} 
+        />
         <main className="flex-1 relative flex flex-col bg-muted/20 overflow-hidden">
           {compareMode ? (
-            <CompareGrid assets={selectedAssets} max={compare.max} onRemove={(id) => compare.toggle(id)} onClear={compare.clear} onOpenDetails={(a) => setDetailAsset(a)} />
+            <CompareGrid 
+              assets={selectedAssets} 
+              onRemove={(id) => compare.toggle(id)} 
+            />
           ) : (
-            <PreviewStage asset={activeAsset} isLoading={isLoading} onPrev={goPrev} onNext={goNext} onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)} />
+            <PreviewStage 
+              asset={activeAsset} 
+              index={activeIndex}
+              total={assets.length}
+              onPrev={goPrev} 
+              onNext={goNext} 
+              onOpenDetails={() => activeAsset && setDetailAsset(activeAsset)} 
+            />
           )}
           {assetRemovedByFilter && (
-            <ActiveFiltersSummaryPanel causes={removalCauses} onClearCause={clearCause} actionLabel={causeActionLabel} />
+            <ActiveFiltersSummaryPanel 
+              state={state}
+              activeAsset={activeAsset}
+              clientNameById={clientNameById}
+              onClearAssetTypes={() => setAssetTypes([])}
+              onClearClient={() => setClientId("all")}
+              onClearTags={() => setTags([])}
+              onClearSearch={() => setSearch("")}
+              onClearArchived={() => setIncludeArchived(true)}
+              onResetAll={resetFilters}
+            />
           )}
-          <PreviewThumbStrip assets={assets} activeIndex={activeIndex} onSelect={(idx) => selectAssetAt(idx, { pushHistory: true })} compare={compare} />
+          <PreviewThumbStrip 
+            assets={assets} 
+            activeIndex={activeIndex} 
+            onSelect={(idx: number) => selectAssetAt(idx, { pushHistory: true })} 
+          />
         </main>
       </div>
 

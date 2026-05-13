@@ -26,7 +26,11 @@ export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, u
     if (!asset || tagError) return;
     setSavingTags(true);
     try {
-      await updateAsset.mutateAsync({ id: asset.id, patch: { tags: tagsDraft } });
+      await updateAsset.mutateAsync({ 
+        id: asset.id, 
+        patch: { tags: tagsDraft },
+        lockVersion: (asset as any).lock_version 
+      });
       toast.success("Tags atualizadas");
       setEditingTags(false);
     } catch (e) {

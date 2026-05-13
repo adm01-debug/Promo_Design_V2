@@ -193,16 +193,26 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: Partial<AssetInsert> & { is_archived?: boolean } }) => {
-      const { error } = await supabase.from("assets").update(patch).eq("id", id);
-      if (error) throw error;
+    mutationFn: async ({ id, patch, lockVersion }: { id: string; patch: Partial<AssetInsert> & { is_archived?: boolean }; lockVersion?: number }) => {
+      let q = supabase.from("assets").update(patch).eq("id", id);
+      if (typeof lockVersion === "number") {
+        q = q.eq("lock_version", lockVersion);
+      }
+      const { data, error } = await q.select().single();
+      if (error) {
+        if (error.code === "PGRST116") {
+          throw new Error("Conflito de concorrência: o registro foi alterado ou excluído por outro usuário.");
+        }
+        throw error;
+      }
+      return data as unknown as Asset;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
   });
 
   const archive = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("assets").update({ is_archived: true }).eq("id", id);
+      const { error } = await supabase.from("assets").update({ is_archived: true, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
@@ -210,7 +220,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
 
   const restore = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("assets").update({ is_archived: false }).eq("id", id);
+      const { error } = await supabase.from("assets").update({ is_archived: false, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
