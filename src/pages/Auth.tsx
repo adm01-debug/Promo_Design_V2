@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, Mail, Lock, Loader2, Eye, EyeOff, Shield, Sparkles } from "lucide-react";
+import { Layers, Mail, Lock, Loader2, Eye, EyeOff, Shield, Sparkles, LogIn } from "lucide-react";
 import PasswordStrength from "@/components/PasswordStrength";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Navigate } from "react-router-dom";
 import AuthLeftPanel from "@/components/AuthLeftPanel";
+import MfaChallenge from "@/components/MfaChallenge";
 
 type AuthMode = "login" | "signup" | "forgot";
 
