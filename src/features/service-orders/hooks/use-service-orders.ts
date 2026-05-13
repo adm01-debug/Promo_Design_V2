@@ -283,7 +283,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("service_orders").delete().eq("id", id);
+      const { error } = await supabase.from("service_orders").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: invalidate,
