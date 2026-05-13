@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { AuditAction, AuditFilterState } from "../hooks/use-audit-log";
+import type { AuditAction } from "../hooks/use-audit-log";
+import type { AuditFilterState } from "../components/AuditFilters";
 
 const PAGE_SIZE_KEY = "audit-page-size";
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
