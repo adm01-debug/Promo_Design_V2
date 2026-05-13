@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { LAST_ASSET_KEY } from "../pages/DamPreviewPage";
 import type { Asset } from "../hooks/use-assets";
 
