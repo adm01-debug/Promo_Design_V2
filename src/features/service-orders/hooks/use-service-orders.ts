@@ -290,7 +290,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   });
 
   const addOrder = useCallback(
-    async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+    async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt">) => {
       const result = await addMutation.mutateAsync(order);
       return result;
     },
