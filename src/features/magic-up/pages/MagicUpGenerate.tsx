@@ -71,13 +71,58 @@ const MagicUpGenerate = () => {
     const finalPrompt = prompt.trim() || smartPrompt;
     if (!finalPrompt) return;
     setIsGenerating(true);
-    setTimeout(() => {
+    setLastError(null);
+    const requestId = crypto.randomUUID();
+
+    ErrorLogger.info("Starting image generation", { prompt: finalPrompt, requestId, product: selectedProduct?.name });
+
+    try {
+      // Simulate API call for now (this is where the real fetch would be)
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // 5% chance of simulated error for testing logging
+          if (Math.random() < 0.05) {
+            reject(new Error("Simulated network timeout or quota exceeded"));
+          } else {
+            resolve(true);
+          }
+        }, 2000);
+      });
+
       const batchId = Date.now().toString();
-      const variations = VARIATION_STYLES.map((style, i) => ({ id: `${batchId}-${i}`, imageUrl: "/placeholder.svg", favorite: false, selected: i === 0, style: VARIATION_LABELS[i] }));
-      setGenerationBatches((prev) => [{ id: batchId, prompt: finalPrompt, productName: selectedProduct?.name, variations, createdAt: new Date().toISOString() }, ...prev]);
-      saveToHistory({ prompt: finalPrompt, imageUrl: "/placeholder.svg", productName: selectedProduct?.name, productSku: selectedProduct?.sku, style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label });
+      const variations = VARIATION_STYLES.map((style, i) => ({ 
+        id: `${batchId}-${i}`, 
+        imageUrl: "/placeholder.svg", 
+        favorite: false, 
+        selected: i === 0, 
+        style: VARIATION_LABELS[i] 
+      }));
+
+      setGenerationBatches((prev) => [{ 
+        id: batchId, 
+        prompt: finalPrompt, 
+        productName: selectedProduct?.name, 
+        variations, 
+        createdAt: new Date().toISOString() 
+      }, ...prev]);
+
+      saveToHistory({ 
+        prompt: finalPrompt, 
+        imageUrl: "/placeholder.svg", 
+        productName: selectedProduct?.name, 
+        productSku: selectedProduct?.sku, 
+        style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label 
+      });
+
+      ErrorLogger.info("Generation successful", { batchId, requestId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido ao gerar imagem";
+      setLastError(message);
+      ErrorLogger.error("Failed to generate image", error, { prompt: finalPrompt, requestId });
+      toast.error("Falha na geração: " + message);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   const toggleFavorite = (batchId: string, varId: string) => {
