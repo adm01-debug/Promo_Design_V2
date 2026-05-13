@@ -194,8 +194,38 @@ const OrganizationPage = () => {
                 })}
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-4">
-              💡 Para adicionar membros, eles precisam se cadastrar primeiro. O fluxo de convite por e-mail será implementado na próxima onda.
+            {invites.length > 0 && (
+              <div className="mt-8 space-y-4 pt-6 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" /> Convites Pendentes
+                  </h3>
+                  <Badge variant="outline" className="font-mono text-[10px]">{invites.length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {invites.filter(inv => !inv.accepted_at).map((inv) => (
+                    <div key={inv.id} className="flex items-center justify-between p-3 rounded-md border border-dashed bg-muted/30">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium truncate">{inv.email}</span>
+                          <Badge variant="secondary" className="text-[9px] uppercase">{ROLE_LABEL[inv.role]}</Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          Enviado em {format(new Date(inv.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                      {canManage && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteInvite.mutate(inv.id)} title="Cancelar convite">
+                          <XIcon className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-6 pt-4 border-t border-border/50">
+              💡 Os membros convidados podem aceitar o convite através do link enviado por e-mail ou na tela de login.
             </p>
           </CardContent>
         </Card>
