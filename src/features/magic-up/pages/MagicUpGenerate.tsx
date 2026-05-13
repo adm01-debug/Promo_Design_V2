@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Wand2, Sparkles, Send, Loader2 } from "lucide-react";
+import { Wand2, Sparkles, Send, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
 import { useProducts, useCategories, useProductVariants } from "@/features/mockup";
@@ -9,6 +9,9 @@ import { useMagicUpHistory } from "@/features/magic-up";
 import MagicUpLeftPanel, { STYLE_OPTIONS } from "@/features/magic-up/components/MagicUpLeftPanel";
 import MagicUpProductPickerModal from "@/features/magic-up/components/MagicUpProductPickerModal";
 import MagicUpResultsGrid from "@/features/magic-up/components/MagicUpResultsGrid";
+import { ErrorLogger } from "@/lib/error-logger";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
   const colors = product.colors?.length ? product.colors.join(", ") : "";
