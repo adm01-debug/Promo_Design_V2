@@ -989,6 +989,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_mfa_authenticated: { Args: never; Returns: boolean }
       search_assets_ranked:
         | {
             Args: {
