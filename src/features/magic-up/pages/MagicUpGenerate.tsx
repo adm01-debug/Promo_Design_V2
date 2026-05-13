@@ -39,6 +39,7 @@ const MagicUpGenerate = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const [generationBatches, setGenerationBatches] = useState<{
     id: string; prompt: string; productName?: string;
     variations: { id: string; imageUrl: string; favorite: boolean; selected: boolean; style: string }[];
