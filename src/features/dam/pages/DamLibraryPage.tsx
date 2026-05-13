@@ -140,182 +140,44 @@ const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "u
 export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  
+  const {
+    state,
+    setSearch,
+    setAssetTypes,
+    setClientId,
+    setTags: setSelectedTags,
+    setTagsMode,
+    setIncludeArchived,
+    setArchivedOnly,
+    setOcrOnly,
+    setSort,
+    setPage,
+    setPageSize,
+    setPaginationMode,
+    setViewMode,
+    setShowSizeColumn,
+    setSizeRange,
+    setUpdatedRange,
+    setCustomSize,
+    reset: resetFilters
+  } = useDamFilters();
+
+  const {
+    search, assetTypes, clientId, tags: selectedTags, tagsMode, includeArchived,
+    archivedOnly, ocrOnly, sort, page, pageSize, paginationMode,
+    viewMode, showSizeColumn, sizeRange, updatedRange, customSize
+  } = state;
+
   const [activityOpen, setActivityOpen] = useState(false);
-  const [search, setSearch] = useState<string>(() => searchParams.get("q") ?? readLS(SEARCH_KEY) ?? "");
   const debouncedSearch = useDebounce(search, 300);
-  const [assetTypes, setAssetTypes] = useState<AssetType[]>(() => {
-    const raw = searchParams.get("type");
-    const source = raw ?? readLS(ASSET_TYPES_KEY) ?? "";
-    if (!source) return [];
-    return source.split(",").filter((t): t is AssetType => VALID_ASSET_TYPES.includes(t as AssetType));
-  });
-  const [clientId, setClientId] = useState<string | "all" | "none">(() => {
-    const raw = searchParams.get("client");
-    if (!raw) {
-      const ls = readLS(CLIENT_ID_KEY);
-      return (ls as "all" | "none" | string) || "all";
-    }
-    if (raw === "all" || raw === "none") return raw;
-    return raw;
-  });
-  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
-    const raw = searchParams.get("tags");
-    const source = raw ?? readLS(TAGS_KEY) ?? "";
-    return source ? source.split(",").filter(Boolean) : [];
-  });
-  const [tagsMode, setTagsMode] = useState<"all" | "any">(() => {
-    const fromUrl = searchParams.get("tagsMode");
-    if (fromUrl === "all" || fromUrl === "any") return fromUrl;
-    if (typeof window === "undefined") return "all";
-    return (localStorage.getItem(TAGS_MODE_KEY) as "all" | "any") || "all";
-  });
-  const [includeArchived, setIncludeArchived] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const fromUrl = parseBoolParam(searchParams.get("archived"));
-    if (fromUrl !== null) return fromUrl;
-    return localStorage.getItem(INCLUDE_ARCHIVED_KEY) === "1";
-  });
-  const [archivedOnly, setArchivedOnly] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const fromUrl = parseBoolParam(searchParams.get("archivedOnly"));
-    if (fromUrl !== null) return fromUrl;
-    return localStorage.getItem(ARCHIVED_ONLY_KEY) === "1";
-  });
-  const [ocrOnly, setOcrOnly] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const fromUrl = parseBoolParam(searchParams.get("ocrOnly"));
-    if (fromUrl !== null) return fromUrl;
-    return localStorage.getItem(OCR_ONLY_KEY) === "1";
-  });
-  const [sort, setSort] = useState<SortValue>(() => {
-    const fromUrl = searchParams.get("sort") as SortValue | null;
-    if (fromUrl && SORT_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
-    const ls = readLS(SORT_KEY) as SortValue | null;
-    if (ls && SORT_OPTIONS.some((o) => o.value === ls)) return ls;
-    return "created_desc";
-  });
-  const [page, setPage] = useState<number>(() => {
-    const fromUrl = Number(searchParams.get("page"));
-    if (Number.isFinite(fromUrl) && fromUrl > 0) return fromUrl;
-    if (typeof window === "undefined") return 1;
-    const saved = Number(localStorage.getItem(PAGE_KEY));
-    return Number.isFinite(saved) && saved > 0 ? saved : 1;
-  });
-  const [pageSize, setPageSize] = useState<number>(() => {
-    const fromUrl = Number(searchParams.get("pageSize"));
-    if ([24, 48, 96].includes(fromUrl)) return fromUrl;
-    if (typeof window === "undefined") return 24;
-    const saved = Number(localStorage.getItem(PAGE_SIZE_KEY));
-    return [24, 48, 96].includes(saved) ? saved : 24;
-  });
-  const [paginationMode, setPaginationMode] = useState<PaginationMode>(() => {
-    const fromUrl = searchParams.get("mode");
-    if (fromUrl === "loadmore" || fromUrl === "pages") return fromUrl;
-    if (typeof window === "undefined") return "pages";
-    return (localStorage.getItem(PAGINATION_MODE_KEY) as PaginationMode) || "pages";
-  });
   const [accumulated, setAccumulated] = useState<Asset[]>([]);
-  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
-    if (typeof window === "undefined") return "grid";
-    return (localStorage.getItem(VIEW_MODE_KEY) as "grid" | "list") || "grid";
-  });
-  const [showSizeColumn, setShowSizeColumn] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(LIST_SHOW_SIZE_KEY) === "1";
-  });
-  const [sizeRange, setSizeRange] = useState<SizeRangeKey>(() => {
-    const fromUrl = searchParams.get("size") as SizeRangeKey | null;
-    if (fromUrl && SIZE_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
-    if (typeof window === "undefined") return "all";
-    const ls = localStorage.getItem(SIZE_RANGE_KEY) as SizeRangeKey | null;
-    if (ls && SIZE_RANGE_OPTIONS.some((o) => o.value === ls)) return ls;
-    return "all";
-  });
-  useEffect(() => {
-    try {
-      if (sizeRange !== "all") localStorage.setItem(SIZE_RANGE_KEY, sizeRange);
-      else localStorage.removeItem(SIZE_RANGE_KEY);
-    } catch {
-      /* ignore */
-    }
-  }, [sizeRange]);
-  // Custom (advanced) size range — independent from the preset above. When set,
-  // it overrides the preset for query purposes. Persisted as JSON in
-  // localStorage and as `sizeMin`/`sizeMax` (bytes) in the URL for shareable links.
-  const [customSize, setCustomSize] = useState<CustomSizeRange | null>(() => {
-    if (typeof window === "undefined") return null;
-    const minUrl = Number(searchParams.get("sizeMin"));
-    const maxUrl = Number(searchParams.get("sizeMax"));
-    const hasMin = Number.isFinite(minUrl) && minUrl >= 0;
-    const hasMax = Number.isFinite(maxUrl) && maxUrl >= 0;
-    if (hasMin || hasMax) {
-      const unit = (searchParams.get("sizeUnit") as "KB" | "MB") === "KB" ? "KB" : "MB";
-      const factor = unit === "KB" ? 1024 : 1024 * 1024;
-      return {
-        minBytes: hasMin ? minUrl : null,
-        maxBytes: hasMax ? maxUrl : null,
-        unit,
-        minRaw: hasMin ? String(minUrl / factor) : "",
-        maxRaw: hasMax ? String(maxUrl / factor) : "",
-      };
-    }
-    try {
-      const raw = localStorage.getItem(CUSTOM_SIZE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as CustomSizeRange;
-      if (typeof parsed === "object" && parsed !== null) return parsed;
-    } catch {
-      /* ignore */
-    }
-    return null;
-  });
-  useEffect(() => {
-    try {
-      if (customSize) localStorage.setItem(CUSTOM_SIZE_KEY, JSON.stringify(customSize));
-      else localStorage.removeItem(CUSTOM_SIZE_KEY);
-    } catch {
-      /* ignore */
-    }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (customSize?.minBytes != null) next.set("sizeMin", String(customSize.minBytes));
-      else next.delete("sizeMin");
-      if (customSize?.maxBytes != null) next.set("sizeMax", String(customSize.maxBytes));
-      else next.delete("sizeMax");
-      if (customSize) next.set("sizeUnit", customSize.unit);
-      else next.delete("sizeUnit");
-      return next;
-    }, { replace: true });
-  }, [customSize, setSearchParams]);
-  const [updatedRange, setUpdatedRange] = useState<UpdatedRangeKey>(() => {
-    const fromUrl = searchParams.get("updated") as UpdatedRangeKey | null;
-    if (fromUrl && UPDATED_RANGE_OPTIONS.some((o) => o.value === fromUrl)) return fromUrl;
-    if (typeof window === "undefined") return "all";
-    const ls = localStorage.getItem(UPDATED_RANGE_KEY) as UpdatedRangeKey | null;
-    if (ls && UPDATED_RANGE_OPTIONS.some((o) => o.value === ls)) return ls;
-    return "all";
-  });
-  useEffect(() => {
-    try {
-      if (updatedRange !== "all") localStorage.setItem(UPDATED_RANGE_KEY, updatedRange);
-      else localStorage.removeItem(UPDATED_RANGE_KEY);
-    } catch {
-      /* ignore */
-    }
-  }, [updatedRange]);
-  useEffect(() => {
-    try {
-      if (showSizeColumn) localStorage.setItem(LIST_SHOW_SIZE_KEY, "1");
-      else localStorage.removeItem(LIST_SHOW_SIZE_KEY);
-    } catch {
-      /* ignore */
-    }
-  }, [showSizeColumn]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+
   const quickPreview = useQuickPreview();
   const [copiedLink, setCopiedLink] = useState(false);
   // Captured ONCE at mount: was the Arquivados toggle activated through the
