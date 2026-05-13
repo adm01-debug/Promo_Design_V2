@@ -8,7 +8,9 @@
  * In development the full entry is printed to the console; in production
  * only errors/fatals are logged to console.error to avoid noise.
  */
+
 import * as Sentry from "@sentry/react";
+
 export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
 
 export interface LogEntry {
@@ -90,6 +92,7 @@ export const ErrorLogger = {
         { ...context, errorName: err?.name },
         err?.stack,
       ),
+      error,
     );
   },
 
@@ -102,6 +105,7 @@ export const ErrorLogger = {
         { ...context, errorName: err?.name },
         err?.stack,
       ),
+      error,
     );
   },
 
