@@ -9,7 +9,7 @@ import { Layers, Mail, Lock, Loader2, Eye, EyeOff, Shield, Sparkles } from "luci
 import PasswordStrength from "@/components/PasswordStrength";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import AuthLeftPanel from "@/components/AuthLeftPanel";
 import MfaChallenge from "@/components/MfaChallenge";
 
