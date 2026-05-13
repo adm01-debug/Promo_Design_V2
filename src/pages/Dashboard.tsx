@@ -35,7 +35,6 @@ const Dashboard = () => {
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
   const { widgetOrder, updateOrder, resetOrder, isDefault } = useWidgetLayout();
-  const { currentOrgId } = useOrganizations();
   const { invites, acceptInvite } = useOrganizationInvites(null); // Fetch all invites for current user email
   
   const userInvites = useMemo(() => {
