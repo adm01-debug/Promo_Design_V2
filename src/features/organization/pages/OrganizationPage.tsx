@@ -42,8 +42,14 @@ const OrganizationPage = () => {
       toast({ title: "Organização criada", description: newName });
       setOpen(false);
       setNewName("");
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    try {
+      await createInvite.mutateAsync({ email: inviteEmail.trim(), role: inviteRole });
+      setInviteOpen(false);
+      setInviteEmail("");
     } catch (e) {
-      toast({ title: "Erro ao criar", description: (e as Error).message, variant: "destructive" });
+      // toast handled in hook
     }
   };
 
