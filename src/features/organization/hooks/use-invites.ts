@@ -53,6 +53,9 @@ export function useOrganizationInvites(organizationId: string | null) {
     mutationFn: async ({ email, role }: { email: string; role: AppRole }) => {
       if (!user || !organizationId) throw new Error("Contexto inválido");
       
+      const requestId = crypto.randomUUID();
+      ErrorLogger.info("Creating organization invite", { email, role, organizationId, requestId });
+
       const { data, error } = await supabase
           .from("organization_invites")
           .insert({
@@ -66,6 +69,7 @@ export function useOrganizationInvites(organizationId: string | null) {
       
       if (error) {
         if (error.code === '23505') throw new Error("Já existe um convite pendente para este e-mail.");
+        ErrorLogger.error("Failed to create organization invite", error, { email, organizationId, requestId });
         throw error;
       }
       return data;
