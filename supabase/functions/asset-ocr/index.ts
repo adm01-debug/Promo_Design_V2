@@ -70,7 +70,8 @@ serve(async (req) => {
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
-      return jsonResponse({ error: "Sessão inválida" }, 401, req);
+      console.warn(`[${requestId}] Invalid session:`, userErr);
+      return jsonResponse({ error: "Sessão inválida", requestId }, 401, req);
     }
 
     // Service-role client to update OCR fields after RLS check
