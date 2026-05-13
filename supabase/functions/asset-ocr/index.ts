@@ -168,19 +168,19 @@ serve(async (req) => {
 
     if (!aiRes.ok) {
       const errText = await aiRes.text().catch(() => "");
-      console.error("AI gateway error:", aiRes.status, errText);
+      console.error(`[${requestId}] AI gateway error:`, aiRes.status, errText);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       if (aiRes.status === 429) {
-        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes." }, 429, req);
+        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes.", requestId }, 429, req);
       }
       if (aiRes.status === 402) {
         return jsonResponse(
-          { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage." },
+          { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage.", requestId },
           402,
           req
         );
       }
-      return jsonResponse({ error: "Falha no AI Gateway" }, 502, req);
+      return jsonResponse({ error: "Falha no AI Gateway", requestId }, 502, req);
     }
 
     const aiJson = await aiRes.json();
