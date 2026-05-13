@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TagCounter } from "@/components/ui/tag-counter";
+import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 
 interface Props {
@@ -20,7 +21,7 @@ export function AssetUploadAutoSuggestions({ suggestions, onAddTag, onAddAll, re
           <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Sugestões automáticas
           </Label>
-          <TagCounter current={suggestions.length} max={12} className="h-3.5 px-1 text-[9px]" />
+          <TagCounter count={suggestions.length} max={12} className="h-3.5 px-1 text-[9px]" />
         </div>
         <Button
           type="button"
@@ -48,9 +49,4 @@ export function AssetUploadAutoSuggestions({ suggestions, onAddTag, onAddAll, re
       </div>
     </div>
   );
-}
-
-// Mocking Label to avoid import issues if not passed
-function Label({ children, className }: any) {
-  return <span className={className}>{children}</span>;
 }
