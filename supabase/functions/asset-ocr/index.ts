@@ -36,11 +36,15 @@ function jsonResponse(data: unknown, status = 200, req?: Request) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
+  const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  console.log(`[${requestId}] asset-ocr started`);
+
   try {
     // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Não autorizado" }, 401, req);
+      console.warn(`[${requestId}] Unauthorized: missing bearer token`);
+      return jsonResponse({ error: "Não autorizado", requestId }, 401, req);
     }
 
     // Parse + validate
