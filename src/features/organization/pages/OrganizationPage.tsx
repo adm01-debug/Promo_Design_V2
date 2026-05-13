@@ -8,8 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Trash2, Crown } from "lucide-react";
+import { Building2, Plus, Trash2, Crown, Mail, Send, X as XIcon, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useOrganizationInvites } from "../hooks/use-invites";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const ROLES: AppRole[] = ["owner", "admin", "designer", "approver", "viewer"];
 const ROLE_LABEL: Record<AppRole, string> = {
