@@ -914,6 +914,7 @@ export type Database = {
           client_phone: string | null
           created_at: string
           date: string
+          deleted_at: string | null
           delivery_date: string | null
           faz_parte_kit: boolean | null
           gravacao_detalhe: string | null
@@ -955,6 +956,7 @@ export type Database = {
           client_phone?: string | null
           created_at?: string
           date?: string
+          deleted_at?: string | null
           delivery_date?: string | null
           faz_parte_kit?: boolean | null
           gravacao_detalhe?: string | null
@@ -996,6 +998,7 @@ export type Database = {
           client_phone?: string | null
           created_at?: string
           date?: string
+          deleted_at?: string | null
           delivery_date?: string | null
           faz_parte_kit?: boolean | null
           gravacao_detalhe?: string | null
