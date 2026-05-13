@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Building2, Plus, Trash2, Crown, Mail, Send, X as XIcon, Clock, Loader2 } from "lucide-react";
+import { Building2, Plus, Trash2, Crown, Mail, Send, X as XIcon, Clock, Loader2, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganizationInvites } from "../hooks/use-invites";
 import { format } from "date-fns";
