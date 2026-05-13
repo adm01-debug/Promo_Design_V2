@@ -29,5 +29,16 @@ export function useAuth() {
     await supabase.auth.signOut();
   };
 
-  return { user, session, loading, signOut };
+  const isMfaAuthenticated = session?.user?.factors?.some(f => f.status === 'verified') ?? false;
+  const aal = session?.user?.app_metadata?.aal || 'aal1';
+
+  return { 
+    user, 
+    session, 
+    loading, 
+    signOut,
+    isMfaAuthenticated,
+    aal,
+    isMfaStrong: aal === 'aal2'
+  };
 }
