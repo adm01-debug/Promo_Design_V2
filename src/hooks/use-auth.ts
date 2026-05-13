@@ -29,16 +29,16 @@ export function useAuth() {
     await supabase.auth.signOut();
   };
 
-  const isMfaAuthenticated = session?.user?.factors?.some(f => f.status === 'verified') ?? false;
-  const aal = session?.user?.app_metadata?.aal || 'aal1';
+  const isMfaAuthenticated = session?.user?.factors?.some((f) => f.status === "verified") ?? false;
+  const aal = (session?.user?.app_metadata?.aal as string) || "aal1";
 
-  return { 
-    user, 
-    session, 
-    loading, 
+  return {
+    user,
+    session,
+    loading,
     signOut,
     isMfaAuthenticated,
     aal,
-    isMfaStrong: aal === 'aal2'
+    isMfaStrong: aal === "aal2",
   };
 }

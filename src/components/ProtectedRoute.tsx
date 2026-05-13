@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/hooks/use-auth";
 import LoadingScreen from "./LoadingScreen";
 import { Navigate } from "react-router-dom";

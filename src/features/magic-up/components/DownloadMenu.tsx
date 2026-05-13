@@ -1,4 +1,4 @@
-import { Download, Share2, Image, FileImage } from "lucide-react";
+import { Download, Share2, Image as ImageIcon, FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -75,7 +75,7 @@ const DownloadMenu = ({ imageUrl, fileName = "mockup" }: Props) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onClick={() => downloadAs(imageUrl, fileName, "png")} className="gap-2 text-xs">
-          <Image className="w-3.5 h-3.5" /> Baixar PNG
+          <ImageIcon className="w-3.5 h-3.5" /> Baixar PNG
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => downloadAs(imageUrl, fileName, "jpg")} className="gap-2 text-xs">
           <FileImage className="w-3.5 h-3.5" /> Baixar JPG
