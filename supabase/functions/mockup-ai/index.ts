@@ -251,15 +251,15 @@ Suggest the best placement for a logo on this product, considering:
       });
 
       if (!response.ok) {
+        const t = await response.text().catch(() => "");
+        console.error(`[${requestId}] AI gateway error (suggest-placement):`, response.status, t);
         if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido." }, 429, req);
+          return jsonResponse({ error: "Limite de requisições excedido.", requestId }, 429, req);
         }
         if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados." }, 402, req);
+          return jsonResponse({ error: "Créditos de IA esgotados.", requestId }, 402, req);
         }
-        const t = await response.text();
-        console.error("AI gateway error:", response.status, t);
-        return jsonResponse({ error: "Erro no serviço de IA" }, 500, req);
+        return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
 
       const data = await response.json();
