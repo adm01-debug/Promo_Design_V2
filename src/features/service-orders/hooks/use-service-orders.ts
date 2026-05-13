@@ -56,6 +56,8 @@ export interface StoredServiceOrder {
   fazParteKit: boolean;
   gravacaoDetalhe: string;
   artAssetId?: string | null;
+  lockVersion: number;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -95,6 +97,8 @@ export function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
     fazParteKit: row.faz_parte_kit ?? false,
     gravacaoDetalhe: row.gravacao_detalhe ?? "",
     artAssetId: (row as unknown as { art_asset_id?: string | null }).art_asset_id ?? null,
+    lockVersion: (row as any).lock_version ?? 1,
+    deletedAt: (row as any).deleted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -174,7 +178,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["service-orders"] });
 
   const addMutation = useMutation({
-    mutationFn: async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+    mutationFn: async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt">) => {
       const { data, error } = await supabase
         .from("service_orders")
         .insert({
@@ -222,6 +226,13 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<StoredServiceOrder> }) => {
       const dbUpdates: Record<string, string | number | boolean | null> = {};
+      
+      // Concurrency check
+      const currentOrder = orders.find(o => o.id === id);
+      if (currentOrder?.lockVersion !== undefined) {
+        dbUpdates.lock_version = currentOrder.lockVersion;
+      }
+
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
       if (updates.clientCompany !== undefined) dbUpdates.client_company = updates.clientCompany || null;
@@ -254,22 +265,32 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       if (updates.artAssetId !== undefined) dbUpdates.art_asset_id = updates.artAssetId ?? null;
 
       if (Object.keys(dbUpdates).length === 0) return;
-      const { error } = await supabase.from("service_orders").update(dbUpdates).eq("id", id);
+      
+      const { error, data } = await supabase
+        .from("service_orders")
+        .update(dbUpdates)
+        .eq("id", id)
+        .eq("lock_version", (dbUpdates.lock_version as number) || 0) // Explicit lock check
+        .select();
+
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Conflito de concorrência: A ordem de serviço foi alterada por outro usuário. Por favor, recarregue a página.");
+      }
     },
     onSuccess: invalidate,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("service_orders").delete().eq("id", id);
+      const { error } = await supabase.from("service_orders").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 
   const addOrder = useCallback(
-    async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt">) => {
+    async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt">) => {
       const result = await addMutation.mutateAsync(order);
       return result;
     },

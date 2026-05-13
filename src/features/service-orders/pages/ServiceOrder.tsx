@@ -104,8 +104,18 @@ const ServiceOrder = () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(Object.values(validationErrors)[0]); return; }
     try {
-      if (editId) { await updateOrder(editId, { ...form, status: currentStatus }); toast.success("Ordem de Serviço atualizada!"); setSaved(true); }
-      else { const newOrder = await addOrder(form); navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true }); toast.success("Ordem de Serviço salva!"); setSaved(true); }
+      if (editId) { 
+        await updateOrder(editId, { ...form, status: currentStatus }); 
+        toast.success("Ordem de Serviço atualizada!"); 
+        setSaved(true); 
+      }
+      else { 
+        const { lockVersion: _lv, deletedAt: _da, ...formWithoutMeta } = form as any;
+        const newOrder = await addOrder(formWithoutMeta); 
+        navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true }); 
+        toast.success("Ordem de Serviço salva!"); 
+        setSaved(true); 
+      }
     } catch (err) { toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); }
   };
 

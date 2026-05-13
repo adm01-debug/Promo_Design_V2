@@ -191,6 +191,8 @@ const ServiceOrderList = () => {
         fazParteKit: row.faz_parte_kit ?? false,
         gravacaoDetalhe: row.gravacao_detalhe ?? "",
         artAssetId: row.art_asset_id ?? null,
+        lockVersion: (row as any).lock_version ?? 1,
+        deletedAt: (row as any).deleted_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));
