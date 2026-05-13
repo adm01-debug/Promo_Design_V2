@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { useAssetUpload } from "../hooks/use-asset-upload";
 import { useAssets, type Asset, type AssetType } from "../hooks/use-assets";
 import { useClients } from "@/features/clients/hooks/use-clients";
-import { Upload, History, RotateCw, Loader2 } from "lucide-react";
+import { Upload, History, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { TagChipsInput } from "./TagChipsInput";
 import { TagCounter } from "@/components/ui/tag-counter";
@@ -53,8 +52,7 @@ export function AssetUploadDialog({
     setEntries, 
     addFiles, 
     removeEntry, 
-    changePdfPage,
-    updatePreview 
+    changePdfPage 
   } = useAssetUploadEntries(isVersionMode, MAX_FILES, MAX_SIZE_MB);
 
   const {
@@ -65,8 +63,7 @@ export function AssetUploadDialog({
     tags,
     setTags,
     tagError,
-    persistKey,
-    hydrated
+    persistKey
   } = useAssetUploadDraft(
     organizationId,
     parentAsset?.client_id ?? defaultClientId,
@@ -142,7 +139,8 @@ export function AssetUploadDialog({
       try {
         for (let i = 0; i < pages.length; i++) {
           const page = pages[i];
-          const overrideName = pages.length > 1 
+          const isMulti = pages.length > 1;
+          const overrideName = isMulti 
             ? `${entry.file.name.replace(/\.[^.]+$/, "")} — pág. ${page}${entry.file.name.match(/\.[^.]+$/)?.[0] || ""}` 
             : undefined;
             
@@ -255,7 +253,7 @@ export function AssetUploadDialog({
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">Tags <TagCounter count={tags.length} max={MAX_TAGS} /></Label>
               </div>
-              <TagChipsInput tags={tags} onChange={setTags} suggestions={tagSuggestions} maxTags={MAX_TAGS} disabled={isUploading} error={tagError} />
+              <TagChipsInput value={tags} onChange={setTags} suggestions={tagSuggestions} maxTags={MAX_TAGS} />
               <AssetUploadAutoSuggestions suggestions={autoSuggestions} onAddTag={addAutoTag} onAddAll={addAllAutoTags} remainingSlots={remainingSlots} />
             </div>
           </div>
@@ -274,8 +272,9 @@ export function AssetUploadDialog({
           open={!!pageSelectorEntryId}
           onOpenChange={v => !v && setPageSelectorEntryId(null)}
           file={pageSelectorEntry.file}
-          selectedPages={pageSelectorEntry.pdfPages ?? [pageSelectorEntry.pdfPage ?? 1]}
-          onApply={pages => {
+          totalPages={pageSelectorEntry.pdfPageCount ?? null}
+          initialPages={pageSelectorEntry.pdfPages ?? [pageSelectorEntry.pdfPage ?? 1]}
+          onConfirm={(pages: number[]) => {
             setEntries(prev => prev.map(e => e.id === pageSelectorEntryId ? { ...e, pdfPages: pages, pdfPage: pages[0] } : e));
             setPageSelectorEntryId(null);
           }}
