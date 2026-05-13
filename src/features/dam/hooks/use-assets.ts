@@ -220,7 +220,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
 
   const restore = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("assets").update({ is_archived: false }).eq("id", id);
+      const { error } = await supabase.from("assets").update({ is_archived: false, updated_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
