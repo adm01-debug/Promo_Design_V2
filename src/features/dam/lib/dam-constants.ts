@@ -1,5 +1,39 @@
 import type { AssetType } from "../hooks/use-assets";
 
+export type SizeUnit = "KB" | "MB";
+
+export interface CustomSizeRange {
+  /** Inclusive minimum, in bytes. null = no lower bound. */
+  minBytes: number | null;
+  /** Inclusive maximum, in bytes. null = no upper bound. */
+  maxBytes: number | null;
+  /** Last unit chosen by the user; preserved so the popover restores the same UX. */
+  unit: SizeUnit;
+  /** Raw min input value (string) — kept so the popover restores exactly. */
+  minRaw: string;
+  /** Raw max input value (string) — kept so the popover restores exactly. */
+  maxRaw: string;
+}
+
+export const VIEW_MODE_KEY = "dam-view-mode";
+export const PAGE_SIZE_KEY = "dam-page-size";
+export const PAGE_KEY = "dam-page";
+export const TAGS_MODE_KEY = "dam-tags-mode";
+export const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
+export const ARCHIVED_ONLY_KEY = "dam-archived-only";
+export const OCR_ONLY_KEY = "dam-ocr-only";
+export const PAGINATION_MODE_KEY = "dam-pagination-mode";
+export const SEARCH_KEY = "dam-search";
+export const ASSET_TYPES_KEY = "dam-asset-types";
+export const CLIENT_ID_KEY = "dam-client-id";
+export const TAGS_KEY = "dam-tags";
+export const SORT_KEY = "dam-sort";
+export const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
+export const SIZE_RANGE_KEY = "dam-size-range";
+export const UPDATED_RANGE_KEY = "dam-updated-range";
+export const CUSTOM_SIZE_KEY = "dam-custom-size-range";
+
+
 export type SortValue =
   | "relevance"
   | "created_desc"
