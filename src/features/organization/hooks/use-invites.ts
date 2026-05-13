@@ -85,12 +85,16 @@ export function useOrganizationInvites(organizationId: string | null) {
 
   const deleteInvite = useMutation({
     mutationFn: async (inviteId: string) => {
+      const requestId = crypto.randomUUID();
       const { error } = await supabase
           .from("organization_invites")
           .delete()
           .eq("id", inviteId);
       
-      if (error) throw error;
+      if (error) {
+        ErrorLogger.error("Failed to delete invite", error, { inviteId, requestId });
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
@@ -100,8 +104,12 @@ export function useOrganizationInvites(organizationId: string | null) {
 
   const acceptInvite = useMutation({
     mutationFn: async (token: string) => {
+      const requestId = crypto.randomUUID();
       const { data, error } = await supabase.rpc("accept_organization_invite", { _token: token });
-      if (error) throw error;
+      if (error) {
+        ErrorLogger.error("Failed to accept invite", error, { token, requestId });
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
