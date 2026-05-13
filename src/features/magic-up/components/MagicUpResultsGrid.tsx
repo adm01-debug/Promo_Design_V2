@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Heart, Copy, Image, Package, Loader2 } from "lucide-react";
+import { Sparkles, Heart, Copy, Image as ImageIcon, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DownloadMenu from "@/features/magic-up/components/DownloadMenu";
 import type { DbProduct } from "@/features/mockup";
