@@ -288,8 +288,6 @@ export default function DamPreviewPage() {
             <CompareGrid 
               assets={selectedAssets} 
               onRemove={(id) => compare.toggle(id)} 
-              onClear={compare.clear} 
-              onOpenDetails={(a: Asset) => setDetailAsset(a)} 
             />
           ) : (
             <PreviewStage 
