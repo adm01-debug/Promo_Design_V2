@@ -21,21 +21,16 @@ import { CompareTopBar } from "../components/CompareTopBar";
 import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
 import { ExportProgressPanel } from "../components/ExportProgressPanel";
-import { diagnoseAssetRemoval, type DiagnosisCause } from "../lib/filter-diagnosis";
 import { ActiveFiltersSummaryPanel } from "../components/ActiveFiltersSummaryPanel";
+import { usePreviewSync } from "../hooks/use-preview-sync";
+import { usePreviewDiagnosis } from "../hooks/use-preview-diagnosis";
 
 export const LAST_ASSET_KEY = "dam-last-preview-asset";
 export const LAST_ASSET_TTL_MS = 24 * 60 * 60 * 1000;
 export const COMPARE_MODE_KEY = "dam-compare-mode";
-/** Last URL query string (filters + ?asset + ?compare) used in /dam/preview. */
 export const PREVIEW_QS_KEY = "dam-preview-qs";
-/** Last set of compare-selected asset ids (CSV). Used when URL has no ?compare=. */
 export const COMPARE_IDS_KEY = "dam-compare-ids";
 
-/**
- * Reads the last viewed preview asset id from localStorage, validating TTL.
- * Returns null if missing, malformed, or expired.
- */
 export function readLastPreviewAsset(): string | null {
   if (typeof window === "undefined") return null;
   try {
@@ -55,12 +50,6 @@ export function clearLastPreviewAsset(): void {
   try { localStorage.removeItem(LAST_ASSET_KEY); } catch { /* ignore */ }
 }
 
-/**
- * Peeks the raw localStorage entry without clearing it.
- * Returns { id, expired } so callers can show UX hints (e.g. expiration toasts).
- * - id is null if there is no entry or the entry is malformed.
- * - expired is true only when an entry exists but is past its TTL.
- */
 export function peekLastPreviewAssetRaw(): { id: string | null; expired: boolean } {
   if (typeof window === "undefined") return { id: null, expired: false };
   try {
@@ -101,26 +90,10 @@ export default function DamPreviewPage() {
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);
   const didHydrateCompareRef = useRef(false);
-  const didRestoreSessionRef = useRef(false);
 
-  // Mount-only: if the URL is empty (no filters / asset / compare) but we have a saved
-  // session from a previous visit to /dam/preview, restore it via replace navigation.
-  // This keeps /dam/preview "remembering" the last context the user worked with.
-  useEffect(() => {
-    if (didRestoreSessionRef.current) return;
-    didRestoreSessionRef.current = true;
-    if (typeof window === "undefined") return;
-    if (searchParams.toString() !== "") return; // user came in WITH an explicit URL — respect it
-    let saved: string | null = null;
-    try { saved = sessionStorage.getItem(PREVIEW_QS_KEY); } catch { /* ignore */ }
-    if (!saved) return;
-    const trimmed = saved.startsWith("?") ? saved.slice(1) : saved;
-    if (!trimmed) return;
-    navigate(`/dam/preview?${trimmed}`, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const compare = useCompareSelection();
+  const { didRestore } = usePreviewSync(searchParams, setSearchParams, compare.selectedIds);
 
-  // Show a discreet toast on mount when the persisted "last preview" entry has expired (>24h).
   useEffect(() => {
     if (didShowExpiredToastRef.current) return;
     const { expired } = peekLastPreviewAssetRaw();
@@ -136,8 +109,6 @@ export default function DamPreviewPage() {
 
   const debouncedSearch = useDebounce(state.search, 300);
 
-  // Auto-switch to "relevance" sort when user types a valid search; restore previous sort when search clears.
-  // We track the last value we auto-applied so manual user changes during an active search are respected.
   const previousSortRef = useRef<SortValue | null>(null);
   const lastAutoSortRef = useRef<SortValue | null>(null);
   useEffect(() => {
@@ -174,10 +145,7 @@ export default function DamPreviewPage() {
       sessionStorage.setItem(COMPARE_MODE_KEY, compareMode ? "1" : "0");
     } catch { /* ignore */ }
   }, [compareMode]);
-  const compare = useCompareSelection();
 
-  // Toast hint when re-entering compare mode with a previously saved selection (≥ 2).
-  // Skips first render and the initial bool from sessionStorage to avoid noise on mount.
   const prevCompareModeRef = useRef(compareMode);
   const didShowRestoreToastRef = useRef(false);
   useEffect(() => {
@@ -193,29 +161,6 @@ export default function DamPreviewPage() {
       });
     }
   }, [compareMode, compare.selectedIds.length]);
-
-  // Persist current URL query string (filters + asset + compare) so re-entry into
-  // /dam/preview with no params restores the same context.
-  useEffect(() => {
-    if (!didRestoreSessionRef.current) return; // wait until restore-on-mount has run
-    try {
-      const qs = searchParams.toString();
-      if (qs) sessionStorage.setItem(PREVIEW_QS_KEY, qs);
-    } catch { /* ignore */ }
-  }, [searchParams]);
-
-  // Persist compare selection (ids only). Used as a fallback when URL has no ?compare=.
-  useEffect(() => {
-    try {
-      const ids = compare.selectedIds;
-      if (ids.length >= 2) sessionStorage.setItem(COMPARE_IDS_KEY, ids.join(","));
-      else sessionStorage.removeItem(COMPARE_IDS_KEY);
-    } catch { /* ignore */ }
-  }, [compare.selectedIds]);
-
-  // Last asset that was actually visible in results — used to diagnose why it
-  // disappeared after a filter change, and to restore selection when filters clear.
-  const [lastKnownAsset, setLastKnownAsset] = useState<Asset | null>(null);
 
   const queryFilters = useMemo(() => {
     const opt = SORT_OPTIONS.find((s) => s.value === state.sort) ?? SORT_OPTIONS[1];
@@ -236,14 +181,9 @@ export default function DamPreviewPage() {
 
   const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
 
-  // Hydrate compare selection from ?compare=id1,id2,... on first load when assets are available.
-  // Validates each restored id against the current asset list. If some no longer exist
-  // (deleted, archived, or filtered out), they are dropped silently from the selection
-  // and the user is informed via a toast.
   useEffect(() => {
     if (didHydrateCompareRef.current) return;
     if (assets.length === 0) return;
-    // Prefer ?compare= from URL; fall back to last set persisted in sessionStorage.
     const fromUrl = searchParams.get("compare");
     let raw: string | null = fromUrl;
     let source: "url" | "session" = "url";
@@ -273,10 +213,7 @@ export default function DamPreviewPage() {
         });
       }
     } else {
-      // Not enough valid assets to keep comparing. Drop persisted selection so we don't
-      // keep trying to restore a stale set, and warn the user when something was lost.
       try { sessionStorage.removeItem(COMPARE_IDS_KEY); } catch { /* ignore */ }
-      // Strip stale ?compare= from URL so back/forward and shares don't replay it.
       if (fromUrl) {
         const next = new URLSearchParams(searchParams);
         next.delete("compare");
@@ -296,10 +233,8 @@ export default function DamPreviewPage() {
       }
     }
     didHydrateCompareRef.current = true;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assets]);
+  }, [assets, searchParams, setSearchParams, compare]);
 
-  // Resolve selected assets into Asset[] (maintain selection order).
   const selectedAssets = useMemo(() => {
     if (compare.selectedIds.length === 0) return [];
     const map = new Map(assets.map((a) => [a.id, a]));
@@ -308,20 +243,16 @@ export default function DamPreviewPage() {
       .filter((a): a is Asset => Boolean(a));
   }, [assets, compare.selectedIds]);
 
-  // React to ?asset= changes (incl. browser back/forward) — explicitly depend on assetIdParam.
   useEffect(() => {
     if (assets.length === 0) return;
     if (!assetIdParam) return;
     const idx = assets.findIndex((a) => a.id === assetIdParam);
     if (idx >= 0) {
-      // URL-driven selection counts as user intent — track for localStorage persistence.
       lastUserSelectedIdRef.current = assetIdParam;
       if (idx !== activeIndex) setActiveIndex(idx);
     }
   }, [assetIdParam, assets, activeIndex]);
 
-  // First-load fallback: when no ?asset= and assets just arrived, default to index 0 once.
-  // Guard: never overwrite when ?asset= is present and points to a valid asset in the list.
   useEffect(() => {
     if (didInitRef.current) return;
     if (assets.length === 0) return;
@@ -330,12 +261,10 @@ export default function DamPreviewPage() {
       setActiveIndex(0);
       return;
     }
-    // If the URL asset is in the list, the other effect handles positioning — do not reset.
     const idx = assets.findIndex((a) => a.id === assetIdParam);
     if (idx < 0) setActiveIndex(0);
   }, [assets.length, assetIdParam, assets]);
 
-  // Clamp activeIndex if list shrinks
   useEffect(() => {
     if (activeIndex >= assets.length && assets.length > 0) {
       setActiveIndex(0);
@@ -346,20 +275,14 @@ export default function DamPreviewPage() {
   const assetMissingFromList =
     Boolean(assetIdParam) && assets.length > 0 && !assets.some((a) => a.id === assetIdParam);
 
-  // Build clientId -> name map for diagnosis messages.
   const clientNameById = useMemo(() => {
     const map: Record<string, string> = {};
     for (const c of clients ?? []) map[c.id] = c.name;
     return map;
   }, [clients]);
 
-  // Track last known asset (the last one actually present in results).
-  useEffect(() => {
-    if (activeAsset) setLastKnownAsset(activeAsset);
-  }, [activeAsset]);
+  const { lastKnownAsset, removalCauses, assetRemovedByFilter } = usePreviewDiagnosis(activeAsset, assets, filters, clientNameById);
 
-  // If the lastKnownAsset reappears in the list (e.g. after clearing filters),
-  // restore it as active instead of staying on index 0.
   useEffect(() => {
     if (!lastKnownAsset) return;
     if (assets.length === 0) return;
@@ -370,17 +293,7 @@ export default function DamPreviewPage() {
     }
   }, [assets, lastKnownAsset, activeAsset, activeIndex]);
 
-  // Diagnose why the last known asset is no longer in the results.
-  const removalCauses: DiagnosisCause[] = useMemo(() => {
-    if (!lastKnownAsset) return [];
-    if (assets.some((a) => a.id === lastKnownAsset.id)) return [];
-    return diagnoseAssetRemoval(lastKnownAsset, state, { clientNameById });
-  }, [lastKnownAsset, assets, state, clientNameById]);
-
-  const assetRemovedByFilter = removalCauses.length > 0;
-
-  // Helper: clear a single cause.
-  const clearCause = (kind: DiagnosisCause["kind"]) => {
+  const clearCause = (kind: any) => {
     switch (kind) {
       case "assetTypes": setAssetTypes([]); break;
       case "clientId": setClientId("all"); break;
@@ -390,7 +303,7 @@ export default function DamPreviewPage() {
     }
   };
 
-  const causeActionLabel = (kind: DiagnosisCause["kind"]): string => {
+  const causeActionLabel = (kind: any): string => {
     switch (kind) {
       case "assetTypes": return "Remover filtro de tipo";
       case "clientId": return "Remover filtro de cliente";
@@ -400,9 +313,6 @@ export default function DamPreviewPage() {
     }
   };
 
-  // When the URL/localStorage points to an asset that's not in the current results,
-  // show a one-time toast offering to clear filters. The localStorage entry is kept
-  // (filters may be temporary) — only cleared when the user explicitly chooses to clear filters.
   useEffect(() => {
     if (!assetMissingFromList) return;
     if (didShowFallbackToastRef.current) return;
@@ -421,6 +331,7 @@ export default function DamPreviewPage() {
         },
       },
     });
+
   }, [assetMissingFromList, resetFilters, removalCauses]);
 
   // Sync URL ?asset=<id> with current activeAsset.
