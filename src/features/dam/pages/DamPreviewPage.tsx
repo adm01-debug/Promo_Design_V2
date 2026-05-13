@@ -147,7 +147,7 @@ export default function DamPreviewPage() {
     };
   }, [state, debouncedSearch]);
 
-  const { assets, total, isLoading } = useAssets(currentOrgId, queryFilters);
+  const { assets, isLoading } = useAssets(currentOrgId, queryFilters);
 
   const { activeAsset, goPrev, goNext, selectAssetAt } = usePreviewNavigation({
     assets, activeIndex, setActiveIndex, searchParams, setSearchParams
