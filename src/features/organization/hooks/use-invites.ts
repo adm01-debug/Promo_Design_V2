@@ -23,13 +23,19 @@ export function useOrganizationInvites(organizationId: string | null) {
 
   const query = useQuery({
     queryKey,
-    enabled: !!organizationId && !!user,
+    enabled: !!user,
     queryFn: async (): Promise<OrganizationInvite[]> => {
-      const { data, error } = await supabase
-        .from("organization_invites")
-        .select("*")
-        .eq("organization_id", organizationId!)
-        .order("created_at", { ascending: false });
+      let q = supabase.from("organization_invites").select("*");
+      
+      if (organizationId) {
+        q = q.eq("organization_id", organizationId);
+      } else if (user?.email) {
+        q = q.eq("email", user.email);
+      } else {
+        return [];
+      }
+
+      const { data, error } = await q.order("created_at", { ascending: false });
       
       if (error) throw error;
       return (data ?? []) as unknown as OrganizationInvite[];
