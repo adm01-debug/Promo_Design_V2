@@ -38,7 +38,7 @@ const Auth = () => {
       if (mode === "forgot") { const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` }); if (error) throw error; toast({ title: "E-mail enviado", description: "Verifique sua caixa de entrada para redefinir a senha." }); setMode("login"); }
       else if (mode === "signup") { const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }); if (error) throw error; toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." }); }
       else { 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password }); 
+        const { error } = await supabase.auth.signInWithPassword({ email, password }); 
         if (error) throw error;
         
         const factors = await supabase.auth.mfa.listFactors();
