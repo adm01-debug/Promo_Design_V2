@@ -168,8 +168,8 @@ export default function DamLibraryPage() {
           {quickPreview.enabled && (
             <QuickPreviewPanel 
               asset={quickPreview.activeAsset} 
-              pinned={quickPreview.isPinned}
-              onTogglePin={quickPreview.togglePin}
+              pinned={Boolean(quickPreview.activeAsset && quickPreview.pinnedId === quickPreview.activeAsset.id)}
+              onTogglePin={() => quickPreview.activeAsset && quickPreview.togglePin(quickPreview.activeAsset)}
               onOpenDetails={() => quickPreview.activeAsset && setSelected(quickPreview.activeAsset)}
               clients={clients}
               sortLabel={sortLabel}
