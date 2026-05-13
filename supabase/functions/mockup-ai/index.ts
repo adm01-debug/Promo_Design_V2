@@ -84,7 +84,8 @@ serve(async (req) => {
     if (orgId) {
       const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
       if (hasQuota === false) {
-        return jsonResponse({ error: "Quota de IA da organização atingida para este mês." }, 403, req);
+        console.warn(`[${requestId}] Quota exceeded for org ${orgId}`);
+        return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
       }
     }
 
