@@ -2,16 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { History, Link2, ScanText, Plus, RotateCcw, Check, Copy, Eye, FolderArchive } from "lucide-react";
-import { Link } from "react-router-dom";
+import { History, Link2, ScanText, Plus, RotateCcw, FolderArchive, PanelRight } from "lucide-react";
 import { SavedSearchesMenu } from "./SavedSearchesMenu";
 import { LibraryExportMenu } from "./LibraryExportMenu";
 import { Toggle } from "@/components/ui/toggle";
-import { PanelRight } from "lucide-react";
 import { MIN_SEARCH_LENGTH } from "../hooks/use-assets";
 import { SORT_OPTIONS } from "../lib/dam-constants";
-import type { DamFiltersState, UseDamFiltersReturn } from "../hooks/use-dam-filters";
-import type { Asset } from "../hooks/use-assets";
+import type { UseDamFiltersReturn } from "../hooks/use-dam-filters";
+import type { Asset, AssetType } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
 
 interface Props {
@@ -21,12 +19,13 @@ interface Props {
   onOpenActivity: () => void;
   onOpenBatchOcr: () => void;
   onOpenReset: () => void;
-  quickPreview: any; // Using any for brevity here, should be type-safe in real code
+  quickPreview: any;
   assets: Asset[];
   clients: Client[];
   total: number;
   ocrFilteredOut: number;
   debouncedSearch: string;
+  organizationId: string;
 }
 
 export function DamLibraryHeader({
@@ -34,16 +33,15 @@ export function DamLibraryHeader({
   canUpload,
   onOpenUpload,
   onOpenActivity,
-  onOpenBatchOcr,
   onOpenReset,
   quickPreview,
   assets,
   clients,
   total,
-  ocrFilteredOut,
-  debouncedSearch
+  debouncedSearch,
+  organizationId
 }: Props) {
-  const { state, setSort, setOcrOnly, reset } = filters;
+  const { state, setSort, setOcrOnly } = filters;
   const [copiedLink, setCopiedLink] = useState(false);
 
   const handleCopyLink = async () => {
@@ -55,7 +53,7 @@ export function DamLibraryHeader({
     } catch {}
   };
 
-  const currentSavedFilters = {
+  const currentSavedFilters: any = {
     _v: 1,
     search: debouncedSearch.trim(),
     assetTypes: state.assetTypes,
@@ -99,9 +97,9 @@ export function DamLibraryHeader({
           filters.setIncludeArchived(Boolean(snap.includeArchived));
           filters.setSort((snap.sort as any) ?? "created_desc");
         }} />
-        <Button variant="outline" size="sm" onClick={handleCopyLink}>
+        <Button variant="outline" size="sm" onClick={handleCopyLink} data-testid="dam-copy-link">
           <Link2 className="w-4 h-4 mr-2" />
-          Compartilhar
+          {copiedLink ? "Copiado!" : "Compartilhar"}
         </Button>
         <Button variant="outline" size="sm" onClick={onOpenActivity}>
           <History className="w-4 h-4 mr-2" />
@@ -111,9 +109,9 @@ export function DamLibraryHeader({
           assets={assets}
           clients={clients}
           total={total}
-          organizationId={""} // Pass from parent
-          filters={{} as any} // Pass from parent
-          filtersSummary={{} as any} // Pass from parent
+          organizationId={organizationId}
+          filters={{} as any}
+          filtersSummary={{} as any}
         />
         <Toggle
           pressed={quickPreview.enabled}
@@ -146,7 +144,7 @@ export function DamLibraryHeader({
             <Plus className="w-4 h-4 mr-2" /> Novo asset
           </Button>
         )}
-        <Button variant="outline" size="icon" onClick={onOpenReset}>
+        <Button variant="outline" size="icon" onClick={onOpenReset} data-testid="dam-reset-preferences">
           <RotateCcw className="w-4 h-4" />
         </Button>
       </div>

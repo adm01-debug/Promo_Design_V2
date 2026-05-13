@@ -1,34 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Toggle } from "@/components/ui/toggle";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { 
-  Archive, 
-  ArchiveRestore, 
-  FolderArchive, 
-  LayoutGrid, 
-  List, 
-  Plus, 
-  Eye, 
-  ChevronDown, 
-  Loader2, 
-  FilterX, 
-  PanelRight, 
-  History, 
-  X, 
-  AlertCircle, 
-  ScanText, 
-  HardDrive, 
-  RotateCcw
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Archive, ArchiveRestore, LayoutGrid, List, Loader2, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
@@ -39,28 +16,18 @@ import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { TagFilter } from "../components/TagFilter";
 import { AssetListView } from "../components/AssetListView";
 import { ActiveFiltersBar } from "../components/ActiveFiltersBar";
-import { SavedSearchesMenu } from "../components/SavedSearchesMenu";
 import { QuickPreviewPanel } from "../components/QuickPreviewPanel";
 import { useQuickPreview } from "../hooks/use-quick-preview";
 import { useDebounce } from "@/hooks/use-debounce";
-import { readLastPreviewAsset, clearLastPreviewAsset, peekLastPreviewAssetRaw } from "./DamPreviewPage";
+import { readLastPreviewAsset } from "./DamPreviewPage";
 import { ResultsPagination } from "@/components/ResultsPagination";
-import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
-import { JumpToPage } from "../components/JumpToPage";
 import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
-import { SizeRangeFilter } from "../components/SizeRangeFilter";
 import { useDamFilters } from "../hooks/use-dam-filters";
 import { useDamLibraryResults } from "../hooks/use-dam-library-results";
 import { DamLibraryHeader } from "../components/DamLibraryHeader";
-import { 
-  TYPES, 
-  SORT_OPTIONS, 
-  SIZE_RANGE_OPTIONS, 
-  UPDATED_RANGE_OPTIONS,
-  VALID_ASSET_TYPES 
-} from "../lib/dam-constants";
+import { TYPES } from "../lib/dam-constants";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,14 +43,20 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const { state, setSearch, setAssetTypes, setClientId, setTags, setTagsMode, setIncludeArchived, setArchivedOnly, setOcrOnly, setSort, setPage, setPageSize, setPaginationMode, setViewMode, setShowSizeColumn, setSizeRange, setUpdatedRange, setCustomSize, reset: resetFilters } = filters;
-  const { search, assetTypes, clientId, tags, tagsMode, includeArchived, archivedOnly, ocrOnly, sort, page, pageSize, paginationMode, viewMode, showSizeColumn, sizeRange, updatedRange, customSize } = state;
+  const { 
+    state, setSearch, setAssetTypes, setClientId, setTags, setTagsMode, 
+    setIncludeArchived, setSort, setPage, setViewMode, reset: resetFilters 
+  } = filters;
+  const { 
+    search, assetTypes, clientId, tags, tagsMode, includeArchived, 
+    sort, page, pageSize, paginationMode, viewMode, showSizeColumn 
+  } = state;
 
   const [activityOpen, setActivityOpen] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
   const results = useDamLibraryResults(currentOrgId || "", state, debouncedSearch);
-  const { assets, total, totalPages, isLoading, isFetching, isPaginating, restore, displayedAssets, hasMore, stable, filters: apiFilters, setAccumulated } = results;
+  const { assets, total, totalPages, isLoading, isFetching, isPaginating, restore, displayedAssets, hasMore } = results;
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
@@ -91,11 +64,6 @@ export default function DamLibraryPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const quickPreview = useQuickPreview();
 
-  const [lastPreviewAssetId, setLastPreviewAssetId] = useState<string | null>(() => readLastPreviewAsset());
-  const highlightedRef = useRef<string | null>(null);
-  const [fallbackDismissed, setFallbackDismissed] = useState(false);
-
-  const archivedCount = useMemo(() => displayedAssets.filter((a) => a.is_archived).length, [displayedAssets]);
   const availableTags = useMemo(() => {
     const set = new Set<string>();
     displayedAssets.forEach((a) => a.tags.forEach((t) => set.add(t)));
@@ -110,8 +78,6 @@ export default function DamLibraryPage() {
       toast.error("Falha ao restaurar");
     }
   };
-
-  const hasActiveFilters = debouncedSearch.trim().length >= MIN_SEARCH_LENGTH || assetTypes.length > 0 || clientId !== "all" || tags.length > 0 || includeArchived || customSize !== null || sizeRange !== "all";
 
   if (!currentOrgId) return <div className="p-6 text-center"><Card className="p-8">Selecione uma organização</Card></div>;
 
@@ -130,6 +96,7 @@ export default function DamLibraryPage() {
         total={total}
         ocrFilteredOut={0}
         debouncedSearch={debouncedSearch}
+        organizationId={currentOrgId}
       />
 
       <div className="flex flex-wrap gap-3 items-center">
@@ -180,10 +147,15 @@ export default function DamLibraryPage() {
       {(isLoading && displayedAssets.length === 0) || isPaginating ? (
         <AssetGridSkeleton viewMode={viewMode} count={pageSize} />
       ) : displayedAssets.length === 0 ? (
-        <Card className="p-12 text-center">Nenhum asset encontrado</Card>
+        <Card className="p-12 text-center text-muted-foreground">Nenhum asset encontrado</Card>
       ) : (
         <div className={quickPreview.enabled ? "flex gap-4 items-start" : undefined}>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative">
+            {isFetching && !isLoading && !isPaginating && (
+              <div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center rounded-lg">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            )}
             {viewMode === "list" ? (
               <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} onRestore={can(["owner", "admin", "designer"]) ? handleRestore : undefined} showSize={showSizeColumn} />
             ) : (
@@ -192,13 +164,13 @@ export default function DamLibraryPage() {
               </div>
             )}
           </div>
-          {quickPreview.enabled && <QuickPreviewPanel asset={quickPreview.activeAsset} onClose={quickPreview.toggleEnabled} />}
+          {quickPreview.enabled && <QuickPreviewPanel asset={quickPreview.activeAsset} />}
         </div>
       )}
 
       {paginationMode === "pages" && totalPages > 1 && (
         <div className="flex justify-center pt-6">
-          <ResultsPagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <ResultsPagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       )}
 
@@ -212,9 +184,9 @@ export default function DamLibraryPage() {
       )}
 
       <AssetUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} organizationId={currentOrgId} />
-      {selected && <AssetDetailDrawer open={!!selected} onOpenChange={(o) => !o && setSelected(null)} asset={selected} organizationId={currentOrgId} />}
+      {selected && <AssetDetailDrawer asset={selected} organizationId={currentOrgId} onOpenChange={(o) => !o && setSelected(null)} />}
       <LibraryActivityDialog open={activityOpen} onOpenChange={setActivityOpen} organizationId={currentOrgId} />
-      <BatchOcrDialog open={batchOcrOpen} onOpenChange={setBatchOcrOpen} organizationId={currentOrgId} assets={assets} />
+      <BatchOcrDialog open={batchOcrOpen} onOpenChange={setBatchOcrOpen} assets={assets} />
 
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
