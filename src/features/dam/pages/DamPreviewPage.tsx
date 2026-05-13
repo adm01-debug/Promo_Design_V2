@@ -234,26 +234,6 @@ export default function DamPreviewPage() {
     });
   }, [assetMissingFromList, resetFilters, removalCauses]);
 
-  const clearCause = (kind: any) => {
-    switch (kind) {
-      case "assetTypes": setAssetTypes([]); break;
-      case "clientId": setClientId("all"); break;
-      case "tags": setTags([]); break;
-      case "search": setSearch(""); break;
-      case "includeArchived": setIncludeArchived(true); break;
-    }
-  };
-
-  const causeActionLabel = (kind: any): string => {
-    switch (kind) {
-      case "assetTypes": return "Remover filtro de tipo";
-      case "clientId": return "Remover filtro de cliente";
-      case "tags": return "Remover filtro de tags";
-      case "search": return "Limpar busca";
-      case "includeArchived": return "Incluir arquivados";
-      default: return "Limpar filtro";
-    }
-  };
 
   if (!currentOrgId) return <div className="p-8 text-center"><Card className="p-12"><p className="text-muted-foreground">Selecione uma organização</p></Card></div>;
 
