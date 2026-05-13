@@ -146,15 +146,15 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
+        const t = await response.text().catch(() => "");
+        console.error(`[${requestId}] AI gateway error (remove-bg):`, response.status, t);
         if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }, 429, req);
+          return jsonResponse({ error: "Limite de requisições excedido. Tente novamente em alguns segundos.", requestId }, 429, req);
         }
         if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso." }, 402, req);
+          return jsonResponse({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.", requestId }, 402, req);
         }
-        const t = await response.text();
-        console.error("AI gateway error:", response.status, t);
-        return jsonResponse({ error: "Erro no serviço de IA" }, 500, req);
+        return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
 
       const data = await response.json();
