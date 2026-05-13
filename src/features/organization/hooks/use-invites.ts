@@ -14,6 +14,9 @@ export interface OrganizationInvite {
   expires_at: string;
   created_at: string;
   accepted_at: string | null;
+  organizations?: {
+    name: string;
+  } | null;
 }
 
 export function useOrganizationInvites(organizationId: string | null) {
@@ -25,7 +28,7 @@ export function useOrganizationInvites(organizationId: string | null) {
     queryKey,
     enabled: !!user,
     queryFn: async (): Promise<OrganizationInvite[]> => {
-      let q = supabase.from("organization_invites").select("*");
+      let q = supabase.from("organization_invites").select("*, organizations(name)");
       
       if (organizationId) {
         q = q.eq("organization_id", organizationId);
@@ -47,15 +50,15 @@ export function useOrganizationInvites(organizationId: string | null) {
       if (!user || !organizationId) throw new Error("Contexto inválido");
       
       const { data, error } = await supabase
-        .from("organization_invites")
-        .insert({
-          organization_id: organizationId,
-          email,
-          role,
-          invited_by: user.id
-        })
-        .select()
-        .single();
+          .from("organization_invites")
+          .insert({
+            organization_id: organizationId,
+            email,
+            role,
+            invited_by: user.id
+          })
+          .select()
+          .single();
       
       if (error) {
         if (error.code === '23505') throw new Error("Já existe um convite pendente para este e-mail.");
@@ -75,9 +78,9 @@ export function useOrganizationInvites(organizationId: string | null) {
   const deleteInvite = useMutation({
     mutationFn: async (inviteId: string) => {
       const { error } = await supabase
-        .from("organization_invites")
-        .delete()
-        .eq("id", inviteId);
+          .from("organization_invites")
+          .delete()
+          .eq("id", inviteId);
       
       if (error) throw error;
     },

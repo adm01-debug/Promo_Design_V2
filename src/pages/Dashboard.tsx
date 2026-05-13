@@ -120,8 +120,10 @@ const Dashboard = () => {
                       <Building2 className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">Convite de Organização</p>
-                      <p className="text-xs text-muted-foreground">Você foi convidado para participar de uma nova organização.</p>
+                      <p className="text-sm font-semibold">
+                        Convite de {inv.organizations?.name || "Organização"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Você foi convidado para participar desta organização.</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto">
