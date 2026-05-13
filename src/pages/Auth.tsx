@@ -16,6 +16,7 @@ import MfaChallenge from "@/components/MfaChallenge";
 type AuthMode = "login" | "signup" | "forgot";
 
 const Auth = () => {
+  const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<AuthMode | "mfa">("login");
   const [email, setEmail] = useState("");
