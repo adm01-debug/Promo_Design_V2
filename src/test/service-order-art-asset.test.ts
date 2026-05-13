@@ -48,7 +48,7 @@ function makeValidForm(overrides: Partial<ServiceOrderData> = {}): ServiceOrderD
 }
 
 function makeRow(overrides: Partial<Tables<"service_orders">> = {}): Tables<"service_orders"> {
-  return {
+  const base: Tables<"service_orders"> = {
     id: "22222222-2222-4222-8222-222222222222",
     user_id: "33333333-3333-4333-8333-333333333333",
     os_number: "OS-0001",
@@ -88,8 +88,8 @@ function makeRow(overrides: Partial<Tables<"service_orders">> = {}): Tables<"ser
     last_modified_by: null,
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
-    ...overrides,
   };
+  return { ...base, ...overrides };
 }
 
 describe("artAssetId — Zod validation", () => {
