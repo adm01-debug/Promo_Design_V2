@@ -11,7 +11,6 @@ interface MfaChallengeProps {
 }
 
 const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
-  const { user } = useAuth();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
