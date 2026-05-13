@@ -106,8 +106,9 @@ serve(async (req) => {
 
     const parsed = RequestSchema.safeParse(rawBody);
     if (!parsed.success) {
+      console.warn(`[${requestId}] Validation failed:`, parsed.error.flatten().fieldErrors);
       return jsonResponse(
-        { error: "Validação falhou", details: parsed.error.flatten().fieldErrors },
+        { error: "Validação falhou", details: parsed.error.flatten().fieldErrors, requestId },
         400,
         req
       );
