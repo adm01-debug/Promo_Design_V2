@@ -42,6 +42,11 @@ const OrganizationPage = () => {
       toast({ title: "Organização criada", description: newName });
       setOpen(false);
       setNewName("");
+    } catch (e) {
+      toast({ title: "Erro ao criar", description: (e as Error).message, variant: "destructive" });
+    }
+  };
+
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return;
     try {
