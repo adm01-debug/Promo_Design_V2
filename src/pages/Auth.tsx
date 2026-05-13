@@ -37,7 +37,15 @@ const Auth = () => {
     try {
       if (mode === "forgot") { const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` }); if (error) throw error; toast({ title: "E-mail enviado", description: "Verifique sua caixa de entrada para redefinir a senha." }); setMode("login"); }
       else if (mode === "signup") { const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }); if (error) throw error; toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." }); }
-      else { const { error } = await supabase.auth.signInWithPassword({ email, password }); if (error) throw error; }
+      else { 
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password }); 
+        if (error) throw error;
+        
+        const factors = await supabase.auth.mfa.listFactors();
+        if (factors.data?.totp.some(f => f.status === 'verified')) {
+          setMode("mfa");
+        }
+      }
     } catch (error: unknown) { toast({ title: "Erro", description: error instanceof Error ? error.message : "Ocorreu um erro. Tente novamente.", variant: "destructive" }); }
     finally { setLoading(false); }
   };
