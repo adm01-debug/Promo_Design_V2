@@ -222,11 +222,12 @@ serve(async (req) => {
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       return jsonResponse({ error: "Falha ao salvar texto extraído", requestId }, 500, req);
 
-    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText }, 200, req);
+    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}`);
+    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId }, 200, req);
   } catch (e) {
-    console.error("asset-ocr error:", e);
+    console.error(`[${requestId}] asset-ocr fatal error:`, e);
     return jsonResponse(
-      { error: e instanceof Error ? e.message : "Erro desconhecido" },
+      { error: e instanceof Error ? e.message : "Erro desconhecido", requestId },
       500,
       req
     );
