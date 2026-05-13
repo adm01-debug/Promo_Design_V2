@@ -183,8 +183,12 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const handleRemoveBg = useCallback(async () => {
     if (!logoPreview) return;
     setIsRemovingBg(true);
+    const requestId = crypto.randomUUID();
     try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", { body: { action: "remove-bg", imageBase64: logoPreview } });
+      const { data, error } = await supabase.functions.invoke("mockup-ai", { 
+        body: { action: "remove-bg", imageBase64: logoPreview },
+        headers: { "X-Request-Id": requestId },
+      });
       if (error) throw error;
       if (data?.error) { toast.error(data.error); return; }
       if (data?.imageBase64) {
@@ -200,9 +204,11 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const handleSuggestPlacement = useCallback(async () => {
     if (!selectedProduct) return;
     setIsSuggestingPlacement(true); setAiReasoning(null);
+    const requestId = crypto.randomUUID();
     try {
       const { data, error } = await supabase.functions.invoke("mockup-ai", {
         body: { action: "suggest-placement", productName: selectedProduct.name, templateId: selectedTemplate || "", areaWidth: selectedArea?.max_width || 15, areaHeight: selectedArea?.max_height || 15 },
+        headers: { "X-Request-Id": requestId },
       });
       if (error) throw error;
       if (data?.error) { toast.error(data.error); return; }

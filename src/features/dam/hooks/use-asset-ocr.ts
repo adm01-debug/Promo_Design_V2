@@ -39,9 +39,11 @@ export function useAssetOcr(asset: Asset | null, searchQuery?: string) {
     if (!asset) return;
     setOcrLoading(true);
     setOcrStatus("pending");
+    const requestId = crypto.randomUUID();
     try {
       const { data, error } = await supabase.functions.invoke("asset-ocr", {
         body: { assetId: asset.id, filePath: asset.file_path, mimeType: asset.mime_type ?? "" },
+        headers: { "X-Request-Id": requestId },
       });
       if (error) throw error;
       const result = data as { ok?: boolean; length?: number; hasText?: boolean; skipped?: boolean; error?: string };

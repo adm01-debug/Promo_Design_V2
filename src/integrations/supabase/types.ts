@@ -397,6 +397,7 @@ export type Database = {
           image_url: string | null
           material: string | null
           name: string
+          organization_id: string | null
           sku: string | null
           updated_at: string
           user_id: string
@@ -410,6 +411,7 @@ export type Database = {
           image_url?: string | null
           material?: string | null
           name: string
+          organization_id?: string | null
           sku?: string | null
           updated_at?: string
           user_id: string
@@ -423,6 +425,7 @@ export type Database = {
           image_url?: string | null
           material?: string | null
           name?: string
+          organization_id?: string | null
           sku?: string | null
           updated_at?: string
           user_id?: string
@@ -433,6 +436,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_products_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -598,6 +608,8 @@ export type Database = {
           favorite: boolean
           id: string
           image_url: string
+          lock_version: number | null
+          organization_id: string | null
           product_name: string | null
           product_sku: string | null
           prompt: string
@@ -609,6 +621,8 @@ export type Database = {
           favorite?: boolean
           id?: string
           image_url: string
+          lock_version?: number | null
+          organization_id?: string | null
           product_name?: string | null
           product_sku?: string | null
           prompt: string
@@ -620,20 +634,33 @@ export type Database = {
           favorite?: boolean
           id?: string
           image_url?: string
+          lock_version?: number | null
+          organization_id?: string | null
           product_name?: string | null
           product_sku?: string | null
           prompt?: string
           style?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "magicup_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mockup_drafts: {
         Row: {
           created_at: string
           editor_state: Json | null
           id: string
+          last_modified_by: string | null
+          lock_version: number | null
           name: string
+          organization_id: string | null
           product_name: string | null
           product_sku: string | null
           thumbnail_url: string | null
@@ -644,7 +671,10 @@ export type Database = {
           created_at?: string
           editor_state?: Json | null
           id?: string
+          last_modified_by?: string | null
+          lock_version?: number | null
           name: string
+          organization_id?: string | null
           product_name?: string | null
           product_sku?: string | null
           thumbnail_url?: string | null
@@ -655,14 +685,25 @@ export type Database = {
           created_at?: string
           editor_state?: Json | null
           id?: string
+          last_modified_by?: string | null
+          lock_version?: number | null
           name?: string
+          organization_id?: string | null
           product_name?: string | null
           product_sku?: string | null
           thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mockup_drafts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -782,6 +823,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          organization_id: string | null
           user_id: string
         }
         Insert: {
@@ -789,6 +831,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           user_id: string
         }
         Update: {
@@ -796,9 +839,18 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_orders: {
         Row: {
@@ -823,10 +875,12 @@ export type Database = {
           gravacao_detalhe: string | null
           id: string
           identificacao_caixa: string | null
+          last_modified_by: string | null
           lock_version: number
           material_evento: boolean | null
           mockup_image_url: string | null
           observations: string | null
+          organization_id: string | null
           os_number: string
           product_colors: string | null
           product_material: string | null
@@ -862,10 +916,12 @@ export type Database = {
           gravacao_detalhe?: string | null
           id?: string
           identificacao_caixa?: string | null
+          last_modified_by?: string | null
           lock_version?: number
           material_evento?: boolean | null
           mockup_image_url?: string | null
           observations?: string | null
+          organization_id?: string | null
           os_number: string
           product_colors?: string | null
           product_material?: string | null
@@ -901,10 +957,12 @@ export type Database = {
           gravacao_detalhe?: string | null
           id?: string
           identificacao_caixa?: string | null
+          last_modified_by?: string | null
           lock_version?: number
           material_evento?: boolean | null
           mockup_image_url?: string | null
           observations?: string | null
+          organization_id?: string | null
           os_number?: string
           product_colors?: string | null
           product_material?: string | null
@@ -918,7 +976,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       status_audit_log: {
         Row: {

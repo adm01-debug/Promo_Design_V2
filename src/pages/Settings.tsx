@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ErrorLogger, type LogEntry } from "@/lib/error-logger";
 import { usePollingMetrics } from "@/hooks/use-visibility-polling";
+import { useAuth } from "@/hooks/use-auth";
 
 const levelColor: Record<string, string> = {
   debug: "bg-muted text-muted-foreground",
@@ -169,6 +170,8 @@ function PollingMetricsPanel() {
 }
 
 const Settings = () => {
+  const { isMfaStrong, aal } = useAuth();
+  
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4">
@@ -196,26 +199,34 @@ const Settings = () => {
             <h3 className="text-sm font-semibold text-foreground">Segurança</h3>
           </div>
           <div className="space-y-4">
-            <div className="flex items-start gap-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Smartphone className="w-4 h-4 text-primary" />
+            <div className={`flex items-start gap-4 p-3 rounded-lg border ${isMfaStrong ? 'bg-green-500/5 border-green-500/20' : 'bg-primary/5 border-primary/10'}`}>
+              <div className={`p-2 rounded-full ${isMfaStrong ? 'bg-green-500/10' : 'bg-primary/10'}`}>
+                <Smartphone className={`w-4 h-4 ${isMfaStrong ? 'text-green-600' : 'text-primary'}`} />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="text-xs font-semibold uppercase tracking-wider">Autenticação de Dois Fatores (2FA)</h4>
-                  <Badge variant="outline" className="text-[10px] text-muted-foreground border-dashed">Recomendado</Badge>
+                  <Badge variant={isMfaStrong ? "default" : "outline"} className={`text-[10px] ${isMfaStrong ? 'bg-green-600' : 'text-muted-foreground border-dashed'}`}>
+                    {isMfaStrong ? "Ativado" : "Recomendado"}
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Adicione uma camada extra de segurança à sua conta usando um aplicativo de autenticação (Google Authenticator, Authy, etc.).
+                  {isMfaStrong 
+                    ? "Sua conta está protegida com autenticação de múltiplos fatores (AAL2)." 
+                    : "Adicione uma camada extra de segurança à sua conta usando um aplicativo de autenticação (Google Authenticator, Authy, etc.)."}
                 </p>
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" variant="outline" className="h-8 text-xs gap-2" disabled>
-                    <QrCode className="w-3.5 h-3.5" /> Configurar 2FA
+                  <Button size="sm" variant={isMfaStrong ? "outline" : "default"} className="h-8 text-xs gap-2" asChild>
+                    <a href="https://supabase.com/dashboard/project/_/auth/users" target="_blank" rel="noopener noreferrer">
+                      <QrCode className="w-3.5 h-3.5" /> {isMfaStrong ? "Gerenciar 2FA" : "Configurar 2FA"}
+                    </a>
                   </Button>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-2 italic">
-                  * A configuração de 2FA requer validação manual pelo administrador do sistema no momento.
-                </p>
+                {!isMfaStrong && (
+                  <p className="text-[10px] text-muted-foreground mt-2 italic">
+                    Nível de segurança atual: <span className="font-mono">{aal}</span>
+                  </p>
+                )}
               </div>
             </div>
             <div className="p-3 rounded-lg border border-border bg-background/50">
