@@ -84,6 +84,8 @@ function makeRow(overrides: Partial<Tables<"service_orders">> = {}): Tables<"ser
     gravacao_detalhe: null,
     art_asset_id: null,
     lock_version: 1,
+    organization_id: "44444444-4444-4444-4444-444444444444",
+    last_modified_by: null,
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
     ...overrides,
