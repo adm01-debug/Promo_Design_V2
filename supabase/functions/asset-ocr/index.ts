@@ -218,11 +218,9 @@ serve(async (req) => {
       .from("assets")
       .update({ ocr_text: finalText, ocr_status: "done" })
       .eq("id", assetId);
-    if (updErr) {
-      console.error("Falha ao salvar OCR:", updErr);
+      console.error(`[${requestId}] Failed to save OCR:`, updErr);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao salvar texto extraído" }, 500, req);
-    }
+      return jsonResponse({ error: "Falha ao salvar texto extraído", requestId }, 500, req);
 
     return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText }, 200, req);
   } catch (e) {
