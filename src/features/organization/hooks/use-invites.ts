@@ -41,7 +41,10 @@ export function useOrganizationInvites(organizationId: string | null) {
 
       const { data, error } = await q.order("created_at", { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        ErrorLogger.error("Failed to fetch organization invites", error, { organizationId });
+        throw error;
+      }
       return (data ?? []) as unknown as OrganizationInvite[];
     },
   });
