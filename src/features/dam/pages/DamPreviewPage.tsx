@@ -92,7 +92,7 @@ export default function DamPreviewPage() {
   const didHydrateCompareRef = useRef(false);
 
   const compare = useCompareSelection();
-  const { didRestore } = usePreviewSync(searchParams, setSearchParams, compare.selectedIds);
+  usePreviewSync(searchParams, setSearchParams, compare.selectedIds);
 
   useEffect(() => {
     if (didShowExpiredToastRef.current) return;
