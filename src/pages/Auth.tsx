@@ -50,8 +50,8 @@ const Auth = () => {
     finally { setLoading(false); }
   };
 
-  const headingText = { login: "Bem-vindo de volta", signup: "Crie sua conta", forgot: "Recupere sua senha" };
-  const subtitleText = { login: "Entre com suas credenciais para continuar", signup: "Preencha os dados para começar", forgot: "Enviaremos um link para redefinir sua senha" };
+  const headingText: Record<string, string> = { login: "Bem-vindo de volta", signup: "Crie sua conta", forgot: "Recupere sua senha", mfa: "Verificação" };
+  const subtitleText: Record<string, string> = { login: "Entre com suas credenciais para continuar", signup: "Preencha os dados para começar", forgot: "Enviaremos um link para redefinir sua senha", mfa: "Confirme sua identidade" };
 
   return (
     <div className="min-h-screen bg-background flex" role="main">
