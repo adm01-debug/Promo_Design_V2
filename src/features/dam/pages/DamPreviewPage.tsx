@@ -62,7 +62,7 @@ export function peekLastPreviewAssetRaw(): { id: string | null; expired: boolean
 }
 
 export default function DamPreviewPage() {
-  const navigate = useNavigate();
+  
   const { currentOrgId } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
