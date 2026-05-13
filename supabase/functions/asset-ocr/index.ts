@@ -51,7 +51,8 @@ serve(async (req) => {
     const raw = await req.json().catch(() => null);
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten() }, 400, req);
+      console.warn(`[${requestId}] Invalid parameters:`, parsed.error.flatten());
+      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400, req);
     }
     const { assetId, filePath, mimeType } = parsed.data;
 
