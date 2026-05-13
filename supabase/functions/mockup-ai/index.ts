@@ -176,7 +176,8 @@ serve(async (req) => {
       }
 
       if (!resultImage) {
-        return jsonResponse({ error: "IA não retornou imagem processada" }, 500, req);
+        console.warn(`[${requestId}] AI did not return a processed image`);
+        return jsonResponse({ error: "IA não retornou imagem processada", requestId }, 500, req);
       }
 
       return jsonResponse({ imageBase64: resultImage }, 200, req);
