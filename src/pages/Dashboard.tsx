@@ -107,7 +107,40 @@ const Dashboard = () => {
   return (
     <div className="p-4 sm:p-6 max-w-6xl">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 flex items-start justify-between">
-        <div data-tour="greeting">
+        <div data-tour="greeting" className="flex-1">
+          {userInvites.length > 0 && (
+            <div className="mb-6 space-y-3">
+              {userInvites.map(inv => (
+                <motion.div 
+                  key={inv.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <Building2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Convite de Organização</p>
+                      <p className="text-xs text-muted-foreground">Você foi convidado para participar de uma nova organização.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button 
+                      size="sm" 
+                      className="flex-1 sm:flex-none gap-1.5"
+                      onClick={() => acceptInvite.mutate(inv.token)}
+                      disabled={acceptInvite.isPending}
+                    >
+                      {acceptInvite.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                      Aceitar Convite
+                    </Button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
           <h1 className="text-xl sm:text-2xl font-bold text-foreground flex flex-wrap items-center gap-1.5">
             <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>{greeting}{firstName ? "," : "!"}</motion.span>
             {firstName && <motion.span initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-primary">{firstName}</motion.span>}
