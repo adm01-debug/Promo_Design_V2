@@ -266,7 +266,12 @@ export default function DamPreviewPage() {
           <Button variant="outline" size="sm" onClick={handleCopyShareLink} className="h-8 gap-2" disabled={!activeAsset}>
             {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />} {copied ? "Copiado" : "Compartilhar"}
           </Button>
-          <ExportMenu assets={assets} filters={queryFilters} />
+          <ExportMenu 
+            assets={assets} 
+            selectedAssets={selectedAssets}
+            clients={clients}
+            compareMode={compareMode}
+          />
         </div>
       </header>
 
