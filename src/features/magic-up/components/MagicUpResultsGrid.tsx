@@ -29,7 +29,7 @@ const MagicUpResultsGrid = ({
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <div className="w-20 h-20 rounded-2xl bg-surface-2 flex items-center justify-center mb-4">
-          <Image className="w-9 h-9 text-muted-foreground" />
+          <ImageIcon className="w-9 h-9 text-muted-foreground" />
         </div>
         <p className="text-sm font-display font-semibold text-foreground mb-1">Nenhuma geração ainda</p>
         <p className="text-xs text-muted-foreground mb-4">
