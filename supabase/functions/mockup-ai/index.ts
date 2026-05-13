@@ -180,7 +180,8 @@ serve(async (req) => {
         return jsonResponse({ error: "IA não retornou imagem processada", requestId }, 500, req);
       }
 
-      return jsonResponse({ imageBase64: resultImage }, 200, req);
+      console.log(`[${requestId}] remove-bg completed successfully`);
+      return jsonResponse({ imageBase64: resultImage, requestId }, 200, req);
     }
 
     // ─── Action: Suggest Placement ──────────────────────────
