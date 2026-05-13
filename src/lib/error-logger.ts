@@ -2,11 +2,9 @@
  * Structured error logger — lightweight, local, production-ready.
  *
  * Captures errors with structured metadata (severity, context, timestamp,
- * user-agent, URL) and keeps a ring-buffer of recent entries accessible via
- * `ErrorLogger.getRecentErrors()` for in-app diagnostics.
+ * user-agent, URL, requestId) and keeps a ring-buffer of recent entries.
  *
- * In development the full entry is printed to the console; in production
- * only errors/fatals are logged to console.error to avoid noise.
+ * Integrated with Sentry and centralized console logging.
  */
 
 import * as Sentry from "@sentry/react";
@@ -19,6 +17,7 @@ export interface LogEntry {
   timestamp: string;
   url: string;
   userAgent: string;
+  requestId?: string;
   context?: Record<string, unknown>;
   stack?: string;
 }
@@ -39,6 +38,7 @@ function createEntry(
     timestamp: new Date().toISOString(),
     url: typeof window !== "undefined" ? window.location.href : "",
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    requestId: (context?.requestId as string) || undefined,
     context,
     stack,
   };
@@ -48,12 +48,26 @@ function push(entry: LogEntry, error?: unknown) {
   buffer.push(entry);
   if (buffer.length > MAX_BUFFER) buffer.shift();
 
+  // Send to Sentry if high severity
   if (entry.level === "error" || entry.level === "fatal") {
     Sentry.captureException(error || new Error(entry.message), {
-      extra: entry.context,
+      extra: {
+        ...entry.context,
+        requestId: entry.requestId,
+        url: entry.url,
+      },
       level: entry.level === "fatal" ? "fatal" : "error",
+      tags: {
+        requestId: entry.requestId,
+      },
     });
   }
+
+  // Structured console output
+  const logData = {
+    ...entry,
+    // Avoid circular refs or huge objects in context if any
+  };
 
   if (isDev) {
     const consoleFn =
@@ -62,9 +76,12 @@ function push(entry: LogEntry, error?: unknown) {
         : entry.level === "warn"
           ? console.warn
           : console.log;
-    consoleFn(`[${entry.level.toUpperCase()}]`, entry.message, entry);
-  } else if (entry.level === "error" || entry.level === "fatal") {
-    console.error(`[${entry.level.toUpperCase()}]`, entry.message, entry);
+    
+    // In dev, we use a more readable output but still provide the structured data
+    consoleFn(`[${entry.level.toUpperCase()}]${entry.requestId ? ` [RID:${entry.requestId}]` : ''} ${entry.message}`, logData);
+  } else if (entry.level === "error" || entry.level === "fatal" || entry.level === "warn") {
+    // In production, we log as JSON for structured log collectors
+    console.log(JSON.stringify(logData));
   }
 }
 

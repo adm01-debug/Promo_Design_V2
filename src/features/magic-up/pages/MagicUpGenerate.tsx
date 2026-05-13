@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Wand2, Sparkles, Send, Loader2 } from "lucide-react";
+import { Wand2, Sparkles, Send, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
 import { useProducts, useCategories, useProductVariants } from "@/features/mockup";
@@ -9,6 +9,9 @@ import { useMagicUpHistory } from "@/features/magic-up";
 import MagicUpLeftPanel, { STYLE_OPTIONS } from "@/features/magic-up/components/MagicUpLeftPanel";
 import MagicUpProductPickerModal from "@/features/magic-up/components/MagicUpProductPickerModal";
 import MagicUpResultsGrid from "@/features/magic-up/components/MagicUpResultsGrid";
+import { ErrorLogger } from "@/lib/error-logger";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
   const colors = product.colors?.length ? product.colors.join(", ") : "";
@@ -36,6 +39,7 @@ const MagicUpGenerate = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const [generationBatches, setGenerationBatches] = useState<{
     id: string; prompt: string; productName?: string;
     variations: { id: string; imageUrl: string; favorite: boolean; selected: boolean; style: string }[];
@@ -67,13 +71,58 @@ const MagicUpGenerate = () => {
     const finalPrompt = prompt.trim() || smartPrompt;
     if (!finalPrompt) return;
     setIsGenerating(true);
-    setTimeout(() => {
+    setLastError(null);
+    const requestId = crypto.randomUUID();
+
+    ErrorLogger.info("Starting image generation", { prompt: finalPrompt, requestId, product: selectedProduct?.name });
+
+    try {
+      // Simulate API call for now (this is where the real fetch would be)
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // 5% chance of simulated error for testing logging
+          if (Math.random() < 0.05) {
+            reject(new Error("Simulated network timeout or quota exceeded"));
+          } else {
+            resolve(true);
+          }
+        }, 2000);
+      });
+
       const batchId = Date.now().toString();
-      const variations = VARIATION_STYLES.map((style, i) => ({ id: `${batchId}-${i}`, imageUrl: "/placeholder.svg", favorite: false, selected: i === 0, style: VARIATION_LABELS[i] }));
-      setGenerationBatches((prev) => [{ id: batchId, prompt: finalPrompt, productName: selectedProduct?.name, variations, createdAt: new Date().toISOString() }, ...prev]);
-      saveToHistory({ prompt: finalPrompt, imageUrl: "/placeholder.svg", productName: selectedProduct?.name, productSku: selectedProduct?.sku, style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label });
+      const variations = VARIATION_STYLES.map((style, i) => ({ 
+        id: `${batchId}-${i}`, 
+        imageUrl: "/placeholder.svg", 
+        favorite: false, 
+        selected: i === 0, 
+        style: VARIATION_LABELS[i] 
+      }));
+
+      setGenerationBatches((prev) => [{ 
+        id: batchId, 
+        prompt: finalPrompt, 
+        productName: selectedProduct?.name, 
+        variations, 
+        createdAt: new Date().toISOString() 
+      }, ...prev]);
+
+      saveToHistory({ 
+        prompt: finalPrompt, 
+        imageUrl: "/placeholder.svg", 
+        productName: selectedProduct?.name, 
+        productSku: selectedProduct?.sku, 
+        style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label 
+      });
+
+      ErrorLogger.info("Generation successful", { batchId, requestId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido ao gerar imagem";
+      setLastError(message);
+      ErrorLogger.error("Failed to generate image", error, { prompt: finalPrompt, requestId });
+      toast.error("Falha na geração: " + message);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   const toggleFavorite = (batchId: string, varId: string) => {
@@ -104,6 +153,13 @@ const MagicUpGenerate = () => {
         />
 
         <div className="flex-1 flex flex-col">
+          {lastError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erro na Geração</AlertTitle>
+              <AlertDescription>{lastError}</AlertDescription>
+            </Alert>
+          )}
           {/* Prompt input */}
           <div className="p-4 border-b border-border">
             <div className="flex gap-3">
