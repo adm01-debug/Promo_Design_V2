@@ -74,6 +74,7 @@ export type Database = {
           height: number | null
           id: string
           is_archived: boolean
+          last_modified_by: string | null
           lock_version: number
           metadata: Json | null
           mime_type: string | null
@@ -100,6 +101,7 @@ export type Database = {
           height?: number | null
           id?: string
           is_archived?: boolean
+          last_modified_by?: string | null
           lock_version?: number
           metadata?: Json | null
           mime_type?: string | null
@@ -126,6 +128,7 @@ export type Database = {
           height?: number | null
           id?: string
           is_archived?: boolean
+          last_modified_by?: string | null
           lock_version?: number
           metadata?: Json | null
           mime_type?: string | null
