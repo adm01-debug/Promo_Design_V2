@@ -66,7 +66,8 @@ serve(async (req) => {
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData?.user) {
-      return jsonResponse({ error: "Unauthorized" }, 401, req);
+      console.warn(`[${requestId}] Invalid session:`, userErr);
+      return jsonResponse({ error: "Unauthorized", requestId }, 401, req);
     }
 
     // Fetch user's organization (assuming first one for simplicity or logic needs improvement)
