@@ -116,11 +116,47 @@ const OrganizationPage = () => {
 
       {currentOrgId && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-lg">
               Membros
-              {currentRole && <Badge variant="secondary">{ROLE_LABEL[currentRole]}</Badge>}
+              {currentRole && <Badge variant="secondary" className="text-[10px] uppercase font-mono">{ROLE_LABEL[currentRole]}</Badge>}
             </CardTitle>
+            {canManage && (
+              <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="h-8 gap-1.5"><Plus className="h-3.5 w-3.5" /> Convidar</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Convidar para organização</DialogTitle></DialogHeader>
+                  <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="invite-email">E-mail</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input id="invite-email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="colaborador@empresa.com" className="pl-10" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Papel</Label>
+                      <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABEL[r]}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-[10px] text-muted-foreground italic">O papel define as permissões que o usuário terá ao aceitar o convite.</p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleInvite} disabled={createInvite.isPending || !inviteEmail.trim()} className="gap-1.5">
+                      {createInvite.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                      Enviar Convite
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </CardHeader>
           <CardContent>
             {members.length === 0 ? (
