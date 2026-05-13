@@ -7,8 +7,8 @@ interface PasswordStrengthProps {
 
 function getStrength(pw: string): { score: number; label: string; color: string } {
   let score = 0;
-  if (pw.length >= 6) score++;
   if (pw.length >= 10) score++;
+  if (pw.length >= 14) score++;
   if (/[A-Z]/.test(pw)) score++;
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;

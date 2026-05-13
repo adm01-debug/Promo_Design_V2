@@ -2,12 +2,22 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  "https://id-preview--5da5ba25-dbc3-474e-b521-f7c17b3151a4.lovable.app",
+  "https://lovable.app",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const isAllowed = ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
+  
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
 
 const BodySchema = z.object({
   assetId: z.string().uuid(),
@@ -15,28 +25,29 @@ const BodySchema = z.object({
   mimeType: z.string().min(1),
 });
 
-function jsonResponse(data: unknown, status = 200) {
+function jsonResponse(data: unknown, status = 200, req?: Request) {
+  const headers = req ? getCorsHeaders(req) : { "Access-Control-Allow-Origin": "*" };
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...headers, "Content-Type": "application/json" },
   });
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
   try {
     // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return jsonResponse({ error: "Não autorizado" }, 401);
+      return jsonResponse({ error: "Não autorizado" }, 401, req);
     }
 
     // Parse + validate
     const raw = await req.json().catch(() => null);
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten() }, 400);
+      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten() }, 400, req);
     }
     const { assetId, filePath, mimeType } = parsed.data;
 
@@ -44,7 +55,7 @@ serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return jsonResponse({ error: "AI gateway não configurado" }, 500);
+      return jsonResponse({ error: "AI gateway não configurado" }, 500, req);
     }
 
     // User-scoped client validates JWT and respects RLS
@@ -53,7 +64,7 @@ serve(async (req) => {
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
-      return jsonResponse({ error: "Sessão inválida" }, 401);
+      return jsonResponse({ error: "Sessão inválida" }, 401, req);
     }
 
     // Service-role client to update OCR fields after RLS check
@@ -66,7 +77,7 @@ serve(async (req) => {
       .eq("id", assetId)
       .maybeSingle();
     if (assetErr || !asset) {
-      return jsonResponse({ error: "Asset não encontrado ou sem permissão" }, 404);
+      return jsonResponse({ error: "Asset não encontrado ou sem permissão" }, 404, req);
     }
 
     // Skip non-image
@@ -75,7 +86,7 @@ serve(async (req) => {
         .from("assets")
         .update({ ocr_status: "skipped", ocr_text: null })
         .eq("id", assetId);
-      return jsonResponse({ ok: true, skipped: true });
+      return jsonResponse({ ok: true, skipped: true }, 200, req);
     }
 
     // Mark pending
@@ -87,13 +98,13 @@ serve(async (req) => {
       .createSignedUrl(filePath, 60 * 60);
     if (signErr || !signed?.signedUrl) {
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao gerar URL assinada" }, 500);
+      return jsonResponse({ error: "Falha ao gerar URL assinada" }, 500, req);
     }
 
     const imgRes = await fetch(signed.signedUrl);
     if (!imgRes.ok) {
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao baixar imagem" }, 500);
+      return jsonResponse({ error: "Falha ao baixar imagem" }, 500, req);
     }
     const imgBuffer = new Uint8Array(await imgRes.arrayBuffer());
     // Base64 encode
@@ -155,19 +166,34 @@ serve(async (req) => {
       console.error("AI gateway error:", aiRes.status, errText);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       if (aiRes.status === 429) {
-        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes." }, 429);
+        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes." }, 429, req);
       }
       if (aiRes.status === 402) {
         return jsonResponse(
           { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage." },
           402,
+          req
         );
       }
-      return jsonResponse({ error: "Falha no AI Gateway" }, 502);
+      return jsonResponse({ error: "Falha no AI Gateway" }, 502, req);
     }
 
     const aiJson = await aiRes.json();
+    const usage = aiJson?.usage || {};
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
+    
+    // Log usage
+    await adminClient.from("ai_usage_log").insert({
+      organization_id: asset.organization_id,
+      user_id: userData.user.id,
+      feature_name: "asset-ocr",
+      model_name: "google/gemini-3-flash-preview",
+      tokens_in: usage.prompt_tokens || 0,
+      tokens_out: usage.completion_tokens || 0,
+      cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003), // Approximate
+      metadata: { assetId }
+    });
+
     let extractedText = "";
     let hasText = false;
     if (toolCall?.function?.arguments) {
@@ -190,15 +216,16 @@ serve(async (req) => {
     if (updErr) {
       console.error("Falha ao salvar OCR:", updErr);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao salvar texto extraído" }, 500);
+      return jsonResponse({ error: "Falha ao salvar texto extraído" }, 500, req);
     }
 
-    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText });
+    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText }, 200, req);
   } catch (e) {
     console.error("asset-ocr error:", e);
     return jsonResponse(
       { error: e instanceof Error ? e.message : "Erro desconhecido" },
       500,
+      req
     );
   }
 });

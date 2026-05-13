@@ -3,17 +3,19 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
 
 const ALLOWED_ORIGINS = [
-  "https://artful-mock-lab.lovable.app",
-  "https://id-preview--9e2d0e84-1b63-4f32-bfac-a18bc7e9eab4.lovable.app",
+  "https://id-preview--5da5ba25-dbc3-474e-b521-f7c17b3151a4.lovable.app",
+  "https://lovable.app",
 ];
 
 function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") ?? "";
-  const allowedOrigin = ALLOWED_ORIGINS.find((o) => origin.startsWith(o)) ? origin : ALLOWED_ORIGINS[0];
+  const origin = req.headers.get("Origin") || "";
+  const isAllowed = ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
+  
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers":
       "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
 }
 
@@ -58,11 +60,27 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(
-      authHeader.replace("Bearer ", "")
-    );
-    if (claimsError || !claimsData?.claims) {
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
       return jsonResponse({ error: "Unauthorized" }, 401, req);
+    }
+
+    // Fetch user's organization (assuming first one for simplicity or logic needs improvement)
+    const { data: orgData } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", userData.user.id)
+      .limit(1)
+      .maybeSingle();
+
+    const orgId = orgData?.organization_id;
+
+    // Check quota before call
+    if (orgId) {
+      const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
+      if (hasQuota === false) {
+        return jsonResponse({ error: "Quota de IA da organização atingida para este mês." }, 403, req);
+      }
     }
 
     // ─── API Key ───────────────────────────────────────────
@@ -130,7 +148,22 @@ serve(async (req) => {
       }
 
       const data = await response.json();
+      const usage = data.usage || {};
       const resultImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+      // Log usage
+      if (orgId) {
+        await supabase.from("ai_usage_log").insert({
+          organization_id: orgId,
+          user_id: userData.user.id,
+          feature_name: "mockup-ai:remove-bg",
+          model_name: "google/gemini-2.5-flash-image",
+          tokens_in: usage.prompt_tokens || 0,
+          tokens_out: usage.completion_tokens || 0,
+          cost_estimate: 0.01, // Flat estimate for image removal
+          metadata: { action: body.action }
+        });
+      }
 
       if (!resultImage) {
         return jsonResponse({ error: "IA não retornou imagem processada" }, 500, req);
@@ -218,7 +251,23 @@ Suggest the best placement for a logo on this product, considering:
       }
 
       const data = await response.json();
+      const usage = data.usage || {};
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+
+      // Log usage
+      if (orgId) {
+        await supabase.from("ai_usage_log").insert({
+          organization_id: orgId,
+          user_id: userData.user.id,
+          feature_name: "mockup-ai:suggest-placement",
+          model_name: "google/gemini-3-flash-preview",
+          tokens_in: usage.prompt_tokens || 0,
+          tokens_out: usage.completion_tokens || 0,
+          cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003),
+          metadata: { action: body.action }
+        });
+      }
+
       if (!toolCall) {
         return jsonResponse({ error: "IA não retornou sugestão" }, 500, req);
       }
