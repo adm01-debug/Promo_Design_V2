@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { PREVIEW_QS_KEY, COMPARE_IDS_KEY, COMPARE_MODE_KEY } from "../pages/DamPreviewPage";
+import { useNavigate } from "react-router-dom";
+import { PREVIEW_QS_KEY, COMPARE_IDS_KEY } from "../pages/DamPreviewPage";
 
 /**
  * Manages URL synchronization and sessionStorage persistence for the Preview page.
