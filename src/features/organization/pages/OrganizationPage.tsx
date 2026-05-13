@@ -27,9 +27,13 @@ const OrganizationPage = () => {
   const { user } = useAuth();
   const { organizations, currentOrgId, currentRole, switchOrg, createOrg, can, isLoading } = useOrganizations();
   const { members, updateRole, removeMember } = useOrgMembers(currentOrgId);
+  const { invites, createInvite, deleteInvite } = useOrganizationInvites(currentOrgId);
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<AppRole>("viewer");
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
