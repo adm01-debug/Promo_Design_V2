@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity } from "lucide-react";
+import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity, Shield, QrCode, Smartphone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
