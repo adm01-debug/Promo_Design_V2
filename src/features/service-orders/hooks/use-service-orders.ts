@@ -226,6 +226,13 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<StoredServiceOrder> }) => {
       const dbUpdates: Record<string, string | number | boolean | null> = {};
+      
+      // Concurrency check
+      const currentOrder = orders.find(o => o.id === id);
+      if (currentOrder?.lockVersion !== undefined) {
+        dbUpdates.lock_version = currentOrder.lockVersion;
+      }
+
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
       if (updates.clientCompany !== undefined) dbUpdates.client_company = updates.clientCompany || null;
@@ -258,8 +265,18 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       if (updates.artAssetId !== undefined) dbUpdates.art_asset_id = updates.artAssetId ?? null;
 
       if (Object.keys(dbUpdates).length === 0) return;
-      const { error } = await supabase.from("service_orders").update(dbUpdates).eq("id", id);
+      
+      const { error, data } = await supabase
+        .from("service_orders")
+        .update(dbUpdates)
+        .eq("id", id)
+        .eq("lock_version", dbUpdates.lock_version || 0) // Explicit lock check
+        .select();
+
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Conflito de concorrência: A ordem de serviço foi alterada por outro usuário. Por favor, recarregue a página.");
+      }
     },
     onSuccess: invalidate,
   });
