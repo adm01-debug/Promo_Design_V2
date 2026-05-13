@@ -217,7 +217,8 @@ export function useDamFilters() {
 
   // ── Updaters ──
   const setSearch = useCallback((v: string) => setState((s) => ({ ...s, search: v, page: 1 })), []);
-  const setAssetTypes = useCallback((v: AssetType[]) => setState((s) => ({ ...s, assetTypes: v, page: 1 })), []);
+  const setAssetTypes = useCallback((v: AssetType[] | ((prev: AssetType[]) => AssetType[])) => 
+    setState((s) => ({ ...s, assetTypes: typeof v === "function" ? v(s.assetTypes) : v, page: 1 })), []);
   const setClientId = useCallback((v: DamFiltersState["clientId"]) => setState((s) => ({ ...s, clientId: v, page: 1 })), []);
   const setTags = useCallback((v: string[] | ((prev: string[]) => string[])) => 
     setState((s) => ({ ...s, tags: typeof v === "function" ? v(s.tags) : v, page: 1 })), []);
@@ -245,11 +246,24 @@ export function useDamFilters() {
     });
   }, []);
 
+  const queryString = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (state.search.trim()) sp.set("q", state.search.trim());
+    if (state.assetTypes.length > 0) sp.set("type", state.assetTypes.join(","));
+    if (state.clientId && state.clientId !== "all") sp.set("client", state.clientId);
+    if (state.tags.length > 0) sp.set("tags", state.tags.join(","));
+    if (state.tags.length > 1) sp.set("tagsMode", state.tagsMode);
+    if (state.includeArchived) sp.set("archived", "1");
+    if (state.sort !== "created_desc") sp.set("sort", state.sort);
+    const s = sp.toString();
+    return s ? `?${s}` : "";
+  }, [state]);
+
   return {
     state, setSearch, setAssetTypes, setClientId, setTags, setTagsMode,
     setIncludeArchived, setArchivedOnly, setOcrOnly, setSort, setPage,
     setPageSize, setPaginationMode, setViewMode, setShowSizeColumn,
-    setSizeRange, setUpdatedRange, setCustomSize, reset
+    setSizeRange, setUpdatedRange, setCustomSize, reset, queryString
   };
 }
 

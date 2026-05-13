@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 import { type CustomSizeRange, type SizeUnit } from "../lib/dam-constants";
+export { type CustomSizeRange };
 
 const numberSchema = z
   .string()
