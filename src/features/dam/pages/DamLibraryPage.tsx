@@ -31,10 +31,35 @@ import { ResultsPagination } from "@/components/ResultsPagination";
 import { LibraryExportMenu } from "../components/LibraryExportMenu";
 import { LibraryActivityDialog } from "../components/LibraryActivityDialog";
 import { BatchOcrDialog } from "../components/BatchOcrDialog";
-import { parseBoolParam } from "../lib/parse-bool-param";
 import { JumpToPage } from "../components/JumpToPage";
 import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
 import { SizeRangeFilter, type CustomSizeRange } from "../components/SizeRangeFilter";
+import { useDamFilters } from "../hooks/use-dam-filters";
+import { useDamLibraryResults } from "../hooks/use-dam-library-results";
+import { 
+  TYPES, 
+  SORT_OPTIONS, 
+  SIZE_RANGE_OPTIONS, 
+  UPDATED_RANGE_OPTIONS,
+  VALID_ASSET_TYPES,
+  SEARCH_KEY,
+  ASSET_TYPES_KEY,
+  CLIENT_ID_KEY,
+  TAGS_KEY,
+  SORT_KEY,
+  INCLUDE_ARCHIVED_KEY,
+  ARCHIVED_ONLY_KEY,
+  OCR_ONLY_KEY,
+  PAGE_KEY,
+  PAGE_SIZE_KEY,
+  PAGINATION_MODE_KEY,
+  VIEW_MODE_KEY,
+  LIST_SHOW_SIZE_KEY,
+  SIZE_RANGE_KEY,
+  UPDATED_RANGE_KEY,
+  CUSTOM_SIZE_KEY,
+  TAGS_MODE_KEY
+} from "../lib/dam-constants";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,63 +71,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const TYPES: { value: AssetType | "all"; label: string }[] = [
-  { value: "all", label: "Todos" },
-  { value: "logo", label: "Logos" },
-  { value: "art", label: "Artes" },
-  { value: "photo", label: "Fotos" },
-  { value: "mockup", label: "Mockups" },
-  { value: "document", label: "Documentos" },
-  { value: "other", label: "Outros" },
-];
 
-const VIEW_MODE_KEY = "dam-view-mode";
-const PAGE_SIZE_KEY = "dam-page-size";
-const PAGE_KEY = "dam-page";
-const TAGS_MODE_KEY = "dam-tags-mode";
-const INCLUDE_ARCHIVED_KEY = "dam-include-archived";
-const ARCHIVED_ONLY_KEY = "dam-archived-only";
-const OCR_ONLY_KEY = "dam-ocr-only";
-const PAGINATION_MODE_KEY = "dam-pagination-mode";
-const SEARCH_KEY = "dam-search";
-const ASSET_TYPES_KEY = "dam-asset-types";
-const CLIENT_ID_KEY = "dam-client-id";
-const TAGS_KEY = "dam-tags";
-const SORT_KEY = "dam-sort";
-const LIST_SHOW_SIZE_KEY = "dam-list-show-size";
-const SIZE_RANGE_KEY = "dam-size-range";
-const UPDATED_RANGE_KEY = "dam-updated-range";
-const CUSTOM_SIZE_KEY = "dam-custom-size-range";
-
-type SizeRangeKey = "all" | "lt1mb" | "1to5mb" | "5to20mb" | "gt20mb";
-const SIZE_RANGE_OPTIONS: {
-  value: SizeRangeKey;
-  label: string;
-  min?: number;
-  max?: number;
-}[] = [
-  { value: "all", label: "Qualquer tamanho" },
-  { value: "lt1mb", label: "Até 1 MB", max: 1 * 1024 * 1024 },
-  { value: "1to5mb", label: "1–5 MB", min: 1 * 1024 * 1024, max: 5 * 1024 * 1024 },
-  { value: "5to20mb", label: "5–20 MB", min: 5 * 1024 * 1024, max: 20 * 1024 * 1024 },
-  { value: "gt20mb", label: "Acima de 20 MB", min: 20 * 1024 * 1024 },
-];
-
-type UpdatedRangeKey = "all" | "24h" | "7d" | "30d" | "90d";
-const UPDATED_RANGE_OPTIONS: { value: UpdatedRangeKey; label: string; hours?: number }[] = [
-  { value: "all", label: "Qualquer data" },
-  { value: "24h", label: "Últimas 24h", hours: 24 },
-  { value: "7d", label: "Últimos 7 dias", hours: 24 * 7 },
-  { value: "30d", label: "Últimos 30 dias", hours: 24 * 30 },
-  { value: "90d", label: "Últimos 90 dias", hours: 24 * 90 },
-];
-
-const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
-
-function readLS(key: string): string | null {
-  if (typeof window === "undefined") return null;
-  try { return localStorage.getItem(key); } catch { return null; }
-}
 function writeLS(key: string, value: string | null) {
   if (typeof window === "undefined") return;
   try {
@@ -111,37 +80,12 @@ function writeLS(key: string, value: string | null) {
   } catch { /* ignore */ }
 }
 
-type PaginationMode = "pages" | "loadmore";
-
-type SortValue =
-  | "relevance"
-  | "created_desc"
-  | "created_asc"
-  | "name_asc"
-  | "name_desc"
-  | "size_desc"
-  | "size_asc"
-  | "updated_desc"
-  | "updated_asc"
-  | "version_desc";
-const SORT_OPTIONS: { value: SortValue; label: string; sortBy: "created_at" | "updated_at" | "name" | "file_size" | "version" | "relevance"; sortDir: "asc" | "desc" }[] = [
-  { value: "relevance", label: "Relevância", sortBy: "relevance", sortDir: "desc" },
-  { value: "created_desc", label: "Mais recentes", sortBy: "created_at", sortDir: "desc" },
-  { value: "created_asc", label: "Mais antigos", sortBy: "created_at", sortDir: "asc" },
-  { value: "name_asc", label: "Nome A→Z", sortBy: "name", sortDir: "asc" },
-  { value: "name_desc", label: "Nome Z→A", sortBy: "name", sortDir: "desc" },
-  { value: "size_desc", label: "Maior arquivo", sortBy: "file_size", sortDir: "desc" },
-  { value: "size_asc", label: "Menor arquivo", sortBy: "file_size", sortDir: "asc" },
-  { value: "updated_desc", label: "Modificados recentemente", sortBy: "updated_at", sortDir: "desc" },
-  { value: "updated_asc", label: "Modificados há mais tempo", sortBy: "updated_at", sortDir: "asc" },
-  { value: "version_desc", label: "Versão", sortBy: "version", sortDir: "desc" },
-];
 
 export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const [searchParams] = useSearchParams();
-  
+
   const {
     state,
     setSearch,
@@ -161,124 +105,60 @@ export default function DamLibraryPage() {
     setSizeRange,
     setUpdatedRange,
     setCustomSize,
-    reset: resetFilters
+    reset: resetFilters,
   } = useDamFilters();
 
   const {
-    search, assetTypes, clientId, tags: selectedTags, tagsMode, includeArchived,
-    archivedOnly, ocrOnly, sort, page, pageSize, paginationMode,
-    viewMode, showSizeColumn, sizeRange, updatedRange, customSize
+    search,
+    assetTypes,
+    clientId,
+    tags: selectedTags,
+    tagsMode,
+    includeArchived,
+    archivedOnly,
+    ocrOnly,
+    sort,
+    page,
+    pageSize,
+    paginationMode,
+    viewMode,
+    showSizeColumn,
+    sizeRange,
+    updatedRange,
+    customSize,
   } = state;
 
   const [activityOpen, setActivityOpen] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
-  const [accumulated, setAccumulated] = useState<Asset[]>([]);
+
+  const {
+    assets,
+    total,
+    totalPages,
+    isLoading,
+    isFetching,
+    isPaginating,
+    restore,
+    displayedAssets,
+    hasMore,
+    stable,
+    filters,
+    setAccumulated,
+  } = useDamLibraryResults(currentOrgId || "", state, debouncedSearch);
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [batchOcrOpen, setBatchOcrOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
 
-  const quickPreview = useQuickPreview();
-  const [copiedLink, setCopiedLink] = useState(false);
-  // Captured ONCE at mount: was the Arquivados toggle activated through the
-  // URL (?archived=...)? Used to surface a subtle "applied via link" hint.
-  const [archivedFromUrlAtMount] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return parseBoolParam(searchParams.get("archived")) === true;
-  });
-  const [archivedUrlHintDismissed, setArchivedUrlHintDismissed] = useState(false);
-  // First-time-only Tooltip on the Arquivados toggle: opens once when the
-  // user toggles it for the first time this session, then never reopens.
-  const [archivedTooltipOpen, setArchivedTooltipOpen] = useState(false);
-  const [archivedTooltipShown, setArchivedTooltipShown] = useState(false);
-  // Single source of truth for the SR-only live region. We compose a single
-  // sentence per phase so screen readers don't announce overlapping fragments.
-  const [a11yStatus, setA11yStatus] = useState<string>("");
-  const handleIncludeArchivedToggle = (next: boolean) => {
-    setIncludeArchived(next);
-    if (!archivedTooltipShown) {
-      setArchivedTooltipShown(true);
-      setArchivedTooltipOpen(true);
-      window.setTimeout(() => setArchivedTooltipOpen(false), 2500);
-    }
-  };
-
-  // Copies the current full URL (including all active filters and toggles like
-  // ?archived=1) to the clipboard so the user can share the exact view.
-  const handleCopyLink = async () => {
-    try {
-      const url = typeof window !== "undefined" ? window.location.href : "";
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = url;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      }
-      setCopiedLink(true);
-      toast.success("Link copiado", {
-        description: "URL com filtros atuais copiada para a área de transferência.",
-      });
-      setTimeout(() => setCopiedLink(false), 1800);
-    } catch {
-      toast.error("Não foi possível copiar o link");
-    }
-  };
-
-  // Wipes every dam-* preference persisted in localStorage and returns all
-  // toggles/filters/pagination to factory defaults. URL search params are
-  // cleared so reload starts clean.
   const handleResetPreferences = () => {
-    const KEYS = [
-      VIEW_MODE_KEY,
-      PAGE_SIZE_KEY,
-      PAGE_KEY,
-      TAGS_MODE_KEY,
-      INCLUDE_ARCHIVED_KEY,
-      ARCHIVED_ONLY_KEY,
-      OCR_ONLY_KEY,
-      PAGINATION_MODE_KEY,
-      SEARCH_KEY,
-      ASSET_TYPES_KEY,
-      CLIENT_ID_KEY,
-      TAGS_KEY,
-      SORT_KEY,
-      LIST_SHOW_SIZE_KEY,
-      SIZE_RANGE_KEY,
-      UPDATED_RANGE_KEY,
-      CUSTOM_SIZE_KEY,
-    ];
-    for (const k of KEYS) {
-      try { localStorage.removeItem(k); } catch { /* ignore */ }
-    }
-    setSearch("");
-    setAssetTypes([]);
-    setClientId("all");
-    setSelectedTags([]);
-    setTagsMode("all");
-    setIncludeArchived(false);
-    setArchivedOnly(false);
-    setOcrOnly(false);
-    setSort("created_desc");
-    setPage(1);
-    setPageSize(24);
-    setPaginationMode("pages");
-    setViewMode("grid");
-    setSizeRange("all");
-    setUpdatedRange("all");
-    setCustomSize(null);
-    setShowSizeColumn(false);
-    setSearchParams(new URLSearchParams(), { replace: true });
+    resetFilters();
     setResetOpen(false);
     toast.success("Preferências redefinidas", {
       description: "Filtros, toggles e paginação voltaram ao padrão.",
     });
   };
+
 
   // "Continue where you left off" — last asset viewed in /dam/preview.
   // The optional `?highlight=<assetId>` URL param takes precedence over the
@@ -340,181 +220,10 @@ export default function DamLibraryPage() {
     setSizeRange("all");
     setUpdatedRange("all");
     setCustomSize(null);
-    writeLS(SEARCH_KEY, null);
-    writeLS(ASSET_TYPES_KEY, null);
-    writeLS(CLIENT_ID_KEY, null);
-    writeLS(TAGS_KEY, null);
-    writeLS(SORT_KEY, null);
-    writeLS(INCLUDE_ARCHIVED_KEY, null);
-    try { localStorage.removeItem(SIZE_RANGE_KEY); } catch { /* ignore */ }
-    try { localStorage.removeItem(UPDATED_RANGE_KEY); } catch { /* ignore */ }
-    try { localStorage.removeItem(CUSTOM_SIZE_KEY); } catch { /* ignore */ }
   };
 
-  useEffect(() => {
-    try { localStorage.setItem(VIEW_MODE_KEY, viewMode); } catch { /* ignore */ }
-  }, [viewMode]);
 
-  useEffect(() => {
-    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
-  }, [pageSize]);
 
-  useEffect(() => {
-    try { localStorage.setItem(TAGS_MODE_KEY, tagsMode); } catch { /* ignore */ }
-  }, [tagsMode]);
-
-  useEffect(() => {
-    try { localStorage.setItem(INCLUDE_ARCHIVED_KEY, includeArchived ? "1" : "0"); } catch { /* ignore */ }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (includeArchived) next.set("archived", "1");
-      else next.delete("archived");
-      return next;
-    }, { replace: true });
-  }, [includeArchived, setSearchParams]);
-
-  useEffect(() => {
-    try { localStorage.setItem(ARCHIVED_ONLY_KEY, archivedOnly ? "1" : "0"); } catch { /* ignore */ }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (archivedOnly) next.set("archivedOnly", "1");
-      else next.delete("archivedOnly");
-      return next;
-    }, { replace: true });
-  }, [archivedOnly, setSearchParams]);
-
-  useEffect(() => {
-    try { localStorage.setItem(OCR_ONLY_KEY, ocrOnly ? "1" : "0"); } catch { /* ignore */ }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (ocrOnly) next.set("ocrOnly", "1");
-      else next.delete("ocrOnly");
-      return next;
-    }, { replace: true });
-  }, [ocrOnly, setSearchParams]);
-
-  useEffect(() => {
-    try { localStorage.setItem(PAGINATION_MODE_KEY, paginationMode); } catch { /* ignore */ }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (paginationMode === "loadmore") next.set("mode", "loadmore");
-      else next.delete("mode");
-      return next;
-    }, { replace: true });
-  }, [paginationMode, setSearchParams]);
-
-  // Persist filters to localStorage so they survive navigation back to /dam
-  useEffect(() => {
-    writeLS(SEARCH_KEY, debouncedSearch.trim() || null);
-  }, [debouncedSearch]);
-  useEffect(() => {
-    writeLS(ASSET_TYPES_KEY, assetTypes.length > 0 ? assetTypes.join(",") : null);
-  }, [assetTypes]);
-  useEffect(() => {
-    writeLS(CLIENT_ID_KEY, clientId !== "all" ? clientId : null);
-  }, [clientId]);
-  useEffect(() => {
-    writeLS(TAGS_KEY, selectedTags.length > 0 ? selectedTags.join(",") : null);
-  }, [selectedTags]);
-  useEffect(() => {
-    writeLS(SORT_KEY, sort !== "created_desc" ? sort : null);
-  }, [sort]);
-
-  // Sync page/pageSize with URL
-  useEffect(() => {
-    try {
-      if (page > 1 && paginationMode === "pages") localStorage.setItem(PAGE_KEY, String(page));
-      else localStorage.removeItem(PAGE_KEY);
-    } catch { /* ignore */ }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (page > 1 && paginationMode === "pages") next.set("page", String(page));
-      else next.delete("page");
-      if (pageSize !== 24) next.set("pageSize", String(pageSize));
-      else next.delete("pageSize");
-      return next;
-    }, { replace: false });
-  }, [page, pageSize, paginationMode, setSearchParams]);
-
-  // React to browser back/forward: re-sync page & pageSize from URL.
-  useEffect(() => {
-    const urlPage = Number(searchParams.get("page"));
-    const nextPage = Number.isFinite(urlPage) && urlPage >= 1 ? urlPage : 1;
-    if (nextPage !== page) setPage(nextPage);
-    const urlSize = Number(searchParams.get("pageSize"));
-    const nextSize = Number.isFinite(urlSize) && urlSize > 0 ? urlSize : 24;
-    if (nextSize !== pageSize) setPageSize(nextSize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  // Sync content filters (search, types, client, tags, tagsMode, sort) with URL
-  useEffect(() => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      const q = debouncedSearch.trim();
-      if (q) next.set("q", q); else next.delete("q");
-      if (assetTypes.length > 0) next.set("type", assetTypes.join(",")); else next.delete("type");
-      if (clientId !== "all") next.set("client", clientId); else next.delete("client");
-      if (selectedTags.length > 0) next.set("tags", selectedTags.join(",")); else next.delete("tags");
-      if (selectedTags.length > 1 && tagsMode !== "all") next.set("tagsMode", tagsMode);
-      else next.delete("tagsMode");
-      if (sort !== "created_desc") next.set("sort", sort); else next.delete("sort");
-      if (sizeRange !== "all") next.set("size", sizeRange); else next.delete("size");
-      if (updatedRange !== "all") next.set("updated", updatedRange); else next.delete("updated");
-      return next;
-    }, { replace: true });
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, sort, sizeRange, updatedRange, setSearchParams]);
-
-  // If user clears search while sorting by relevance, fall back to "Mais recentes"
-  useEffect(() => {
-    if (sort === "relevance" && !debouncedSearch.trim()) setSort("created_desc");
-  }, [debouncedSearch, sort]);
-
-  // Reset to page 1 when filters/search/sort/pageSize change
-  useEffect(() => {
-    setPage(1);
-    setAccumulated([]);
-  }, [debouncedSearch, assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, sort, pageSize, sizeRange, updatedRange, customSize]);
-
-  const filters = useMemo(
-    () => {
-      const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
-      const range = SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange);
-      const updRange = UPDATED_RANGE_OPTIONS.find((o) => o.value === updatedRange);
-      const updatedAfter = updRange?.hours
-        ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
-        : undefined;
-      // Custom size range overrides the preset when active.
-      const minSize = customSize ? customSize.minBytes ?? undefined : range?.min;
-      const maxSize = customSize ? customSize.maxBytes ?? undefined : range?.max;
-      return {
-        assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
-        clientId: clientId === "all" ? undefined : clientId === "none" ? null : clientId,
-        tags: selectedTags.length > 0 ? selectedTags : undefined,
-        tagsMode,
-        includeArchived: archivedOnly ? true : includeArchived,
-        archivedOnly,
-        search: debouncedSearch.trim() || undefined,
-        sortBy: opt.sortBy,
-        sortDir: opt.sortDir,
-        page,
-        pageSize,
-        minSize,
-        maxSize,
-        updatedAfter,
-      };
-    },
-    [assetTypes, clientId, selectedTags, tagsMode, includeArchived, archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, updatedRange, customSize],
-  );
-
-  const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(currentOrgId, filters);
-  // Track which page the displayed `assets` correspond to (after a successful fetch).
-  // While the current `page` doesn't match the last loaded page, we are paginating → show skeleton.
-  const [loadedPage, setLoadedPage] = useState<number>(page);
-  useEffect(() => {
-    if (!isFetching) setLoadedPage(page);
-  }, [isFetching, page]);
-  const isPaginating = isFetching && !isLoading && loadedPage !== page;
 
   const handleRestore = async (asset: Asset) => {
     try {
@@ -527,19 +236,6 @@ export default function DamLibraryPage() {
     }
   };
 
-  // Cache last-known totals so the counter stays stable during refetches and never
-  // flickers back to "Carregando..." when paginating or filtering.
-  const lastTotalsRef = useRef<{ total: number; totalPages: number; page: number; pageSize: number; displayedLen: number } | null>(null);
-  if (!isLoading) {
-    lastTotalsRef.current = {
-      total,
-      totalPages,
-      page,
-      pageSize,
-      displayedLen: assets.length,
-    };
-  }
-  const stable = lastTotalsRef.current;
 
   // Keyboard shortcuts for pagination: ← / → (or J/K) navigate pages,
   // Home / End jump to first/last page. Disabled in load-more mode and while typing.
