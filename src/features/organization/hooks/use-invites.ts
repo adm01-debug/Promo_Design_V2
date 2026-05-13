@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { AppRole } from "@/hooks/use-organization";
 import { toast } from "sonner";
+import { ErrorLogger } from "@/lib/error-logger";
 
 export interface OrganizationInvite {
   id: string;
