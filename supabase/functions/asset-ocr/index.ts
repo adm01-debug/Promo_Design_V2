@@ -88,6 +88,7 @@ serve(async (req) => {
       return jsonResponse({ error: "Asset não encontrado ou sem permissão", requestId }, 404, req);
     }
 
+    if (!mimeType.startsWith("image/")) {
       console.log(`[${requestId}] Skipping non-image mime type: ${mimeType}`);
       await adminClient
         .from("assets")
