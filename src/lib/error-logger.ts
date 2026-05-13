@@ -8,7 +8,7 @@
  * In development the full entry is printed to the console; in production
  * only errors/fatals are logged to console.error to avoid noise.
  */
-
+import * as Sentry from "@sentry/react";
 export type LogLevel = "debug" | "info" | "warn" | "error" | "fatal";
 
 export interface LogEntry {
@@ -42,9 +42,16 @@ function createEntry(
   };
 }
 
-function push(entry: LogEntry) {
+function push(entry: LogEntry, error?: unknown) {
   buffer.push(entry);
   if (buffer.length > MAX_BUFFER) buffer.shift();
+
+  if (entry.level === "error" || entry.level === "fatal") {
+    Sentry.captureException(error || new Error(entry.message), {
+      extra: entry.context,
+      level: entry.level === "fatal" ? "fatal" : "error",
+    });
+  }
 
   if (isDev) {
     const consoleFn =
