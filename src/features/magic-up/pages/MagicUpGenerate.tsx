@@ -153,6 +153,13 @@ const MagicUpGenerate = () => {
         />
 
         <div className="flex-1 flex flex-col">
+          {lastError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Erro na Geração</AlertTitle>
+              <AlertDescription>{lastError}</AlertDescription>
+            </Alert>
+          )}
           {/* Prompt input */}
           <div className="p-4 border-b border-border">
             <div className="flex gap-3">
