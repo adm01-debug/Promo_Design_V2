@@ -281,7 +281,8 @@ Suggest the best placement for a logo on this product, considering:
       }
 
       if (!toolCall) {
-        return jsonResponse({ error: "IA não retornou sugestão" }, 500, req);
+        console.warn(`[${requestId}] AI did not return a suggestion`);
+        return jsonResponse({ error: "IA não retornou sugestão", requestId }, 500, req);
       }
 
       const suggestion = JSON.parse(toolCall.function.arguments);
