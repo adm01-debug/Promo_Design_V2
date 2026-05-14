@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD & Audit
 
 on:
   push:
@@ -29,10 +29,35 @@ jobs:
         run: npm run lint
 
       - name: Type check
-        run: npm run build:dev # Vite build without minification is a good type check
+        run: npm run build:dev
 
       - name: Run unit tests
         run: npm test
 
       - name: Run E2E tests
         run: npx playwright install --with-deps && npx playwright test
+
+  generate-audit-pdf:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pandoc & TeX Live
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc texlive-latex-base texlive-fonts-recommended texlive-extra-utils texlive-latex-extra
+
+      - name: Generate PDF from Markdown
+        run: |
+          mkdir -p docs
+          pandoc docs/enterprise-audit-report.md -o docs/audit_report.pdf --pdf-engine=pdflatex
+
+      - name: Commit and Push PDF
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/audit_report.pdf
+          git commit -m "chore: auto-generate enterprise audit PDF [skip ci]" || echo "No changes to commit"
+          git push

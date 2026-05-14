@@ -9,6 +9,7 @@
 
 ## 📋 Índice
 
+- [Relatórios de Auditoria](#-relatórios-de-auditoria)
 - [Visão Geral](#visão-geral)
 - [Arquitetura](#arquitetura)
 - [Módulos](#módulos)
@@ -22,7 +23,16 @@
 
 ---
 
-## Visão Geral
+## 🛡️ Relatórios de Auditoria
+
+Para manter a transparência e excelência técnica 10/10, o sistema dispõe de documentação de auditoria enterprise:
+
+- **[Enterprise Audit Report (Markdown)](docs/enterprise-audit-report.md)**: Inventário detalhado de funcionalidades, matriz de riscos e checklist operacional.
+- **[Relatório de Auditoria (PDF)](docs/audit_report.pdf)**: Versão exportável do relatório (disponível no repositório).
+
+---
+33: 
+34: ## Visão Geral
 
 Promo Design é uma aplicação SPA construída com React 18 e TypeScript, focada no fluxo de trabalho de personalização de brindes promocionais:
 
