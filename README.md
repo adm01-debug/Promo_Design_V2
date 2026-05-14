@@ -9,6 +9,7 @@
 
 ## 📋 Índice
 
+- [Relatórios de Auditoria](#-relatórios-de-auditoria)
 - [Visão Geral](#visão-geral)
 - [Arquitetura](#arquitetura)
 - [Módulos](#módulos)
