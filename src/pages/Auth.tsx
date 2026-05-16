@@ -13,7 +13,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import AuthLeftPanel from "@/components/AuthLeftPanel";
 import MfaChallenge from "@/components/MfaChallenge";
 
-type AuthMode = "login" | "signup" | "forgot";
+type AuthMode = "login" | "forgot";
 
 const Auth = () => {
   const navigate = useNavigate();
