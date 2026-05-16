@@ -6,14 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Mail, Lock, Loader2, Eye, EyeOff, Shield, Sparkles } from "lucide-react";
-import PasswordStrength from "@/components/PasswordStrength";
+
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Navigate, useNavigate } from "react-router-dom";
 import AuthLeftPanel from "@/components/AuthLeftPanel";
 import MfaChallenge from "@/components/MfaChallenge";
 
-type AuthMode = "login" | "signup" | "forgot";
+type AuthMode = "login" | "forgot";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const Auth = () => {
     setLoading(true);
     try {
       if (mode === "forgot") { const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` }); if (error) throw error; toast({ title: "E-mail enviado", description: "Verifique sua caixa de entrada para redefinir a senha." }); setMode("login"); }
-      else if (mode === "signup") { const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }); if (error) throw error; toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." }); }
+      
       else { 
         const { error } = await supabase.auth.signInWithPassword({ email, password }); 
         if (error) throw error;
@@ -51,8 +51,8 @@ const Auth = () => {
     finally { setLoading(false); }
   };
 
-  const headingText: Record<string, string> = { login: "Bem-vindo de volta", signup: "Crie sua conta", forgot: "Recupere sua senha", mfa: "Verificação" };
-  const subtitleText: Record<string, string> = { login: "Entre com suas credenciais para continuar", signup: "Preencha os dados para começar", forgot: "Enviaremos um link para redefinir sua senha", mfa: "Confirme sua identidade" };
+  const headingText: Record<string, string> = { login: "Bem-vindo de volta", forgot: "Recupere sua senha", mfa: "Verificação" };
+  const subtitleText: Record<string, string> = { login: "Entre com suas credenciais para continuar", forgot: "Enviaremos um link para redefinir sua senha", mfa: "Confirme sua identidade" };
 
   return (
     <div className="min-h-screen bg-background flex" role="main">
@@ -91,14 +91,13 @@ const Auth = () => {
                     {mode !== "forgot" && (
                       <motion.div key="password" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
                         <div className="flex items-center justify-between"><Label htmlFor="password">Senha</Label>{mode === "login" && <button type="button" onClick={() => setMode("forgot")} className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm">Esqueceu a senha?</button>}</div>
-                        <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" /><Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, password: true }))} className={`pl-10 pr-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${passwordError ? "border-destructive" : ""}`} required minLength={10} autoComplete={mode === "signup" ? "new-password" : "current-password"} aria-required="true" aria-invalid={!!passwordError} aria-describedby={passwordError ? "password-error" : undefined} /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">{showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}</button></div>
+                        <div className="relative"><Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" /><Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => setTouched((t) => ({ ...t, password: true }))} className={`pl-10 pr-10 h-12 bg-surface-1 border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${passwordError ? "border-destructive" : ""}`} required minLength={10} autoComplete="current-password" aria-required="true" aria-invalid={!!passwordError} aria-describedby={passwordError ? "password-error" : undefined} /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm">{showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}</button></div>
                         {passwordError && <p id="password-error" className="text-xs text-destructive mt-1">{passwordError}</p>}
-                        {mode === "signup" && <PasswordStrength password={password} />}
                       </motion.div>
                     )}
                   </AnimatePresence>
                   <Button type="submit" disabled={loading} className="w-full h-12 text-base font-semibold bg-gradient-primary text-primary-foreground shadow-lg hover:shadow-primary/25 transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" aria-busy={loading}>
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <><Sparkles className="w-4 h-4 mr-2" aria-hidden="true" />{mode === "login" && "Entrar"}{mode === "signup" && "Criar conta"}{mode === "forgot" && "Enviar link"}</>}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : <><Sparkles className="w-4 h-4 mr-2" aria-hidden="true" />{mode === "login" && "Entrar"}{mode === "forgot" && "Enviar link"}</>}
                   </Button>
                 </form>
 
@@ -119,9 +118,8 @@ const Auth = () => {
             )}
           </AnimatePresence>
 
-          <div className="text-center text-sm text-muted-foreground mt-6">
-            {mode === "login" && <p>Não tem uma conta?{" "}<button onClick={() => setMode("signup")} className="text-primary hover:underline font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm">Registre-se</button></p>}
-            {mode === "signup" && <p>Já tem conta?{" "}<button onClick={() => setMode("login")} className="text-primary hover:underline font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm">Entrar</button></p>}
+          <div className="text-center text-xs text-muted-foreground mt-6">
+            {mode === "login" && <p className="italic">Sistema de uso exclusivo da Promo Brindes. Novos acessos somente via administrador.</p>}
             {mode === "forgot" && <button onClick={() => setMode("login")} className="text-primary hover:underline font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm">Voltar ao login</button>}
           </div>
 
