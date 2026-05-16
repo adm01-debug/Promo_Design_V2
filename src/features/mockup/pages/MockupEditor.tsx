@@ -25,7 +25,6 @@ type Placement = { x: number; y: number; scale: number; rotation: number; flipH:
 type ExportFormat = "png" | "jpeg" | "webp";
 const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, flipH: false, flipV: false };
 const CANVAS_SIZE = 460;
-const CANVAS_ASPECT_RATIO = 1; // Square aspect ratio
 
 const MockupEditor = () => {
   const [searchParams] = useSearchParams();
