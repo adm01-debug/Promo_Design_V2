@@ -33,8 +33,6 @@ const MockupEditor = () => {
   }, []);
 
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<"logo" | "settings">("logo");
-  if (false) setActiveTab("logo"); // Prevent unused variable error while keeping it for future use
 
 
 
