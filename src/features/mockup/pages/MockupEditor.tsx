@@ -46,6 +46,7 @@ const MockupEditor = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isWarping, setIsWarping] = useState(false);
+  const [isWarping, setIsWarping] = useState(false);
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
   const [showTexture, setShowTexture] = useState(true);
@@ -300,8 +301,12 @@ const MockupEditor = () => {
                 <span className="absolute -top-5 left-0 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">{currentView.label}</span>
                 <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-muted-foreground">{areaW}cm</span>
                 <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-[8px] font-mono text-muted-foreground rotate-90">{areaH}cm</span>
-                {logoPreview && showLogo && (
                   <div className={} style={{ left: currentPlacement.x, top: currentPlacement.y, width:  }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar logo" tabIndex={0}>
+                    {isWarping ? (
+                      <Skeleton className="w-full aspect-square rounded-sm bg-primary/10 animate-pulse" />
+                    ) : (
+                  <div className={} style={{ left: currentPlacement.x, top: currentPlacement.y, width:  }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar logo" tabIndex={0}>
+                    )}
                     {isWarping ? (
                       <Skeleton className="w-full aspect-square rounded-sm bg-primary/10 animate-pulse" />
                     ) : (
