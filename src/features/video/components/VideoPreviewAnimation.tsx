@@ -13,9 +13,10 @@ interface VideoPreviewAnimationProps {
   templateId: string;
   productImage: string;
   productName: string;
+  characterAvatar?: string;
 }
 
-const ANIMATION_MAP: Record<string, React.FC<{ productImage: string }>> = {
+const ANIMATION_MAP: Record<string, React.FC<{ productImage: string, characterAvatar?: string }>> = {
   reveal: RevealAnimation,
   showcase: Showcase360Animation,
   promo: FlashPromoAnimation,
