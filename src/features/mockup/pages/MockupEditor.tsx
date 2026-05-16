@@ -59,13 +59,31 @@ const MockupEditor = () => {
   });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [containerSize, setContainerSize] = useState({ width: CANVAS_SIZE, height: CANVAS_SIZE });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Resize observer to handle responsive canvas
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry.contentRect) {
+        const size = Math.min(entry.contentRect.width - 40, CANVAS_SIZE);
+        if (size > 0) {
+          setContainerSize({ width: size, height: size });
+        }
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const currentPlacement = placements[activeView] || INITIAL_PLACEMENT;
   const currentView = VIEWS.find(v => v.id === activeView)!;
-  const viewAreaW = (currentView.areaPercent.w / 100) * CANVAS_SIZE;
-  const viewAreaH = (currentView.areaPercent.h / 100) * CANVAS_SIZE;
+  const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
+  const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
 
   const updatePlacement = (update: Partial<Placement>) => {
     setPlacements(prev => ({ ...prev, [activeView]: { ...prev[activeView], ...update } }));
@@ -195,8 +213,8 @@ const MockupEditor = () => {
           </div>
 
           {/* Canvas */}
-          <div className="flex-1 flex items-center justify-center overflow-auto relative" style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-            <div className="relative bg-white rounded-xl border border-border shadow-lg select-none" style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}>
+          <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-auto relative p-4" style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+            <div className="relative bg-white rounded-xl border border-border shadow-lg select-none" style={{ width: containerSize.width, height: containerSize.height, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}>
               <img src={productImage} alt={productName} className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ transform: currentView.bgRotation ? `rotate(${currentView.bgRotation}deg)` : undefined }} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
               {showGrid && <div className="absolute inset-0 pointer-events-none z-[5]" style={{ backgroundImage: "linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px)", backgroundSize: "25px 25px" }} />}
               <div ref={areaRef} className="absolute border-2 border-dashed border-primary/40 rounded bg-primary/5" style={{ left: `${currentView.areaPercent.x}%`, top: `${currentView.areaPercent.y}%`, width: `${currentView.areaPercent.w}%`, height: `${currentView.areaPercent.h}%` }}>
