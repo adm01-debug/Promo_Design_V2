@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Upload, GripVertical, Grid3X3, Maximize,
-  FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check,
+  FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check, Undo2, Redo2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
@@ -59,6 +59,26 @@ const MockupEditor = () => {
   });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [history, setHistory] = useState<Record<string, Placement[]>>({
+    front: [{ ...INITIAL_PLACEMENT }],
+    back: [{ ...INITIAL_PLACEMENT }],
+    "side-left": [{ ...INITIAL_PLACEMENT }],
+    "side-right": [{ ...INITIAL_PLACEMENT }],
+  });
+  const [historyIndex, setHistoryIndex] = useState<Record<string, number>>({
+    front: 0, back: 0, "side-left": 0, "side-right": 0
+  });
+
+  const [history, setHistory] = useState<Record<string, Placement[]>>({
+    front: [{ ...INITIAL_PLACEMENT }],
+    back: [{ ...INITIAL_PLACEMENT }],
+    "side-left": [{ ...INITIAL_PLACEMENT }],
+    "side-right": [{ ...INITIAL_PLACEMENT }],
+  });
+  const [historyIndex, setHistoryIndex] = useState<Record<string, number>>({
+    front: 0, back: 0, "side-left": 0, "side-right": 0
+  });
+
   const [containerSize, setContainerSize] = useState({ width: CANVAS_SIZE, height: CANVAS_SIZE });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -85,8 +105,51 @@ const MockupEditor = () => {
   const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
   const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
 
+  const addToHistory = useCallback((viewId: string, placement: Placement) => {
+    setHistory(prev => {
+      const viewHistory = prev[viewId] || [];
+      const currentIdx = historyIndex[viewId];
+      // Remove any redo steps if we make a new move
+      const newHistory = viewHistory.slice(0, currentIdx + 1);
+      newHistory.push({ ...placement });
+      // Limit history to 50 steps
+      if (newHistory.length > 50) newHistory.shift();
+      return { ...prev, [viewId]: newHistory };
+    });
+    setHistoryIndex(prev => ({ ...prev, [viewId]: Math.min((prev[viewId] || 0) + 1, 49) }));
+  }, [historyIndex]);
+
+  const undo = useCallback(() => {
+    const currentIdx = historyIndex[activeView];
+    if (currentIdx > 0) {
+      const newIdx = currentIdx - 1;
+      const prevPlacement = history[activeView][newIdx];
+      setPlacements(prev => ({ ...prev, [activeView]: prevPlacement }));
+      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
+      toast.info("Desfeito");
+    }
+  }, [activeView, history, historyIndex]);
+
+  const redo = useCallback(() => {
+    const viewHistory = history[activeView] || [];
+    const currentIdx = historyIndex[activeView];
+    if (currentIdx < viewHistory.length - 1) {
+      const newIdx = currentIdx + 1;
+      const nextPlacement = viewHistory[newIdx];
+      setPlacements(prev => ({ ...prev, [activeView]: nextPlacement }));
+      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
+      toast.info("Refeito");
+    }
+  }, [activeView, history, historyIndex]);
+
   const updatePlacement = (update: Partial<Placement>) => {
-    setPlacements(prev => ({ ...prev, [activeView]: { ...prev[activeView], ...update } }));
+    const newPlacement = { ...placements[activeView], ...update };
+    setPlacements(prev => ({ ...prev, [activeView]: newPlacement }));
+    // We only add to history when the user finishes a drag or clicks a tool
+    // but for simple clicks (flip, rotation), we add immediately
+    if (Object.keys(update).some(k => ["rotation", "flipH", "flipV"].includes(k))) {
+      addToHistory(activeView, newPlacement);
+    }
   };
 
   useEffect(() => { clearWarpCache(); setWarpedLogoUrl(null); }, [logoPreview]);
@@ -195,6 +258,9 @@ const MockupEditor = () => {
           {/* Canvas toolbar */}
           <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
             <div className="flex items-center gap-1.5">
+              <button onClick={undo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Desfazer" aria-label="Desfazer"><Undo2 className="w-4 h-4" /></button>
+              <button onClick={redo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Refazer" aria-label="Refazer"><Redo2 className="w-4 h-4" /></button>
+              <div className="w-px h-5 bg-border mx-1" />
               <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid" aria-pressed={showGrid} aria-label="Alternar grade"><Grid3X3 className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
               <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar" aria-label="Centralizar logo"><Maximize className="w-4 h-4" aria-hidden="true" /></button>
