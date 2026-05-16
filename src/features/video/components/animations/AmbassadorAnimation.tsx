@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 
-const AmbassadorAnimation = ({ productImage, characterAvatar }: { productImage: string, characterAvatar: string }) => (
+const AmbassadorAnimation = ({ productImage, characterAvatar }: { productImage: string, characterAvatar?: string }) => (
   <motion.div className="absolute inset-0 flex items-center justify-center p-6 bg-gradient-to-br from-primary/5 to-secondary/5">
     {/* Character on the left */}
     <motion.div 
@@ -9,7 +9,7 @@ const AmbassadorAnimation = ({ productImage, characterAvatar }: { productImage: 
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 1, ease: "easeOut" }}
     >
-      {characterAvatar}
+      {characterAvatar || "👤"}
       <motion.div 
         className="absolute -right-2 top-0 bg-primary/20 rounded-full w-4 h-4"
         animate={{ scale: [1, 1.2, 1] }}
