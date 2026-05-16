@@ -46,7 +46,6 @@ const MockupEditor = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isWarping, setIsWarping] = useState(false);
-  const [isWarping, setIsWarping] = useState(false);
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
   const [showTexture, setShowTexture] = useState(true);
@@ -72,14 +71,11 @@ const MockupEditor = () => {
     front: 0, back: 0, "side-left": 0, "side-right": 0
   });
 
-
-
   const [containerSize, setContainerSize] = useState({ width: CANVAS_SIZE, height: CANVAS_SIZE });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resize observer to handle responsive canvas
   useEffect(() => {
     if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -104,10 +100,8 @@ const MockupEditor = () => {
     setHistory(prev => {
       const viewHistory = prev[viewId] || [];
       const currentIdx = historyIndex[viewId];
-      // Remove any redo steps if we make a new move
       const newHistory = viewHistory.slice(0, currentIdx + 1);
       newHistory.push({ ...placement });
-      // Limit history to 50 steps
       if (newHistory.length > 50) newHistory.shift();
       return { ...prev, [viewId]: newHistory };
     });
@@ -140,8 +134,6 @@ const MockupEditor = () => {
   const updatePlacement = (update: Partial<Placement>) => {
     const newPlacement = { ...placements[activeView], ...update };
     setPlacements(prev => ({ ...prev, [activeView]: newPlacement }));
-    // We only add to history when the user finishes a drag or clicks a tool
-    // but for simple clicks (flip, rotation), we add immediately
     if (Object.keys(update).some(k => ["rotation", "flipH", "flipV"].includes(k))) {
       addToHistory(activeView, newPlacement);
     }
@@ -155,13 +147,10 @@ const MockupEditor = () => {
       setIsWarping(false);
       return; 
     }
-    
     let cancelled = false;
     setIsWarping(true);
-    
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
-    
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
       .then((url: string) => { 
         if (!cancelled) {
@@ -175,7 +164,6 @@ const MockupEditor = () => {
           setIsWarping(false);
         }
       });
-      
     return () => { cancelled = true; };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
@@ -249,7 +237,6 @@ const MockupEditor = () => {
         a.href = url; 
         a.download = `mockup-multiview-${productSku}-HD.${format}`; 
         a.click(); 
-        // Cleanup memory properly
         setTimeout(() => URL.revokeObjectURL(url), 100);
         toast.success(`${format.toUpperCase()} multivistas exportado`); 
       }, mimeType, format === "png" ? undefined : 0.92);
@@ -269,7 +256,6 @@ const MockupEditor = () => {
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
 
         <div className="flex-1 flex flex-col">
-          {/* Canvas toolbar */}
           <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
             <div className="flex items-center gap-1.5">
               <button onClick={undo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Desfazer" aria-label="Desfazer"><Undo2 className="w-4 h-4" /></button>
@@ -292,7 +278,6 @@ const MockupEditor = () => {
             </div>
           </div>
 
-          {/* Canvas */}
           <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-auto relative p-4" style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
             <div className="relative bg-white rounded-xl border border-border shadow-lg select-none" style={{ width: containerSize.width, height: containerSize.height, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}>
               <img src={productImage} alt={productName} className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ transform: currentView.bgRotation ? `rotate(${currentView.bgRotation}deg)` : undefined }} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
@@ -301,16 +286,12 @@ const MockupEditor = () => {
                 <span className="absolute -top-5 left-0 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">{currentView.label}</span>
                 <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-muted-foreground">{areaW}cm</span>
                 <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-[8px] font-mono text-muted-foreground rotate-90">{areaH}cm</span>
-                  <div className={} style={{ left: currentPlacement.x, top: currentPlacement.y, width:  }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar logo" tabIndex={0}>
+                {logoPreview && showLogo && (
+                  <div className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`} style={{ left: currentPlacement.x, top: currentPlacement.y, width: `${currentPlacement.scale * 100}%` }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar posição da logo" tabIndex={0}>
                     {isWarping ? (
                       <Skeleton className="w-full aspect-square rounded-sm bg-primary/10 animate-pulse" />
                     ) : (
-                  <div className={} style={{ left: currentPlacement.x, top: currentPlacement.y, width:  }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar logo" tabIndex={0}>
-                    )}
-                    {isWarping ? (
-                      <Skeleton className="w-full aspect-square rounded-sm bg-primary/10 animate-pulse" />
-                    ) : (
-                    <img src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview} alt="Logo aplicada" className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100, filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined, ...(surfaceType === "flat" ? { transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})` } : {}) }} />
+                      <img src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview} alt="Logo aplicada" className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100, filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined, ...(surfaceType === "flat" ? { transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})` } : {}) }} />
                     )}
                     <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground" role="button" aria-label="Redimensionar logo"><GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" aria-hidden="true" /></div>
                     <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" aria-hidden="true" />
@@ -326,7 +307,6 @@ const MockupEditor = () => {
             </div>
           </div>
 
-          {/* Bottom strip */}
           <div className="h-[140px] bg-card border-t border-border flex items-center gap-3 px-4 overflow-x-auto shrink-0">
             {VIEWS.map((view) => (
               <motion.button key={view.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setActiveView(view.id)} className={`relative shrink-0 w-[110px] rounded-lg border-2 transition-all overflow-hidden ${activeView === view.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40"}`}>
