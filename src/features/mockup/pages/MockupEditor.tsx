@@ -139,10 +139,17 @@ const MockupEditor = () => {
     }
   };
 
-  useEffect(() => { clearWarpCache(); setWarpedLogoUrl(null); }, [logoPreview]);
+  useEffect(() => {
+    if (warpedLogoUrl) {
+      URL.revokeObjectURL(warpedLogoUrl);
+    }
+    clearWarpCache();
+    setWarpedLogoUrl(null);
+  }, [logoPreview]);
 
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") { 
+      if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
       setWarpedLogoUrl(null); 
       setIsWarping(false);
       return; 
