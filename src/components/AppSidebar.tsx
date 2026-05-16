@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useServiceOrders } from "@/features/service-orders";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -98,7 +98,7 @@ const modules = [
 const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boolean) => void }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+
   const [collapsed, setCollapsedState] = useState(false);
 
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {

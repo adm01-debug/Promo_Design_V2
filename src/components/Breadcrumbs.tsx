@@ -1,5 +1,5 @@
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { ChevronRight, Home, ArrowLeft } from "lucide-react";
+import { ChevronRight, Home } from "lucide-react";
 import { BackButton } from "./BackButton";
 import { useEffect } from "react";
 
