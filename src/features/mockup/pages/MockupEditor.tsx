@@ -175,7 +175,7 @@ const MockupEditor = () => {
 
         <div className="flex-1 flex flex-col">
           {/* Canvas toolbar */}
-          <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3">
+          <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
             <div className="flex items-center gap-1.5">
               <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid"><Grid3X3 className="w-4 h-4" /></button>
               <div className="w-px h-5 bg-border mx-1" />
