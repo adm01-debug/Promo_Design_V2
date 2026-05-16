@@ -324,24 +324,26 @@ const MockupEditor = () => {
             </div>
           </div>
 
-          <nav className="h-[140px] bg-card border-t border-border flex items-center gap-3 px-4 overflow-x-auto shrink-0" aria-label="Navegação rápida de vistas">
-            {VIEWS.map((view) => (
-              <motion.button key={view.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setActiveView(view.id)} className={`relative shrink-0 w-[110px] rounded-lg border-2 transition-all overflow-hidden ${activeView === view.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40"}`}>
-                <div className="aspect-square bg-white flex items-center justify-center relative">
-                  <img src={productImage} alt={view.label} className="w-full h-full object-contain p-1" style={{ transform: view.bgRotation ? `rotate(${view.bgRotation}deg)` : undefined }} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
-                  <div className="absolute border border-dashed border-primary/30 bg-primary/5 rounded-sm" style={{ left: `${view.areaPercent.x}%`, top: `${view.areaPercent.y}%`, width: `${view.areaPercent.w}%`, height: `${view.areaPercent.h}%` }} />
-                  {approvedViews.has(view.id) && <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow"><Check className="w-3 h-3 text-white" /></div>}
-                </div>
-                <div className="p-1.5 bg-card text-center"><span className="text-[10px] font-semibold text-foreground">{view.label}</span></div>
-              </motion.button>
-            ))}
-            <div className="shrink-0 w-px h-20 bg-border mx-2" />
-            <div className="shrink-0 flex flex-col items-center justify-center px-4">
+          <section className="h-[140px] bg-card border-t border-border flex items-center gap-3 px-4 overflow-x-auto shrink-0" aria-label="Navegação rápida de vistas">
+            <nav className="flex items-center gap-3">
+              {VIEWS.map((view) => (
+                <motion.button key={view.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setActiveView(view.id)} className={`relative shrink-0 w-[110px] rounded-lg border-2 transition-all overflow-hidden ${activeView === view.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40"}`} aria-label={`Mudar para vista ${view.label}`} aria-current={activeView === view.id ? "page" : undefined}>
+                  <div className="aspect-square bg-white flex items-center justify-center relative">
+                    <img src={productImage} alt={`Miniatura da vista ${view.label}`} className="w-full h-full object-contain p-1" style={{ transform: view.bgRotation ? `rotate(${view.bgRotation}deg)` : undefined }} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
+                    <div className="absolute border border-dashed border-primary/30 bg-primary/5 rounded-sm" style={{ left: `${view.areaPercent.x}%`, top: `${view.areaPercent.y}%`, width: `${view.areaPercent.w}%`, height: `${view.areaPercent.h}%` }} aria-hidden="true" />
+                    {approvedViews.has(view.id) && <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shadow" title="Aprovado"><Check className="w-3 h-3 text-white" /></div>}
+                  </div>
+                  <div className="p-1.5 bg-card text-center"><span className="text-[10px] font-semibold text-foreground">{view.label}</span></div>
+                </motion.button>
+              ))}
+            </nav>
+            <div className="shrink-0 w-px h-20 bg-border mx-2" role="separator" />
+            <div className="shrink-0 flex flex-col items-center justify-center px-4" role="status" aria-label="Progresso de aprovação">
               <div className="text-[10px] font-mono text-muted-foreground uppercase mb-2">Aprovação</div>
-              <div className="text-2xl font-bold text-foreground">{approvedViews.size}<span className="text-muted-foreground text-lg">/{VIEWS.length}</span></div>
+              <div className="text-2xl font-bold text-foreground" aria-live="polite">{approvedViews.size}<span className="text-muted-foreground text-lg">/{VIEWS.length}</span></div>
               {allApproved && <span className="text-[9px] text-green-400 font-semibold mt-1">✓ Completo</span>}
             </div>
-          </nav>
+          </section>
         </div>
 
         <EditorRightPanel
