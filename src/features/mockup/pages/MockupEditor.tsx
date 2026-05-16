@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Upload, GripVertical, Grid3X3, Maximize,
-  FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check,
+  FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check, Undo2, Redo2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
