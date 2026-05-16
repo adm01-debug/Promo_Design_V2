@@ -304,6 +304,70 @@ export function getWarpedPreview(
   });
 }
 
+// --- Worker Integration ---
+
+let worker: Worker | null = null;
+
+function getWorker() {
+  if (!worker) {
+    worker = new Worker(new URL('./warp-worker.ts', import.meta.url), { type: 'module' });
+  }
+  return worker;
+}
+
+/**
+ * Offloads warping to a Web Worker for better performance.
+ */
+export async function getWarpedPreviewWorker(
+  logoSrc: string,
+  width: number,
+  height: number,
+  surface: SurfaceType,
+  rotation: number = 0,
+  flipH: boolean = false,
+  flipV: boolean = false
+): Promise<string> {
+  const cacheKey = `worker_${logoSrc}_${width}_${height}_${surface}_${rotation}_${flipH}_${flipV}`;
+  const cached = warpCache.get(cacheKey);
+  if (cached) return cached;
+
+  const w = getWorker();
+  
+  // 1. Fetch the image and convert to ImageBitmap (transferable)
+  const response = await fetch(logoSrc);
+  const blob = await response.blob();
+  const bitmap = await createImageBitmap(blob);
+
+  const config = DEFAULT_CONFIGS[surface];
+
+  return new Promise((resolve, reject) => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data.type === 'WARP_RESULT') {
+        const { bitmap: resultBitmap } = e.data.payload;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(resultBitmap, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        
+        warpCache.set(cacheKey, dataUrl);
+        w.removeEventListener('message', handleMessage);
+        resolve(dataUrl);
+      } else if (e.data.type === 'ERROR') {
+        w.removeEventListener('message', handleMessage);
+        reject(new Error(e.data.payload.message));
+      }
+    };
+
+    w.addEventListener('message', handleMessage);
+    w.postMessage({
+      type: 'WARP_IMAGE',
+      payload: { bitmap, width, height, surface, config, rotation, flipH, flipV }
+    }, [bitmap] as any);
+  });
+}
+
 /** Clear the warp cache (call when logo changes) */
 export function clearWarpCache() {
   warpCache.clear();

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
-import { getWarpedPreview, clearWarpCache } from "@/features/mockup";
+import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateApprovalPdf } from "@/features/mockup";
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
@@ -79,7 +79,7 @@ const MockupEditor = () => {
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
-      .then((url) => { if (!cancelled) setWarpedLogoUrl(url); })
+      .then((url: string) => { if (!cancelled) setWarpedLogoUrl(url); })
       .catch(() => { if (!cancelled) setWarpedLogoUrl(null); });
     return () => { cancelled = true; };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
@@ -147,7 +147,17 @@ const MockupEditor = () => {
         if (row === 0) { ctx.beginPath(); ctx.moveTo(ox, size); ctx.lineTo(ox + size, size); ctx.stroke(); }
       }
       const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-      canvas.toBlob((blob) => { if (!blob) return; const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `mockup-multiview-${productSku}-HD.${format}`; a.click(); URL.revokeObjectURL(url); toast.success(`${format.toUpperCase()} multivistas exportado`); }, mimeType, format === "png" ? undefined : 0.92);
+      canvas.toBlob((blob) => { 
+        if (!blob) return; 
+        const url = URL.createObjectURL(blob); 
+        const a = document.createElement("a"); 
+        a.href = url; 
+        a.download = `mockup-multiview-${productSku}-HD.${format}`; 
+        a.click(); 
+        // Cleanup memory properly
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        toast.success(`${format.toUpperCase()} multivistas exportado`); 
+      }, mimeType, format === "png" ? undefined : 0.92);
     } catch { toast.error("Erro ao exportar"); } finally { setIsExporting(false); }
   }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH]);
 
@@ -165,22 +175,22 @@ const MockupEditor = () => {
 
         <div className="flex-1 flex flex-col">
           {/* Canvas toolbar */}
-          <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3">
+          <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
             <div className="flex items-center gap-1.5">
-              <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid"><Grid3X3 className="w-4 h-4" /></button>
+              <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid" aria-pressed={showGrid} aria-label="Alternar grade"><Grid3X3 className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
-              <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar"><Maximize className="w-4 h-4" /></button>
-              <button onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip H"><FlipHorizontal className="w-4 h-4" /></button>
-              <button onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip V"><FlipVertical className="w-4 h-4" /></button>
-              <button onClick={() => updatePlacement({ rotation: currentPlacement.rotation + 15 })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar"><RotateCw className="w-4 h-4" /></button>
+              <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar" aria-label="Centralizar logo"><Maximize className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip H" aria-label="Espelhar horizontal"><FlipHorizontal className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip V" aria-label="Espelhar vertical"><FlipVertical className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ rotation: currentPlacement.rotation + 15 })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar" aria-label="Rotacionar logo"><RotateCw className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
               <span className="text-[10px] font-mono text-primary">{currentView.label}</span>
               <span className="text-[10px] font-mono text-muted-foreground ml-1">({areaW}×{areaH}cm)</span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><ZoomOut className="w-4 h-4" /></button>
-              <span className="text-xs font-mono text-muted-foreground w-12 text-center">{zoom}%</span>
-              <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><ZoomIn className="w-4 h-4" /></button>
+              <button onClick={() => setZoom(Math.max(50, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Diminuir zoom"><ZoomOut className="w-4 h-4" aria-hidden="true" /></button>
+              <span className="text-xs font-mono text-muted-foreground w-12 text-center" aria-live="polite">{zoom}%</span>
+              <button onClick={() => setZoom(Math.min(300, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Aumentar zoom"><ZoomIn className="w-4 h-4" aria-hidden="true" /></button>
             </div>
           </div>
 
@@ -194,10 +204,10 @@ const MockupEditor = () => {
                 <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-muted-foreground">{areaW}cm</span>
                 <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-[8px] font-mono text-muted-foreground rotate-90">{areaH}cm</span>
                 {logoPreview && showLogo && (
-                  <div className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`} style={{ left: currentPlacement.x, top: currentPlacement.y, width: `${currentPlacement.scale * 100}%` }} onMouseDown={handleLogoMouseDown}>
-                    <img src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview} alt="Logo" className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100, filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined, ...(surfaceType === "flat" ? { transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})` } : {}) }} />
-                    <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"><GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" /></div>
-                    <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" />
+                  <div className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`} style={{ left: currentPlacement.x, top: currentPlacement.y, width: `${currentPlacement.scale * 100}%` }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar posição da logo" tabIndex={0}>
+                    <img src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview} alt="Logo aplicada" className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100, filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined, ...(surfaceType === "flat" ? { transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})` } : {}) }} />
+                    <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground" role="button" aria-label="Redimensionar logo"><GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" aria-hidden="true" /></div>
+                    <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" aria-hidden="true" />
                   </div>
                 )}
                 {!logoPreview && (
