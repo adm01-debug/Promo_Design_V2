@@ -307,7 +307,7 @@ const MockupEditor = () => {
             </div>
           </div>
 
-          <div className="h-[140px] bg-card border-t border-border flex items-center gap-3 px-4 overflow-x-auto shrink-0">
+          <nav className="h-[140px] bg-card border-t border-border flex items-center gap-3 px-4 overflow-x-auto shrink-0" aria-label="Navegação rápida de vistas">
             {VIEWS.map((view) => (
               <motion.button key={view.id} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setActiveView(view.id)} className={`relative shrink-0 w-[110px] rounded-lg border-2 transition-all overflow-hidden ${activeView === view.id ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40"}`}>
                 <div className="aspect-square bg-white flex items-center justify-center relative">
@@ -324,7 +324,7 @@ const MockupEditor = () => {
               <div className="text-2xl font-bold text-foreground">{approvedViews.size}<span className="text-muted-foreground text-lg">/{VIEWS.length}</span></div>
               {allApproved && <span className="text-[9px] text-green-400 font-semibold mt-1">✓ Completo</span>}
             </div>
-          </div>
+          </nav>
         </div>
 
         <EditorRightPanel

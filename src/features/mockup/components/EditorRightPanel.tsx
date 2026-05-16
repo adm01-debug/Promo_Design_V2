@@ -82,32 +82,32 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
   } = props;
 
   return (
-    <div className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto">
+    <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
       {/* Product info */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Produto</h3>
+      <section className="p-4 border-b border-border" aria-labelledby="product-info-title">
+        <h3 id="product-info-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Produto</h3>
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center p-1 shrink-0">
-            <img src={productImage} alt="" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
+            <img src={productImage} alt="" className="w-full h-full object-contain" aria-hidden="true" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{productName}</p>
-            <p className="text-[10px] text-muted-foreground font-mono">{productSku}</p>
+            <p className="text-[10px] text-muted-foreground font-mono" aria-label={`SKU: ${productSku}`}>{productSku}</p>
           </div>
         </div>
-        {technique && <span className="inline-block text-[10px] text-primary font-mono mt-2 bg-primary/10 px-1.5 py-0.5 rounded">{technique}</span>}
-      </div>
+        {technique && <span className="inline-block text-[10px] text-primary font-mono mt-2 bg-primary/10 px-1.5 py-0.5 rounded" aria-label={`Técnica: ${technique}`}>{technique}</span>}
+      </section>
 
       {/* Logo */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Logo</h3>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
+      <section className="p-4 border-b border-border" aria-labelledby="logo-section-title">
+        <h3 id="logo-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Logo</h3>
+        <input ref={fileInputRef} type="file" id="logo-upload-input" accept="image/*" className="hidden" aria-label="Upload de logo" onChange={(e) => e.target.files?.[0] && handleLogoUpload(e.target.files[0])} />
         <div className="grid grid-cols-2 gap-1.5">
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="w-3.5 h-3.5 mr-1" /> {logoFile ? logoFile.name.slice(0, 10) : "Upload"}
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => fileInputRef.current?.click()} aria-label="Fazer upload de imagem">
+            <Upload className="w-3.5 h-3.5 mr-1" aria-hidden="true" /> {logoFile ? logoFile.name.slice(0, 10) : "Upload"}
           </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)} disabled={isLoadingFromDam}>
-            {isLoadingFromDam ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Library className="w-3.5 h-3.5 mr-1" />}
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setDamPickerOpen(true)} disabled={isLoadingFromDam} aria-label="Escolher da biblioteca DAM">
+            {isLoadingFromDam ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" aria-hidden="true" /> : <Library className="w-3.5 h-3.5 mr-1" aria-hidden="true" />}
             {isLoadingFromDam ? "Carregando..." : "DAM"}
           </Button>
         </div>
@@ -148,11 +148,11 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Appearance */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aparência</h3>
+      <section className="p-4 border-b border-border" aria-labelledby="appearance-section-title">
+        <h3 id="appearance-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aparência</h3>
         <div className="space-y-3">
           <div>
             <label className="text-[10px] font-mono text-muted-foreground mb-1.5 block">Blend Mode</label>
@@ -195,12 +195,12 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             )}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Auto-Fit & Surface */}
-      <div className="p-4 border-b border-border">
+      <section className="p-4 border-b border-border" aria-labelledby="autofit-section-title">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Auto-Fit</h3>
+          <h3 id="autofit-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Auto-Fit</h3>
           <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" disabled={!logoPreview} onClick={() => logoPreview && autoFitLogo(logoPreview)}>
             <Maximize className="w-3 h-3" /> Encaixar
           </Button>
@@ -215,11 +215,11 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Position */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Posição — {currentViewLabel}</h3>
+      <section className="p-4 border-b border-border" aria-labelledby="position-section-title">
+        <h3 id="position-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Posição — {currentViewLabel}</h3>
         <div className="space-y-3">
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -236,11 +236,11 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             <Slider value={[currentPlacement.rotation]} onValueChange={([v]) => updatePlacement({ rotation: v })} min={-180} max={180} step={5} />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Per-view approval */}
-      <div className="p-4 border-b border-border">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aprovação por Vista</h3>
+      <section className="p-4 border-b border-border" aria-labelledby="approval-section-title">
+        <h3 id="approval-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-3">Aprovação por Vista</h3>
         <div className="space-y-1.5">
           {views.map((view) => (
             <button key={view.id} onClick={() => toggleApproval(view.id)} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all text-xs ${approvedViews.has(view.id) ? "border-green-500/40 bg-green-500/10 text-green-400" : "border-border hover:border-primary/40 text-muted-foreground"}`}>
@@ -249,10 +249,11 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Export */}
-      <div className="p-4 mt-auto space-y-2">
+      <section className="p-4 mt-auto space-y-2" aria-labelledby="export-section-title">
+        <h2 id="export-section-title" className="sr-only">Opções de Exportação</h2>
         <div>
           <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5 block">Formato</label>
           <div className="grid grid-cols-3 gap-1">
@@ -267,7 +268,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
         <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
         </Button>
-      </div>
+      </section>
 
       <AssetPicker
         open={damPickerOpen}
@@ -286,7 +287,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
           }
         }}
       />
-    </div>
+    </aside>
   );
 };
 

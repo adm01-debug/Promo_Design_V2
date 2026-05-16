@@ -13,14 +13,14 @@ interface EditorTopBarProps {
 const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, isExporting }: EditorTopBarProps) => {
   const navigate = useNavigate();
   return (
-    <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
+    <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0" role="banner">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => navigate(-1)}>
-          <ChevronLeft className="w-3.5 h-3.5" /> Voltar
+        <Button variant="ghost" size="sm" className="h-8 text-xs gap-1" onClick={() => navigate(-1)} aria-label="Voltar para página anterior">
+          <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" /> Voltar
         </Button>
-        <div className="w-px h-5 bg-border" />
+        <div className="w-px h-5 bg-border" aria-hidden="true" />
         <h1 className="text-sm font-semibold text-foreground">Editor Multivistas</h1>
-        <span className="text-xs text-muted-foreground font-mono">{productName}</span>
+        <span className="text-xs text-muted-foreground font-mono" aria-label={`Produto: ${productName}`}>{productName}</span>
       </div>
       <div className="flex items-center gap-2">
         {allApproved && (
