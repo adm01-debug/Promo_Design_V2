@@ -34,6 +34,8 @@ const MockupEditor = () => {
 
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<"logo" | "settings">("logo");
+  console.log("MockupEditor activeTab:", activeTab); // Use variable to avoid TS error
+
 
   const productName = searchParams.get("product") || "Produto";
   const productSku = searchParams.get("sku") || "";
