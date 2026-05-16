@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Video, Search, Loader2, Package, Sparkles, Play, Clock, ChevronLeft, ChevronRight, Film, Image as X, Palette } from "lucide-react";
@@ -25,8 +25,18 @@ const VideoNew = () => {
   const [creationMode, setCreationMode] = useState<CreationMode>("template");
   const [aiPrompt, setAiPrompt] = useState("");
   const [duration, setDuration] = useState<5 | 10>(5);
-  const [selectedCharacter, setSelectedCharacter] = useState<string>("👩‍💼");
+  const [selectedCharacter, setSelectedCharacter] = useState<string>(() => {
+    return localStorage.getItem("selected_character_avatar") || "👩‍💼";
+  });
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
+
+  useEffect(() => {
+    // Clear selection after consumption to avoid sticky states between sessions
+    return () => {
+      localStorage.removeItem("selected_character_avatar");
+      localStorage.removeItem("selected_character_id");
+    };
+  }, []);
 
   const { data: productsData, isLoading: productsLoading } = useProducts({ search, page, pageSize: 20, onlyWithImages: true });
   const products = productsData?.products || [];
