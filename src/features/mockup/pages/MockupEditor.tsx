@@ -69,15 +69,7 @@ const MockupEditor = () => {
     front: 0, back: 0, "side-left": 0, "side-right": 0
   });
 
-  const [history, setHistory] = useState<Record<string, Placement[]>>({
-    front: [{ ...INITIAL_PLACEMENT }],
-    back: [{ ...INITIAL_PLACEMENT }],
-    "side-left": [{ ...INITIAL_PLACEMENT }],
-    "side-right": [{ ...INITIAL_PLACEMENT }],
-  });
-  const [historyIndex, setHistoryIndex] = useState<Record<string, number>>({
-    front: 0, back: 0, "side-left": 0, "side-right": 0
-  });
+
 
   const [containerSize, setContainerSize] = useState({ width: CANVAS_SIZE, height: CANVAS_SIZE });
   const fileInputRef = useRef<HTMLInputElement>(null);
