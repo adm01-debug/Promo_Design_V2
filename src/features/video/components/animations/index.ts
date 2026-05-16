@@ -19,3 +19,4 @@ export { default as SpotlightAnimation } from "./SpotlightAnimation";
 export { default as TypewriterAnimation } from "./TypewriterAnimation";
 export { default as ColorSweepAnimation } from "./ColorSweepAnimation";
 export { default as MatrixRainAnimation } from "./MatrixRainAnimation";
+export { default as AmbassadorAnimation } from "./AmbassadorAnimation";
