@@ -28,6 +28,10 @@ const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, fl
 const CANVAS_SIZE = 460;
 
 const MockupEditor = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const [searchParams] = useSearchParams();
   const productName = searchParams.get("product") || "Produto";
   const productSku = searchParams.get("sku") || "";
