@@ -17,18 +17,20 @@ interface EditorViewThumbnailsProps {
 }
 
 const EditorViewThumbnails = ({ views, activeView, setActiveView, productImage, approvedViews }: EditorViewThumbnailsProps) => (
-  <div className="w-[100px] bg-card border-r border-border flex flex-col gap-1 p-2 overflow-y-auto">
+  <nav className="w-[100px] bg-card border-r border-border flex flex-col gap-1 p-2 overflow-y-auto" aria-label="Seletor de vistas do produto">
     {views.map((view) => (
       <button
         key={view.id}
         onClick={() => setActiveView(view.id)}
+        aria-label={`Mudar para vista ${view.label}`}
+        aria-pressed={activeView === view.id}
         className={`relative rounded-lg border-2 p-1 transition-all text-center ${
           activeView === view.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
         }`}
       >
         <div className="aspect-square bg-muted rounded flex items-center justify-center relative overflow-hidden">
           <img
-            src={productImage} alt={view.label}
+            src={productImage} alt="" aria-hidden="true"
             className="w-full h-full object-contain opacity-60"
             style={{ transform: view.bgRotation ? `rotate(${view.bgRotation}deg)` : undefined }}
             onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }}
