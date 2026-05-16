@@ -41,6 +41,7 @@ export const TEMPLATES = [
   { id: "typewriter", name: "Typewriter", desc: "Texto animado letra a letra", duration: "5s", style: "impactante" },
   { id: "colorsweep", name: "Color Sweep", desc: "Onda de cor passando", duration: "5s", style: "minimalista" },
   { id: "matrixrain", name: "Matrix Rain", desc: "Chuva de código digital", duration: "10s", style: "jovem" },
+  { id: "ambassador", name: "Brand Ambassador", desc: "Embaixador apresentando o produto", duration: "10s", style: "premium" },
 ];
 
 export const ASPECT_PREVIEW: Record<AspectRatio, string> = {
