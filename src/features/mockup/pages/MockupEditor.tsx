@@ -147,7 +147,17 @@ const MockupEditor = () => {
         if (row === 0) { ctx.beginPath(); ctx.moveTo(ox, size); ctx.lineTo(ox + size, size); ctx.stroke(); }
       }
       const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-      canvas.toBlob((blob) => { if (!blob) return; const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `mockup-multiview-${productSku}-HD.${format}`; a.click(); URL.revokeObjectURL(url); toast.success(`${format.toUpperCase()} multivistas exportado`); }, mimeType, format === "png" ? undefined : 0.92);
+      canvas.toBlob((blob) => { 
+        if (!blob) return; 
+        const url = URL.createObjectURL(blob); 
+        const a = document.createElement("a"); 
+        a.href = url; 
+        a.download = `mockup-multiview-${productSku}-HD.${format}`; 
+        a.click(); 
+        // Cleanup memory properly
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        toast.success(`${format.toUpperCase()} multivistas exportado`); 
+      }, mimeType, format === "png" ? undefined : 0.92);
     } catch { toast.error("Erro ao exportar"); } finally { setIsExporting(false); }
   }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH]);
 
