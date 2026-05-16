@@ -61,6 +61,10 @@ interface EditorRightPanelProps {
   toggleApproval: (id: string) => void;
   exportFormat: ExportFormat;
   setExportFormat: (f: ExportFormat) => void;
+  exportQuality: number;
+  setExportQuality: (q: number) => void;
+  exportScale: number;
+  setExportScale: (s: number) => void;
   handleExportPdf: () => void;
   handleExportPng: () => void;
   isExporting: boolean;
@@ -78,7 +82,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     autoFitLogo, surfaceType, setSurfaceType,
     currentPlacement, updatePlacement, currentViewLabel,
     views, approvedViews, toggleApproval,
-    exportFormat, setExportFormat, handleExportPdf, handleExportPng, isExporting,
+    exportFormat, setExportFormat, exportQuality, setExportQuality, exportScale, setExportScale, handleExportPdf, handleExportPng, isExporting,
   } = props;
 
   return (
@@ -251,23 +255,52 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
         </div>
       </section>
 
-      {/* Export */}
-      <section className="p-4 mt-auto space-y-2" aria-labelledby="export-section-title">
-        <h2 id="export-section-title" className="sr-only">Opções de Exportação</h2>
-        <div>
-          <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5 block">Formato</label>
-          <div className="grid grid-cols-3 gap-1">
-            {(["png", "jpeg", "webp"] as ExportFormat[]).map((fmt) => (
-              <button key={fmt} onClick={() => setExportFormat(fmt)} className={`px-2 py-1.5 rounded text-[10px] font-mono uppercase transition-all ${exportFormat === fmt ? "bg-primary/20 text-primary border border-primary/40" : "bg-muted text-muted-foreground border border-border hover:border-primary/30"}`}>
-                {fmt}
-              </button>
-            ))}
+      <section className="p-4 mt-auto space-y-4" aria-labelledby="export-section-title">
+        <h2 id="export-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Exportação</h2>
+        
+        <div className="space-y-3">
+          <div>
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5 block">Formato</label>
+            <div className="grid grid-cols-3 gap-1">
+              {(["png", "jpeg", "webp"] as ExportFormat[]).map((fmt) => (
+                <button key={fmt} onClick={() => setExportFormat(fmt)} className={`px-2 py-1.5 rounded text-[10px] font-mono uppercase transition-all ${exportFormat === fmt ? "bg-primary/20 text-primary border border-primary/40" : "bg-muted text-muted-foreground border border-border hover:border-primary/30"}`}>
+                  {fmt}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-mono text-muted-foreground">Qualidade / Tamanho</label>
+              <span className="text-[10px] font-mono text-primary">{exportScale}x ({(1200 * exportScale)}px)</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              {[1, 2, 3].map((s) => (
+                <button key={s} onClick={() => setExportScale(s)} className={`px-1 py-1 rounded text-[10px] transition-all ${exportScale === s ? "bg-primary/20 text-primary border border-primary/40" : "bg-muted text-muted-foreground border border-border"}`}>
+                  {s}x
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {exportFormat !== "png" && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] font-mono text-muted-foreground">Compressão</label>
+                <span className="text-[10px] font-mono text-primary">{Math.round(exportQuality * 100)}%</span>
+              </div>
+              <Slider value={[exportQuality * 100]} onValueChange={([v]) => setExportQuality(v / 100)} min={10} max={100} step={5} />
+            </div>
+          )}
         </div>
-        <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}><Printer className="w-3.5 h-3.5" /> Layout Aprovação (PDF)</Button>
-        <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
-          {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
-        </Button>
+
+        <div className="space-y-2 pt-2">
+          <Button className="w-full gap-2 text-xs" onClick={handleExportPdf}><Printer className="w-3.5 h-3.5" /> Arte Final (PDF Otimizado)</Button>
+          <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
+            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Exportar {exportFormat.toUpperCase()}
+          </Button>
+        </div>
       </section>
 
       <AssetPicker
