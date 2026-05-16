@@ -25,6 +25,7 @@ const VideoNew = () => {
   const [creationMode, setCreationMode] = useState<CreationMode>("template");
   const [aiPrompt, setAiPrompt] = useState("");
   const [duration, setDuration] = useState<5 | 10>(5);
+  const [selectedCharacter, setSelectedCharacter] = useState<string>("👩‍💼");
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
 
   const { data: productsData, isLoading: productsLoading } = useProducts({ search, page, pageSize: 20, onlyWithImages: true });
