@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Plus, Trash2, Copy, Sparkles, Camera, Palette, Download, Search, Heart } from "lucide-react";
+import { User, Plus, Trash2, Copy, Sparkles, Camera, Palette, Download, Search, Heart, Video } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CharacterCreator from "@/features/video/components/CharacterCreator";
@@ -26,11 +27,20 @@ const DEMO_CHARACTERS: CharacterProfile[] = [
 ];
 
 const CharacterStudio = () => {
+  const navigate = useNavigate();
   const [characters, setCharacters] = useState<CharacterProfile[]>(DEMO_CHARACTERS);
   const [selectedChar, setSelectedChar] = useState<CharacterProfile | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [newName, setNewName] = useState(""); const [newStyle, setNewStyle] = useState("professional"); const [newTraits, setNewTraits] = useState<string[]>([]); const [newPoses, setNewPoses] = useState<string[]>([]); const [newOutfits, setNewOutfits] = useState<string[]>([]); const [consistency, setConsistency] = useState(80);
+
+  const handleUseInVideo = (char: CharacterProfile) => {
+    // Store selected character in a way VideoNew can access (e.g., localStorage or state management)
+    localStorage.setItem("selected_character_avatar", char.avatar);
+    localStorage.setItem("selected_character_id", char.id);
+    toast.info(`Personagem ${char.name} selecionado para o Video Studio`);
+    navigate("/video/new");
+  };
 
   const filteredChars = characters.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
   const toggleFavorite = (id: string) => setCharacters(prev => prev.map(c => c.id === id ? { ...c, favorite: !c.favorite } : c));
@@ -79,7 +89,13 @@ const CharacterStudio = () => {
                   <div><label className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mb-2">Figurinos</label><div className="space-y-1">{selectedChar.outfits.map(o => <div key={o} className="flex items-center gap-2 text-xs text-foreground bg-muted rounded-lg px-3 py-2"><Palette className="w-3 h-3 text-primary" /> {o}</div>)}</div></div>
                   <div><label className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mb-2">Poses com Produto</label><div className="space-y-1">{selectedChar.poses.map(p => <div key={p} className="flex items-center gap-2 text-xs text-foreground bg-muted rounded-lg px-3 py-2"><Camera className="w-3 h-3 text-primary" /> {p}</div>)}</div></div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 pt-4"><Button variant="outline" className="gap-2 text-xs"><Camera className="w-4 h-4" /> Gerar Foto</Button><Button variant="outline" className="gap-2 text-xs"><Download className="w-4 h-4" /> Exportar Perfil</Button><Button className="gap-2 text-xs"><Sparkles className="w-4 h-4" /> Usar no Mockup</Button></div>
+                <div className="grid grid-cols-3 gap-3 pt-4">
+                  <Button variant="outline" className="gap-2 text-xs"><Camera className="w-4 h-4" /> Gerar Foto</Button>
+                  <Button className="gap-2 text-xs bg-gradient-to-r from-primary to-secondary text-white border-none" onClick={() => handleUseInVideo(selectedChar)}>
+                    <Video className="w-4 h-4" /> Usar no Vídeo
+                  </Button>
+                  <Button variant="outline" className="gap-2 text-xs"><Sparkles className="w-4 h-4" /> Usar no Mockup</Button>
+                </div>
               </motion.div>
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col items-center justify-center text-center p-8">
