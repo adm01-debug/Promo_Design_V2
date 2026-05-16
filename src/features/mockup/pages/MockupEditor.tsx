@@ -147,13 +147,32 @@ const MockupEditor = () => {
   useEffect(() => { clearWarpCache(); setWarpedLogoUrl(null); }, [logoPreview]);
 
   useEffect(() => {
-    if (!logoPreview || surfaceType === "flat") { setWarpedLogoUrl(null); return; }
+    if (!logoPreview || surfaceType === "flat") { 
+      setWarpedLogoUrl(null); 
+      setIsWarping(false);
+      return; 
+    }
+    
     let cancelled = false;
+    setIsWarping(true);
+    
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
+    
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
-      .then((url: string) => { if (!cancelled) setWarpedLogoUrl(url); })
-      .catch(() => { if (!cancelled) setWarpedLogoUrl(null); });
+      .then((url: string) => { 
+        if (!cancelled) {
+          setWarpedLogoUrl(url); 
+          setIsWarping(false);
+        }
+      })
+      .catch(() => { 
+        if (!cancelled) {
+          setWarpedLogoUrl(null);
+          setIsWarping(false);
+        }
+      });
+      
     return () => { cancelled = true; };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
