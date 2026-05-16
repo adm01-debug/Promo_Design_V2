@@ -85,8 +85,51 @@ const MockupEditor = () => {
   const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
   const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
 
+  const addToHistory = useCallback((viewId: string, placement: Placement) => {
+    setHistory(prev => {
+      const viewHistory = prev[viewId] || [];
+      const currentIdx = historyIndex[viewId];
+      // Remove any redo steps if we make a new move
+      const newHistory = viewHistory.slice(0, currentIdx + 1);
+      newHistory.push({ ...placement });
+      // Limit history to 50 steps
+      if (newHistory.length > 50) newHistory.shift();
+      return { ...prev, [viewId]: newHistory };
+    });
+    setHistoryIndex(prev => ({ ...prev, [viewId]: Math.min((prev[viewId] || 0) + 1, 49) }));
+  }, [historyIndex]);
+
+  const undo = useCallback(() => {
+    const currentIdx = historyIndex[activeView];
+    if (currentIdx > 0) {
+      const newIdx = currentIdx - 1;
+      const prevPlacement = history[activeView][newIdx];
+      setPlacements(prev => ({ ...prev, [activeView]: prevPlacement }));
+      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
+      toast.info("Desfeito");
+    }
+  }, [activeView, history, historyIndex]);
+
+  const redo = useCallback(() => {
+    const viewHistory = history[activeView] || [];
+    const currentIdx = historyIndex[activeView];
+    if (currentIdx < viewHistory.length - 1) {
+      const newIdx = currentIdx + 1;
+      const nextPlacement = viewHistory[newIdx];
+      setPlacements(prev => ({ ...prev, [activeView]: nextPlacement }));
+      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
+      toast.info("Refeito");
+    }
+  }, [activeView, history, historyIndex]);
+
   const updatePlacement = (update: Partial<Placement>) => {
-    setPlacements(prev => ({ ...prev, [activeView]: { ...prev[activeView], ...update } }));
+    const newPlacement = { ...placements[activeView], ...update };
+    setPlacements(prev => ({ ...prev, [activeView]: newPlacement }));
+    // We only add to history when the user finishes a drag or clicks a tool
+    // but for simple clicks (flip, rotation), we add immediately
+    if (Object.keys(update).some(k => ["rotation", "flipH", "flipV"].includes(k))) {
+      addToHistory(activeView, newPlacement);
+    }
   };
 
   useEffect(() => { clearWarpCache(); setWarpedLogoUrl(null); }, [logoPreview]);
