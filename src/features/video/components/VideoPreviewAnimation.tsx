@@ -6,16 +6,17 @@ import {
   SplitRevealAnimation, GlitchAnimation, FloatingAnimation,
   CinematicAnimation, NeonGlowAnimation, BounceDropAnimation,
   MorphShapesAnimation, SpotlightAnimation, TypewriterAnimation,
-  ColorSweepAnimation, MatrixRainAnimation,
+  ColorSweepAnimation, MatrixRainAnimation, AmbassadorAnimation,
 } from "./animations";
 
 interface VideoPreviewAnimationProps {
   templateId: string;
   productImage: string;
   productName: string;
+  characterAvatar?: string;
 }
 
-const ANIMATION_MAP: Record<string, React.FC<{ productImage: string }>> = {
+const ANIMATION_MAP: Record<string, React.FC<{ productImage: string, characterAvatar?: string }>> = {
   reveal: RevealAnimation,
   showcase: Showcase360Animation,
   promo: FlashPromoAnimation,
@@ -36,9 +37,10 @@ const ANIMATION_MAP: Record<string, React.FC<{ productImage: string }>> = {
   typewriter: TypewriterAnimation,
   colorsweep: ColorSweepAnimation,
   matrixrain: MatrixRainAnimation,
+  ambassador: AmbassadorAnimation,
 };
 
-const VideoPreviewAnimation = ({ templateId, productImage, productName }: VideoPreviewAnimationProps) => {
+const VideoPreviewAnimation = ({ templateId, productImage, productName, characterAvatar }: VideoPreviewAnimationProps) => {
   const AnimComponent = ANIMATION_MAP[templateId];
 
   if (!AnimComponent) {
@@ -52,7 +54,7 @@ const VideoPreviewAnimation = ({ templateId, productImage, productName }: VideoP
   return (
     <AnimatePresence mode="wait">
       <motion.div key={templateId} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-        <AnimComponent productImage={productImage} />
+        <AnimComponent productImage={productImage} characterAvatar={characterAvatar} />
       </motion.div>
     </AnimatePresence>
   );

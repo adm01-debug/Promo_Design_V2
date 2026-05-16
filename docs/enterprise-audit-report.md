@@ -34,7 +34,8 @@ O **Promo Design** é uma plataforma SaaS multi-tenant de alta performance proje
 | **Geração de Imagens Publicitárias** | Criar fotos de catálogo realistas sem necessidade de fotografia física. | ✅ | `src/features/magic-up/pages/MagicUpGenerate.tsx` |
 | **Prompt Inteligente (Context-Aware)** | Construir prompts baseados no material e SKU do produto real. | ✅ | `src/features/magic-up/lib/prompt-builder.ts` |
 | **Video Creation Mode** | Gerar vídeos de "reveal" de produtos para redes sociais. | ✅ | `src/features/video/pages/VideoNew.tsx` |
-| **Character Studio** | Criação de avatares de marca para vídeos explicativos. | 🛠️ | `src/features/video/pages/CharacterStudio.tsx` |
+| **Character Studio** | Criação de avatares de marca para vídeos explicativos. | ✅ | `src/features/video/pages/CharacterStudio.tsx` |
+| **Brand Ambassador Template** | Integração nativa entre personagens e templates de vídeo. | ✅ | `src/features/video/components/animations/AmbassadorAnimation.tsx` |
 
 ### Módulo: Gestão de Ordens de Serviço (Workflow)
 | Funcionalidade | Motivo de Existir | Status | Evidência (Arquivo/Path) |

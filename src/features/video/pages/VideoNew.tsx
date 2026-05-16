@@ -25,6 +25,7 @@ const VideoNew = () => {
   const [creationMode, setCreationMode] = useState<CreationMode>("template");
   const [aiPrompt, setAiPrompt] = useState("");
   const [duration, setDuration] = useState<5 | 10>(5);
+  const [selectedCharacter, setSelectedCharacter] = useState<string>("👩‍💼");
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
 
   const { data: productsData, isLoading: productsLoading } = useProducts({ search, page, pageSize: 20, onlyWithImages: true });
@@ -138,11 +139,27 @@ const VideoNew = () => {
                   ) : (
                     <div><p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Prompt IA</p><textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Descreva o vídeo que deseja criar..." className="w-full h-28 p-3 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-primary" /><p className="text-[10px] text-muted-foreground mt-1">A IA gerará um vídeo de {duration}s no formato {aspectRatio} com estilo {videoStyle}</p></div>
                   )}
+                  {selectedTemplate === "ambassador" && creationMode === "template" && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                      <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-2">Embaixador da Marca</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {["👩‍💼", "🧑", "🧔", "👩‍🎨", "👮", "🧑‍💻", "👩‍🔬", "👤"].map((avatar) => (
+                          <button
+                            key={avatar}
+                            onClick={() => setSelectedCharacter(avatar)}
+                            className={`h-12 flex items-center justify-center rounded-xl border-2 transition-all text-2xl ${selectedCharacter === avatar ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}
+                          >
+                            {avatar}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground h-11" onClick={() => setStep("preview")}><Play className="w-4 h-4" />Pré-visualizar</Button>
                 </div>
                 <div className="flex-1 flex items-center justify-center bg-surface-1 p-8">
                   <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[340px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex flex-col items-center justify-center`}>
-                    <VideoPreviewAnimation templateId={creationMode === "template" ? selectedTemplate : "minimal"} productImage={getProductImageUrl(selectedProduct)} productName={selectedProduct.name} />
+                    <VideoPreviewAnimation templateId={creationMode === "template" ? selectedTemplate : "minimal"} productImage={getProductImageUrl(selectedProduct)} productName={selectedProduct.name} characterAvatar={selectedCharacter} />
                     <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card via-card/80 to-transparent z-30"><p className="text-xs font-display font-bold text-foreground truncate">{selectedProduct.name}</p><div className="flex items-center gap-2 mt-1"><span className="text-[10px] font-mono text-primary">{aspectRatio}</span><span className="text-[10px] text-muted-foreground">·</span><span className="text-[10px] text-muted-foreground">{duration}s</span></div></div>
                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-30"><span className="text-[8px] font-mono text-muted-foreground bg-surface-1/80 px-1.5 py-0.5 rounded">{creationMode === "template" ? selectedTemplateMeta?.name : "IA Gen"}</span><span className="text-[8px] font-mono text-primary bg-surface-1/80 px-1.5 py-0.5 rounded">PREVIEW</span></div>
                   </div>
@@ -153,7 +170,7 @@ const VideoNew = () => {
             {step === "preview" && selectedProduct && (
               <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col items-center justify-center p-8">
                 <div className={`${ASPECT_PREVIEW[aspectRatio]} w-full max-w-[400px] rounded-2xl bg-card border-2 border-border overflow-hidden relative flex items-center justify-center mb-6`}>
-                  <VideoPreviewAnimation templateId={creationMode === "template" ? selectedTemplate : "minimal"} productImage={getProductImageUrl(selectedProduct)} productName={selectedProduct.name} />
+                  <VideoPreviewAnimation templateId={creationMode === "template" ? selectedTemplate : "minimal"} productImage={getProductImageUrl(selectedProduct)} productName={selectedProduct.name} characterAvatar={selectedCharacter} />
                   <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-card to-transparent z-30"><p className="text-sm font-display font-bold text-foreground">{selectedProduct.name}</p><p className="text-[10px] text-muted-foreground mt-1">{aspectRatio} · {duration}s · {videoStyle} · {creationMode === "template" ? selectedTemplateMeta?.name : "IA"}</p></div>
                 </div>
                 <div className="text-center space-y-3 max-w-md">
