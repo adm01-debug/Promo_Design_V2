@@ -57,39 +57,57 @@ const MockupCanvas = ({
 }: MockupCanvasProps) => (
   <div className="flex-1 flex flex-col">
     {/* Toolbar */}
-    <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3">
+    <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de edição de mockup">
       <div className="flex items-center gap-1">
-        <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid (G)">
+        <button 
+          onClick={() => setShowGrid(!showGrid)} 
+          className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} 
+          title="Grid (G)"
+          aria-label={showGrid ? "Esconder grade" : "Mostrar grade"}
+          aria-pressed={showGrid}
+        >
           <Grid3X3 className="w-4 h-4" />
         </button>
-        <button onClick={() => setShowRulers(!showRulers)} className={`p-1.5 rounded transition-colors ${showRulers ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Réguas (R)">
+        <button 
+          onClick={() => setShowRulers(!showRulers)} 
+          className={`p-1.5 rounded transition-colors ${showRulers ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} 
+          title="Réguas (R)"
+          aria-label={showRulers ? "Esconder réguas" : "Mostrar réguas"}
+          aria-pressed={showRulers}
+        >
           <Ruler className="w-4 h-4" />
         </button>
-        <button onClick={() => setShowGuides(!showGuides)} className={`p-1.5 rounded transition-colors ${showGuides ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Guias">
+        <button 
+          onClick={() => setShowGuides(!showGuides)} 
+          className={`p-1.5 rounded transition-colors ${showGuides ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} 
+          title="Guias"
+          aria-label={showGuides ? "Esconder guias" : "Mostrar guias"}
+          aria-pressed={showGuides}
+        >
           <AlignCenter className="w-4 h-4" />
         </button>
-        <div className="w-px h-5 bg-border mx-1" />
-        <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar logo">
+        <div className="w-px h-5 bg-border mx-1" role="separator" />
+        <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar logo" aria-label="Centralizar logo">
           <Maximize className="w-4 h-4" />
         </button>
-        <button onClick={() => setPlacement(p => ({ ...p, flipH: !p.flipH }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip H">
+        <button onClick={() => setPlacement(p => ({ ...p, flipH: !p.flipH }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar Horizontal" aria-label="Espelhar Horizontal">
           <FlipHorizontal className="w-4 h-4" />
         </button>
-        <button onClick={() => setPlacement(p => ({ ...p, flipV: !p.flipV }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip V">
+        <button onClick={() => setPlacement(p => ({ ...p, flipV: !p.flipV }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar Vertical" aria-label="Espelhar Vertical">
           <FlipVertical className="w-4 h-4" />
         </button>
-        <button onClick={() => setPlacement(p => ({ ...p, rotation: p.rotation + 15 }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar">
+        <button onClick={() => setPlacement(p => ({ ...p, rotation: p.rotation + 15 }))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar" aria-label="Rotacionar 15 graus">
           <RotateCw className="w-4 h-4" />
         </button>
-        <div className="w-px h-5 bg-border mx-1" />
-        <span className="text-[10px] font-mono text-muted-foreground">
+        <div className="w-px h-5 bg-border mx-1" role="separator" />
+        <span className="text-[10px] font-mono text-muted-foreground" aria-label={`Área de impressão: ${selectedArea.location_name}`}>
           {selectedArea.location_name} ({selectedArea.max_width}×{selectedArea.max_height}cm)
         </span>
       </div>
-      <div className="flex items-center gap-2">
-        <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><ZoomOut className="w-4 h-4" /></button>
-        <span className="text-xs font-mono text-muted-foreground w-12 text-center">{zoom}%</span>
-        <button onClick={() => setZoom(Math.min(400, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted"><ZoomIn className="w-4 h-4" /></button>
+      <div className="flex items-center gap-2" role="group" aria-label="Controle de Zoom">
+        <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Diminuir zoom"><ZoomOut className="w-4 h-4" /></button>
+        <span className="text-xs font-mono text-muted-foreground w-12 text-center" aria-live="polite" aria-label={`Zoom atual: ${zoom}%`}>{zoom}%</span>
+        <button onClick={() => setZoom(Math.min(400, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Aumentar zoom"><ZoomIn className="w-4 h-4" /></button>
       </div>
     </div>
 
@@ -156,13 +174,16 @@ const MockupCanvas = ({
 
           {logoPreview && showLogo && (
             <div
-              className={`absolute cursor-move ${isDragging ? "opacity-80" : ""} ${isWarping ? "animate-pulse" : ""}`}
+              className={`absolute cursor-move focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${isDragging ? "opacity-80" : ""} ${isWarping ? "animate-pulse" : ""}`}
               style={{ left: placement.x, top: placement.y, width: `${placement.scale * 100}%` }}
               onMouseDown={handleLogoMouseDown}
+              role="img"
+              aria-label="Logo posicionada no produto"
+              tabIndex={0}
             >
               <img
                 src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview}
-                alt="Logo"
+                alt="Logo preview"
                 className="w-full h-full object-contain pointer-events-none"
                 draggable={false}
                 style={{
@@ -172,25 +193,27 @@ const MockupCanvas = ({
                   ...(surfaceType === "flat" ? { transform: `rotate(${placement.rotation}deg) scaleX(${placement.flipH ? -1 : 1}) scaleY(${placement.flipV ? -1 : 1})` } : {}),
                 }}
               />
-              <div
+              <button
                 className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground"
                 onMouseDown={(e) => { e.stopPropagation(); setIsResizing(true); }}
+                aria-label="Redimensionar logo"
               >
-                <GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" />
-              </div>
-              <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" />
+                <GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" aria-hidden="true" />
+              </button>
+              <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" aria-hidden="true" />
             </div>
           )}
 
           {!logoPreview && (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-colors rounded"
+            <button
+              className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-colors rounded focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus-visible:outline-none"
               onClick={() => fileInputRef.current?.click()}
+              aria-label="Upload de logo"
             >
-              <Upload className="w-6 h-6 text-primary/60 mb-1" />
+              <Upload className="w-6 h-6 text-primary/60 mb-1" aria-hidden="true" />
               <span className="text-[10px] text-primary/60 font-mono">Soltar logo aqui</span>
               <span className="text-[8px] text-muted-foreground mt-1">ou clique para upload</span>
-            </div>
+            </button>
           )}
         </div>
       </div>
