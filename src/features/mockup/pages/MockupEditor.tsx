@@ -79,7 +79,7 @@ const MockupEditor = () => {
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
-      .then((url) => { if (!cancelled) setWarpedLogoUrl(url); })
+      .then((url: string) => { if (!cancelled) setWarpedLogoUrl(url); })
       .catch(() => { if (!cancelled) setWarpedLogoUrl(null); });
     return () => { cancelled = true; };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
