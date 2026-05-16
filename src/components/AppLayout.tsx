@@ -1,5 +1,6 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
@@ -19,6 +20,31 @@ const AppLayout = () => {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchStart === null) return;
+      const touchEnd = e.changedTouches[0].clientX;
+      const distance = touchEnd - touchStart;
+      // Swipe right to go back (min 100px)
+      if (distance > 100 && touchStart < 50) {
+        navigate(-1);
+      }
+      setTouchStart(null);
+    };
+
+    if (isMobile) {
+      window.addEventListener("touchstart", handleTouchStart);
+      window.addEventListener("touchend", handleTouchEnd);
+    }
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [touchStart, navigate, isMobile]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -91,9 +117,10 @@ const AppLayout = () => {
           </AnimatePresence>
 
           <main id="main-content" className="flex-1 pt-14">
-            <div className="p-4">
+            <div className="p-4 flex items-center gap-4">
               <Breadcrumbs />
             </div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
@@ -111,9 +138,10 @@ const AppLayout = () => {
         <>
           <AppSidebar onCollapseChange={setCollapsed} />
           <main id="main-content" className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
-            <div className="p-4 pb-0">
+            <div className="p-4 pb-0 flex items-center gap-4">
               <Breadcrumbs />
             </div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

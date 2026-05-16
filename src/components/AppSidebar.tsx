@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "react-router-dom";
 import { useServiceOrders } from "@/features/service-orders";
 import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Layers,
   Image,
@@ -97,7 +98,9 @@ const modules = [
 const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boolean) => void }) => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+
   const [collapsed, setCollapsedState] = useState(false);
+
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {
     if (location.pathname.startsWith("/magicup")) return "magicup";
     if (location.pathname.startsWith("/video")) return "video";
@@ -180,11 +183,11 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
     <motion.aside
       animate={{ width: collapsed ? 64 : 240 }}
       transition={{ duration: 0.2 }}
-      className="h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40"
+      className="h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0 z-40 touch-none"
       role="navigation"
       aria-label="Barra lateral principal"
     >
-      <div className="h-14 flex items-center px-4 border-b border-sidebar-border">
+      <div className="h-14 flex items-center px-4 border-b border-sidebar-border shrink-0">
         <Link to="/" className="flex items-center gap-2.5 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg" aria-label="Ir para o Dashboard — Promo Design">
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
             <Layers className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
