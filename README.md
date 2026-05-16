@@ -28,6 +28,7 @@
 Para manter a transparência e excelência técnica 10/10, o sistema dispõe de documentação de auditoria enterprise:
 
 - **[Enterprise Audit Report (Markdown)](docs/enterprise-audit-report.md)**: Inventário detalhado de funcionalidades, matriz de riscos e checklist operacional.
+- **[Senior Front-End Audit (Markdown)](docs/senior-frontend-audit.md)**: Análise técnica de performance, acessibilidade e arquitetura front-end.
 - **[Relatório de Auditoria (PDF)](docs/audit_report.pdf)**: Versão exportável do relatório (disponível no repositório).
 
 ---
