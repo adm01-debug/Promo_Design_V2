@@ -48,7 +48,7 @@ const EditorViewThumbnails = ({ views, activeView, setActiveView, productImage, 
         <span className="text-[9px] font-medium text-foreground mt-1 block">{view.label}</span>
       </button>
     ))}
-  </div>
+  </nav>
 );
 
 export default EditorViewThumbnails;

@@ -324,7 +324,7 @@ const MockupEditor = () => {
               <div className="text-2xl font-bold text-foreground">{approvedViews.size}<span className="text-muted-foreground text-lg">/{VIEWS.length}</span></div>
               {allApproved && <span className="text-[9px] text-green-400 font-semibold mt-1">✓ Completo</span>}
             </div>
-          </div>
+          </nav>
         </div>
 
         <EditorRightPanel

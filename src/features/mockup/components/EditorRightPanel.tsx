@@ -148,7 +148,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Appearance */}
       <section className="p-4 border-b border-border" aria-labelledby="appearance-section-title">
@@ -195,7 +195,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             )}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Auto-Fit & Surface */}
       <section className="p-4 border-b border-border" aria-labelledby="autofit-section-title">
@@ -215,7 +215,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Position */}
       <section className="p-4 border-b border-border" aria-labelledby="position-section-title">
@@ -236,7 +236,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             <Slider value={[currentPlacement.rotation]} onValueChange={([v]) => updatePlacement({ rotation: v })} min={-180} max={180} step={5} />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Per-view approval */}
       <section className="p-4 border-b border-border" aria-labelledby="approval-section-title">
@@ -249,7 +249,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Export */}
       <section className="p-4 mt-auto space-y-2" aria-labelledby="export-section-title">
@@ -268,7 +268,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
         <Button variant="outline" className="w-full gap-2 text-xs" onClick={handleExportPng} disabled={isExporting}>
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} {exportFormat.toUpperCase()} Multivistas
         </Button>
-      </div>
+      </section>
 
       <AssetPicker
         open={damPickerOpen}
