@@ -161,12 +161,16 @@ const MockupEditor = () => {
     getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
       .then((url: string) => { 
         if (!cancelled) {
+          if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
           setWarpedLogoUrl(url); 
           setIsWarping(false);
+        } else {
+          URL.revokeObjectURL(url);
         }
       })
       .catch(() => { 
         if (!cancelled) {
+          if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
           setWarpedLogoUrl(null);
           setIsWarping(false);
         }
