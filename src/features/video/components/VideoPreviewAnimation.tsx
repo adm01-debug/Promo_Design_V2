@@ -6,7 +6,7 @@ import {
   SplitRevealAnimation, GlitchAnimation, FloatingAnimation,
   CinematicAnimation, NeonGlowAnimation, BounceDropAnimation,
   MorphShapesAnimation, SpotlightAnimation, TypewriterAnimation,
-  ColorSweepAnimation, MatrixRainAnimation,
+  ColorSweepAnimation, MatrixRainAnimation, AmbassadorAnimation,
 } from "./animations";
 
 interface VideoPreviewAnimationProps {
