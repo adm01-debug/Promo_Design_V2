@@ -325,7 +325,7 @@ const MockupEditor = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality]);
+  }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, INITIAL_PLACEMENT]);
 
   const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
   const handleExportPdf = () => {
@@ -425,6 +425,8 @@ const MockupEditor = () => {
           currentPlacement={currentPlacement} updatePlacement={updatePlacement} currentViewLabel={currentView.label}
           views={VIEWS} approvedViews={approvedViews} toggleApproval={toggleApproval}
           exportFormat={exportFormat} setExportFormat={setExportFormat}
+          exportQuality={exportQuality} setExportQuality={setExportQuality}
+          exportScale={exportScale} setExportScale={setExportScale}
           handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
         />
       </div>
