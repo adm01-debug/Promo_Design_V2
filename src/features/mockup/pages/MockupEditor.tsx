@@ -238,6 +238,9 @@ const MockupEditor = () => {
           {/* Canvas toolbar */}
           <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
             <div className="flex items-center gap-1.5">
+              <button onClick={undo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Desfazer" aria-label="Desfazer"><Undo2 className="w-4 h-4" /></button>
+              <button onClick={redo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Refazer" aria-label="Refazer"><Redo2 className="w-4 h-4" /></button>
+              <div className="w-px h-5 bg-border mx-1" />
               <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid" aria-pressed={showGrid} aria-label="Alternar grade"><Grid3X3 className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
               <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar" aria-label="Centralizar logo"><Maximize className="w-4 h-4" aria-hidden="true" /></button>
