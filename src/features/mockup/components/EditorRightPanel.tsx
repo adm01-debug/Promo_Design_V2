@@ -287,7 +287,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
           }
         }}
       />
-    </div>
+    </aside>
   );
 };
 
