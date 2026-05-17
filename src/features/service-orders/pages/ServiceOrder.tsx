@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   SectionTitle, ArtUploadField, PdfPreviewDialog,
-  generateServiceOrderPdf, getLogoDataUrl,
+  generateServiceOrderPdf, generateFinalArtPdf, getLogoDataUrl,
   ServiceOrderData, TECHNIQUES, generateOsNumber, validateForm,
 } from "@/features/service-orders";
 import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrderTopBar";
