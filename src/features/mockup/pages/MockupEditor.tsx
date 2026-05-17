@@ -113,6 +113,39 @@ const MockupEditor = () => {
   const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
   const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
 
+  // Keyboard shortcuts and nudge functionality
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const step = e.shiftKey ? 5 : 1;
+
+      // Undo/Redo shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      }
+
+      // Nudge logo with arrow keys
+      if (logoPreview && showLogo) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); updatePlacement({ x: currentPlacement.x - step }); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); updatePlacement({ x: currentPlacement.x + step }); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); updatePlacement({ x: currentPlacement.y - step }); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); updatePlacement({ x: currentPlacement.y + step }); }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
+
+
   const addToHistory = useCallback((viewId: string, placement: Placement) => {
     setHistory(prev => {
       const viewHistory = prev[viewId] || [];
