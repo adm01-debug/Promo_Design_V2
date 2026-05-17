@@ -96,6 +96,28 @@ const MockupEditor = () => {
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const { drafts, isLoading: draftsLoading } = useMockupDrafts();
+
+  // Load draft if draftId is present
+  useEffect(() => {
+    if (draftId && drafts.length > 0) {
+      const draft = drafts.find(d => d.id === draftId);
+      if (draft && draft.editorState) {
+        const state = draft.editorState as any;
+        if (state.placements) setPlacements(state.placements);
+        if (state.logoPreview) setLogoPreview(state.logoPreview);
+        if (state.logoOpacity) setLogoOpacity(state.logoOpacity);
+        if (state.blendMode) setBlendMode(state.blendMode);
+        if (state.surfaceType) setSurfaceType(state.surfaceType);
+        if (state.shadowEnabled !== undefined) setShadowEnabled(state.shadowEnabled);
+        if (state.shadowIntensity) setShadowIntensity(state.shadowIntensity);
+        if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
+        
+        toast.success("Rascunho carregado");
+      }
+    }
+  }, [draftId, drafts, setPlacements]);
+
 
 
   const [displayScale, setDisplayScale] = useState(1);
