@@ -10,11 +10,13 @@ interface EditorTopBarProps {
   onExportPng: () => void;
   onExportArt: () => void;
   onOpenServiceOrder: () => void;
+  onTogglePanel?: () => void;
   isExporting: boolean;
   isSaving?: boolean;
 }
 
-const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onExportArt, onOpenServiceOrder, isExporting, isSaving }: EditorTopBarProps) => {
+const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onExportArt, onOpenServiceOrder, onTogglePanel, isExporting, isSaving }: EditorTopBarProps) => {
+
 
   const navigate = useNavigate();
   return (
