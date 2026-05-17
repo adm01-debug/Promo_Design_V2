@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
+
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { motion } from "framer-motion";
 import { useServiceOrders, type OsStatus } from "@/features/service-orders";
@@ -27,6 +28,8 @@ import AssetVersionUpdateBanner from "@/features/service-orders/components/Asset
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
   const { addOrder, getOrder, updateOrder } = useServiceOrders();
   const { uploadFile } = useFileUpload();
   const [uploading, setUploading] = useState(false);
@@ -52,6 +55,24 @@ const ServiceOrder = () => {
       setSaved(true);
     }
   }, [existingOrder]);
+
+  useEffect(() => {
+    if (location.state?.prefill && !editId) {
+      const prefill = location.state.prefill;
+      setForm(prev => ({
+        ...prev,
+        ...prefill,
+        // Mantemos o número da OS gerado se não houver um no prefill
+        osNumber: prefill.osNumber || prev.osNumber,
+      }));
+      toast.info("Dados importados do Editor de Mockups", {
+        description: `Produto: ${prefill.productName}`,
+      });
+      // Limpar o state para não reaplicar ao recarregar
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, editId]);
+
 
   const [form, setForm] = useState<ServiceOrderData>(() => {
     if (existingOrder) {
