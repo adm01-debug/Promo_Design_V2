@@ -336,7 +336,14 @@ const MockupEditor = () => {
         a.href = url;
         a.download = `mockup-multiview-${productSku}-${size}px.${format}`;
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        
+        // Clean up memory after browser has handled the click
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          canvas.width = 0;
+          canvas.height = 0;
+        }, 1000);
+        
         toast.success(`${format.toUpperCase()} (${size}px) exportado`);
       }, mimeType, format === "png" ? undefined : exportQuality);
     } catch {
