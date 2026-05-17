@@ -1,4 +1,4 @@
-import { Check, Download, FileText, Loader2, ChevronLeft } from "lucide-react";
+import { Check, Download, FileText, Loader2, ChevronLeft, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -7,10 +7,11 @@ interface EditorTopBarProps {
   allApproved: boolean;
   onExportPdf: () => void;
   onExportPng: () => void;
+  onExportArt: () => void;
   isExporting: boolean;
 }
 
-const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, isExporting }: EditorTopBarProps) => {
+const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onExportArt, isExporting }: EditorTopBarProps) => {
   const navigate = useNavigate();
   return (
     <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0" role="banner">
@@ -29,7 +30,10 @@ const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, isEx
           </span>
         )}
         <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPdf}>
-          <FileText className="w-3.5 h-3.5" /> PDF
+          <FileText className="w-3.5 h-3.5" /> PDF APROVAÇÃO
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={onExportArt}>
+          <FileDown className="w-3.5 h-3.5" /> ARTE FINAL
         </Button>
         <Button size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPng} disabled={isExporting}>
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG HD

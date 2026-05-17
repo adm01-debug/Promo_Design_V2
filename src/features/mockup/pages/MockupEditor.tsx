@@ -8,7 +8,7 @@ import {
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
-import { generateApprovalPdf } from "@/features/mockup";
+import { generateApprovalPdf, generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
@@ -333,9 +333,53 @@ const MockupEditor = () => {
     pdf.save(`mockup-editor-${productSku}-${Date.now()}.pdf`); toast.success("PDF de aprovação gerado");
   };
 
+  const handleExportArt = () => {
+    const pdf = generateArtPdf({
+      osNumber: `ART-${productSku || "NEW"}`,
+      date: new Date().toLocaleDateString("pt-BR"),
+      deliveryDate: "",
+      clientName: "Rascunho Editor",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName,
+      productSku,
+      productMaterial: "",
+      productColors: "",
+      technique: technique || "Laser Fiber",
+      areaName,
+      areaWidth: String(areaW),
+      areaHeight: String(areaH),
+      areaShape: "",
+      artColors: logoColors.join(", "),
+      artDpi: "300",
+      artFile: logoFile?.name || "logo.png",
+      artFileDataUrl: logoPreview || "",
+      quantity: "1",
+      observations: "Gerado via Editor Multivistas",
+      mockupImageUrl: "",
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
+    });
+    pdf.save(`arte-final-${productSku || "export"}.pdf`);
+    toast.success("Arte Final exportada!");
+  };
+
   return (
     <div className="h-screen flex flex-col">
-      <EditorTopBar productName={productName} allApproved={allApproved} onExportPdf={handleExportPdf} onExportPng={handleExportPng} isExporting={isExporting} />
+      <EditorTopBar 
+        productName={productName} 
+        allApproved={allApproved} 
+        onExportPdf={handleExportPdf} 
+        onExportPng={handleExportPng} 
+        onExportArt={handleExportArt}
+        isExporting={isExporting} 
+      />
       <div className="flex-1 flex overflow-hidden">
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
 

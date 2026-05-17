@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, CheckCircle2, Copy, Eye, Download, Printer } from "lucide-react";
+import { ChevronLeft, CheckCircle2, Copy, Eye, Download, Printer, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ServiceOrderTopBarProps {
   osNumber: string;
@@ -17,11 +18,12 @@ interface ServiceOrderTopBarProps {
   onPreviewPdf: () => void;
   onPrint: () => void;
   onDownloadPdf: () => void;
+  onDownloadFinalArt?: () => void;
 }
 
 const ServiceOrderTopBar = ({
   osNumber, editId, currentStatus, setCurrentStatus,
-  saved, setSaved, onSave, onPreviewPdf, onPrint, onDownloadPdf,
+  saved, setSaved, onSave, onPreviewPdf, onPrint, onDownloadPdf, onDownloadFinalArt,
 }: ServiceOrderTopBarProps) => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
@@ -69,9 +71,22 @@ const ServiceOrderTopBar = ({
         <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={onPrint}>
           <Printer className="w-3.5 h-3.5" /> Imprimir
         </Button>
-        <Button size="sm" className="gap-2 text-xs" onClick={onDownloadPdf}>
-          <Download className="w-3.5 h-3.5" /> Preview + Baixar
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="gap-2 text-xs">
+              <Download className="w-3.5 h-3.5" /> Download <FileDown className="w-3.5 h-3.5 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onDownloadPdf} className="gap-2 text-xs">
+              <Download className="w-3.5 h-3.5" /> Ordem de Serviço (PDF)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDownloadFinalArt} className="gap-2 text-xs">
+              <FileDown className="w-3.5 h-3.5" /> Arte Final Otimizada (PDF)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

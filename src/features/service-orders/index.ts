@@ -8,7 +8,7 @@ export { useServiceOrderRealtime } from "./hooks/use-service-order-realtime";
 export { default as SectionTitle } from "./components/SectionTitle";
 export { default as ArtUploadField } from "./components/ArtUploadField";
 export { default as PdfPreviewDialog } from "./components/PdfPreviewDialog";
-export { generateServiceOrderPdf } from "./lib/ServiceOrderPdf";
+export { generateServiceOrderPdf, generateFinalArtPdf } from "./lib/ServiceOrderPdf";
 export type { PdfFormData } from "./lib/ServiceOrderPdf";
 export { generateBatchPdf } from "./lib/ServiceOrderBatchPdf";
 export type { BatchPdfFilters } from "./lib/ServiceOrderBatchPdf";
