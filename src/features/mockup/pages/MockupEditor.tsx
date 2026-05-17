@@ -350,6 +350,7 @@ const MockupEditor = () => {
   
   const handleExportPdf = async () => {
     setIsExporting(true);
+    const pdfToast = toast.loading("Gerando PDF de Aprovação...");
     try {
       await exportMockupPdf({
         productImage,
@@ -375,14 +376,15 @@ const MockupEditor = () => {
         date: new Date().toLocaleDateString("pt-BR"),
         technique: technique || "Personalização"
       });
-      toast.success("PDF de Aprovação gerado com sucesso");
+      toast.success("PDF gerado e pronto para download", { id: pdfToast });
     } catch (error) {
       console.error("PDF export error:", error);
-      toast.error("Erro ao gerar PDF");
+      toast.error("Erro ao processar o PDF. Verifique se a logo foi carregada corretamente.", { id: pdfToast });
     } finally {
       setIsExporting(false);
     }
   };
+
 
 
   const handleExportArt = () => {
