@@ -171,10 +171,15 @@ const MockupEditor = () => {
   // Keyboard shortcuts and nudge functionality
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Robust check for typing context
+      const isInput = e.target instanceof HTMLInputElement || 
+                      e.target instanceof HTMLTextAreaElement || 
+                      (e.target as HTMLElement)?.isContentEditable ||
+                      (e.target as HTMLElement)?.closest('.cmdk-input'); // Special check for Command Menu
+      
+      if (isInput) return;
 
-      const step = e.shiftKey ? 5 : 1;
+      const step = e.shiftKey ? 10 : 2;
 
       // Undo/Redo shortcuts
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -196,9 +201,10 @@ const MockupEditor = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true); // Use capture to preempt other listeners
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
+
 
 
   useEffect(() => {
