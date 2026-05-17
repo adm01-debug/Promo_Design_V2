@@ -124,51 +124,14 @@ const MockupEditor = () => {
   const viewAreaW = (currentView.areaPercent.w / 100) * VIRTUAL_CANVAS_SIZE;
   const viewAreaH = (currentView.areaPercent.h / 100) * VIRTUAL_CANVAS_SIZE;
 
+  const undo = useCallback(() => undoCore(activeView), [activeView, undoCore]);
+  const redo = useCallback(() => redoCore(activeView), [activeView, redoCore]);
 
+  const updatePlacement = useCallback((update: Partial<Placement>) => {
+    const isHistoryChange = Object.keys(update).some(k => ["rotation", "flipH", "flipV", "scale"].includes(k));
+    updatePlacementCore(activeView, update, isHistoryChange);
+  }, [activeView, updatePlacementCore]);
 
-
-  const addToHistory = useCallback((viewId: string, placement: Placement) => {
-    setHistory(prev => {
-      const viewHistory = prev[viewId] || [];
-      const currentIdx = historyIndex[viewId];
-      const newHistory = viewHistory.slice(0, currentIdx + 1);
-      newHistory.push({ ...placement });
-      if (newHistory.length > 50) newHistory.shift();
-      return { ...prev, [viewId]: newHistory };
-    });
-    setHistoryIndex(prev => ({ ...prev, [viewId]: Math.min((prev[viewId] || 0) + 1, 49) }));
-  }, [historyIndex]);
-
-  const undo = useCallback(() => {
-    const currentIdx = historyIndex[activeView];
-    if (currentIdx > 0) {
-      const newIdx = currentIdx - 1;
-      const prevPlacement = history[activeView][newIdx];
-      setPlacements(prev => ({ ...prev, [activeView]: prevPlacement }));
-      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
-      toast.info("Desfeito");
-    }
-  }, [activeView, history, historyIndex]);
-
-  const redo = useCallback(() => {
-    const viewHistory = history[activeView] || [];
-    const currentIdx = historyIndex[activeView];
-    if (currentIdx < viewHistory.length - 1) {
-      const newIdx = currentIdx + 1;
-      const nextPlacement = viewHistory[newIdx];
-      setPlacements(prev => ({ ...prev, [activeView]: nextPlacement }));
-      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
-      toast.info("Refeito");
-    }
-  }, [activeView, history, historyIndex]);
-
-  const updatePlacement = (update: Partial<Placement>) => {
-    const newPlacement = { ...placements[activeView], ...update };
-    setPlacements(prev => ({ ...prev, [activeView]: newPlacement }));
-    if (Object.keys(update).some(k => ["rotation", "flipH", "flipV"].includes(k))) {
-      addToHistory(activeView, newPlacement);
-    }
-  };
 
   // Keyboard shortcuts and nudge functionality
   useEffect(() => {
