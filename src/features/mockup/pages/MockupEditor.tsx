@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import {
   Upload, GripVertical, Grid3X3, Maximize,
   FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check, Undo2, Redo2,
-  Trash2, Move, Layers, Square,
+  Trash2, Square,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
@@ -46,6 +47,8 @@ const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, fl
 const CANVAS_SIZE = 460;
 
 const MockupEditor = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -449,6 +452,22 @@ const MockupEditor = () => {
     toast.success("Arte Final exportada!");
   };
 
+  const handleOpenServiceOrder = () => {
+    navigate("/service-orders/new", {
+      state: {
+        prefill: {
+          productName,
+          productSku,
+          technique,
+          areaWidth: String(areaW),
+          areaHeight: String(areaH),
+          areaName,
+          artFileDataUrl: logoPreview,
+        }
+      }
+    });
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <EditorTopBar 
@@ -457,8 +476,10 @@ const MockupEditor = () => {
         onExportPdf={handleExportPdf} 
         onExportPng={handleExportPng} 
         onExportArt={handleExportArt}
+        onOpenServiceOrder={handleOpenServiceOrder}
         isExporting={isExporting} 
       />
+
       <div className="flex-1 flex overflow-hidden">
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
 
