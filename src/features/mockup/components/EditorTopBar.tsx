@@ -7,10 +7,11 @@ interface EditorTopBarProps {
   allApproved: boolean;
   onExportPdf: () => void;
   onExportPng: () => void;
+  onExportArt: () => void;
   isExporting: boolean;
 }
 
-const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, isExporting }: EditorTopBarProps) => {
+const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onExportArt, isExporting }: EditorTopBarProps) => {
   const navigate = useNavigate();
   return (
     <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0" role="banner">
