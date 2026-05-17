@@ -96,7 +96,7 @@ const MockupEditor = () => {
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const { drafts, isLoading: draftsLoading } = useMockupDrafts();
+  const { drafts, isLoading: _draftsLoading } = useMockupDrafts();
 
   // Load draft if draftId is present
   useEffect(() => {
