@@ -463,7 +463,9 @@ const MockupEditor = () => {
             surfaceType,
             shadowEnabled,
             shadowIntensity,
-            approvedViews: Array.from(approvedViews)
+            approvedViews: Array.from(approvedViews),
+            watermarkConfig
+
           }
         });
       } catch (error) {
