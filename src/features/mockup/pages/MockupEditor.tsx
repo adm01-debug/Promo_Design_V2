@@ -54,12 +54,11 @@ const VIRTUAL_CANVAS_SIZE = 800;
 
 const MockupEditor = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   const [searchParams] = useSearchParams();
+  const { saveDraft, isSaving } = useMockupDrafts();
+  
+  const draftId = searchParams.get("id") || searchParams.get("edit");
+
 
 
 
