@@ -92,9 +92,10 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
       ctx.globalAlpha = logoOpacity / 100;
       ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
       
-      const editorRefSize = 460; // CANVAS_SIZE from editor
+      const editorRefSize = 800; // VIRTUAL_CANVAS_SIZE from editor
       const coordScaleX = vAreaW / (view.areaPercent.w / 100 * editorRefSize);
       const coordScaleY = vAreaH / (view.areaPercent.h / 100 * editorRefSize);
+
 
       ctx.translate(
         vAreaX + vp.x * coordScaleX + logoW / 2,

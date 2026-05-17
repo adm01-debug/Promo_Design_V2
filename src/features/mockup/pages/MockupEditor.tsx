@@ -1,17 +1,21 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, GripVertical, Grid3X3, Maximize,
   FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check, Undo2, Redo2,
   Trash2, Square,
 } from "lucide-react";
-
 import { toast } from "sonner";
+
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
+import { useMockupDrafts } from "../hooks/use-mockup-drafts";
+import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
+
+
 
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
@@ -43,19 +47,19 @@ const VIEWS: { id: string; label: string; icon: string; areaPercent: { x: number
 ];
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
-type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 type ExportFormat = "png" | "jpeg" | "webp";
-const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, flipH: false, flipV: false };
-const CANVAS_SIZE = 460;
+const INITIAL_PLACEMENT: Placement = { x: 50, y: 50, scale: 0.6, rotation: 0, flipH: false, flipV: false };
+const VIRTUAL_CANVAS_SIZE = 800;
+
+
 
 const MockupEditor = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   const [searchParams] = useSearchParams();
+  const { saveDraft, isSaving } = useMockupDrafts();
+  
+  const draftId = searchParams.get("id") || searchParams.get("edit");
+
 
 
 
@@ -89,23 +93,36 @@ const MockupEditor = () => {
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
   const [includeWatermark, setIncludeWatermark] = useState(false);
 
-  const [placements, setPlacements] = useState<Record<string, Placement>>({
-    front: { ...INITIAL_PLACEMENT }, back: { ...INITIAL_PLACEMENT },
-    "side-left": { ...INITIAL_PLACEMENT }, "side-right": { ...INITIAL_PLACEMENT },
-  });
+  const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [history, setHistory] = useState<Record<string, Placement[]>>({
-    front: [{ ...INITIAL_PLACEMENT }],
-    back: [{ ...INITIAL_PLACEMENT }],
-    "side-left": [{ ...INITIAL_PLACEMENT }],
-    "side-right": [{ ...INITIAL_PLACEMENT }],
-  });
-  const [historyIndex, setHistoryIndex] = useState<Record<string, number>>({
-    front: 0, back: 0, "side-left": 0, "side-right": 0
-  });
+  const [showRightPanel, setShowRightPanel] = useState(true);
 
-  const [containerSize, setContainerSize] = useState({ width: CANVAS_SIZE, height: CANVAS_SIZE });
+  const { drafts, isLoading: _draftsLoading } = useMockupDrafts();
+
+  // Load draft if draftId is present
+  useEffect(() => {
+    if (draftId && drafts.length > 0) {
+      const draft = drafts.find(d => d.id === draftId);
+      if (draft && draft.editorState) {
+        const state = draft.editorState as any;
+        if (state.placements) setPlacements(state.placements);
+        if (state.logoPreview) setLogoPreview(state.logoPreview);
+        if (state.logoOpacity) setLogoOpacity(state.logoOpacity);
+        if (state.blendMode) setBlendMode(state.blendMode);
+        if (state.surfaceType) setSurfaceType(state.surfaceType);
+        if (state.shadowEnabled !== undefined) setShadowEnabled(state.shadowEnabled);
+        if (state.shadowIntensity) setShadowIntensity(state.shadowIntensity);
+        if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
+        
+        toast.success("Rascunho carregado");
+      }
+    }
+  }, [draftId, drafts, setPlacements]);
+
+
+
+  const [displayScale, setDisplayScale] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -115,10 +132,10 @@ const MockupEditor = () => {
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry.contentRect) {
-        const size = Math.min(entry.contentRect.width - 40, CANVAS_SIZE);
-        if (size > 0) {
-          setContainerSize({ width: size, height: size });
-        }
+        const availableWidth = entry.contentRect.width - 48;
+        const availableHeight = entry.contentRect.height - 48;
+        const scale = Math.min(availableWidth / VIRTUAL_CANVAS_SIZE, availableHeight / VIRTUAL_CANVAS_SIZE, 1);
+        setDisplayScale(scale > 0 ? scale : 1);
       }
     });
     observer.observe(containerRef.current);
@@ -127,53 +144,17 @@ const MockupEditor = () => {
 
   const currentPlacement = placements[activeView] || INITIAL_PLACEMENT;
   const currentView = VIEWS.find(v => v.id === activeView)!;
-  const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
-  const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
+  const viewAreaW = (currentView.areaPercent.w / 100) * VIRTUAL_CANVAS_SIZE;
+  const viewAreaH = (currentView.areaPercent.h / 100) * VIRTUAL_CANVAS_SIZE;
 
+  const undo = useCallback(() => undoCore(activeView), [activeView, undoCore]);
+  const redo = useCallback(() => redoCore(activeView), [activeView, redoCore]);
 
+  const updatePlacement = useCallback((update: Partial<Placement>) => {
+    const isHistoryChange = Object.keys(update).some(k => ["rotation", "flipH", "flipV", "scale"].includes(k));
+    updatePlacementCore(activeView, update, isHistoryChange);
+  }, [activeView, updatePlacementCore]);
 
-  const addToHistory = useCallback((viewId: string, placement: Placement) => {
-    setHistory(prev => {
-      const viewHistory = prev[viewId] || [];
-      const currentIdx = historyIndex[viewId];
-      const newHistory = viewHistory.slice(0, currentIdx + 1);
-      newHistory.push({ ...placement });
-      if (newHistory.length > 50) newHistory.shift();
-      return { ...prev, [viewId]: newHistory };
-    });
-    setHistoryIndex(prev => ({ ...prev, [viewId]: Math.min((prev[viewId] || 0) + 1, 49) }));
-  }, [historyIndex]);
-
-  const undo = useCallback(() => {
-    const currentIdx = historyIndex[activeView];
-    if (currentIdx > 0) {
-      const newIdx = currentIdx - 1;
-      const prevPlacement = history[activeView][newIdx];
-      setPlacements(prev => ({ ...prev, [activeView]: prevPlacement }));
-      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
-      toast.info("Desfeito");
-    }
-  }, [activeView, history, historyIndex]);
-
-  const redo = useCallback(() => {
-    const viewHistory = history[activeView] || [];
-    const currentIdx = historyIndex[activeView];
-    if (currentIdx < viewHistory.length - 1) {
-      const newIdx = currentIdx + 1;
-      const nextPlacement = viewHistory[newIdx];
-      setPlacements(prev => ({ ...prev, [activeView]: nextPlacement }));
-      setHistoryIndex(prev => ({ ...prev, [activeView]: newIdx }));
-      toast.info("Refeito");
-    }
-  }, [activeView, history, historyIndex]);
-
-  const updatePlacement = (update: Partial<Placement>) => {
-    const newPlacement = { ...placements[activeView], ...update };
-    setPlacements(prev => ({ ...prev, [activeView]: newPlacement }));
-    if (Object.keys(update).some(k => ["rotation", "flipH", "flipV"].includes(k))) {
-      addToHistory(activeView, newPlacement);
-    }
-  };
 
   // Keyboard shortcuts and nudge functionality
   useEffect(() => {
@@ -286,8 +267,25 @@ const MockupEditor = () => {
   }, [viewAreaW, viewAreaH]);
 
   const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file?.type.startsWith("image/")) handleLogoUpload(file); }, [handleLogoUpload]);
-  const handleLogoMouseDown = (e: React.MouseEvent) => { e.stopPropagation(); setIsDragging(true); setDragStart({ x: e.clientX - currentPlacement.x, y: e.clientY - currentPlacement.y }); };
-  const handleMouseMove = (e: React.MouseEvent) => { if (!isDragging) return; updatePlacement({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
+  const handleLogoMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDragging(true);
+    const scaleFactor = displayScale * (zoom / 100);
+    setDragStart({ 
+      x: e.clientX / scaleFactor - currentPlacement.x, 
+      y: e.clientY / scaleFactor - currentPlacement.y 
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const scaleFactor = displayScale * (zoom / 100);
+    updatePlacement({ 
+      x: e.clientX / scaleFactor - dragStart.x, 
+      y: e.clientY / scaleFactor - dragStart.y 
+    });
+  };
+
   const handleMouseUp = () => setIsDragging(false);
   const centerLogo = () => { if (!areaRef.current) return; const rect = areaRef.current.getBoundingClientRect(); updatePlacement({ x: rect.width * 0.15, y: rect.height * 0.15 }); };
   const toggleApproval = (viewId: string) => { setApprovedViews(prev => { const next = new Set(prev); if (next.has(viewId)) next.delete(viewId); else next.add(viewId); return next; }); };
@@ -419,6 +417,35 @@ const MockupEditor = () => {
     });
   };
 
+  useEffect(() => {
+    if (!logoPreview) return;
+    
+    const timer = setTimeout(async () => {
+      try {
+        await saveDraft({
+          id: draftId || undefined,
+          name: `Draft ${productName}`,
+          productName,
+          productSku,
+          editorState: {
+            placements,
+            logoPreview,
+            logoOpacity,
+            blendMode,
+            surfaceType,
+            shadowEnabled,
+            shadowIntensity,
+            approvedViews: Array.from(approvedViews)
+          }
+        });
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+      }
+    }, 2000); // 2s debounce
+    
+    return () => clearTimeout(timer);
+  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft]);
+
   return (
     <div className="h-screen flex flex-col">
       <EditorTopBar 
@@ -428,11 +455,14 @@ const MockupEditor = () => {
         onExportPng={handleExportPng} 
         onExportArt={handleExportArt}
         onOpenServiceOrder={handleOpenServiceOrder}
+        onTogglePanel={() => setShowRightPanel(!showRightPanel)}
         isExporting={isExporting} 
+        isSaving={isSaving}
       />
 
       <div className="flex-1 flex overflow-hidden">
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
+
 
         <div className="flex-1 flex flex-col">
           <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
@@ -473,8 +503,9 @@ const MockupEditor = () => {
             </div>
           </div>
 
-          <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-auto relative p-4" style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-            <div className="relative bg-white rounded-xl border border-border shadow-lg select-none" style={{ width: containerSize.width, height: containerSize.height, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}>
+          <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-hidden relative p-4" style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+            <div className="relative bg-white rounded-xl border border-border shadow-2xl select-none" style={{ width: VIRTUAL_CANVAS_SIZE, height: VIRTUAL_CANVAS_SIZE, transform: `scale(${displayScale * (zoom / 100)})`, transformOrigin: "center" }}>
+
               <img src={productImage} alt={productName} className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ transform: currentView.bgRotation ? `rotate(${currentView.bgRotation}deg)` : undefined }} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
               {showGrid && <div className="absolute inset-0 pointer-events-none z-[5]" style={{ backgroundImage: "linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px)", backgroundSize: "25px 25px" }} />}
               <div ref={areaRef} className="absolute border-2 border-dashed border-primary/40 rounded bg-primary/5" style={{ left: `${currentView.areaPercent.x}%`, top: `${currentView.areaPercent.y}%`, width: `${currentView.areaPercent.w}%`, height: `${currentView.areaPercent.h}%` }}>
@@ -557,23 +588,36 @@ const MockupEditor = () => {
           </section>
         </div>
 
-        <EditorRightPanel
-          productName={productName} productSku={productSku} productImage={productImage} technique={technique}
-          logoFile={logoFile} logoPreview={logoPreview} logoColors={logoColors} showLogo={showLogo} setShowLogo={setShowLogo}
-          fileInputRef={fileInputRef} handleLogoUpload={handleLogoUpload}
-          setLogoPreview={setLogoPreview} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
-          blendMode={blendMode} setBlendMode={setBlendMode} logoOpacity={logoOpacity} setLogoOpacity={setLogoOpacity}
-          showTexture={showTexture} setShowTexture={setShowTexture}
-          shadowEnabled={shadowEnabled} setShadowEnabled={setShadowEnabled} shadowIntensity={shadowIntensity} setShadowIntensity={setShadowIntensity}
-          autoFitLogo={autoFitLogo} surfaceType={surfaceType} setSurfaceType={setSurfaceType}
-          currentPlacement={currentPlacement} updatePlacement={updatePlacement} currentViewLabel={currentView.label}
-          views={VIEWS} approvedViews={approvedViews} toggleApproval={toggleApproval}
-          exportFormat={exportFormat} setExportFormat={setExportFormat}
-          exportQuality={exportQuality} setExportQuality={setExportQuality}
-          exportScale={exportScale} setExportScale={setExportScale}
-          handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
-          includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
-        />
+        <AnimatePresence>
+          {showRightPanel && (
+            <motion.div
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 300, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-12 right-0 z-40 lg:relative lg:inset-y-0"
+            >
+              <EditorRightPanel
+                productName={productName} productSku={productSku} productImage={productImage} technique={technique}
+                logoFile={logoFile} logoPreview={logoPreview} logoColors={logoColors} showLogo={showLogo} setShowLogo={setShowLogo}
+                fileInputRef={fileInputRef} handleLogoUpload={handleLogoUpload}
+                setLogoPreview={setLogoPreview} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
+                blendMode={blendMode} setBlendMode={setBlendMode} logoOpacity={logoOpacity} setLogoOpacity={setLogoOpacity}
+                showTexture={showTexture} setShowTexture={setShowTexture}
+                shadowEnabled={shadowEnabled} setShadowEnabled={setShadowEnabled} shadowIntensity={shadowIntensity} setShadowIntensity={setShadowIntensity}
+                autoFitLogo={autoFitLogo} surfaceType={surfaceType} setSurfaceType={setSurfaceType}
+                currentPlacement={currentPlacement} updatePlacement={updatePlacement} currentViewLabel={currentView.label}
+                views={VIEWS} approvedViews={approvedViews} toggleApproval={toggleApproval}
+                exportFormat={exportFormat} setExportFormat={setExportFormat}
+                exportQuality={exportQuality} setExportQuality={setExportQuality}
+                exportScale={exportScale} setExportScale={setExportScale}
+                handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
+                includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
 
       </div>
     </div>
