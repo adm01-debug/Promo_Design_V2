@@ -572,7 +572,9 @@ const MockupEditor = () => {
           exportQuality={exportQuality} setExportQuality={setExportQuality}
           exportScale={exportScale} setExportScale={setExportScale}
           handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
+          includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
         />
+
       </div>
     </div>
   );
