@@ -365,3 +365,67 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
 
   return doc;
 }
+
+export function generateFinalArtPdf(form: PdfFormData): jsPDF {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+  const m = 20;
+
+  // Header limpo para arte final
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("ARTE FINAL PARA PRODUÇÃO", pw / 2, 15, { align: "center" });
+  
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text(`OS: ${form.osNumber} | Técnica: ${form.technique}`, pw / 2, 20, { align: "center" });
+  
+  doc.setDrawColor(200);
+  doc.line(m, 24, pw - m, 24);
+
+  let y = 35;
+
+  // Informações Técnicas da Arte
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("ESPECIFICAÇÕES:", m, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Produto: ${form.productName} (${form.productSku})`, m, y + 6);
+  doc.text(`Cores da Gravação (Pantone): ${val(form.artColors)}`, m, y + 12);
+  doc.text(`Dimensões Reais: ${val(form.areaWidth)} x ${val(form.areaHeight)} cm`, m, y + 18);
+  
+  y += 35;
+
+  // Arte em destaque
+  if (form.artFileDataUrl) {
+    try {
+      const maxArtW = pw - m * 2;
+      const maxArtH = 100;
+      doc.addImage(form.artFileDataUrl, "PNG", m, y, maxArtW, maxArtH, undefined, "FAST");
+      y += maxArtH + 15;
+    } catch {
+      doc.text("[Erro ao carregar imagem da arte]", m, y);
+      y += 20;
+    }
+  }
+
+  // Notas de Produção
+  doc.setFont("helvetica", "bold");
+  doc.text("NOTAS PARA O OPERADOR:", m, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(`• Técnica: ${form.technique}`, m, y + 8);
+  if (form.gravacaoDetalhe) doc.text(`• Detalhe: ${form.gravacaoDetalhe}`, m, y + 14);
+  if (form.observations) {
+    const lines = doc.splitTextToSize(`• Obs: ${form.observations}`, pw - m * 2);
+    doc.text(lines, m, y + 20);
+  }
+
+  // Footer de segurança
+  doc.setFontSize(7);
+  doc.setTextColor(100);
+  doc.text("Documento gerado automaticamente pelo Sistema de Gestão Promo Design.", pw / 2, ph - 15, { align: "center" });
+  doc.text("Verificar dimensões e cores antes de iniciar a produção em larga escala.", pw / 2, ph - 10, { align: "center" });
+
+  return doc;
+}
