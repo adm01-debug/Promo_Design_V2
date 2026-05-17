@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
+
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
@@ -91,7 +92,19 @@ const MockupEditor = () => {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportQuality, setExportQuality] = useState(0.92);
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
-  const [includeWatermark, setIncludeWatermark] = useState(false);
+  const [watermarkConfig, setWatermarkConfig] = useState<{
+    include: boolean;
+    opacity: number;
+    scale: number;
+    position: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  }>({
+    include: false,
+    opacity: 0.1,
+    scale: 0.8,
+    position: "center"
+  });
+
+
 
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
@@ -114,6 +127,8 @@ const MockupEditor = () => {
         if (state.shadowEnabled !== undefined) setShadowEnabled(state.shadowEnabled);
         if (state.shadowIntensity) setShadowIntensity(state.shadowIntensity);
         if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
+        if (state.watermarkConfig) setWatermarkConfig(state.watermarkConfig);
+
         
         toast.success("Rascunho carregado");
       }
@@ -159,10 +174,15 @@ const MockupEditor = () => {
   // Keyboard shortcuts and nudge functionality
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Robust check for typing context
+      const isInput = e.target instanceof HTMLInputElement || 
+                      e.target instanceof HTMLTextAreaElement || 
+                      (e.target as HTMLElement)?.isContentEditable ||
+                      (e.target as HTMLElement)?.closest('.cmdk-input'); // Special check for Command Menu
+      
+      if (isInput) return;
 
-      const step = e.shiftKey ? 5 : 1;
+      const step = e.shiftKey ? 10 : 2;
 
       // Undo/Redo shortcuts
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
@@ -184,9 +204,10 @@ const MockupEditor = () => {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true); // Use capture to preempt other listeners
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
+
 
 
   useEffect(() => {
@@ -293,6 +314,7 @@ const MockupEditor = () => {
 
   const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     setIsExporting(true);
+    const exportToast = toast.loading(`Iniciando exportação ${format.toUpperCase()}...`);
     try {
       const options: ExportOptions = {
         productImage,
@@ -312,23 +334,26 @@ const MockupEditor = () => {
         exportFormat: format,
         approvedViews,
         views: VIEWS,
-        includeWatermark
+        watermarkOptions: watermarkConfig
       };
       
+      toast.loading(`Renderizando multi-vistas (${VIRTUAL_CANVAS_SIZE * exportScale}px)...`, { id: exportToast });
       await exportMockupImage(options);
-      toast.success(`${format.toUpperCase()} exportado com sucesso`);
+      toast.success(`${format.toUpperCase()} exportado com sucesso!`, { id: exportToast });
     } catch (error) {
       console.error("Export error:", error);
-      toast.error("Erro ao exportar imagem");
+      toast.error("Falha na exportação. Tente reduzir a escala ou qualidade.", { id: exportToast });
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, includeWatermark]);
+  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, watermarkConfig]);
+
 
   const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
   
   const handleExportPdf = async () => {
     setIsExporting(true);
+    const pdfToast = toast.loading("Gerando PDF de Aprovação...");
     try {
       await exportMockupPdf({
         productImage,
@@ -348,20 +373,21 @@ const MockupEditor = () => {
         exportFormat: "png",
         approvedViews,
         views: VIEWS,
-        includeWatermark,
+        watermarkOptions: watermarkConfig,
         colors: logoColors.slice(0, 5),
         area: areaName,
         date: new Date().toLocaleDateString("pt-BR"),
         technique: technique || "Personalização"
       });
-      toast.success("PDF de Aprovação gerado com sucesso");
+      toast.success("PDF gerado e pronto para download", { id: pdfToast });
     } catch (error) {
       console.error("PDF export error:", error);
-      toast.error("Erro ao gerar PDF");
+      toast.error("Erro ao processar o PDF. Verifique se a logo foi carregada corretamente.", { id: pdfToast });
     } finally {
       setIsExporting(false);
     }
   };
+
 
 
   const handleExportArt = () => {
@@ -402,7 +428,7 @@ const MockupEditor = () => {
   };
 
   const handleOpenServiceOrder = () => {
-    navigate("/service-orders/new", {
+    navigate("/mockup/service-order", {
       state: {
         prefill: {
           productName,
@@ -412,10 +438,14 @@ const MockupEditor = () => {
           areaHeight: String(areaH),
           areaName,
           artFileDataUrl: logoPreview,
+          mockupImageUrl: "", 
+          observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
         }
       }
     });
   };
+
+
 
   useEffect(() => {
     if (!logoPreview) return;
@@ -435,7 +465,9 @@ const MockupEditor = () => {
             surfaceType,
             shadowEnabled,
             shadowIntensity,
-            approvedViews: Array.from(approvedViews)
+            approvedViews: Array.from(approvedViews),
+            watermarkConfig
+
           }
         });
       } catch (error) {
@@ -489,9 +521,10 @@ const MockupEditor = () => {
               <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grade" aria-pressed={showGrid} aria-label="Alternar grade"><Grid3X3 className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
               <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar" aria-label="Centralizar logo"><Maximize className="w-4 h-4" aria-hidden="true" /></button>
-              <button onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar horizontal" aria-label="Espelhar horizontal"><FlipHorizontal className="w-4 h-4" aria-hidden="true" /></button>
-              <button onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar vertical" aria-label="Espelhar vertical"><FlipVertical className="w-4 h-4" aria-hidden="true" /></button>
-              <button onClick={() => updatePlacement({ rotation: currentPlacement.rotation + 15 })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar" aria-label="Rotacionar logo"><RotateCw className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar horizontal" aria-label="Espelhar horizontal" tabIndex={-1}><FlipHorizontal className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar vertical" aria-label="Espelhar vertical" tabIndex={-1}><FlipVertical className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ rotation: currentPlacement.rotation + 15 })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar" aria-label="Rotacionar logo" tabIndex={-1}><RotateCw className="w-4 h-4" aria-hidden="true" /></button>
+
               <div className="w-px h-5 bg-border mx-1" />
               <span className="text-[10px] font-mono text-primary">{currentView.label}</span>
               <span className="text-[10px] font-mono text-muted-foreground ml-1">({areaW}×{areaH}cm)</span>
@@ -525,14 +558,15 @@ const MockupEditor = () => {
                     </ContextMenuTrigger>
                     
                     <ContextMenuContent className="w-56">
-                      <ContextMenuItem onClick={undo} disabled={historyIndex[activeView] <= 0}>
+                      <ContextMenuItem onClick={(e) => { e.stopPropagation(); undo(); }} disabled={historyIndex[activeView] <= 0}>
                         <Undo2 className="mr-2 h-4 w-4" /> <span>Desfazer</span>
                         <ContextMenuShortcut>Ctrl+Z</ContextMenuShortcut>
                       </ContextMenuItem>
-                      <ContextMenuItem onClick={redo} disabled={historyIndex[activeView] >= (history[activeView]?.length || 0) - 1}>
+                      <ContextMenuItem onClick={(e) => { e.stopPropagation(); redo(); }} disabled={historyIndex[activeView] >= (history[activeView]?.length || 0) - 1}>
                         <Redo2 className="mr-2 h-4 w-4" /> <span>Refazer</span>
                         <ContextMenuShortcut>Ctrl+Y</ContextMenuShortcut>
                       </ContextMenuItem>
+
                       <ContextMenuSeparator />
                       <ContextMenuItem onClick={centerLogo}>
                         <Maximize className="mr-2 h-4 w-4" /> <span>Centralizar</span>
@@ -612,7 +646,7 @@ const MockupEditor = () => {
                 exportQuality={exportQuality} setExportQuality={setExportQuality}
                 exportScale={exportScale} setExportScale={setExportScale}
                 handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
-                includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
+                watermarkConfig={watermarkConfig} setWatermarkConfig={setWatermarkConfig}
               />
             </motion.div>
           )}

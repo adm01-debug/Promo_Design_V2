@@ -59,19 +59,38 @@ const ServiceOrder = () => {
   useEffect(() => {
     if (location.state?.prefill && !editId) {
       const prefill = location.state.prefill;
+      
+      // Robust mapping with defaults and type coercion
+      const mappedData: Partial<ServiceOrderData> = {
+        productName: String(prefill.productName || ""),
+        productSku: String(prefill.productSku || ""),
+        technique: String(prefill.technique || ""),
+        areaWidth: prefill.areaWidth ? String(prefill.areaWidth).replace(",", ".") : "",
+        areaHeight: prefill.areaHeight ? String(prefill.areaHeight).replace(",", ".") : "",
+        areaName: String(prefill.areaName || "Personalização"),
+        artFileDataUrl: String(prefill.artFileDataUrl || ""),
+        artFile: prefill.artFileDataUrl ? "mockup-editor-export.png" : "",
+        observations: prefill.observations ? String(prefill.observations) : "Importado do Editor de Mockups",
+      };
+
       setForm(prev => ({
         ...prev,
-        ...prefill,
-        // Mantemos o número da OS gerado se não houver um no prefill
+        ...mappedData,
         osNumber: prefill.osNumber || prev.osNumber,
       }));
-      toast.info("Dados importados do Editor de Mockups", {
-        description: `Produto: ${prefill.productName}`,
+
+      // Immediate validation after import to highlight missing required fields
+      const importErrors = validateForm({ ...form, ...mappedData } as ServiceOrderData);
+      setErrors(importErrors);
+
+      toast.success("Dados importados com sucesso", {
+        description: ` SKU ${mappedData.productSku} pronto para finalização.`,
       });
-      // Limpar o state para não reaplicar ao recarregar
+      
       window.history.replaceState({}, document.title);
     }
   }, [location.state, editId]);
+
 
 
   const [form, setForm] = useState<ServiceOrderData>(() => {

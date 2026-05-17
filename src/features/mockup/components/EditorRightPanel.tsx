@@ -14,6 +14,13 @@ type ExportFormat = "png" | "jpeg" | "webp";
 type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 
 interface ViewDef { id: string; label: string; icon: string; areaPercent: { x: number; y: number; w: number; h: number }; bgRotation?: number; }
+interface WatermarkConfig {
+  include: boolean;
+  opacity: number;
+  scale: number;
+  position: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+}
+
 
 const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
   { id: "normal", label: "Normal", desc: "Sem efeito" },
@@ -68,9 +75,10 @@ interface EditorRightPanelProps {
   handleExportPdf: () => void;
   handleExportPng: () => void;
   isExporting: boolean;
-  includeWatermark: boolean;
-  setIncludeWatermark: (v: boolean) => void;
+  watermarkConfig: WatermarkConfig;
+  setWatermarkConfig: (v: WatermarkConfig) => void;
 }
+
 
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
@@ -86,7 +94,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     currentPlacement, updatePlacement, currentViewLabel,
     views, approvedViews, toggleApproval,
     exportFormat, setExportFormat, exportQuality, setExportQuality, exportScale, setExportScale, handleExportPdf, handleExportPng, isExporting,
-    includeWatermark, setIncludeWatermark,
+    watermarkConfig, setWatermarkConfig,
   } = props;
 
 
@@ -289,12 +297,48 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] font-mono text-muted-foreground">Marca d'água</label>
-            <button onClick={() => setIncludeWatermark(!includeWatermark)} className={`px-2 py-1 rounded text-[10px] border transition-all ${includeWatermark ? "bg-primary/20 text-primary border-primary/40" : "bg-muted text-muted-foreground border-border"}`}>
-              {includeWatermark ? "Sim" : "Não"}
-            </button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-mono text-muted-foreground uppercase">Marca d'água</label>
+              <button onClick={() => setWatermarkConfig({ ...watermarkConfig, include: !watermarkConfig.include })} className={`px-2 py-1 rounded text-[10px] border transition-all ${watermarkConfig.include ? "bg-primary/20 text-primary border-primary/40" : "bg-muted text-muted-foreground border-border"}`}>
+                {watermarkConfig.include ? "Ativo" : "Off"}
+              </button>
+            </div>
+            
+            {watermarkConfig.include && (
+              <div className="space-y-3 p-2 bg-muted/30 rounded-lg border border-border/50 animate-in fade-in slide-in-from-top-1">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[9px] font-mono text-muted-foreground">Opacidade</label>
+                    <span className="text-[9px] font-mono text-primary">{Math.round(watermarkConfig.opacity * 100)}%</span>
+                  </div>
+                  <Slider value={[watermarkConfig.opacity * 100]} onValueChange={([v]) => setWatermarkConfig({ ...watermarkConfig, opacity: v / 100 })} min={5} max={40} step={5} />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[9px] font-mono text-muted-foreground">Escala</label>
+                    <span className="text-[9px] font-mono text-primary">{Math.round(watermarkConfig.scale * 100)}%</span>
+                  </div>
+                  <Slider value={[watermarkConfig.scale * 100]} onValueChange={([v]) => setWatermarkConfig({ ...watermarkConfig, scale: v / 100 })} min={20} max={150} step={10} />
+                </div>
+                <div>
+                  <label className="text-[9px] font-mono text-muted-foreground mb-1 block">Posição</label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(["center", "top-left", "top-right", "bottom-left", "bottom-right"] as const).map((pos) => (
+                      <button 
+                        key={pos} 
+                        onClick={() => setWatermarkConfig({ ...watermarkConfig, position: pos })}
+                        className={`px-1 py-1 rounded text-[8px] uppercase border transition-all ${watermarkConfig.position === pos ? "bg-primary/20 border-primary/40 text-primary" : "bg-card border-border text-muted-foreground"}`}
+                      >
+                        {pos.replace("-", " ")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
 
           {exportFormat !== "png" && (
 
