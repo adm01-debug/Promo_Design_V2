@@ -289,8 +289,25 @@ const MockupEditor = () => {
   }, [viewAreaW, viewAreaH]);
 
   const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file?.type.startsWith("image/")) handleLogoUpload(file); }, [handleLogoUpload]);
-  const handleLogoMouseDown = (e: React.MouseEvent) => { e.stopPropagation(); setIsDragging(true); setDragStart({ x: e.clientX - currentPlacement.x, y: e.clientY - currentPlacement.y }); };
-  const handleMouseMove = (e: React.MouseEvent) => { if (!isDragging) return; updatePlacement({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
+  const handleLogoMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDragging(true);
+    const scaleFactor = displayScale * (zoom / 100);
+    setDragStart({ 
+      x: e.clientX / scaleFactor - currentPlacement.x, 
+      y: e.clientY / scaleFactor - currentPlacement.y 
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const scaleFactor = displayScale * (zoom / 100);
+    updatePlacement({ 
+      x: e.clientX / scaleFactor - dragStart.x, 
+      y: e.clientY / scaleFactor - dragStart.y 
+    });
+  };
+
   const handleMouseUp = () => setIsDragging(false);
   const centerLogo = () => { if (!areaRef.current) return; const rect = areaRef.current.getBoundingClientRect(); updatePlacement({ x: rect.width * 0.15, y: rect.height * 0.15 }); };
   const toggleApproval = (viewId: string) => { setApprovedViews(prev => { const next = new Set(prev); if (next.has(viewId)) next.delete(viewId); else next.add(viewId); return next; }); };
