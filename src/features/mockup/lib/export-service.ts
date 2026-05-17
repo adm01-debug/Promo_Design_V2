@@ -23,7 +23,14 @@ export interface ExportOptions {
   exportFormat: ExportFormat;
   approvedViews: Set<string>;
   views: { id: string; label: string; areaPercent: { x: number; y: number; w: number; h: number } }[];
-  includeWatermark?: boolean;
+  watermarkOptions?: {
+    include: boolean;
+    opacity: number;
+    scale: number;
+    position: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  };
+}
+
 }
 
 /**
@@ -33,8 +40,9 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
   const {
     productImage, logoPreview, showLogo, placements, logoOpacity, 
     blendMode, shadowEnabled, shadowIntensity, exportScale, views,
-    includeWatermark
+    watermarkOptions
   } = options;
+
 
   const productImg = await loadImageWithFallback(productImage);
   const logoImg = logoPreview ? await loadImageWithFallback(logoPreview) : null;
@@ -141,16 +149,31 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
     ctx.strokeRect(ox, oy, size, size);
   }
 
-  if (includeWatermark) {
+  if (watermarkOptions?.include) {
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(-Math.PI / 4);
-    ctx.font = `bold ${100 * exportScale}px sans-serif`;
-    ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+    const { opacity = 0.05, scale = 1, position = "center" } = watermarkOptions;
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = "rgba(0, 0, 0, 1)";
+    const fontSize = 100 * exportScale * scale;
+    ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    let wx = canvas.width / 2;
+    let wy = canvas.height / 2;
+    let angle = -Math.PI / 4;
+
+    if (position === "top-left") { wx = canvas.width * 0.2; wy = canvas.height * 0.2; }
+    else if (position === "top-right") { wx = canvas.width * 0.8; wy = canvas.height * 0.2; }
+    else if (position === "bottom-left") { wx = canvas.width * 0.2; wy = canvas.height * 0.8; }
+    else if (position === "bottom-right") { wx = canvas.width * 0.8; wy = canvas.height * 0.8; }
+
+    ctx.translate(wx, wy);
+    ctx.rotate(angle);
     ctx.fillText("PROMO BRINDES - APROVAÇÃO", 0, 0);
     ctx.restore();
   }
+
 
   return canvas;
 }

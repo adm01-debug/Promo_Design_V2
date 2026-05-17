@@ -91,7 +91,13 @@ const MockupEditor = () => {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportQuality, setExportQuality] = useState(0.92);
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
-  const [includeWatermark, setIncludeWatermark] = useState(false);
+  const [watermarkConfig, setWatermarkConfig] = useState({
+    include: false,
+    opacity: 0.1,
+    scale: 0.8,
+    position: "center" as const
+  });
+
 
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
@@ -312,7 +318,8 @@ const MockupEditor = () => {
         exportFormat: format,
         approvedViews,
         views: VIEWS,
-        includeWatermark
+        watermarkOptions: watermarkConfig
+
       };
       
       await exportMockupImage(options);
@@ -323,7 +330,7 @@ const MockupEditor = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, includeWatermark]);
+  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, watermarkConfig]);
 
   const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
   
@@ -348,7 +355,7 @@ const MockupEditor = () => {
         exportFormat: "png",
         approvedViews,
         views: VIEWS,
-        includeWatermark,
+        watermarkOptions: watermarkConfig,
         colors: logoColors.slice(0, 5),
         area: areaName,
         date: new Date().toLocaleDateString("pt-BR"),
