@@ -91,12 +91,18 @@ const MockupEditor = () => {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportQuality, setExportQuality] = useState(0.92);
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
-  const [watermarkConfig, setWatermarkConfig] = useState({
+  const [watermarkConfig, setWatermarkConfig] = useState<{
+    include: boolean;
+    opacity: number;
+    scale: number;
+    position: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  }>({
     include: false,
     opacity: 0.1,
     scale: 0.8,
-    position: "center" as const
+    position: "center"
   });
+
 
 
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
