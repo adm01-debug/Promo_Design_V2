@@ -25,7 +25,23 @@ const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onEx
         <div className="w-px h-5 bg-border" aria-hidden="true" />
         <h1 className="text-sm font-semibold text-foreground">Editor Multivistas</h1>
         <span className="text-xs text-muted-foreground font-mono" aria-label={`Produto: ${productName}`}>{productName}</span>
+        {isSaving !== undefined && (
+          <div className="flex items-center gap-1.5 ml-2">
+            {isSaving ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground font-medium">Salvando...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-3 h-3 text-green-500" />
+                <span className="text-[10px] text-green-500 font-medium">Salvo na nuvem</span>
+              </>
+            )}
+          </div>
+        )}
       </div>
+
       <div className="flex items-center gap-2">
         {allApproved && (
           <span className="text-[10px] font-semibold text-green-400 bg-green-400/10 px-2 py-1 rounded-md flex items-center gap-1">
