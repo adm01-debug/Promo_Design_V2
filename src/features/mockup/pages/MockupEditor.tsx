@@ -107,7 +107,7 @@ const MockupEditor = () => {
     front: 0, back: 0, "side-left": 0, "side-right": 0
   });
 
-  const [containerSize, setContainerSize] = useState({ width: CANVAS_SIZE, height: CANVAS_SIZE });
+  const [displayScale, setDisplayScale] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -117,10 +117,10 @@ const MockupEditor = () => {
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry.contentRect) {
-        const size = Math.min(entry.contentRect.width - 40, CANVAS_SIZE);
-        if (size > 0) {
-          setContainerSize({ width: size, height: size });
-        }
+        const availableWidth = entry.contentRect.width - 48;
+        const availableHeight = entry.contentRect.height - 48;
+        const scale = Math.min(availableWidth / VIRTUAL_CANVAS_SIZE, availableHeight / VIRTUAL_CANVAS_SIZE, 1);
+        setDisplayScale(scale > 0 ? scale : 1);
       }
     });
     observer.observe(containerRef.current);
@@ -129,8 +129,9 @@ const MockupEditor = () => {
 
   const currentPlacement = placements[activeView] || INITIAL_PLACEMENT;
   const currentView = VIEWS.find(v => v.id === activeView)!;
-  const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
-  const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
+  const viewAreaW = (currentView.areaPercent.w / 100) * VIRTUAL_CANVAS_SIZE;
+  const viewAreaH = (currentView.areaPercent.h / 100) * VIRTUAL_CANVAS_SIZE;
+
 
 
 
