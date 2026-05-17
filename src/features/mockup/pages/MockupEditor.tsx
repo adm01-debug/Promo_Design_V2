@@ -48,10 +48,10 @@ const VIEWS: { id: string; label: string; icon: string; areaPercent: { x: number
 ];
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
-type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 type ExportFormat = "png" | "jpeg" | "webp";
 const INITIAL_PLACEMENT: Placement = { x: 50, y: 50, scale: 0.6, rotation: 0, flipH: false, flipV: false };
 const VIRTUAL_CANVAS_SIZE = 800;
+
 
 
 const MockupEditor = () => {
