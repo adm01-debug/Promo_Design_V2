@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, CheckCircle2, Copy, Eye, Download, Printer } from "lucide-react";
+import { ChevronLeft, CheckCircle2, Copy, Eye, Download, Printer, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ServiceOrderTopBarProps {
   osNumber: string;
@@ -17,11 +18,12 @@ interface ServiceOrderTopBarProps {
   onPreviewPdf: () => void;
   onPrint: () => void;
   onDownloadPdf: () => void;
+  onDownloadFinalArt?: () => void;
 }
 
 const ServiceOrderTopBar = ({
   osNumber, editId, currentStatus, setCurrentStatus,
-  saved, setSaved, onSave, onPreviewPdf, onPrint, onDownloadPdf,
+  saved, setSaved, onSave, onPreviewPdf, onPrint, onDownloadPdf, onDownloadFinalArt,
 }: ServiceOrderTopBarProps) => {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
