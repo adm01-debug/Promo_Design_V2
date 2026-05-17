@@ -127,6 +127,8 @@ const MockupEditor = () => {
         if (state.shadowEnabled !== undefined) setShadowEnabled(state.shadowEnabled);
         if (state.shadowIntensity) setShadowIntensity(state.shadowIntensity);
         if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
+        if (state.watermarkConfig) setWatermarkConfig(state.watermarkConfig);
+
         
         toast.success("Rascunho carregado");
       }
