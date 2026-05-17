@@ -10,7 +10,9 @@ import {
 import { toast } from "sonner";
 import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
-import { generateApprovalPdf, generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
+import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
+import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
+
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
@@ -85,6 +87,8 @@ const MockupEditor = () => {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportQuality, setExportQuality] = useState(0.92);
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
+  const [includeWatermark, setIncludeWatermark] = useState(false);
+
   const [placements, setPlacements] = useState<Record<string, Placement>>({
     front: { ...INITIAL_PLACEMENT }, back: { ...INITIAL_PLACEMENT },
     "side-left": { ...INITIAL_PLACEMENT }, "side-right": { ...INITIAL_PLACEMENT },
@@ -292,128 +296,75 @@ const MockupEditor = () => {
   const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     setIsExporting(true);
     try {
-      const productImg = await loadImageWithFallback(productImage);
-      const logoImg = logoPreview ? await loadImageWithFallback(logoPreview) : null;
-      const canvas = document.createElement("canvas");
+      const options: ExportOptions = {
+        productImage,
+        productSku,
+        productName,
+        logoPreview,
+        showLogo,
+        placements,
+        logoOpacity,
+        blendMode,
+        shadowEnabled,
+        shadowIntensity,
+        viewAreaW,
+        viewAreaH,
+        exportScale,
+        exportQuality,
+        exportFormat: format,
+        approvedViews,
+        views: VIEWS,
+        includeWatermark
+      };
       
-      const baseSize = 1200;
-      const size = baseSize * exportScale;
-      
-      canvas.width = size * 2;
-      canvas.height = size * 2;
-      const ctx = canvas.getContext("2d")!;
-      
-      for (let i = 0; i < VIEWS.length; i++) {
-        const view = VIEWS[i];
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const ox = col * size;
-        const oy = row * size;
-        
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(ox, oy, size, size);
-        
-        const scale = (size * 0.8) / Math.max(productImg.width, productImg.height);
-        const dx = ox + (size - productImg.width * scale) / 2;
-        const dy = oy + (size - productImg.height * scale) / 2;
-        
-        ctx.drawImage(productImg, dx, dy, productImg.width * scale, productImg.height * scale);
-        
-        if (logoImg && showLogo) {
-          const vp = placements[view.id] || INITIAL_PLACEMENT;
-          const vAreaW = (view.areaPercent.w / 100) * size * 0.8;
-          const vAreaH = (view.areaPercent.h / 100) * size * 0.8;
-          const vAreaX = dx + (view.areaPercent.x / 100) * (productImg.width * scale);
-          const vAreaY = dy + (view.areaPercent.y / 100) * (productImg.height * scale);
-          
-          const logoScale = vp.scale;
-          const logoW = vAreaW * logoScale;
-          const logoH = logoW / (logoImg.width / logoImg.height);
-          
-          ctx.save();
-          ctx.globalAlpha = logoOpacity / 100;
-          ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
-          
-          ctx.translate(
-            vAreaX + vp.x * (vAreaW / viewAreaW) + logoW / 2,
-            vAreaY + vp.y * (vAreaH / viewAreaH) + logoH / 2
-          );
-          
-          ctx.rotate((vp.rotation * Math.PI) / 180);
-          if (vp.flipH) ctx.scale(-1, 1);
-          if (vp.flipV) ctx.scale(1, -1);
-          
-          if (shadowEnabled) {
-            ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity / 100})`;
-            ctx.shadowBlur = 12 * exportScale;
-            ctx.shadowOffsetX = 3 * exportScale;
-            ctx.shadowOffsetY = 3 * exportScale;
-          }
-          
-          ctx.drawImage(logoImg, -logoW / 2, -logoH / 2, logoW, logoH);
-          ctx.restore();
-        }
-        
-        ctx.fillStyle = "#333333";
-        ctx.font = `bold ${24 * exportScale}px sans-serif`;
-        ctx.fillText(view.label, ox + 20 * exportScale, oy + 36 * exportScale);
-        
-        if (approvedViews.has(view.id)) {
-          ctx.fillStyle = "#22c55e";
-          ctx.beginPath();
-          ctx.arc(ox + size - 30 * exportScale, oy + 30 * exportScale, 14 * exportScale, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#ffffff";
-          ctx.font = `bold ${16 * exportScale}px sans-serif`;
-          ctx.fillText("✓", ox + size - 37 * exportScale, oy + 36 * exportScale);
-        }
-        
-        ctx.strokeStyle = "#e5e7eb";
-        ctx.lineWidth = 2 * exportScale;
-        if (col === 0) {
-          ctx.beginPath();
-          ctx.moveTo(size, oy);
-          ctx.lineTo(size, oy + size);
-          ctx.stroke();
-        }
-        if (row === 0) {
-          ctx.beginPath();
-          ctx.moveTo(ox, size);
-          ctx.lineTo(ox + size, size);
-          ctx.stroke();
-        }
-      }
-      
-      const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `mockup-multiview-${productSku}-${size}px.${format}`;
-        a.click();
-        
-        // Clean up memory after browser has handled the click
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          canvas.width = 0;
-          canvas.height = 0;
-        }, 1000);
-        
-        toast.success(`${format.toUpperCase()} (${size}px) exportado`);
-      }, mimeType, format === "png" ? undefined : exportQuality);
-    } catch {
-      toast.error("Erro ao exportar");
+      await exportMockupImage(options);
+      toast.success(`${format.toUpperCase()} exportado com sucesso`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Erro ao exportar imagem");
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, INITIAL_PLACEMENT]);
+  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, includeWatermark]);
 
   const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
-  const handleExportPdf = () => {
-    const pdf = generateApprovalPdf({ productName, technique: technique || "N/A", dimensions: { width: areaW, height: areaH }, colors: logoColors.slice(0, 5), area: areaName, date: new Date().toLocaleDateString("pt-BR"), mockupImageDataUrl: "" });
-    pdf.save(`mockup-editor-${productSku}-${Date.now()}.pdf`); toast.success("PDF de aprovação gerado");
+  
+  const handleExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      await exportMockupPdf({
+        productImage,
+        productSku,
+        productName,
+        logoPreview,
+        showLogo,
+        placements,
+        logoOpacity,
+        blendMode,
+        shadowEnabled,
+        shadowIntensity,
+        viewAreaW,
+        viewAreaH,
+        exportScale,
+        exportQuality,
+        exportFormat: "png",
+        approvedViews,
+        views: VIEWS,
+        includeWatermark,
+        colors: logoColors.slice(0, 5),
+        area: areaName,
+        date: new Date().toLocaleDateString("pt-BR"),
+        technique: technique || "Personalização"
+      });
+      toast.success("PDF de Aprovação gerado com sucesso");
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setIsExporting(false);
+    }
   };
+
 
   const handleExportArt = () => {
     const pdf = generateArtPdf({
