@@ -311,6 +311,7 @@ const MockupEditor = () => {
 
   const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     setIsExporting(true);
+    const exportToast = toast.loading(`Iniciando exportação ${format.toUpperCase()}...`);
     try {
       const options: ExportOptions = {
         productImage,
@@ -331,18 +332,19 @@ const MockupEditor = () => {
         approvedViews,
         views: VIEWS,
         watermarkOptions: watermarkConfig
-
       };
       
+      toast.loading(`Renderizando multi-vistas (${VIRTUAL_CANVAS_SIZE * exportScale}px)...`, { id: exportToast });
       await exportMockupImage(options);
-      toast.success(`${format.toUpperCase()} exportado com sucesso`);
+      toast.success(`${format.toUpperCase()} exportado com sucesso!`, { id: exportToast });
     } catch (error) {
       console.error("Export error:", error);
-      toast.error("Erro ao exportar imagem");
+      toast.error("Falha na exportação. Tente reduzir a escala ou qualidade.", { id: exportToast });
     } finally {
       setIsExporting(false);
     }
   }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, watermarkConfig]);
+
 
   const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
   
