@@ -412,14 +412,30 @@ const MockupEditor = () => {
         <div className="flex-1 flex flex-col">
           <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
             <div className="flex items-center gap-1.5">
-              <button onClick={undo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Desfazer" aria-label="Desfazer"><Undo2 className="w-4 h-4" /></button>
-              <button onClick={redo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Refazer" aria-label="Refazer"><Redo2 className="w-4 h-4" /></button>
+              <button 
+                onClick={undo} 
+                className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed" 
+                title="Desfazer (Ctrl+Z)" 
+                aria-label="Desfazer"
+                disabled={historyIndex[activeView] <= 0}
+              >
+                <Undo2 className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={redo} 
+                className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed" 
+                title="Refazer (Ctrl+Y)" 
+                aria-label="Refazer"
+                disabled={historyIndex[activeView] >= (history[activeView]?.length || 0) - 1}
+              >
+                <Redo2 className="w-4 h-4" />
+              </button>
               <div className="w-px h-5 bg-border mx-1" />
-              <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grid" aria-pressed={showGrid} aria-label="Alternar grade"><Grid3X3 className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`} title="Grade" aria-pressed={showGrid} aria-label="Alternar grade"><Grid3X3 className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
               <button onClick={centerLogo} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Centralizar" aria-label="Centralizar logo"><Maximize className="w-4 h-4" aria-hidden="true" /></button>
-              <button onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip H" aria-label="Espelhar horizontal"><FlipHorizontal className="w-4 h-4" aria-hidden="true" /></button>
-              <button onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Flip V" aria-label="Espelhar vertical"><FlipVertical className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar horizontal" aria-label="Espelhar horizontal"><FlipHorizontal className="w-4 h-4" aria-hidden="true" /></button>
+              <button onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Espelhar vertical" aria-label="Espelhar vertical"><FlipVertical className="w-4 h-4" aria-hidden="true" /></button>
               <button onClick={() => updatePlacement({ rotation: currentPlacement.rotation + 15 })} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Rotacionar" aria-label="Rotacionar logo"><RotateCw className="w-4 h-4" aria-hidden="true" /></button>
               <div className="w-px h-5 bg-border mx-1" />
               <span className="text-[10px] font-mono text-primary">{currentView.label}</span>
