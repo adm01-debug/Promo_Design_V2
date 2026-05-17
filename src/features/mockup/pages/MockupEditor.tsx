@@ -96,6 +96,8 @@ const MockupEditor = () => {
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [showRightPanel, setShowRightPanel] = useState(true);
+
   const { drafts, isLoading: _draftsLoading } = useMockupDrafts();
 
   // Load draft if draftId is present
@@ -585,23 +587,36 @@ const MockupEditor = () => {
           </section>
         </div>
 
-        <EditorRightPanel
-          productName={productName} productSku={productSku} productImage={productImage} technique={technique}
-          logoFile={logoFile} logoPreview={logoPreview} logoColors={logoColors} showLogo={showLogo} setShowLogo={setShowLogo}
-          fileInputRef={fileInputRef} handleLogoUpload={handleLogoUpload}
-          setLogoPreview={setLogoPreview} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
-          blendMode={blendMode} setBlendMode={setBlendMode} logoOpacity={logoOpacity} setLogoOpacity={setLogoOpacity}
-          showTexture={showTexture} setShowTexture={setShowTexture}
-          shadowEnabled={shadowEnabled} setShadowEnabled={setShadowEnabled} shadowIntensity={shadowIntensity} setShadowIntensity={setShadowIntensity}
-          autoFitLogo={autoFitLogo} surfaceType={surfaceType} setSurfaceType={setSurfaceType}
-          currentPlacement={currentPlacement} updatePlacement={updatePlacement} currentViewLabel={currentView.label}
-          views={VIEWS} approvedViews={approvedViews} toggleApproval={toggleApproval}
-          exportFormat={exportFormat} setExportFormat={setExportFormat}
-          exportQuality={exportQuality} setExportQuality={setExportQuality}
-          exportScale={exportScale} setExportScale={setExportScale}
-          handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
-          includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
-        />
+        <AnimatePresence>
+          {showRightPanel && (
+            <motion.div
+              initial={{ x: 300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 300, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-y-12 right-0 z-40 lg:relative lg:inset-y-0"
+            >
+              <EditorRightPanel
+                productName={productName} productSku={productSku} productImage={productImage} technique={technique}
+                logoFile={logoFile} logoPreview={logoPreview} logoColors={logoColors} showLogo={showLogo} setShowLogo={setShowLogo}
+                fileInputRef={fileInputRef} handleLogoUpload={handleLogoUpload}
+                setLogoPreview={setLogoPreview} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
+                blendMode={blendMode} setBlendMode={setBlendMode} logoOpacity={logoOpacity} setLogoOpacity={setLogoOpacity}
+                showTexture={showTexture} setShowTexture={setShowTexture}
+                shadowEnabled={shadowEnabled} setShadowEnabled={setShadowEnabled} shadowIntensity={shadowIntensity} setShadowIntensity={setShadowIntensity}
+                autoFitLogo={autoFitLogo} surfaceType={surfaceType} setSurfaceType={setSurfaceType}
+                currentPlacement={currentPlacement} updatePlacement={updatePlacement} currentViewLabel={currentView.label}
+                views={VIEWS} approvedViews={approvedViews} toggleApproval={toggleApproval}
+                exportFormat={exportFormat} setExportFormat={setExportFormat}
+                exportQuality={exportQuality} setExportQuality={setExportQuality}
+                exportScale={exportScale} setExportScale={setExportScale}
+                handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
+                includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
 
       </div>
     </div>

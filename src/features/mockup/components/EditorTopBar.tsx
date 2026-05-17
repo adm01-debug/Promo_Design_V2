@@ -1,6 +1,7 @@
-import { Check, Download, FileText, Loader2, ChevronLeft, FileDown, PlusCircle, Settings2 } from "lucide-react";
+import { Check, Download, FileText, Loader2, ChevronLeft, FileDown, PlusCircle, PanelRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+
 
 
 interface EditorTopBarProps {
