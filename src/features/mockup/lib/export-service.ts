@@ -31,7 +31,6 @@ export interface ExportOptions {
   };
 }
 
-}
 
 /**
  * Renders the multi-view mockup to a canvas
