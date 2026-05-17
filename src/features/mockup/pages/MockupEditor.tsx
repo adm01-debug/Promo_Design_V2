@@ -440,6 +440,35 @@ const MockupEditor = () => {
     });
   };
 
+  useEffect(() => {
+    if (!logoPreview) return;
+    
+    const timer = setTimeout(async () => {
+      try {
+        await saveDraft({
+          id: draftId || undefined,
+          name: `Draft ${productName}`,
+          productName,
+          productSku,
+          editorState: {
+            placements,
+            logoPreview,
+            logoOpacity,
+            blendMode,
+            surfaceType,
+            shadowEnabled,
+            shadowIntensity,
+            approvedViews: Array.from(approvedViews)
+          }
+        });
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+      }
+    }, 2000); // 2s debounce
+    
+    return () => clearTimeout(timer);
+  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft]);
+
   return (
     <div className="h-screen flex flex-col">
       <EditorTopBar 
@@ -450,7 +479,9 @@ const MockupEditor = () => {
         onExportArt={handleExportArt}
         onOpenServiceOrder={handleOpenServiceOrder}
         isExporting={isExporting} 
+        isSaving={isSaving}
       />
+
 
       <div className="flex-1 flex overflow-hidden">
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
