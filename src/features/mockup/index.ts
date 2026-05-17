@@ -14,6 +14,7 @@ export {
   getProductImageUrl,
 } from "./hooks/use-products";
 export { generateApprovalPdf } from "./lib/pdf-export";
+export { generateFinalArtPdf } from "../service-orders/lib/ServiceOrderPdf";
 export {
   loadImageWithFallback,
   cmToPx,
