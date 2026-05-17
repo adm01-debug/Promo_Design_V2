@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import { toast } from "sonner";
-import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
+import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
