@@ -425,11 +425,23 @@ const MockupEditor = () => {
   };
 
   const handleOpenServiceOrder = () => {
-    navigate("/service-orders/new", {
+    navigate("/mockup/service-order", {
       state: {
         prefill: {
-        mockupImageUrl: "", // Will be generated if possible or needed
-        observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+          productName,
+          productSku,
+          technique,
+          areaWidth: String(areaW),
+          areaHeight: String(areaH),
+          areaName,
+          artFileDataUrl: logoPreview,
+          mockupImageUrl: "", 
+          observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+        }
+      }
+    });
+  };
+
 
 
   useEffect(() => {
