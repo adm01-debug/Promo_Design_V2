@@ -14,6 +14,8 @@ import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/fe
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
+import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
+
 
 
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
