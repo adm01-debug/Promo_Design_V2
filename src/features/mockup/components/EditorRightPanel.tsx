@@ -68,7 +68,10 @@ interface EditorRightPanelProps {
   handleExportPdf: () => void;
   handleExportPng: () => void;
   isExporting: boolean;
+  includeWatermark: boolean;
+  setIncludeWatermark: (v: boolean) => void;
 }
+
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
@@ -83,7 +86,9 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     currentPlacement, updatePlacement, currentViewLabel,
     views, approvedViews, toggleApproval,
     exportFormat, setExportFormat, exportQuality, setExportQuality, exportScale, setExportScale, handleExportPdf, handleExportPng, isExporting,
+    includeWatermark, setIncludeWatermark,
   } = props;
+
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
@@ -284,7 +289,15 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </div>
           </div>
 
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-mono text-muted-foreground">Marca d'água</label>
+            <button onClick={() => setIncludeWatermark(!includeWatermark)} className={`px-2 py-1 rounded text-[10px] border transition-all ${includeWatermark ? "bg-primary/20 text-primary border-primary/40" : "bg-muted text-muted-foreground border-border"}`}>
+              {includeWatermark ? "Sim" : "Não"}
+            </button>
+          </div>
+
           {exportFormat !== "png" && (
+
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[10px] font-mono text-muted-foreground">Compressão</label>
