@@ -148,7 +148,7 @@ const ServiceOrder = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <ServiceOrderTopBar osNumber={form.osNumber} editId={editId} currentStatus={currentStatus} setCurrentStatus={setCurrentStatus} saved={saved} setSaved={setSaved} onSave={handleSave} onPreviewPdf={handlePreviewPdf} onPrint={handlePrint} onDownloadPdf={handleDownloadPdf} />
+      <ServiceOrderTopBar osNumber={form.osNumber} editId={editId} currentStatus={currentStatus} setCurrentStatus={setCurrentStatus} saved={saved} setSaved={setSaved} onSave={handleSave} onPreviewPdf={handlePreviewPdf} onPrint={handlePrint} onDownloadPdf={handleDownloadPdf} onDownloadFinalArt={handleDownloadFinalArt} />
 
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-8">
