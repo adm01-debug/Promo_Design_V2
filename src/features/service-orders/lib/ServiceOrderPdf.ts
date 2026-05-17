@@ -63,7 +63,7 @@ const TECHNIQUE_COLORS: Record<string, [number, number, number]> = {
 };
 
 function sim(v: boolean) { return v ? "SIM" : "NÃO"; }
-function val(v: string) { return v || "–"; }
+function val(v: string | number | undefined) { return v ? String(v) : "–"; }
 
 export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string): jsPDF {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
