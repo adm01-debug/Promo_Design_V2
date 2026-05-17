@@ -428,17 +428,9 @@ const MockupEditor = () => {
     navigate("/service-orders/new", {
       state: {
         prefill: {
-          productName,
-          productSku,
-          technique,
-          areaWidth: String(areaW),
-          areaHeight: String(areaH),
-          areaName,
-          artFileDataUrl: logoPreview,
-        }
-      }
-    });
-  };
+        mockupImageUrl: "", // Will be generated if possible or needed
+        observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+
 
   useEffect(() => {
     if (!logoPreview) return;
