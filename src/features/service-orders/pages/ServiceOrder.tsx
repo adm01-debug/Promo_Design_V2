@@ -127,6 +127,15 @@ const ServiceOrder = () => {
 
   const handlePreviewPdf = () => { const blob = getValidatedPdfBlob("visualizar"); if (!blob) return; setPreviewBlob(blob); setPreviewOpen(true); };
   const handleDownloadPdf = () => { const blob = getValidatedPdfBlob("gerar"); if (!blob) return; setPreviewBlob(blob); setPreviewOpen(true); };
+  
+  const handleDownloadFinalArt = () => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error("Preencha os campos obrigatórios antes de gerar a arte final"); return; }
+    const doc = generateFinalArtPdf(form);
+    doc.save(`ARTE_FINAL_${form.osNumber}.pdf`);
+    toast.success("Arte Final gerada com sucesso!");
+  };
+
   const handlePrint = () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error("Preencha os campos obrigatórios antes de imprimir"); return; }
