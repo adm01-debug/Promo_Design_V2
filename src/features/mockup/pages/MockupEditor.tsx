@@ -94,21 +94,10 @@ const MockupEditor = () => {
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
   const [includeWatermark, setIncludeWatermark] = useState(false);
 
-  const [placements, setPlacements] = useState<Record<string, Placement>>({
-    front: { ...INITIAL_PLACEMENT }, back: { ...INITIAL_PLACEMENT },
-    "side-left": { ...INITIAL_PLACEMENT }, "side-right": { ...INITIAL_PLACEMENT },
-  });
+  const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [history, setHistory] = useState<Record<string, Placement[]>>({
-    front: [{ ...INITIAL_PLACEMENT }],
-    back: [{ ...INITIAL_PLACEMENT }],
-    "side-left": [{ ...INITIAL_PLACEMENT }],
-    "side-right": [{ ...INITIAL_PLACEMENT }],
-  });
-  const [historyIndex, setHistoryIndex] = useState<Record<string, number>>({
-    front: 0, back: 0, "side-left": 0, "side-right": 0
-  });
+
 
   const [displayScale, setDisplayScale] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
