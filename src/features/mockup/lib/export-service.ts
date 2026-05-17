@@ -1,7 +1,5 @@
 import { loadImageWithFallback } from "./canvas-utils";
 import { generateApprovalPdf } from "./pdf-export";
-import { generateApprovalPdf } from "./pdf-export";
-
 
 export type ExportFormat = "png" | "jpeg" | "webp";
 export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
