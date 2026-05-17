@@ -71,9 +71,22 @@ const ServiceOrderTopBar = ({
         <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={onPrint}>
           <Printer className="w-3.5 h-3.5" /> Imprimir
         </Button>
-        <Button size="sm" className="gap-2 text-xs" onClick={onDownloadPdf}>
-          <Download className="w-3.5 h-3.5" /> Preview + Baixar
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="gap-2 text-xs">
+              <Download className="w-3.5 h-3.5" /> Download <FileDown className="w-3.5 h-3.5 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onDownloadPdf} className="gap-2 text-xs">
+              <Download className="w-3.5 h-3.5" /> Ordem de Serviço (PDF)
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDownloadFinalArt} className="gap-2 text-xs">
+              <FileDown className="w-3.5 h-3.5" /> Arte Final Otimizada (PDF)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
