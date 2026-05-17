@@ -1,4 +1,4 @@
-import { Check, Download, FileText, Loader2, ChevronLeft, FileDown } from "lucide-react";
+import { Check, Download, FileText, Loader2, ChevronLeft, FileDown, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -8,10 +8,12 @@ interface EditorTopBarProps {
   onExportPdf: () => void;
   onExportPng: () => void;
   onExportArt: () => void;
+  onOpenServiceOrder: () => void;
   isExporting: boolean;
 }
 
-const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onExportArt, isExporting }: EditorTopBarProps) => {
+
+const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onExportArt, onOpenServiceOrder, isExporting }: EditorTopBarProps) => {
   const navigate = useNavigate();
   return (
     <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0" role="banner">
@@ -29,6 +31,9 @@ const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onEx
             <Check className="w-3 h-3" /> Todas as vistas aprovadas
           </span>
         )}
+        <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-green-200 hover:bg-green-50 text-green-700" onClick={onOpenServiceOrder}>
+          <PlusCircle className="w-3.5 h-3.5" /> CRIAR O.S.
+        </Button>
         <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPdf}>
           <FileText className="w-3.5 h-3.5" /> PDF APROVAÇÃO
         </Button>
@@ -38,6 +43,7 @@ const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onEx
         <Button size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPng} disabled={isExporting}>
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG HD
         </Button>
+
       </div>
     </div>
   );

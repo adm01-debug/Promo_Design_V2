@@ -1,18 +1,31 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Upload, GripVertical, Grid3X3, Maximize,
   FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check, Undo2, Redo2,
+  Trash2, Square,
 } from "lucide-react";
+
 import { toast } from "sonner";
-import { loadImageWithFallback, countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
+import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
-import { generateApprovalPdf, generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
+import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
+import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
+
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+  ContextMenuShortcut,
+} from "@/components/ui/context-menu";
+
 
 /**
  * MockupEditor Component
@@ -36,6 +49,8 @@ const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.6, rotation: 0, fl
 const CANVAS_SIZE = 460;
 
 const MockupEditor = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -72,6 +87,8 @@ const MockupEditor = () => {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportQuality, setExportQuality] = useState(0.92);
   const [exportScale, setExportScale] = useState(2); // 1 = 1200px, 2 = 2400px (HD)
+  const [includeWatermark, setIncludeWatermark] = useState(false);
+
   const [placements, setPlacements] = useState<Record<string, Placement>>({
     front: { ...INITIAL_PLACEMENT }, back: { ...INITIAL_PLACEMENT },
     "side-left": { ...INITIAL_PLACEMENT }, "side-right": { ...INITIAL_PLACEMENT },
@@ -112,6 +129,8 @@ const MockupEditor = () => {
   const currentView = VIEWS.find(v => v.id === activeView)!;
   const viewAreaW = (currentView.areaPercent.w / 100) * containerSize.width;
   const viewAreaH = (currentView.areaPercent.h / 100) * containerSize.height;
+
+
 
   const addToHistory = useCallback((viewId: string, placement: Placement) => {
     setHistory(prev => {
@@ -155,6 +174,39 @@ const MockupEditor = () => {
       addToHistory(activeView, newPlacement);
     }
   };
+
+  // Keyboard shortcuts and nudge functionality
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const step = e.shiftKey ? 5 : 1;
+
+      // Undo/Redo shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+      }
+
+      // Nudge logo with arrow keys
+      if (logoPreview && showLogo) {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); updatePlacement({ x: currentPlacement.x - step }); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); updatePlacement({ x: currentPlacement.x + step }); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); updatePlacement({ x: currentPlacement.y - step }); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); updatePlacement({ x: currentPlacement.y + step }); }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
+
 
   useEffect(() => {
     if (warpedLogoUrl) {
@@ -244,128 +296,75 @@ const MockupEditor = () => {
   const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
     setIsExporting(true);
     try {
-      const productImg = await loadImageWithFallback(productImage);
-      const logoImg = logoPreview ? await loadImageWithFallback(logoPreview) : null;
-      const canvas = document.createElement("canvas");
+      const options: ExportOptions = {
+        productImage,
+        productSku,
+        productName,
+        logoPreview,
+        showLogo,
+        placements,
+        logoOpacity,
+        blendMode,
+        shadowEnabled,
+        shadowIntensity,
+        viewAreaW,
+        viewAreaH,
+        exportScale,
+        exportQuality,
+        exportFormat: format,
+        approvedViews,
+        views: VIEWS,
+        includeWatermark
+      };
       
-      const baseSize = 1200;
-      const size = baseSize * exportScale;
-      
-      canvas.width = size * 2;
-      canvas.height = size * 2;
-      const ctx = canvas.getContext("2d")!;
-      
-      for (let i = 0; i < VIEWS.length; i++) {
-        const view = VIEWS[i];
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const ox = col * size;
-        const oy = row * size;
-        
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(ox, oy, size, size);
-        
-        const scale = (size * 0.8) / Math.max(productImg.width, productImg.height);
-        const dx = ox + (size - productImg.width * scale) / 2;
-        const dy = oy + (size - productImg.height * scale) / 2;
-        
-        ctx.drawImage(productImg, dx, dy, productImg.width * scale, productImg.height * scale);
-        
-        if (logoImg && showLogo) {
-          const vp = placements[view.id] || INITIAL_PLACEMENT;
-          const vAreaW = (view.areaPercent.w / 100) * size * 0.8;
-          const vAreaH = (view.areaPercent.h / 100) * size * 0.8;
-          const vAreaX = dx + (view.areaPercent.x / 100) * (productImg.width * scale);
-          const vAreaY = dy + (view.areaPercent.y / 100) * (productImg.height * scale);
-          
-          const logoScale = vp.scale;
-          const logoW = vAreaW * logoScale;
-          const logoH = logoW / (logoImg.width / logoImg.height);
-          
-          ctx.save();
-          ctx.globalAlpha = logoOpacity / 100;
-          ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
-          
-          ctx.translate(
-            vAreaX + vp.x * (vAreaW / viewAreaW) + logoW / 2,
-            vAreaY + vp.y * (vAreaH / viewAreaH) + logoH / 2
-          );
-          
-          ctx.rotate((vp.rotation * Math.PI) / 180);
-          if (vp.flipH) ctx.scale(-1, 1);
-          if (vp.flipV) ctx.scale(1, -1);
-          
-          if (shadowEnabled) {
-            ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity / 100})`;
-            ctx.shadowBlur = 12 * exportScale;
-            ctx.shadowOffsetX = 3 * exportScale;
-            ctx.shadowOffsetY = 3 * exportScale;
-          }
-          
-          ctx.drawImage(logoImg, -logoW / 2, -logoH / 2, logoW, logoH);
-          ctx.restore();
-        }
-        
-        ctx.fillStyle = "#333333";
-        ctx.font = `bold ${24 * exportScale}px sans-serif`;
-        ctx.fillText(view.label, ox + 20 * exportScale, oy + 36 * exportScale);
-        
-        if (approvedViews.has(view.id)) {
-          ctx.fillStyle = "#22c55e";
-          ctx.beginPath();
-          ctx.arc(ox + size - 30 * exportScale, oy + 30 * exportScale, 14 * exportScale, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = "#ffffff";
-          ctx.font = `bold ${16 * exportScale}px sans-serif`;
-          ctx.fillText("✓", ox + size - 37 * exportScale, oy + 36 * exportScale);
-        }
-        
-        ctx.strokeStyle = "#e5e7eb";
-        ctx.lineWidth = 2 * exportScale;
-        if (col === 0) {
-          ctx.beginPath();
-          ctx.moveTo(size, oy);
-          ctx.lineTo(size, oy + size);
-          ctx.stroke();
-        }
-        if (row === 0) {
-          ctx.beginPath();
-          ctx.moveTo(ox, size);
-          ctx.lineTo(ox + size, size);
-          ctx.stroke();
-        }
-      }
-      
-      const mimeType = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `mockup-multiview-${productSku}-${size}px.${format}`;
-        a.click();
-        
-        // Clean up memory after browser has handled the click
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          canvas.width = 0;
-          canvas.height = 0;
-        }, 1000);
-        
-        toast.success(`${format.toUpperCase()} (${size}px) exportado`);
-      }, mimeType, format === "png" ? undefined : exportQuality);
-    } catch {
-      toast.error("Erro ao exportar");
+      await exportMockupImage(options);
+      toast.success(`${format.toUpperCase()} exportado com sucesso`);
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Erro ao exportar imagem");
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, approvedViews, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, INITIAL_PLACEMENT]);
+  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, includeWatermark]);
 
   const handleExportPng = useCallback(() => handleExportImage(exportFormat), [handleExportImage, exportFormat]);
-  const handleExportPdf = () => {
-    const pdf = generateApprovalPdf({ productName, technique: technique || "N/A", dimensions: { width: areaW, height: areaH }, colors: logoColors.slice(0, 5), area: areaName, date: new Date().toLocaleDateString("pt-BR"), mockupImageDataUrl: "" });
-    pdf.save(`mockup-editor-${productSku}-${Date.now()}.pdf`); toast.success("PDF de aprovação gerado");
+  
+  const handleExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      await exportMockupPdf({
+        productImage,
+        productSku,
+        productName,
+        logoPreview,
+        showLogo,
+        placements,
+        logoOpacity,
+        blendMode,
+        shadowEnabled,
+        shadowIntensity,
+        viewAreaW,
+        viewAreaH,
+        exportScale,
+        exportQuality,
+        exportFormat: "png",
+        approvedViews,
+        views: VIEWS,
+        includeWatermark,
+        colors: logoColors.slice(0, 5),
+        area: areaName,
+        date: new Date().toLocaleDateString("pt-BR"),
+        technique: technique || "Personalização"
+      });
+      toast.success("PDF de Aprovação gerado com sucesso");
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setIsExporting(false);
+    }
   };
+
 
   const handleExportArt = () => {
     const pdf = generateArtPdf({
@@ -404,6 +403,22 @@ const MockupEditor = () => {
     toast.success("Arte Final exportada!");
   };
 
+  const handleOpenServiceOrder = () => {
+    navigate("/service-orders/new", {
+      state: {
+        prefill: {
+          productName,
+          productSku,
+          technique,
+          areaWidth: String(areaW),
+          areaHeight: String(areaH),
+          areaName,
+          artFileDataUrl: logoPreview,
+        }
+      }
+    });
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <EditorTopBar 
@@ -412,8 +427,10 @@ const MockupEditor = () => {
         onExportPdf={handleExportPdf} 
         onExportPng={handleExportPng} 
         onExportArt={handleExportArt}
+        onOpenServiceOrder={handleOpenServiceOrder}
         isExporting={isExporting} 
       />
+
       <div className="flex-1 flex overflow-hidden">
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
 
@@ -465,16 +482,49 @@ const MockupEditor = () => {
                 <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-muted-foreground">{areaW}cm</span>
                 <span className="absolute -right-8 top-1/2 -translate-y-1/2 text-[8px] font-mono text-muted-foreground rotate-90">{areaH}cm</span>
                 {logoPreview && showLogo && (
-                  <div className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`} style={{ left: currentPlacement.x, top: currentPlacement.y, width: `${currentPlacement.scale * 100}%` }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar posição da logo" tabIndex={0}>
-                    {isWarping ? (
-                      <Skeleton className="w-full aspect-square rounded-sm bg-primary/10 animate-pulse" />
-                    ) : (
-                      <img src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview} alt="Logo aplicada" className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100, filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined, ...(surfaceType === "flat" ? { transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})` } : {}) }} />
-                    )}
-                    <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground" role="button" aria-label="Redimensionar logo"><GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" aria-hidden="true" /></div>
-                    <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" aria-hidden="true" />
-                  </div>
+                  <ContextMenu>
+                    <ContextMenuTrigger className={`absolute cursor-move ${isDragging ? "opacity-80" : ""}`} style={{ left: currentPlacement.x, top: currentPlacement.y, width: `${currentPlacement.scale * 100}%` }} onMouseDown={handleLogoMouseDown} role="button" aria-label="Ajustar posição da logo" tabIndex={0}>
+                      {isWarping ? (
+                        <Skeleton className="w-full aspect-square rounded-sm bg-primary/10 animate-pulse" />
+                      ) : (
+                        <img src={warpedLogoUrl && surfaceType !== "flat" ? warpedLogoUrl : logoPreview} alt="Logo aplicada" className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ mixBlendMode: blendMode, opacity: logoOpacity / 100, filter: shadowEnabled ? `drop-shadow(3px 3px ${Math.round(shadowIntensity / 5)}px rgba(0,0,0,${shadowIntensity / 100}))` : undefined, ...(surfaceType === "flat" ? { transform: `rotate(${currentPlacement.rotation}deg) scaleX(${currentPlacement.flipH ? -1 : 1}) scaleY(${currentPlacement.flipV ? -1 : 1})` } : {}) }} />
+                      )}
+                      <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-primary rounded-sm cursor-se-resize flex items-center justify-center border border-primary-foreground" role="button" aria-label="Redimensionar logo"><GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" aria-hidden="true" /></div>
+                      <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" aria-hidden="true" />
+                    </ContextMenuTrigger>
+                    
+                    <ContextMenuContent className="w-56">
+                      <ContextMenuItem onClick={undo} disabled={historyIndex[activeView] <= 0}>
+                        <Undo2 className="mr-2 h-4 w-4" /> <span>Desfazer</span>
+                        <ContextMenuShortcut>Ctrl+Z</ContextMenuShortcut>
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={redo} disabled={historyIndex[activeView] >= (history[activeView]?.length || 0) - 1}>
+                        <Redo2 className="mr-2 h-4 w-4" /> <span>Refazer</span>
+                        <ContextMenuShortcut>Ctrl+Y</ContextMenuShortcut>
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem onClick={centerLogo}>
+                        <Maximize className="mr-2 h-4 w-4" /> <span>Centralizar</span>
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => updatePlacement({ rotation: 0, flipH: false, flipV: false })}>
+                        <Square className="mr-2 h-4 w-4" /> <span>Resetar Transformação</span>
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem onClick={() => updatePlacement({ flipH: !currentPlacement.flipH })}>
+                        <FlipHorizontal className="mr-2 h-4 w-4" /> <span>Espelhar Horizontal</span>
+                      </ContextMenuItem>
+                      <ContextMenuItem onClick={() => updatePlacement({ flipV: !currentPlacement.flipV })}>
+                        <FlipVertical className="mr-2 h-4 w-4" /> <span>Espelhar Vertical</span>
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                      <ContextMenuItem onClick={() => { setLogoPreview(null); setLogoFile(null); }} className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" /> <span>Remover Logo</span>
+                        <ContextMenuShortcut>Del</ContextMenuShortcut>
+                      </ContextMenuItem>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 )}
+
                 {!logoPreview && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-primary/10 transition-colors rounded" onClick={() => fileInputRef.current?.click()}>
                     <Upload className="w-5 h-5 text-primary/60 mb-1" /><span className="text-[9px] text-primary/60 font-mono">Soltar logo aqui</span>
@@ -522,7 +572,9 @@ const MockupEditor = () => {
           exportQuality={exportQuality} setExportQuality={setExportQuality}
           exportScale={exportScale} setExportScale={setExportScale}
           handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
+          includeWatermark={includeWatermark} setIncludeWatermark={setIncludeWatermark}
         />
+
       </div>
     </div>
   );
