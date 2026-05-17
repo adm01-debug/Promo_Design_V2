@@ -7,6 +7,7 @@ import {
   Trash2, Square,
 } from "lucide-react";
 
+
 import { toast } from "sonner";
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
