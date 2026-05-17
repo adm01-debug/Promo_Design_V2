@@ -163,12 +163,25 @@ const MockupEditor = () => {
       setIsWarping(false);
       return; 
     }
+    
     let cancelled = false;
     setIsWarping(true);
+    
     const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
     const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
-    getWarpedPreview(logoPreview, warpW, warpH, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV)
-      .then((url: string) => { 
+    
+    const requestWarp = async () => {
+      try {
+        const url = await getWarpedPreview(
+          logoPreview, 
+          warpW, 
+          warpH, 
+          surfaceType, 
+          currentPlacement.rotation, 
+          currentPlacement.flipH, 
+          currentPlacement.flipV
+        );
+        
         if (!cancelled) {
           if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
           setWarpedLogoUrl(url); 
@@ -176,15 +189,21 @@ const MockupEditor = () => {
         } else {
           URL.revokeObjectURL(url);
         }
-      })
-      .catch(() => { 
+      } catch (error) {
+        console.error("Warping error:", error);
         if (!cancelled) {
           if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
           setWarpedLogoUrl(null);
           setIsWarping(false);
         }
-      });
-    return () => { cancelled = true; };
+      }
+    };
+
+    const timer = setTimeout(requestWarp, 150); // Debounce heavy warping
+    return () => { 
+      cancelled = true; 
+      clearTimeout(timer);
+    };
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
