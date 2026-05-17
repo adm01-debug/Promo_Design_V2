@@ -64,6 +64,12 @@ const EditorTopBar = ({ productName, allApproved, onExportPdf, onExportPng, onEx
         <Button size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPng} disabled={isExporting}>
           {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG HD
         </Button>
+        {onTogglePanel && (
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 lg:hidden" onClick={onTogglePanel} aria-label="Alternar painel lateral">
+            <PanelRight className="w-4 h-4" />
+          </Button>
+        )}
+
 
       </div>
     </div>
