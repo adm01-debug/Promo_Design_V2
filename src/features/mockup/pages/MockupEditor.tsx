@@ -455,13 +455,14 @@ const MockupEditor = () => {
         onExportPng={handleExportPng} 
         onExportArt={handleExportArt}
         onOpenServiceOrder={handleOpenServiceOrder}
+        onTogglePanel={() => setShowRightPanel(!showRightPanel)}
         isExporting={isExporting} 
         isSaving={isSaving}
       />
 
-
       <div className="flex-1 flex overflow-hidden">
         <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
+
 
         <div className="flex-1 flex flex-col">
           <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de Edição">
