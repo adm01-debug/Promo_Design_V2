@@ -1,12 +1,13 @@
 import { loadImageWithFallback } from "./canvas-utils";
-import { generateApprovalPdf, generateFinalArtPdf } from "./pdf-export";
-import { type SurfaceType } from "./mesh-warp";
+import { generateApprovalPdf } from "./pdf-export";
+import { generateFinalArtPdf } from "../../service-orders/lib/ServiceOrderPdf";
+import type { SurfaceType } from "./canvas-utils";
 
 export type ExportFormat = "png" | "jpeg" | "webp";
 export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 export type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
 
-interface ExportOptions {
+export interface ExportOptions {
   productImage: string;
   productSku: string;
   productName: string;
@@ -80,8 +81,6 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
     if (logoImg && showLogo) {
       const vp = placements[view.id] || { x: 10, y: 10, scale: 0.6, rotation: 0, flipH: false, flipV: false };
       
-      // Calculate view area in pixels on the export canvas
-      // We use the same percentage mapping as the editor
       const vAreaW = (view.areaPercent.w / 100) * (productImg.width * scale);
       const vAreaH = (view.areaPercent.h / 100) * (productImg.height * scale);
       const vAreaX = dx + (view.areaPercent.x / 100) * (productImg.width * scale);
@@ -95,11 +94,6 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
       ctx.globalAlpha = logoOpacity / 100;
       ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
       
-      // Map editor coordinates (relative to editor viewArea) to export coordinates
-      // In editor, x/y are pixels in a container of viewAreaW/viewAreaH
-      // Here, we scale them to the export's vAreaW/vAreaH
-      // Note: we assume the editor uses a fixed scale for coordinates
-      // Let's normalize it.
       const editorRefSize = 460; // CANVAS_SIZE from editor
       const coordScaleX = vAreaW / (view.areaPercent.w / 100 * editorRefSize);
       const coordScaleY = vAreaH / (view.areaPercent.h / 100 * editorRefSize);
@@ -126,17 +120,16 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
     
     // Label
     ctx.fillStyle = "#111827";
-    ctx.font = `bold ${28 * exportScale}px Inter, sans-serif`;
+    ctx.font = `bold ${28 * exportScale}px sans-serif`;
     ctx.fillText(view.label.toUpperCase(), ox + 40 * exportScale, oy + 60 * exportScale);
     
-    // Approval status
     if (options.approvedViews.has(view.id)) {
-      ctx.fillStyle = "#10b981"; // Emerald-500
+      ctx.fillStyle = "#10b981";
       ctx.beginPath();
       ctx.arc(ox + size - 60 * exportScale, oy + 60 * exportScale, 20 * exportScale, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${24 * exportScale}px Inter, sans-serif`;
+      ctx.font = `bold ${24 * exportScale}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("✓", ox + size - 60 * exportScale, oy + 62 * exportScale);
@@ -144,13 +137,11 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
       ctx.textBaseline = "alphabetic";
     }
     
-    // Borders
     ctx.strokeStyle = "#e5e7eb";
     ctx.lineWidth = 2 * exportScale;
     ctx.strokeRect(ox, oy, size, size);
   }
 
-  // Watermark
   if (includeWatermark) {
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -168,7 +159,6 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
 export async function exportMockupImage(options: ExportOptions) {
   const canvas = await renderMultiViewCanvas(options);
   const { exportFormat, exportQuality, productSku } = options;
-  
   const mimeType = exportFormat === "jpeg" ? "image/jpeg" : exportFormat === "webp" ? "image/webp" : "image/png";
   
   return new Promise<void>((resolve) => {
@@ -179,13 +169,26 @@ export async function exportMockupImage(options: ExportOptions) {
       a.href = url;
       a.download = `mockup-${productSku || "design"}-${Date.now()}.${exportFormat}`;
       a.click();
-      
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-        canvas.width = 0;
-        canvas.height = 0;
-        resolve();
-      }, 1000);
+      setTimeout(() => { URL.revokeObjectURL(url); canvas.width = 0; canvas.height = 0; resolve(); }, 1000);
     }, mimeType, exportFormat === "png" ? undefined : exportQuality);
   });
+}
+
+export async function exportMockupPdf(options: ExportOptions & { colors: string[]; area: string; date: string; technique: string }) {
+  const canvas = await renderMultiViewCanvas(options);
+  const dataUrl = canvas.toDataURL("image/png", 0.8);
+  
+  const pdf = generateApprovalPdf({
+    productName: options.productName,
+    technique: options.technique,
+    dimensions: { width: options.viewAreaW, height: options.viewAreaH },
+    colors: options.colors,
+    area: options.area,
+    date: options.date,
+    mockupImageDataUrl: dataUrl
+  });
+  
+  pdf.save(`PROPOSTA_${options.productSku || "DESIGN"}_${Date.now()}.pdf`);
+  canvas.width = 0;
+  canvas.height = 0;
 }
