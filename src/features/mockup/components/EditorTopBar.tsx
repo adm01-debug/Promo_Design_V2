@@ -1,4 +1,4 @@
-import { Check, Download, FileText, Loader2, ChevronLeft } from "lucide-react";
+import { Check, Download, FileText, Loader2, ChevronLeft, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
