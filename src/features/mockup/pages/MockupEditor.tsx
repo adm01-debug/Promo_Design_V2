@@ -558,14 +558,15 @@ const MockupEditor = () => {
                     </ContextMenuTrigger>
                     
                     <ContextMenuContent className="w-56">
-                      <ContextMenuItem onClick={undo} disabled={historyIndex[activeView] <= 0}>
+                      <ContextMenuItem onClick={(e) => { e.stopPropagation(); undo(); }} disabled={historyIndex[activeView] <= 0}>
                         <Undo2 className="mr-2 h-4 w-4" /> <span>Desfazer</span>
                         <ContextMenuShortcut>Ctrl+Z</ContextMenuShortcut>
                       </ContextMenuItem>
-                      <ContextMenuItem onClick={redo} disabled={historyIndex[activeView] >= (history[activeView]?.length || 0) - 1}>
+                      <ContextMenuItem onClick={(e) => { e.stopPropagation(); redo(); }} disabled={historyIndex[activeView] >= (history[activeView]?.length || 0) - 1}>
                         <Redo2 className="mr-2 h-4 w-4" /> <span>Refazer</span>
                         <ContextMenuShortcut>Ctrl+Y</ContextMenuShortcut>
                       </ContextMenuItem>
+
                       <ContextMenuSeparator />
                       <ContextMenuItem onClick={centerLogo}>
                         <Maximize className="mr-2 h-4 w-4" /> <span>Centralizar</span>
