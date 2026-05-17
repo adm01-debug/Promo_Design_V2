@@ -14,6 +14,14 @@ import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbna
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
 import { Skeleton } from "@/components/ui/skeleton";
 
+/**
+ * MockupEditor Component
+ * 
+ * A high-performance, accessible product mockup studio.
+ * Features Web Worker based warping, memory-safe asset management,
+ * and keyboard-friendly UI.
+ */
+
 const VIEWS: { id: string; label: string; icon: string; areaPercent: { x: number; y: number; w: number; h: number }; bgRotation?: number }[] = [
   { id: "front", label: "Frente", icon: "🟦", areaPercent: { x: 30, y: 20, w: 40, h: 45 } },
   { id: "back", label: "Costas", icon: "🟧", areaPercent: { x: 25, y: 15, w: 50, h: 50 } },
