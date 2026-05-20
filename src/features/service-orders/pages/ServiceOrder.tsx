@@ -154,6 +154,21 @@ const ServiceOrder = () => {
     setSaved(false);
   }, [handleArtUpload]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (!saved) handleSave();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave, handlePrint, saved]);
+
   const handleSave = async () => {
     const validationErrors = validateForm(form);
     if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(Object.values(validationErrors)[0]); return; }
