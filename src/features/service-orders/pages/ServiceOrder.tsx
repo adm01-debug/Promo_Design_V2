@@ -198,7 +198,15 @@ const ServiceOrder = () => {
     const w = window.open(url); if (w) w.onload = () => { w.print(); };
   };
 
-  const fieldError = (field: string) => errors[field] ? <p className="text-[11px] text-destructive mt-1">{errors[field]}</p> : null;
+  const fieldError = (field: string) => errors[field] ? (
+    <motion.p 
+      initial={{ x: -4, opacity: 0 }} 
+      animate={{ x: 0, opacity: 1 }} 
+      className="text-[11px] text-destructive mt-1 font-medium"
+    >
+      {errors[field]}
+    </motion.p>
+  ) : null;
 
   return (
     <div className="min-h-screen bg-background">
