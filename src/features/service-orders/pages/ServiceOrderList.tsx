@@ -390,7 +390,8 @@ const ServiceOrderList = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group"
+                      className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group cursor-pointer"
+                      onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
