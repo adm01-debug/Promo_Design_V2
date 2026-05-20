@@ -434,22 +434,52 @@ const MockupEditor = () => {
     toast.success("Arte Final exportada!");
   };
 
-  const handleOpenServiceOrder = () => {
-    navigate("/mockup/service-order", {
-      state: {
-        prefill: {
-          productName,
-          productSku,
-          technique,
-          areaWidth: String(areaW),
-          areaHeight: String(areaH),
-          areaName,
-          artFileDataUrl: logoPreview,
-          mockupImageUrl: "", 
-          observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+  const handleOpenServiceOrder = async () => {
+    setIsExporting(true);
+    const loadingToast = toast.loading("Preparando dados para Ordem de Serviço...");
+    
+    try {
+      const canvas = await renderMultiViewCanvas({
+        productImage, productSku, productName, logoPreview, showLogo,
+        placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity,
+        viewAreaW, viewAreaH, exportScale: 1, exportQuality: 0.8,
+        exportFormat: "png", approvedViews, views: VIEWS,
+        watermarkOptions: watermarkConfig
+      });
+      
+      const mockupImageUrl = canvas.toDataURL("image/png");
+      
+      navigate("/mockup/service-order", {
+        state: {
+          prefill: {
+            productName,
+            productSku,
+            technique,
+            areaWidth: String(areaW),
+            areaHeight: String(areaH),
+            areaName,
+            artFileDataUrl: logoPreview,
+            mockupImageUrl, 
+            observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+          }
         }
-      }
-    });
+      });
+      toast.success("Pronto!", { id: loadingToast });
+    } catch (error) {
+      console.error("Failed to generate mockup preview:", error);
+      toast.error("Erro ao gerar preview. Continuando sem imagem...", { id: loadingToast });
+      // Fallback
+      navigate("/mockup/service-order", {
+        state: {
+          prefill: {
+            productName, productSku, technique, areaWidth: String(areaW), areaHeight: String(areaH),
+            areaName, artFileDataUrl: logoPreview, mockupImageUrl: "", observations: "Importado do Editor (erro no preview)."
+          }
+        }
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
 
