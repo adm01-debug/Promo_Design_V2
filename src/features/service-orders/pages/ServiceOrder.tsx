@@ -154,6 +154,83 @@ const ServiceOrder = () => {
     setSaved(false);
   }, [handleArtUpload]);
 
+  const handleSave = useCallback(async () => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error(Object.values(validationErrors)[0]); 
+      return; 
+    }
+    try {
+      if (editId) { 
+        await updateOrder(editId, { ...form, status: currentStatus }); 
+        toast.success("Ordem de Serviço atualizada!"); 
+        setSaved(true); 
+      }
+      else { 
+        const { lockVersion: _lv, deletedAt: _da, ...formWithoutMeta } = form as any;
+        const newOrder = await addOrder(formWithoutMeta); 
+        navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true }); 
+        toast.success("Ordem de Serviço salva!"); 
+        setSaved(true); 
+      }
+    } catch (err) { 
+      toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); 
+    }
+  }, [form, editId, currentStatus, updateOrder, addOrder, navigate]);
+
+  const getValidatedPdfBlob = useCallback((actionLabel: "visualizar" | "gerar") => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error(`Preencha os campos obrigatórios antes de ${actionLabel} o PDF`); 
+      return null; 
+    }
+    return generateServiceOrderPdf(form, logoRef.current).output("blob");
+  }, [form]);
+
+  const handlePreviewPdf = useCallback(() => { 
+    const blob = getValidatedPdfBlob("visualizar"); 
+    if (!blob) return; 
+    setPreviewBlob(blob); 
+    setPreviewOpen(true); 
+  }, [getValidatedPdfBlob]);
+
+  const handleDownloadPdf = useCallback(() => { 
+    const blob = getValidatedPdfBlob("gerar"); 
+    if (!blob) return; 
+    setPreviewBlob(blob); 
+    setPreviewOpen(true); 
+  }, [getValidatedPdfBlob]);
+  
+  const handleDownloadFinalArt = useCallback(() => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error("Preencha os campos obrigatórios antes de gerar a arte final"); 
+      return; 
+    }
+    const doc = generateFinalArtPdf(form);
+    doc.save(`ARTE_FINAL_${form.osNumber}.pdf`);
+    toast.success("Arte Final gerada com sucesso!");
+  }, [form]);
+
+  const handlePrint = useCallback(() => {
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error("Preencha os campos obrigatórios antes de imprimir"); 
+      return; 
+    }
+    const doc = generateServiceOrderPdf(form, logoRef.current);
+    const blob = doc.output("blob"); 
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url); 
+    if (w) {
+      w.onload = () => { w.print(); };
+    }
+  }, [form]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
@@ -168,50 +245,6 @@ const ServiceOrder = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleSave, handlePrint, saved]);
-
-  const handleSave = async () => {
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(Object.values(validationErrors)[0]); return; }
-    try {
-      if (editId) { 
-        await updateOrder(editId, { ...form, status: currentStatus }); 
-        toast.success("Ordem de Serviço atualizada!"); 
-        setSaved(true); 
-      }
-      else { 
-        const { lockVersion: _lv, deletedAt: _da, ...formWithoutMeta } = form as any;
-        const newOrder = await addOrder(formWithoutMeta); 
-        navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true }); 
-        toast.success("Ordem de Serviço salva!"); 
-        setSaved(true); 
-      }
-    } catch (err) { toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); }
-  };
-
-  const getValidatedPdfBlob = (actionLabel: "visualizar" | "gerar") => {
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(`Preencha os campos obrigatórios antes de ${actionLabel} o PDF`); return null; }
-    return generateServiceOrderPdf(form, logoRef.current).output("blob");
-  };
-
-  const handlePreviewPdf = () => { const blob = getValidatedPdfBlob("visualizar"); if (!blob) return; setPreviewBlob(blob); setPreviewOpen(true); };
-  const handleDownloadPdf = () => { const blob = getValidatedPdfBlob("gerar"); if (!blob) return; setPreviewBlob(blob); setPreviewOpen(true); };
-  
-  const handleDownloadFinalArt = () => {
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error("Preencha os campos obrigatórios antes de gerar a arte final"); return; }
-    const doc = generateFinalArtPdf(form);
-    doc.save(`ARTE_FINAL_${form.osNumber}.pdf`);
-    toast.success("Arte Final gerada com sucesso!");
-  };
-
-  const handlePrint = () => {
-    const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error("Preencha os campos obrigatórios antes de imprimir"); return; }
-    const doc = generateServiceOrderPdf(form, logoRef.current);
-    const blob = doc.output("blob"); const url = URL.createObjectURL(blob);
-    const w = window.open(url); if (w) w.onload = () => { w.print(); };
-  };
 
   const fieldError = (field: string) => errors[field] ? (
     <motion.p 
