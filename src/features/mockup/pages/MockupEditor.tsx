@@ -110,6 +110,7 @@ const MockupEditor = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const { drafts, isLoading: _draftsLoading } = useMockupDrafts();
 
