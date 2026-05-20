@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
   Package, Calendar, ArrowUpDown, CheckCircle2,
-  ChevronLeft, ChevronRight, Download, Loader2, X
+  ChevronLeft, ChevronRight, Download, Loader2, X, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,7 +104,7 @@ const ServiceOrderList = () => {
     setSearchParams(next, { replace: true });
   }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, setSearchParams]);
 
-  const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
+  const { orders: paginated, total, totalPages, updateStatus, deleteOrder, addOrder } = useServiceOrders({
     page,
     pageSize: PAGE_SIZE,
     search,
@@ -130,6 +130,21 @@ const ServiceOrderList = () => {
   const handleDelete = (id: string) => {
     deleteOrder(id);
     toast.success("Ordem de Serviço excluída");
+  };
+
+  const handleDuplicate = async (order: any) => {
+    try {
+      const { id: _id, osNumber: _os, createdAt: _ca, updatedAt: _ua, ...clonedData } = order;
+      const newOrder = await addOrder({
+        ...clonedData,
+        status: "aberta",
+        observations: `Cópia da OS ${order.osNumber}. ${clonedData.observations || ""}`,
+      });
+      toast.success(`OS ${order.osNumber} duplicada com sucesso!`);
+      navigate(`/mockup/service-order?edit=${newOrder.id}`);
+    } catch (e) {
+      toast.error("Erro ao duplicar OS");
+    }
   };
 
   const handleExportPdf = async () => {
@@ -375,7 +390,8 @@ const ServiceOrderList = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group"
+                      className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors group cursor-pointer"
+                      onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -429,7 +445,14 @@ const ServiceOrderList = () => {
                                 <MoreHorizontal className="w-3.5 h-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}>
+                                <Eye className="w-3.5 h-3.5 mr-2" /> Visualizar / Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicate(order)}>
+                                <Copy className="w-3.5 h-3.5 mr-2" /> Duplicar OS
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               {nextStatuses.length > 0 ? (
                                 <>
                                   {nextStatuses.map((s) => (

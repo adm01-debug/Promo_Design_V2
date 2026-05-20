@@ -102,7 +102,21 @@ const ServiceOrder = () => {
 
   const [currentStatus, setCurrentStatus] = useState<OsStatus>(existingOrder?.status || "aberta");
 
-  const update = (field: keyof ServiceOrderData, value: string | boolean) => { setForm((prev) => ({ ...prev, [field]: value })); setErrors((prev) => ({ ...prev, [field]: "" })); setSaved(false); };
+  const maskPhone = (v: string) => {
+    const numbers = v.replace(/\D/g, "");
+    if (numbers.length <= 10) return numbers.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+    return numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  };
+
+  const update = (field: keyof ServiceOrderData, value: string | boolean) => {
+    let finalValue = value;
+    if (field === "clientPhone" && typeof value === "string") {
+      finalValue = maskPhone(value);
+    }
+    setForm((prev) => ({ ...prev, [field]: finalValue }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setSaved(false);
+  };
 
   const handleArtUpload = useCallback(async (file: File, opts?: { keepAssetId?: boolean }) => {
     setUploading(true);
@@ -140,9 +154,13 @@ const ServiceOrder = () => {
     setSaved(false);
   }, [handleArtUpload]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(Object.values(validationErrors)[0]); return; }
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error(Object.values(validationErrors)[0]); 
+      return; 
+    }
     try {
       if (editId) { 
         await updateOrder(editId, { ...form, status: currentStatus }); 
@@ -156,35 +174,87 @@ const ServiceOrder = () => {
         toast.success("Ordem de Serviço salva!"); 
         setSaved(true); 
       }
-    } catch (err) { toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); }
-  };
+    } catch (err) { 
+      toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); 
+    }
+  }, [form, editId, currentStatus, updateOrder, addOrder, navigate]);
 
-  const getValidatedPdfBlob = (actionLabel: "visualizar" | "gerar") => {
+  const getValidatedPdfBlob = useCallback((actionLabel: "visualizar" | "gerar") => {
     const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error(`Preencha os campos obrigatórios antes de ${actionLabel} o PDF`); return null; }
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error(`Preencha os campos obrigatórios antes de ${actionLabel} o PDF`); 
+      return null; 
+    }
     return generateServiceOrderPdf(form, logoRef.current).output("blob");
-  };
+  }, [form]);
 
-  const handlePreviewPdf = () => { const blob = getValidatedPdfBlob("visualizar"); if (!blob) return; setPreviewBlob(blob); setPreviewOpen(true); };
-  const handleDownloadPdf = () => { const blob = getValidatedPdfBlob("gerar"); if (!blob) return; setPreviewBlob(blob); setPreviewOpen(true); };
+  const handlePreviewPdf = useCallback(() => { 
+    const blob = getValidatedPdfBlob("visualizar"); 
+    if (!blob) return; 
+    setPreviewBlob(blob); 
+    setPreviewOpen(true); 
+  }, [getValidatedPdfBlob]);
+
+  const handleDownloadPdf = useCallback(() => { 
+    const blob = getValidatedPdfBlob("gerar"); 
+    if (!blob) return; 
+    setPreviewBlob(blob); 
+    setPreviewOpen(true); 
+  }, [getValidatedPdfBlob]);
   
-  const handleDownloadFinalArt = () => {
+  const handleDownloadFinalArt = useCallback(() => {
     const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error("Preencha os campos obrigatórios antes de gerar a arte final"); return; }
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error("Preencha os campos obrigatórios antes de gerar a arte final"); 
+      return; 
+    }
     const doc = generateFinalArtPdf(form);
     doc.save(`ARTE_FINAL_${form.osNumber}.pdf`);
     toast.success("Arte Final gerada com sucesso!");
-  };
+  }, [form]);
 
-  const handlePrint = () => {
+  const handlePrint = useCallback(() => {
     const validationErrors = validateForm(form);
-    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); toast.error("Preencha os campos obrigatórios antes de imprimir"); return; }
+    if (Object.keys(validationErrors).length > 0) { 
+      setErrors(validationErrors); 
+      toast.error("Preencha os campos obrigatórios antes de imprimir"); 
+      return; 
+    }
     const doc = generateServiceOrderPdf(form, logoRef.current);
-    const blob = doc.output("blob"); const url = URL.createObjectURL(blob);
-    const w = window.open(url); if (w) w.onload = () => { w.print(); };
-  };
+    const blob = doc.output("blob"); 
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url); 
+    if (w) {
+      w.onload = () => { w.print(); };
+    }
+  }, [form]);
 
-  const fieldError = (field: string) => errors[field] ? <p className="text-[11px] text-destructive mt-1">{errors[field]}</p> : null;
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (!saved) handleSave();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave, handlePrint, saved]);
+
+  const fieldError = (field: string) => errors[field] ? (
+    <motion.p 
+      initial={{ x: -4, opacity: 0 }} 
+      animate={{ x: 0, opacity: 1 }} 
+      className="text-[11px] text-destructive mt-1 font-medium"
+    >
+      {errors[field]}
+    </motion.p>
+  ) : null;
 
   return (
     <div className="min-h-screen bg-background">

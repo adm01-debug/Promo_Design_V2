@@ -12,7 +12,7 @@ import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/feature
 
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
-import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
+import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportOptions } from "../lib/export-service";
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 
@@ -110,8 +110,9 @@ const MockupEditor = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  const { drafts, isLoading: _draftsLoading } = useMockupDrafts();
+  const { drafts } = useMockupDrafts();
 
   // Load draft if draftId is present
   useEffect(() => {
@@ -195,12 +196,13 @@ const MockupEditor = () => {
         redo();
       }
 
-      // Nudge logo with arrow keys
+      // Nudge logo with arrow keys, including snap-to-center shortcut
       if (logoPreview && showLogo) {
         if (e.key === 'ArrowLeft') { e.preventDefault(); updatePlacement({ x: currentPlacement.x - step }); }
         if (e.key === 'ArrowRight') { e.preventDefault(); updatePlacement({ x: currentPlacement.x + step }); }
         if (e.key === 'ArrowUp') { e.preventDefault(); updatePlacement({ x: currentPlacement.y - step }); }
         if (e.key === 'ArrowDown') { e.preventDefault(); updatePlacement({ x: currentPlacement.y + step }); }
+        if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); centerLogo(); }
       }
     };
 
@@ -301,10 +303,14 @@ const MockupEditor = () => {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
     const scaleFactor = displayScale * (zoom / 100);
-    updatePlacement({ 
-      x: e.clientX / scaleFactor - dragStart.x, 
-      y: e.clientY / scaleFactor - dragStart.y 
-    });
+    let newX = e.clientX / scaleFactor - dragStart.x;
+    let newY = e.clientY / scaleFactor - dragStart.y;
+    
+    // Snap to center logic (threshold of 5px)
+    if (Math.abs(newX - 0) < 5) newX = 0; // Relative to area origin
+    if (Math.abs(newY - 0) < 5) newY = 0;
+    
+    updatePlacement({ x: newX, y: newY });
   };
 
   const handleMouseUp = () => setIsDragging(false);
@@ -427,22 +433,52 @@ const MockupEditor = () => {
     toast.success("Arte Final exportada!");
   };
 
-  const handleOpenServiceOrder = () => {
-    navigate("/mockup/service-order", {
-      state: {
-        prefill: {
-          productName,
-          productSku,
-          technique,
-          areaWidth: String(areaW),
-          areaHeight: String(areaH),
-          areaName,
-          artFileDataUrl: logoPreview,
-          mockupImageUrl: "", 
-          observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+  const handleOpenServiceOrder = async () => {
+    setIsExporting(true);
+    const loadingToast = toast.loading("Preparando dados para Ordem de Serviço...");
+    
+    try {
+      const canvas = await renderMultiViewCanvas({
+        productImage, productSku, productName, logoPreview, showLogo,
+        placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity,
+        viewAreaW, viewAreaH, exportScale: 1, exportQuality: 0.8,
+        exportFormat: "png", approvedViews, views: VIEWS,
+        watermarkOptions: watermarkConfig
+      });
+      
+      const mockupImageUrl = canvas.toDataURL("image/png");
+      
+      navigate("/mockup/service-order", {
+        state: {
+          prefill: {
+            productName,
+            productSku,
+            technique,
+            areaWidth: String(areaW),
+            areaHeight: String(areaH),
+            areaName,
+            artFileDataUrl: logoPreview,
+            mockupImageUrl, 
+            observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+          }
         }
-      }
-    });
+      });
+      toast.success("Pronto!", { id: loadingToast });
+    } catch (error) {
+      console.error("Failed to generate mockup preview:", error);
+      toast.error("Erro ao gerar preview. Continuando sem imagem...", { id: loadingToast });
+      // Fallback
+      navigate("/mockup/service-order", {
+        state: {
+          prefill: {
+            productName, productSku, technique, areaWidth: String(areaW), areaHeight: String(areaH),
+            areaName, artFileDataUrl: logoPreview, mockupImageUrl: "", observations: "Importado do Editor (erro no preview)."
+          }
+        }
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
 
@@ -538,8 +574,8 @@ const MockupEditor = () => {
 
           <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-hidden relative p-4" style={{ background: "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px" }} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
             <div className="relative bg-white rounded-xl border border-border shadow-2xl select-none" style={{ width: VIRTUAL_CANVAS_SIZE, height: VIRTUAL_CANVAS_SIZE, transform: `scale(${displayScale * (zoom / 100)})`, transformOrigin: "center" }}>
-
-              <img src={productImage} alt={productName} className="w-full h-full object-contain pointer-events-none" draggable={false} style={{ transform: currentView.bgRotation ? `rotate(${currentView.bgRotation}deg)` : undefined }} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
+              {!imageLoaded && <Skeleton className="absolute inset-0 w-full h-full rounded-xl" />}
+              <img src={productImage} alt={productName} className={`w-full h-full object-contain pointer-events-none transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`} draggable={false} style={{ transform: currentView.bgRotation ? `rotate(${currentView.bgRotation}deg)` : undefined }} onLoad={() => setImageLoaded(true)} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; setImageLoaded(true); }} />
               {showGrid && <div className="absolute inset-0 pointer-events-none z-[5]" style={{ backgroundImage: "linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary) / 0.06) 1px, transparent 1px)", backgroundSize: "25px 25px" }} />}
               <div ref={areaRef} className="absolute border-2 border-dashed border-primary/40 rounded bg-primary/5" style={{ left: `${currentView.areaPercent.x}%`, top: `${currentView.areaPercent.y}%`, width: `${currentView.areaPercent.w}%`, height: `${currentView.areaPercent.h}%` }}>
                 <span className="absolute -top-5 left-0 text-[9px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">{currentView.label}</span>
