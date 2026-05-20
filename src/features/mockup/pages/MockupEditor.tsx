@@ -106,7 +106,7 @@ const MockupEditor = () => {
 
 
 
-  const { placements, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
+  const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showRightPanel, setShowRightPanel] = useState(true);
