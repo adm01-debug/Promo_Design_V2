@@ -307,8 +307,6 @@ const MockupEditor = () => {
     let newY = e.clientY / scaleFactor - dragStart.y;
     
     // Snap to center logic (threshold of 5px)
-    const centerX = viewAreaW / 2 - (viewAreaW * currentPlacement.scale) / 2;
-    const centerY = viewAreaH / 2 - (viewAreaH * currentPlacement.scale) / 2;
     if (Math.abs(newX - 0) < 5) newX = 0; // Relative to area origin
     if (Math.abs(newY - 0) < 5) newY = 0;
     
