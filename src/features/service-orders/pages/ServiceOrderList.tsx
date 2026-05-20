@@ -132,6 +132,21 @@ const ServiceOrderList = () => {
     toast.success("Ordem de Serviço excluída");
   };
 
+  const handleDuplicate = async (order: any) => {
+    try {
+      const { id: _id, osNumber: _os, createdAt: _ca, updatedAt: _ua, ...clonedData } = order;
+      const newOrder = await addOrder({
+        ...clonedData,
+        status: "aberta",
+        observations: `Cópia da OS ${order.osNumber}. ${clonedData.observations || ""}`,
+      });
+      toast.success(`OS ${order.osNumber} duplicada com sucesso!`);
+      navigate(`/mockup/service-order?edit=${newOrder.id}`);
+    } catch (e) {
+      toast.error("Erro ao duplicar OS");
+    }
+  };
+
   const handleExportPdf = async () => {
     setExporting(true);
     setPdfProgress({ stage: "Buscando OSs", current: 0, total: 0, percent: 0 });
