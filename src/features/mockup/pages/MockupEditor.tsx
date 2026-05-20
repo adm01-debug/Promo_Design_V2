@@ -112,7 +112,7 @@ const MockupEditor = () => {
   const [showRightPanel, setShowRightPanel] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const { drafts, isLoading: _draftsLoading } = useMockupDrafts();
+  const { drafts } = useMockupDrafts();
 
   // Load draft if draftId is present
   useEffect(() => {
