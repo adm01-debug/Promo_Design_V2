@@ -12,7 +12,7 @@ import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/feature
 
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
-import { exportMockupImage, exportMockupPdf, type ExportOptions } from "../lib/export-service";
+import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportOptions } from "../lib/export-service";
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 
