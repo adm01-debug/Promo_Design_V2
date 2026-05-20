@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
   Package, Calendar, ArrowUpDown, CheckCircle2,
-  ChevronLeft, ChevronRight, Download, Loader2, X
+  ChevronLeft, ChevronRight, Download, Loader2, X, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
