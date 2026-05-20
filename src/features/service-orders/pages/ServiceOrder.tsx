@@ -102,7 +102,21 @@ const ServiceOrder = () => {
 
   const [currentStatus, setCurrentStatus] = useState<OsStatus>(existingOrder?.status || "aberta");
 
-  const update = (field: keyof ServiceOrderData, value: string | boolean) => { setForm((prev) => ({ ...prev, [field]: value })); setErrors((prev) => ({ ...prev, [field]: "" })); setSaved(false); };
+  const maskPhone = (v: string) => {
+    const numbers = v.replace(/\D/g, "");
+    if (numbers.length <= 10) return numbers.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+    return numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  };
+
+  const update = (field: keyof ServiceOrderData, value: string | boolean) => {
+    let finalValue = value;
+    if (field === "clientPhone" && typeof value === "string") {
+      finalValue = maskPhone(value);
+    }
+    setForm((prev) => ({ ...prev, [field]: finalValue }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    setSaved(false);
+  };
 
   const handleArtUpload = useCallback(async (file: File, opts?: { keepAssetId?: boolean }) => {
     setUploading(true);
