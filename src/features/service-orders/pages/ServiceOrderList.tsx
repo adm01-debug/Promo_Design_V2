@@ -445,7 +445,14 @@ const ServiceOrderList = () => {
                                 <MoreHorizontal className="w-3.5 h-3.5" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}>
+                                <Eye className="w-3.5 h-3.5 mr-2" /> Visualizar / Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDuplicate(order)}>
+                                <Copy className="w-3.5 h-3.5 mr-2" /> Duplicar OS
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               {nextStatuses.length > 0 ? (
                                 <>
                                   {nextStatuses.map((s) => (
