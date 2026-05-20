@@ -104,7 +104,7 @@ const ServiceOrderList = () => {
     setSearchParams(next, { replace: true });
   }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, setSearchParams]);
 
-  const { orders: paginated, total, totalPages, updateStatus, deleteOrder } = useServiceOrders({
+  const { orders: paginated, total, totalPages, updateStatus, deleteOrder, addOrder } = useServiceOrders({
     page,
     pageSize: PAGE_SIZE,
     search,
