@@ -195,12 +195,13 @@ const MockupEditor = () => {
         redo();
       }
 
-      // Nudge logo with arrow keys
+      // Nudge logo with arrow keys, including snap-to-center shortcut
       if (logoPreview && showLogo) {
         if (e.key === 'ArrowLeft') { e.preventDefault(); updatePlacement({ x: currentPlacement.x - step }); }
         if (e.key === 'ArrowRight') { e.preventDefault(); updatePlacement({ x: currentPlacement.x + step }); }
         if (e.key === 'ArrowUp') { e.preventDefault(); updatePlacement({ x: currentPlacement.y - step }); }
         if (e.key === 'ArrowDown') { e.preventDefault(); updatePlacement({ x: currentPlacement.y + step }); }
+        if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); centerLogo(); }
       }
     };
 
