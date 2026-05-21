@@ -187,7 +187,9 @@ export function useDamFilters() {
       if (customLs)
         try {
           customSize = JSON.parse(customLs);
-        } catch {}
+        } catch {
+          /* ignore malformed persisted value */
+        }
     }
 
     return {

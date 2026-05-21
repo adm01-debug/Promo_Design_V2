@@ -175,7 +175,7 @@ const ServiceOrderList = () => {
       });
       toast.success(`OS ${order.osNumber} duplicada com sucesso!`);
       navigate(`/mockup/service-order?edit=${newOrder.id}`);
-    } catch (e) {
+    } catch {
       toast.error("Erro ao duplicar OS");
     }
   };

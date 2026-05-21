@@ -58,7 +58,9 @@ export function getDefaultColumns(): ColumnCount {
       const parsed = parseInt(saved, 10) as ColumnCount;
       if ([3, 4, 5].includes(parsed)) return parsed;
     }
-  } catch {}
+  } catch {
+    /* ignore unavailable/malformed storage */
+  }
   return 4;
 }
 
@@ -119,7 +121,9 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
                   onChange(opt.value);
                   try {
                     localStorage.setItem(STORAGE_KEY, String(opt.value));
-                  } catch {}
+                  } catch {
+                    /* ignore unavailable storage */
+                  }
                 }}
               >
                 {value === opt.value && (

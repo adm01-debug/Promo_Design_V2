@@ -58,6 +58,8 @@ const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
     if (code.length === 6) {
       handleVerify();
     }
+    // Auto-submit only when the 6-digit code changes; handleVerify isn't memoized and adding it would re-fire on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   return (

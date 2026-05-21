@@ -91,7 +91,7 @@ export function QuickVersionCompareDialog({
   onOpenChange,
 }: QuickVersionCompareDialogProps) {
   const versionsQuery = useAssetVersions(open ? asset : null);
-  const versions = versionsQuery.data ?? [];
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data]);
 
   const { current, previous } = useMemo(() => {
     if (!asset || versions.length === 0) return { current: asset, previous: null as Asset | null };

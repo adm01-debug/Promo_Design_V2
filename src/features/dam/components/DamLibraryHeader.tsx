@@ -50,7 +50,9 @@ export function DamLibraryHeader({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 1800);
-    } catch {}
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
   };
 
   const currentSavedFilters: any = {

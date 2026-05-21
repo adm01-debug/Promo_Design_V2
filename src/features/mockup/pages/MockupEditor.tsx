@@ -266,6 +266,8 @@ const MockupEditor = () => {
 
     window.addEventListener("keydown", handleKeyDown, true); // Use capture to preempt other listeners
     return () => window.removeEventListener("keydown", handleKeyDown, true);
+    // centerLogo is stable for the lifetime of the relevant state; re-subscribing only on interaction state is intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
 
   useEffect(() => {
@@ -274,6 +276,8 @@ const MockupEditor = () => {
     }
     clearWarpCache();
     setWarpedLogoUrl(null);
+    // Must run only when the source logo changes; depending on warpedLogoUrl would re-revoke the freshly warped image
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview]);
 
   useEffect(() => {
@@ -324,6 +328,8 @@ const MockupEditor = () => {
       cancelled = true;
       clearTimeout(timer);
     };
+    // warpedLogoUrl is read only to revoke the previous object URL; adding it as a dep would loop the warp on every completion
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     logoPreview,
     surfaceType,
@@ -345,7 +351,7 @@ const MockupEditor = () => {
       };
       img.src = dataUrl;
     },
-    [viewAreaW, viewAreaH],
+    [viewAreaW, viewAreaH, updatePlacement],
   );
 
   const handleLogoUpload = useCallback(
@@ -368,7 +374,7 @@ const MockupEditor = () => {
       };
       reader.readAsDataURL(file);
     },
-    [viewAreaW, viewAreaH],
+    [viewAreaW, viewAreaH, updatePlacement],
   );
 
   const handleDrop = useCallback(
@@ -664,6 +670,7 @@ const MockupEditor = () => {
     shadowEnabled,
     shadowIntensity,
     approvedViews,
+    watermarkConfig,
     draftId,
     productName,
     productSku,

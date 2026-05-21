@@ -61,9 +61,10 @@ const MockupNew = () => {
   });
 
   // Restore draft
+  const { restoreDraft } = editor;
   useEffect(() => {
-    editor.restoreDraft(setStep);
-  }, [editor.restoreDraft]);
+    restoreDraft(setStep);
+  }, [restoreDraft]);
 
   return (
     <div className="h-screen flex flex-col">

@@ -195,7 +195,7 @@ export async function renderMultiViewCanvas(options: ExportOptions): Promise<HTM
 
     let wx = canvas.width / 2;
     let wy = canvas.height / 2;
-    let angle = -Math.PI / 4;
+    const angle = -Math.PI / 4;
 
     if (position === "top-left") {
       wx = canvas.width * 0.2;

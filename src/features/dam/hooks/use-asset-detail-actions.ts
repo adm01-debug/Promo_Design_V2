@@ -5,10 +5,9 @@ import { getAssetSignedUrl, type Asset } from "../hooks/use-assets";
 export function useAssetDetailActions(
   asset: Asset | null,
   {
-    onClose,
     toggleFavorite,
   }: {
-    onClose: () => void;
+    onClose?: () => void;
     toggleFavorite: (id: string) => boolean;
   },
 ) {

@@ -149,6 +149,8 @@ const ServiceOrder = () => {
 
       window.history.replaceState({}, document.title);
     }
+    // Runs only on prefill navigation; `form` is read as the initial snapshot and must not retrigger this effect (would loop with setForm)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, editId]);
 
   const [form, setForm] = useState<ServiceOrderData>(() => {
