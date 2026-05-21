@@ -25,7 +25,7 @@ const STATUS_CHART_COLORS: Record<OsStatus, string> = {
 };
 
 const ServiceOrderDashboard = () => {
-  const { orders } = useServiceOrders();
+  const { orders } = useServiceOrders({ fetchAll: true });
   const navigate = useNavigate();
 
   const metrics = useMemo(() => {

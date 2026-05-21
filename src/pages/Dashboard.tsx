@@ -30,7 +30,7 @@ const Dashboard = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const [isEditing, setIsEditing] = useState(false);
-  const { orders, isLoading: ordersLoading } = useServiceOrders();
+  const { orders, isLoading: ordersLoading } = useServiceOrders({ fetchAll: true });
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
   const { widgetOrder, updateOrder, resetOrder, isDefault } = useWidgetLayout();
