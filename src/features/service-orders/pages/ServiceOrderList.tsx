@@ -3,9 +3,22 @@ import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileText, Plus, Search, Trash2, Eye, MoreHorizontal,
-  Package, Calendar, ArrowUpDown, CheckCircle2,
-  ChevronLeft, ChevronRight, Download, Loader2, X, Copy
+  FileText,
+  Plus,
+  Search,
+  Trash2,
+  Eye,
+  MoreHorizontal,
+  Package,
+  Calendar,
+  ArrowUpDown,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Loader2,
+  X,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,17 +28,30 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format as formatDate } from "date-fns";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  useServiceOrders, STATUS_CONFIG, getNextStatuses,
+  useServiceOrders,
+  STATUS_CONFIG,
+  getNextStatuses,
   type OsStatus,
-  generateBatchPdf, getLogoDataUrl,
+  generateBatchPdf,
+  getLogoDataUrl,
 } from "@/features/service-orders";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -104,7 +130,14 @@ const ServiceOrderList = () => {
     setSearchParams(next, { replace: true });
   }, [search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo, setSearchParams]);
 
-  const { orders: paginated, total, totalPages, updateStatus, deleteOrder, addOrder } = useServiceOrders({
+  const {
+    orders: paginated,
+    total,
+    totalPages,
+    updateStatus,
+    deleteOrder,
+    addOrder,
+  } = useServiceOrders({
     page,
     pageSize: PAGE_SIZE,
     search,
@@ -156,7 +189,7 @@ const ServiceOrderList = () => {
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       if (search) {
         query = query.or(
-          `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
+          `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`,
         );
       }
       query = query.order("created_at", { ascending: !sortDesc }).limit(1000);
@@ -212,11 +245,8 @@ const ServiceOrderList = () => {
         updatedAt: row.updated_at,
       }));
       const logo = await getLogoDataUrl().catch(() => undefined);
-      const doc = await generateBatchPdf(
-        orders,
-        { status: statusFilter, search },
-        logo,
-        (p) => setPdfProgress(p),
+      const doc = await generateBatchPdf(orders, { status: statusFilter, search }, logo, (p) =>
+        setPdfProgress(p),
       );
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       doc.save(`ordens-servico-${today}.pdf`);
@@ -230,15 +260,35 @@ const ServiceOrderList = () => {
   };
 
   // Reset page when filters change
-  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
-  const handleFilterChange = (v: OsStatus | "all") => { setStatusFilter(v); setPage(1); };
-  const handleProductChange = (v: string) => { setProductQuery(v); setPage(1); };
-  const handleDateFromChange = (d: Date | undefined) => { setDateFrom(d); setPage(1); };
-  const handleDateToChange = (d: Date | undefined) => { setDateTo(d); setPage(1); };
+  const handleSearch = (v: string) => {
+    setSearch(v);
+    setPage(1);
+  };
+  const handleFilterChange = (v: OsStatus | "all") => {
+    setStatusFilter(v);
+    setPage(1);
+  };
+  const handleProductChange = (v: string) => {
+    setProductQuery(v);
+    setPage(1);
+  };
+  const handleDateFromChange = (d: Date | undefined) => {
+    setDateFrom(d);
+    setPage(1);
+  };
+  const handleDateToChange = (d: Date | undefined) => {
+    setDateTo(d);
+    setPage(1);
+  };
   /** True whenever any filter (basic or advanced) is active. */
   const hasActiveFilters = !!(
-    search || statusFilter !== "all" || !sortDesc || page > 1 ||
-    productQuery || dateFrom || dateTo
+    search ||
+    statusFilter !== "all" ||
+    !sortDesc ||
+    page > 1 ||
+    productQuery ||
+    dateFrom ||
+    dateTo
   );
   /** Single "Clear filters" entry point — wipes URL params and resets state. */
   const clearAllFilters = () => {
@@ -259,11 +309,23 @@ const ServiceOrderList = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-lg font-display font-bold text-foreground">Ordens de Serviço</h1>
-            <p className="text-xs text-muted-foreground">{total} de {allTotal} ordem(ns)</p>
+            <p className="text-xs text-muted-foreground">
+              {total} de {allTotal} ordem(ns)
+            </p>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="gap-2" onClick={handleExportPdf} disabled={exporting || total === 0}>
-              {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={handleExportPdf}
+              disabled={exporting || total === 0}
+            >
+              {exporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
               Exportar PDF
             </Button>
             <Button size="sm" className="gap-2" onClick={() => navigate("/mockup/service-order")}>
@@ -303,7 +365,9 @@ const ServiceOrderList = () => {
         {/* Advanced filters: product + creation date range — all URL-synced */}
         <div className="flex flex-wrap items-end gap-2 mt-3">
           <div className="flex flex-col">
-            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Produto</label>
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">
+              Produto
+            </label>
             <div className="relative">
               <Package className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
@@ -315,30 +379,60 @@ const ServiceOrderList = () => {
             </div>
           </div>
           <div className="flex flex-col">
-            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Criada de</label>
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">
+              Criada de
+            </label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("h-8 w-[160px] justify-start text-left text-xs font-normal", !dateFrom && "text-muted-foreground")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 w-[160px] justify-start text-left text-xs font-normal",
+                    !dateFrom && "text-muted-foreground",
+                  )}
+                >
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
                   {dateFrom ? formatDate(dateFrom, "dd/MM/yyyy") : "Selecionar"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent mode="single" selected={dateFrom} onSelect={handleDateFromChange} initialFocus className="p-3 pointer-events-auto" />
+                <CalendarComponent
+                  mode="single"
+                  selected={dateFrom}
+                  onSelect={handleDateFromChange}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
               </PopoverContent>
             </Popover>
           </div>
           <div className="flex flex-col">
-            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Criada até</label>
+            <label className="text-[10px] font-mono text-muted-foreground uppercase mb-1">
+              Criada até
+            </label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("h-8 w-[160px] justify-start text-left text-xs font-normal", !dateTo && "text-muted-foreground")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-8 w-[160px] justify-start text-left text-xs font-normal",
+                    !dateTo && "text-muted-foreground",
+                  )}
+                >
                   <Calendar className="w-3.5 h-3.5 mr-1.5" />
                   {dateTo ? formatDate(dateTo, "dd/MM/yyyy") : "Selecionar"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent mode="single" selected={dateTo} onSelect={handleDateToChange} initialFocus className="p-3 pointer-events-auto" />
+                <CalendarComponent
+                  mode="single"
+                  selected={dateTo}
+                  onSelect={handleDateToChange}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
               </PopoverContent>
             </Popover>
           </div>
@@ -371,7 +465,11 @@ const ServiceOrderList = () => {
                 : "Nenhum resultado para os filtros aplicados"}
             </p>
             {allTotal === 0 && (
-              <Button variant="outline" className="mt-4 gap-2" onClick={() => navigate("/mockup/new")}>
+              <Button
+                variant="outline"
+                className="mt-4 gap-2"
+                onClick={() => navigate("/mockup/new")}
+              >
                 <Plus className="w-4 h-4" /> Criar do Mockup Studio
               </Button>
             )}
@@ -396,8 +494,13 @@ const ServiceOrderList = () => {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-1">
-                            <span className="font-mono text-sm font-semibold text-foreground">{order.osNumber}</span>
-                            <Badge variant="outline" className={`${cfg.bg} ${cfg.color} border-0 text-[10px]`}>
+                            <span className="font-mono text-sm font-semibold text-foreground">
+                              {order.osNumber}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={`${cfg.bg} ${cfg.color} border-0 text-[10px]`}
+                            >
                               {cfg.label}
                             </Badge>
                           </div>
@@ -422,9 +525,7 @@ const ServiceOrderList = () => {
                               <Calendar className="w-3 h-3" />
                               Criada: {new Date(order.createdAt).toLocaleDateString("pt-BR")}
                             </span>
-                            {order.deliveryDate && (
-                              <span>Entrega: {order.deliveryDate}</span>
-                            )}
+                            {order.deliveryDate && <span>Entrega: {order.deliveryDate}</span>}
                             {order.quantity && <span>Qtd: {order.quantity}</span>}
                           </div>
                         </div>
@@ -446,7 +547,9 @@ const ServiceOrderList = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                              <DropdownMenuItem onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}>
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/mockup/service-order?edit=${order.id}`)}
+                              >
                                 <Eye className="w-3.5 h-3.5 mr-2" /> Visualizar / Editar
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleDuplicate(order)}>
@@ -456,27 +559,40 @@ const ServiceOrderList = () => {
                               {nextStatuses.length > 0 ? (
                                 <>
                                   {nextStatuses.map((s) => (
-                                    <DropdownMenuItem key={s} onClick={() => handleChangeStatus(order.id, s)}>
-                                      <CheckCircle2 className={`w-3.5 h-3.5 mr-2 ${STATUS_CONFIG[s].color}`} />
+                                    <DropdownMenuItem
+                                      key={s}
+                                      onClick={() => handleChangeStatus(order.id, s)}
+                                    >
+                                      <CheckCircle2
+                                        className={`w-3.5 h-3.5 mr-2 ${STATUS_CONFIG[s].color}`}
+                                      />
                                       {STATUS_CONFIG[s].label}
                                     </DropdownMenuItem>
                                   ))}
                                   <DropdownMenuSeparator />
                                 </>
                               ) : (
-                                <DropdownMenuItem disabled className="text-muted-foreground text-xs">
+                                <DropdownMenuItem
+                                  disabled
+                                  className="text-muted-foreground text-xs"
+                                >
                                   Sem transições disponíveis
                                 </DropdownMenuItem>
                               )}
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="text-destructive"
+                                  >
                                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                                   </DropdownMenuItem>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir OS {order.osNumber}?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Excluir OS {order.osNumber}?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
                                       Esta ação não pode ser desfeita.
                                     </AlertDialogDescription>

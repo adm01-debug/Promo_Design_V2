@@ -44,11 +44,7 @@ export function ActiveFiltersBar({
   onClearAll,
 }: ActiveFiltersBarProps) {
   const hasAny =
-    !!search ||
-    assetTypes.length > 0 ||
-    clientId !== "all" ||
-    tags.length > 0 ||
-    includeArchived;
+    !!search || assetTypes.length > 0 || clientId !== "all" || tags.length > 0 || includeArchived;
 
   if (!hasAny) return null;
 
@@ -57,7 +53,11 @@ export function ActiveFiltersBar({
       <span className="text-xs text-muted-foreground">Filtros ativos:</span>
 
       {search && (
-        <Chip label={`Busca: ${search}`} onRemove={onClearSearch} ariaLabel={`Remover filtro de busca ${search}`} />
+        <Chip
+          label={`Busca: ${search}`}
+          onRemove={onClearSearch}
+          ariaLabel={`Remover filtro de busca ${search}`}
+        />
       )}
 
       {assetTypes.map((t) => (
@@ -71,7 +71,7 @@ export function ActiveFiltersBar({
 
       {clientId !== "all" && (
         <Chip
-          label={`Cliente: ${clientId === "none" ? "Sem cliente" : clientLabel ?? "—"}`}
+          label={`Cliente: ${clientId === "none" ? "Sem cliente" : (clientLabel ?? "—")}`}
           onRemove={onClearClient}
           ariaLabel="Remover filtro de cliente"
         />
@@ -86,7 +86,11 @@ export function ActiveFiltersBar({
       )}
 
       {includeArchived && (
-        <Chip label="Arquivados incluídos" onRemove={onClearArchived} ariaLabel="Ocultar arquivados" />
+        <Chip
+          label="Arquivados incluídos"
+          onRemove={onClearArchived}
+          ariaLabel="Ocultar arquivados"
+        />
       )}
 
       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClearAll}>

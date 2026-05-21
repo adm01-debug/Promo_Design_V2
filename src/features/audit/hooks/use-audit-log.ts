@@ -22,9 +22,9 @@ export interface AuditFilters {
   tableName?: string;
   userId?: string;
   recordIdQuery?: string;
-  valueKey?: string;       // chave dentro de old_values/new_values (ex: "status")
-  valueQuery?: string;     // texto a procurar
-  ipQuery?: string;        // substring do ip_address
+  valueKey?: string; // chave dentro de old_values/new_values (ex: "status")
+  valueQuery?: string; // texto a procurar
+  ipQuery?: string; // substring do ip_address
   userAgentQuery?: string; // substring do user_agent
   page: number;
   pageSize: number;
@@ -62,9 +62,7 @@ function applyFilters(query: any, f: AuditFilters) {
       );
     } else {
       // só chave: traz registros onde a chave existe em algum dos lados (não-nulo)
-      query = query.or(
-        `old_values->>${key}.not.is.null,new_values->>${key}.not.is.null`,
-      );
+      query = query.or(`old_values->>${key}.not.is.null,new_values->>${key}.not.is.null`);
     }
   }
   return query;

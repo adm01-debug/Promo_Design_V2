@@ -27,7 +27,7 @@ function GridCustomIcon({ cols, rows = 2 }: { cols: number; rows?: number }) {
           height={cellH}
           rx={0.6}
           fill="currentColor"
-        />
+        />,
       );
     }
   }
@@ -74,7 +74,9 @@ interface ColumnSelectorProps {
 
 export function ColumnSelector({ value, onChange, className }: ColumnSelectorProps) {
   const isMobile = useIsMobile();
-  const [screenWidth, setScreenWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+  const [screenWidth, setScreenWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
 
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
@@ -94,7 +96,12 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
   if (isMobile || available.length <= 1) return null;
 
   return (
-    <div className={cn("flex items-center gap-0 p-0.5 rounded-lg bg-muted/60 border border-border/30", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-0 p-0.5 rounded-lg bg-muted/60 border border-border/30",
+        className,
+      )}
+    >
       <AnimatePresence mode="popLayout">
         {available.map((opt) => (
           <Tooltip key={opt.value}>
@@ -106,11 +113,13 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
                   "h-9 w-9 min-w-0 p-0 relative transition-all duration-200",
                   value === opt.value
                     ? "text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => {
                   onChange(opt.value);
-                  try { localStorage.setItem(STORAGE_KEY, String(opt.value)); } catch {}
+                  try {
+                    localStorage.setItem(STORAGE_KEY, String(opt.value));
+                  } catch {}
                 }}
               >
                 {value === opt.value && (

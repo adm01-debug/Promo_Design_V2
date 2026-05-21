@@ -39,9 +39,7 @@ class RouteErrorBoundary extends Component<Props, State> {
           <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-lg font-display font-bold text-foreground">
-            Algo deu errado
-          </h2>
+          <h2 className="text-lg font-display font-bold text-foreground">Algo deu errado</h2>
           <p className="text-sm text-muted-foreground max-w-md text-center">
             {this.state.error?.message || "Erro inesperado ao renderizar esta página."}
           </p>

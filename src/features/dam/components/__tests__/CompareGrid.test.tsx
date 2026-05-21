@@ -4,9 +4,8 @@ import { CompareGrid } from "../CompareGrid";
 import type { Asset } from "../../hooks/use-assets";
 
 vi.mock("../../hooks/use-assets", async () => {
-  const actual = await vi.importActual<typeof import("../../hooks/use-assets")>(
-    "../../hooks/use-assets",
-  );
+  const actual =
+    await vi.importActual<typeof import("../../hooks/use-assets")>("../../hooks/use-assets");
   return {
     ...actual,
     getAssetSignedUrl: vi.fn(() => Promise.resolve("https://signed/url.png")),
@@ -40,7 +39,9 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
 
   it("começa em fit (translate(0,0) scale(1))", async () => {
     render(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
   });
 
@@ -48,7 +49,9 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
     const { rerender } = render(
       <CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />,
     );
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     // Zoom in via wheel (negative deltaY = zoom in)
     const stage = document.querySelectorAll('[role="application"]')[0] as HTMLElement;
@@ -58,12 +61,11 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
 
     // 2 → 3 assets
     rerender(
-      <CompareGrid
-        assets={[makeAsset("a"), makeAsset("b"), makeAsset("c")]}
-        onRemove={() => {}}
-      />,
+      <CompareGrid assets={[makeAsset("a"), makeAsset("b"), makeAsset("c")]} onRemove={() => {}} />,
     );
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     // Combinação NOVA (a,b,c) → não há save → reset.
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
 
@@ -80,19 +82,25 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
         onRemove={() => {}}
       />,
     );
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     // Combinação NOVA (a,b,c,d) → reset.
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
 
     // 4 → 2 assets (a,b): combinação JÁ vista → restaura o zoom salvo anteriormente.
     rerender(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(imgTransform()).toBe(zoomedTransform);
   });
 
   it("Reset, Ajustar e 100% sempre produzem um transform válido", async () => {
     render(<CompareGrid assets={[makeAsset("a"), makeAsset("b")]} onRemove={() => {}} />);
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     // Mexe no transform
     const stage = document.querySelectorAll('[role="application"]')[0] as HTMLElement;
@@ -128,7 +136,9 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
     const { unmount } = render(
       <CompareGrid assets={[makeAsset("x"), makeAsset("y")]} onRemove={() => {}} />,
     );
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     const stage = document.querySelectorAll('[role="application"]')[0] as HTMLElement;
     fireEvent.wheel(stage, { deltaY: -600 });
     const saved = imgTransform();
@@ -137,13 +147,17 @@ describe("CompareGrid — transform válido em mudanças 2↔3↔4 e ações de 
 
     // Segunda montagem com a mesma combinação — primeira pintura já carrega o transform salvo.
     render(<CompareGrid assets={[makeAsset("x"), makeAsset("y")]} onRemove={() => {}} />);
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(imgTransform()).toBe(saved);
 
     // Combinação diferente NÃO recebe o transform salvo (entrada própria, vazia → INITIAL).
     document.body.innerHTML = "";
     render(<CompareGrid assets={[makeAsset("x"), makeAsset("z")]} onRemove={() => {}} />);
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     expect(imgTransform()).toBe("translate(0px, 0px) scale(1)");
   });
 });

@@ -6,11 +6,11 @@ export function useAssetDetailActions(
   asset: Asset | null,
   {
     onClose,
-    toggleFavorite
+    toggleFavorite,
   }: {
     onClose: () => void;
     toggleFavorite: (id: string) => boolean;
-  }
+  },
 ) {
   const [url, setUrl] = useState<string | null>(null);
 
@@ -54,6 +54,6 @@ export function useAssetDetailActions(
 
   return {
     url,
-    handleCopyUrl
+    handleCopyUrl,
   };
 }

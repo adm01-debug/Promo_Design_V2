@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCheck, Trash2, ClipboardList, ArrowRight, ShieldAlert, Loader2 } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  Trash2,
+  ClipboardList,
+  ArrowRight,
+  ShieldAlert,
+  Loader2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications, type Notification } from "@/hooks/use-notifications";
 import { STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 function formatTime(dateStr: string): string {
@@ -34,7 +38,9 @@ function getEventLabel(n: Notification): string {
   if (n.eventType === "os_created") {
     return `Nova OS criada`;
   }
-  const oldLabel = n.oldStatus ? (STATUS_CONFIG[n.oldStatus as OsStatus]?.label ?? n.oldStatus) : "–";
+  const oldLabel = n.oldStatus
+    ? (STATUS_CONFIG[n.oldStatus as OsStatus]?.label ?? n.oldStatus)
+    : "–";
   const newLabel = STATUS_CONFIG[n.newStatus as OsStatus]?.label ?? n.newStatus;
   return `${oldLabel} → ${newLabel}`;
 }
@@ -75,7 +81,7 @@ const NotificationItem = ({
         ? "opacity-60 hover:opacity-80"
         : notification.eventType === "audit_alert"
           ? "bg-warning/5 hover:bg-warning/10"
-          : "bg-primary/5 hover:bg-primary/10"
+          : "bg-primary/5 hover:bg-primary/10",
     )}
     onClick={() => {
       if (!notification.read) onMarkRead(notification.id);
@@ -95,14 +101,20 @@ const NotificationItem = ({
           <>
             <span className="text-warning">Alerta</span>
             {notification.productName && (
-              <span className="text-muted-foreground font-normal"> — {notification.productName}</span>
+              <span className="text-muted-foreground font-normal">
+                {" "}
+                — {notification.productName}
+              </span>
             )}
           </>
         ) : (
           <>
             OS {notification.osNumber}
             {notification.productName && (
-              <span className="text-muted-foreground font-normal"> — {notification.productName}</span>
+              <span className="text-muted-foreground font-normal">
+                {" "}
+                — {notification.productName}
+              </span>
             )}
           </>
         )}
@@ -113,7 +125,9 @@ const NotificationItem = ({
       </p>
     </div>
     <div className="flex flex-col items-end gap-1 shrink-0">
-      <span className="text-[10px] text-muted-foreground">{formatTime(notification.createdAt)}</span>
+      <span className="text-[10px] text-muted-foreground">
+        {formatTime(notification.createdAt)}
+      </span>
       {!notification.read && (
         <span
           className={cn(
@@ -192,7 +206,11 @@ const NotificationPanel = () => {
             if (!params.get("action") && Array.isArray(rule.actions) && rule.actions.length > 0) {
               params.set("action", rule.actions.join(","));
             }
-            if (!params.get("table") && Array.isArray(rule.table_names) && rule.table_names.length === 1) {
+            if (
+              !params.get("table") &&
+              Array.isArray(rule.table_names) &&
+              rule.table_names.length === 1
+            ) {
               params.set("table", rule.table_names[0]);
             }
           }
@@ -237,7 +255,9 @@ const NotificationPanel = () => {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold text-foreground" id="notif-heading">Notificações</h3>
+          <h3 className="text-sm font-semibold text-foreground" id="notif-heading">
+            Notificações
+          </h3>
           <div className="flex items-center gap-1">
             {unreadCount > 0 && (
               <button
@@ -268,7 +288,10 @@ const NotificationPanel = () => {
           data-notif-scroll="true"
         >
           {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground" role="status">
+            <div
+              className="flex flex-col items-center justify-center py-10 text-muted-foreground"
+              role="status"
+            >
               <Bell className="w-8 h-8 mb-2 opacity-30" aria-hidden="true" />
               <p className="text-xs">Nenhuma notificação</p>
             </div>

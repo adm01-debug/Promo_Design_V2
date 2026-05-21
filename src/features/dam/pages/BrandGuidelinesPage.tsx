@@ -95,9 +95,7 @@ export default function BrandGuidelinesPage() {
 
   const handleSave = async () => {
     const normalizeList = (l: ColorEntry[]) =>
-      l
-        .map((c) => ({ ...c, hex: normalizeHex(c.hex) }))
-        .filter((c) => isValidHex(c.hex));
+      l.map((c) => ({ ...c, hex: normalizeHex(c.hex) })).filter((c) => isValidHex(c.hex));
     const cleanPrimary = normalizeList(primary);
     const cleanSecondary = normalizeList(secondary);
     const dropped =
@@ -111,16 +109,28 @@ export default function BrandGuidelinesPage() {
       primary_colors: cleanPrimary,
       secondary_colors: cleanSecondary,
       fonts,
-      do_rules: doRules.split("\n").map((s) => s.trim()).filter(Boolean),
-      dont_rules: dontRules.split("\n").map((s) => s.trim()).filter(Boolean),
+      do_rules: doRules
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      dont_rules: dontRules
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
       logo_asset_id: logoId,
       notes: notes || null,
     });
     toast.success("Brand guidelines salvas");
   };
 
-  const doList = doRules.split("\n").map((s) => s.trim()).filter(Boolean);
-  const dontList = dontRules.split("\n").map((s) => s.trim()).filter(Boolean);
+  const doList = doRules
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const dontList = dontRules
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   const removeDo = (idx: number) => {
     setDoRules(doList.filter((_, i) => i !== idx).join("\n"));
@@ -141,36 +151,36 @@ export default function BrandGuidelinesPage() {
     setIsExporting(true);
     const tId = toast.loading("Gerando PDF...");
     try {
-    let logoDataUrl: string | null = null;
-    if (logoAsset) {
-      try {
-        const url = await getAssetSignedUrl(logoAsset.file_path);
-        if (url) {
-          const blob = await (await fetch(url)).blob();
-          logoDataUrl = await new Promise<string>((resolve) => {
-            const r = new FileReader();
-            r.onloadend = () => resolve(r.result as string);
-            r.readAsDataURL(blob);
-          });
+      let logoDataUrl: string | null = null;
+      if (logoAsset) {
+        try {
+          const url = await getAssetSignedUrl(logoAsset.file_path);
+          if (url) {
+            const blob = await (await fetch(url)).blob();
+            logoDataUrl = await new Promise<string>((resolve) => {
+              const r = new FileReader();
+              r.onloadend = () => resolve(r.result as string);
+              r.readAsDataURL(blob);
+            });
+          }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
-    }
-    const pdf = generateBrandKitPdf({
-      clientName: client?.name ?? "Cliente",
-      primary,
-      secondary,
-      fonts,
-      doRules: doList,
-      dontRules: dontList,
-      notes,
-      logoDataUrl,
-    });
-    const safe = (client?.name ?? "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const date = new Date().toISOString().slice(0, 10);
-    pdf.save(`brand-kit-${safe}-${date}.pdf`);
-    toast.success("Brand kit exportado", { id: tId });
+      const pdf = generateBrandKitPdf({
+        clientName: client?.name ?? "Cliente",
+        primary,
+        secondary,
+        fonts,
+        doRules: doList,
+        dontRules: dontList,
+        notes,
+        logoDataUrl,
+      });
+      const safe = (client?.name ?? "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const date = new Date().toISOString().slice(0, 10);
+      pdf.save(`brand-kit-${safe}-${date}.pdf`);
+      toast.success("Brand kit exportado", { id: tId });
     } catch (err) {
       console.error(err);
       toast.error("Falha ao gerar PDF", { id: tId });
@@ -211,100 +221,126 @@ export default function BrandGuidelinesPage() {
       }
     };
     return (
-    <TooltipProvider delayDuration={150}>
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold">{title}</h3>
-        {editable && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setList([...list, { name: "", hex: "#000000" }])}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-      <div className="space-y-2">
-        {list.map((c, i) => {
-          const valid = isValidHex(c.hex);
-          const safeHex = valid ? c.hex : "#000000";
-          const w = wcagBoth(safeHex);
-          const variant = w.vsWhite === "FAIL" ? "destructive" : w.vsWhite === "AAA" ? "default" : "secondary";
-          return (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="color"
-                value={safeHex}
-                disabled={!editable}
-                onChange={(e) => {
-                  const next = [...list]; next[i] = { ...c, hex: e.target.value.toUpperCase() }; setList(next);
-                }}
-                className="w-10 h-10 rounded border border-border cursor-pointer"
-              />
-              <Input
-                value={c.name}
-                disabled={!editable}
-                placeholder="Nome (ex: Marca primária)"
-                onChange={(e) => { const next = [...list]; next[i] = { ...c, name: e.target.value }; setList(next); }}
-              />
-              <Input
-                value={c.hex}
-                disabled={!editable}
-                aria-invalid={!valid}
-                className={cn("w-28 font-mono uppercase", !valid && "border-destructive focus-visible:ring-destructive")}
-                placeholder="#RRGGBB"
-                maxLength={7}
-                onChange={(e) => updateHex(i, e.target.value)}
-                onBlur={() => commitHex(i)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commitHex(i); } }}
-              />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant={variant} className="font-mono text-[9px] px-1.5 py-0 cursor-help shrink-0">
-                    {valid ? w.vsWhite : "—"}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {valid
-                    ? `Contraste vs branco ${w.ratioWhite.toFixed(2)}:1 · vs preto ${w.ratioBlack.toFixed(2)}:1`
-                    : "HEX inválido — corrija para ver o contraste"}
-                </TooltipContent>
-              </Tooltip>
+      <TooltipProvider delayDuration={150}>
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">{title}</h3>
+            {editable && (
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
-                type="button"
-                onClick={() => copyHex(c.hex)}
-                title={`Copiar ${c.hex.toUpperCase()}`}
-                aria-label={`Copiar HEX ${c.hex.toUpperCase()}${c.name ? ` (${c.name})` : ""}`}
+                onClick={() => setList([...list, { name: "", hex: "#000000" }])}
               >
-                <Copy className="w-4 h-4" />
+                <Plus className="w-4 h-4" />
               </Button>
-              {editable && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  type="button"
-                  onClick={() => setList(list.filter((_, idx) => idx !== i))}
-                  aria-label={`Remover cor ${c.name || c.hex.toUpperCase()}`}
-                  title="Remover cor"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          );
-        })}
-        {list.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma cor adicionada.</div>}
-      </div>
-    </Card>
-    </TooltipProvider>
+            )}
+          </div>
+          <div className="space-y-2">
+            {list.map((c, i) => {
+              const valid = isValidHex(c.hex);
+              const safeHex = valid ? c.hex : "#000000";
+              const w = wcagBoth(safeHex);
+              const variant =
+                w.vsWhite === "FAIL"
+                  ? "destructive"
+                  : w.vsWhite === "AAA"
+                    ? "default"
+                    : "secondary";
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={safeHex}
+                    disabled={!editable}
+                    onChange={(e) => {
+                      const next = [...list];
+                      next[i] = { ...c, hex: e.target.value.toUpperCase() };
+                      setList(next);
+                    }}
+                    className="w-10 h-10 rounded border border-border cursor-pointer"
+                  />
+                  <Input
+                    value={c.name}
+                    disabled={!editable}
+                    placeholder="Nome (ex: Marca primária)"
+                    onChange={(e) => {
+                      const next = [...list];
+                      next[i] = { ...c, name: e.target.value };
+                      setList(next);
+                    }}
+                  />
+                  <Input
+                    value={c.hex}
+                    disabled={!editable}
+                    aria-invalid={!valid}
+                    className={cn(
+                      "w-28 font-mono uppercase",
+                      !valid && "border-destructive focus-visible:ring-destructive",
+                    )}
+                    placeholder="#RRGGBB"
+                    maxLength={7}
+                    onChange={(e) => updateHex(i, e.target.value)}
+                    onBlur={() => commitHex(i)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitHex(i);
+                      }
+                    }}
+                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant={variant}
+                        className="font-mono text-[9px] px-1.5 py-0 cursor-help shrink-0"
+                      >
+                        {valid ? w.vsWhite : "—"}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {valid
+                        ? `Contraste vs branco ${w.ratioWhite.toFixed(2)}:1 · vs preto ${w.ratioBlack.toFixed(2)}:1`
+                        : "HEX inválido — corrija para ver o contraste"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    type="button"
+                    onClick={() => copyHex(c.hex)}
+                    title={`Copiar ${c.hex.toUpperCase()}`}
+                    aria-label={`Copiar HEX ${c.hex.toUpperCase()}${c.name ? ` (${c.name})` : ""}`}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                  {editable && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      type="button"
+                      onClick={() => setList(list.filter((_, idx) => idx !== i))}
+                      aria-label={`Remover cor ${c.name || c.hex.toUpperCase()}`}
+                      title="Remover cor"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+            {list.length === 0 && (
+              <div className="text-xs text-muted-foreground">Nenhuma cor adicionada.</div>
+            )}
+          </div>
+        </Card>
+      </TooltipProvider>
     );
   };
 
   if (!currentOrgId || !clientId) {
-    return <div className="p-6 text-sm text-muted-foreground">Cliente/organização não definido.</div>;
+    return (
+      <div className="p-6 text-sm text-muted-foreground">Cliente/organização não definido.</div>
+    );
   }
 
   return (
@@ -312,7 +348,9 @@ export default function BrandGuidelinesPage() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink asChild><Link to="/clients">Clientes</Link></BreadcrumbLink>
+            <BreadcrumbLink asChild>
+              <Link to="/clients">Clientes</Link>
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -328,7 +366,9 @@ export default function BrandGuidelinesPage() {
       <div className="flex items-center justify-between">
         <div>
           <Button variant="ghost" size="sm" asChild className="mb-2">
-            <Link to="/clients"><ArrowLeft className="w-4 h-4 mr-1" /> Clientes</Link>
+            <Link to="/clients">
+              <ArrowLeft className="w-4 h-4 mr-1" /> Clientes
+            </Link>
           </Button>
           <h1 className="text-2xl font-bold">Brand Guidelines</h1>
           <p className="text-sm text-muted-foreground">
@@ -373,7 +413,9 @@ export default function BrandGuidelinesPage() {
             </div>
             {editable && (
               <>
-                <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>Trocar</Button>
+                <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+                  Trocar
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => setLogoId(null)}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -396,7 +438,11 @@ export default function BrandGuidelinesPage() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Fontes</h3>
           {editable && (
-            <Button size="sm" variant="ghost" onClick={() => setFonts([...fonts, { name: "", usage: "", source: "" }])}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setFonts([...fonts, { name: "", usage: "", source: "" }])}
+            >
               <Plus className="w-4 h-4" />
             </Button>
           )}
@@ -405,15 +451,46 @@ export default function BrandGuidelinesPage() {
           {fonts.map((f, i) => (
             <div key={i} className="space-y-1.5">
               <div className="grid grid-cols-12 gap-2 items-center">
-                <Input className="col-span-4" placeholder="Nome (ex: Playfair Display)" value={f.name} disabled={!editable}
-                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, name: e.target.value }; setFonts(next); }} />
-                <Input className="col-span-3" placeholder="Uso (ex: Títulos)" value={f.usage ?? ""} disabled={!editable}
-                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, usage: e.target.value }; setFonts(next); }} />
-                <Input className="col-span-4" placeholder="Fonte/link" value={f.source ?? ""} disabled={!editable}
-                  onChange={(e) => { const next = [...fonts]; next[i] = { ...f, source: e.target.value }; setFonts(next); }} />
+                <Input
+                  className="col-span-4"
+                  placeholder="Nome (ex: Playfair Display)"
+                  value={f.name}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    const next = [...fonts];
+                    next[i] = { ...f, name: e.target.value };
+                    setFonts(next);
+                  }}
+                />
+                <Input
+                  className="col-span-3"
+                  placeholder="Uso (ex: Títulos)"
+                  value={f.usage ?? ""}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    const next = [...fonts];
+                    next[i] = { ...f, usage: e.target.value };
+                    setFonts(next);
+                  }}
+                />
+                <Input
+                  className="col-span-4"
+                  placeholder="Fonte/link"
+                  value={f.source ?? ""}
+                  disabled={!editable}
+                  onChange={(e) => {
+                    const next = [...fonts];
+                    next[i] = { ...f, source: e.target.value };
+                    setFonts(next);
+                  }}
+                />
                 {editable && (
-                  <Button className="col-span-1" size="icon" variant="ghost"
-                    onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}>
+                  <Button
+                    className="col-span-1"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 )}
@@ -421,7 +498,9 @@ export default function BrandGuidelinesPage() {
               <FontLivePreview name={f.name} />
             </div>
           ))}
-          {fonts.length === 0 && <div className="text-xs text-muted-foreground">Nenhuma fonte adicionada.</div>}
+          {fonts.length === 0 && (
+            <div className="text-xs text-muted-foreground">Nenhuma fonte adicionada.</div>
+          )}
         </div>
       </Card>
 
@@ -441,7 +520,11 @@ export default function BrandGuidelinesPage() {
           {editable && (
             <Collapsible>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs h-7 px-2 -ml-2 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2 -ml-2 text-muted-foreground"
+                >
                   <ChevronDown className="w-3 h-3 mr-1" />
                   Editar em massa (texto)
                 </Button>
@@ -453,7 +536,9 @@ export default function BrandGuidelinesPage() {
                   rows={6}
                   placeholder="Use sempre o logo em fundo branco..."
                 />
-                <p className="text-[11px] text-muted-foreground">Uma regra por linha. As mudanças são aplicadas automaticamente.</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Uma regra por linha. As mudanças são aplicadas automaticamente.
+                </p>
               </CollapsibleContent>
             </Collapsible>
           )}
@@ -473,7 +558,11 @@ export default function BrandGuidelinesPage() {
           {editable && (
             <Collapsible>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs h-7 px-2 -ml-2 text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 px-2 -ml-2 text-muted-foreground"
+                >
                   <ChevronDown className="w-3 h-3 mr-1" />
                   Editar em massa (texto)
                 </Button>
@@ -485,7 +574,9 @@ export default function BrandGuidelinesPage() {
                   rows={6}
                   placeholder="Não distorça o logo..."
                 />
-                <p className="text-[11px] text-muted-foreground">Uma regra por linha. As mudanças são aplicadas automaticamente.</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Uma regra por linha. As mudanças são aplicadas automaticamente.
+                </p>
               </CollapsibleContent>
             </Collapsible>
           )}

@@ -31,7 +31,9 @@ describe("formatRelativeDate — exhaustive", () => {
   });
 
   it("returns '59min atrás' at boundary", () => {
-    expect(formatRelativeDate(new Date(Date.now() - 59 * 60_000).toISOString())).toBe("59min atrás");
+    expect(formatRelativeDate(new Date(Date.now() - 59 * 60_000).toISOString())).toBe(
+      "59min atrás",
+    );
   });
 
   it("returns '1h atrás' for 60 minutes", () => {
@@ -39,7 +41,9 @@ describe("formatRelativeDate — exhaustive", () => {
   });
 
   it("returns '23h atrás' at boundary", () => {
-    expect(formatRelativeDate(new Date(Date.now() - 23 * 3600_000).toISOString())).toBe("23h atrás");
+    expect(formatRelativeDate(new Date(Date.now() - 23 * 3600_000).toISOString())).toBe(
+      "23h atrás",
+    );
   });
 
   it("returns '1d atrás' for 24 hours", () => {
@@ -161,14 +165,36 @@ import { validateForm, ServiceOrderData } from "@/features/service-orders";
 
 describe("validateForm — edge cases", () => {
   const base: ServiceOrderData = {
-    osNumber: "OS-2603-0001", date: "2026-03-23", deliveryDate: "",
-    clientName: "Test", clientCompany: "", clientPhone: "", clientEmail: "",
-    productName: "Product", productSku: "", productMaterial: "", productColors: "",
-    technique: "Laser Fiber", areaName: "", areaWidth: "", areaHeight: "",
-    areaShape: "", artColors: "", artDpi: "", artFile: "", artFileDataUrl: "",
-    quantity: "1", observations: "", mockupImageUrl: "",
-    identificacaoCaixa: "", materialEvento: false, aprovarPrimeiraPeca: false,
-    qtdCompra: "", qtdLiberada: "", fazParteKit: false, gravacaoDetalhe: "",
+    osNumber: "OS-2603-0001",
+    date: "2026-03-23",
+    deliveryDate: "",
+    clientName: "Test",
+    clientCompany: "",
+    clientPhone: "",
+    clientEmail: "",
+    productName: "Product",
+    productSku: "",
+    productMaterial: "",
+    productColors: "",
+    technique: "Laser Fiber",
+    areaName: "",
+    areaWidth: "",
+    areaHeight: "",
+    areaShape: "",
+    artColors: "",
+    artDpi: "",
+    artFile: "",
+    artFileDataUrl: "",
+    quantity: "1",
+    observations: "",
+    mockupImageUrl: "",
+    identificacaoCaixa: "",
+    materialEvento: false,
+    aprovarPrimeiraPeca: false,
+    qtdCompra: "",
+    qtdLiberada: "",
+    fazParteKit: false,
+    gravacaoDetalhe: "",
   };
 
   it("passes with minimal valid data", () => {
@@ -309,7 +335,10 @@ describe("Weekly activity computation", () => {
       weekStart.setHours(0, 0, 0, 0);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
-      const inRange = (d: string) => { const date = new Date(d); return date >= weekStart && date < weekEnd; };
+      const inRange = (d: string) => {
+        const date = new Date(d);
+        return date >= weekStart && date < weekEnd;
+      };
       const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
       weeks.push({
         label,
@@ -382,7 +411,7 @@ describe("Sidebar collapse state logic", () => {
   });
 
   it("computes correct margin class", () => {
-    const getMargin = (collapsed: boolean) => collapsed ? "ml-16" : "ml-[240px]";
+    const getMargin = (collapsed: boolean) => (collapsed ? "ml-16" : "ml-[240px]");
     expect(getMargin(false)).toBe("ml-[240px]");
     expect(getMargin(true)).toBe("ml-16");
   });
@@ -436,10 +465,18 @@ describe("Service order row mapping", () => {
 
   it("maps all required fields", () => {
     const row = {
-      id: "1", os_number: "OS-2603-0001", status: "aberta",
-      client_name: "Test", product_name: "Caneca", technique: "Laser",
-      quantity: 100, delivery_date: null, client_company: null,
-      material_evento: null, aprovar_primeira_peca: null, faz_parte_kit: null,
+      id: "1",
+      os_number: "OS-2603-0001",
+      status: "aberta",
+      client_name: "Test",
+      product_name: "Caneca",
+      technique: "Laser",
+      quantity: 100,
+      delivery_date: null,
+      client_company: null,
+      material_evento: null,
+      aprovar_primeira_peca: null,
+      faz_parte_kit: null,
     };
     const order = rowToOrder(row);
     expect(order.deliveryDate).toBe("");
@@ -448,12 +485,31 @@ describe("Service order row mapping", () => {
   });
 
   it("handles zero quantity", () => {
-    const order = rowToOrder({ id: "1", os_number: "X", status: "aberta", client_name: "T", product_name: "P", technique: "L", quantity: 0 });
+    const order = rowToOrder({
+      id: "1",
+      os_number: "X",
+      status: "aberta",
+      client_name: "T",
+      product_name: "P",
+      technique: "L",
+      quantity: 0,
+    });
     expect(order.quantity).toBe("0");
   });
 
   it("preserves boolean true values", () => {
-    const order = rowToOrder({ id: "1", os_number: "X", status: "aberta", client_name: "T", product_name: "P", technique: "L", quantity: 1, material_evento: true, aprovar_primeira_peca: true, faz_parte_kit: true });
+    const order = rowToOrder({
+      id: "1",
+      os_number: "X",
+      status: "aberta",
+      client_name: "T",
+      product_name: "P",
+      technique: "L",
+      quantity: 1,
+      material_evento: true,
+      aprovar_primeira_peca: true,
+      faz_parte_kit: true,
+    });
     expect(order.materialEvento).toBe(true);
     expect(order.aprovarPrimeiraPeca).toBe(true);
     expect(order.fazParteKit).toBe(true);

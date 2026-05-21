@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Printer, Loader2, X } from "lucide-react";
 
@@ -55,7 +61,9 @@ const PdfPreviewDialog = ({ open, onOpenChange, pdfBlob, fileName }: PdfPreviewD
       <DialogContent className="max-w-4xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between gap-2 pr-8">
-            <DialogTitle className="text-sm font-display truncate">Preview do PDF — {fileName}</DialogTitle>
+            <DialogTitle className="text-sm font-display truncate">
+              Preview do PDF — {fileName}
+            </DialogTitle>
             <div className="flex items-center gap-1">
               {ZOOM_LEVELS.map((level) => (
                 <Button
@@ -64,14 +72,20 @@ const PdfPreviewDialog = ({ open, onOpenChange, pdfBlob, fileName }: PdfPreviewD
                   size="sm"
                   variant={zoom === level ? "default" : "outline"}
                   className="h-7 px-2 text-xs"
-                  onClick={() => { setZoom(level); setIframeLoading(true); }}
+                  onClick={() => {
+                    setZoom(level);
+                    setIframeLoading(true);
+                  }}
                 >
                   {level}%
                 </Button>
               ))}
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">Pressione <kbd className="px-1 py-0.5 rounded bg-muted text-[10px] font-mono">ESC</kbd> para fechar</p>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Pressione <kbd className="px-1 py-0.5 rounded bg-muted text-[10px] font-mono">ESC</kbd>{" "}
+            para fechar
+          </p>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 bg-muted/30 relative">
@@ -99,7 +113,12 @@ const PdfPreviewDialog = ({ open, onOpenChange, pdfBlob, fileName }: PdfPreviewD
         </div>
 
         <DialogFooter className="px-6 py-3 border-t border-border shrink-0 flex-row gap-2 sm:gap-2">
-          <Button variant="ghost" size="sm" className="gap-2 mr-auto" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 mr-auto"
+            onClick={() => onOpenChange(false)}
+          >
             <X className="w-3.5 h-3.5" /> Fechar
           </Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>

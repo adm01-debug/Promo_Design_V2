@@ -29,18 +29,26 @@ const VideoGallery = lazyWithRetry(() => import("./features/video/pages/VideoGal
 const VideoCinema = lazyWithRetry(() => import("./features/video/pages/VideoCinema"));
 const CharacterStudio = lazyWithRetry(() => import("./features/video/pages/CharacterStudio"));
 const ServiceOrder = lazyWithRetry(() => import("./features/service-orders/pages/ServiceOrder"));
-const ServiceOrderList = lazyWithRetry(() => import("./features/service-orders/pages/ServiceOrderList"));
-const ServiceOrderDashboard = lazyWithRetry(() => import("./features/service-orders/pages/ServiceOrderDashboard"));
+const ServiceOrderList = lazyWithRetry(
+  () => import("./features/service-orders/pages/ServiceOrderList"),
+);
+const ServiceOrderDashboard = lazyWithRetry(
+  () => import("./features/service-orders/pages/ServiceOrderDashboard"),
+);
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
 const Templates = lazyWithRetry(() => import("./pages/Templates"));
 const Editor = lazyWithRetry(() => import("./pages/Editor"));
 const Auth = lazyWithRetry(() => import("./pages/Auth"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
-const OrganizationPage = lazyWithRetry(() => import("./features/organization/pages/OrganizationPage"));
+const OrganizationPage = lazyWithRetry(
+  () => import("./features/organization/pages/OrganizationPage"),
+);
 const ClientsPage = lazyWithRetry(() => import("./features/clients/pages/ClientsPage"));
 const AuditLogPage = lazyWithRetry(() => import("./features/audit/pages/AuditLogPage"));
-const AuditEventDetailPage = lazyWithRetry(() => import("./features/audit/pages/AuditEventDetailPage"));
+const AuditEventDetailPage = lazyWithRetry(
+  () => import("./features/audit/pages/AuditEventDetailPage"),
+);
 const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));

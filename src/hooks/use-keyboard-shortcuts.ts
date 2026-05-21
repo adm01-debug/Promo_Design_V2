@@ -14,10 +14,11 @@ export function useKeyboardShortcuts(shortcuts: Shortcut[]) {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger in inputs
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+        return;
 
       for (const s of shortcuts) {
-        const ctrlMatch = s.ctrl ? (e.ctrlKey || e.metaKey) : !(e.ctrlKey || e.metaKey);
+        const ctrlMatch = s.ctrl ? e.ctrlKey || e.metaKey : !(e.ctrlKey || e.metaKey);
         const shiftMatch = s.shift ? e.shiftKey : !e.shiftKey;
         if (e.key.toLowerCase() === s.key.toLowerCase() && ctrlMatch && shiftMatch) {
           e.preventDefault();

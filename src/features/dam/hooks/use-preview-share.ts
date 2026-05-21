@@ -6,7 +6,7 @@ export function usePreviewShare({
   activeAsset,
   searchParams,
   compareMode,
-  compare
+  compare,
 }: {
   activeAsset: Asset | null;
   searchParams: URLSearchParams;
@@ -33,15 +33,16 @@ export function usePreviewShare({
   const handleCopyShareLink = async () => {
     const url = buildShareableUrl();
     if (!url) return;
-    
+
     const showSuccess = () => {
       setCopied(true);
       if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
       copiedTimeoutRef.current = window.setTimeout(() => setCopied(false), 1500);
       toast.success("Link copiado", {
-        description: compareMode && compare.selectedIds.length >= 2
-          ? "Quem abrir verá a mesma comparação e filtros."
-          : "Quem abrir verá o mesmo asset e filtros.",
+        description:
+          compareMode && compare.selectedIds.length >= 2
+            ? "Quem abrir verá a mesma comparação e filtros."
+            : "Quem abrir verá o mesmo asset e filtros.",
         duration: 2500,
       });
     };
@@ -50,7 +51,9 @@ export function usePreviewShare({
       await navigator.clipboard.writeText(url);
       showSuccess();
       return;
-    } catch { /* fallback below */ }
+    } catch {
+      /* fallback below */
+    }
 
     try {
       const ta = document.createElement("textarea");
@@ -61,16 +64,22 @@ export function usePreviewShare({
       ta.select();
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
-      if (ok) { showSuccess(); return; }
+      if (ok) {
+        showSuccess();
+        return;
+      }
       throw new Error("execCommand failed");
     } catch {
       toast.error("Não foi possível copiar", { description: url, duration: 6000 });
     }
   };
 
-  useEffect(() => () => {
-    if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (copiedTimeoutRef.current) window.clearTimeout(copiedTimeoutRef.current);
+    },
+    [],
+  );
 
   return { copied, handleCopyShareLink };
 }

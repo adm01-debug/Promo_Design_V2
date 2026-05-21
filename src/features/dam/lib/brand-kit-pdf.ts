@@ -15,8 +15,18 @@ interface BrandKitData {
 
 function hexToRgb(hex: string): [number, number, number] {
   const m = hex.replace("#", "");
-  const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
-  return [parseInt(full.slice(0, 2), 16) || 0, parseInt(full.slice(2, 4), 16) || 0, parseInt(full.slice(4, 6), 16) || 0];
+  const full =
+    m.length === 3
+      ? m
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : m;
+  return [
+    parseInt(full.slice(0, 2), 16) || 0,
+    parseInt(full.slice(2, 4), 16) || 0,
+    parseInt(full.slice(4, 6), 16) || 0,
+  ];
 }
 
 function detectImageFormat(dataUrl: string): "PNG" | "JPEG" | "WEBP" {

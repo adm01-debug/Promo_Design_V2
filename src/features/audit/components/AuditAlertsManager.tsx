@@ -85,7 +85,8 @@ export function AuditAlertsManager({
               <Bell className="h-5 w-5" /> Alertas de auditoria
             </SheetTitle>
             <SheetDescription>
-              Crie regras para receber notificações quando eventos específicos acontecerem na sua organização.
+              Crie regras para receber notificações quando eventos específicos acontecerem na sua
+              organização.
             </SheetDescription>
           </SheetHeader>
 
@@ -96,7 +97,8 @@ export function AuditAlertsManager({
               data-testid="audit-alerts-new-rule"
             >
               <Plus className="h-4 w-4" />
-              Nova regra {prefill && Object.keys(prefill).length > 0 ? "(a partir dos filtros)" : ""}
+              Nova regra{" "}
+              {prefill && Object.keys(prefill).length > 0 ? "(a partir dos filtros)" : ""}
             </Button>
 
             {isLoading ? (

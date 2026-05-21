@@ -125,7 +125,8 @@ export function AssetMetadataDiffDialog({
             )}
             {changedFields.length > 0 && (
               <span className="text-xs text-muted-foreground font-normal">
-                {changedFields.length} {changedFields.length === 1 ? "campo alterado" : "campos alterados"}
+                {changedFields.length}{" "}
+                {changedFields.length === 1 ? "campo alterado" : "campos alterados"}
               </span>
             )}
           </DialogTitle>

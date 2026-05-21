@@ -245,7 +245,8 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              Baixar arquivo <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">D</kbd>
+              Baixar arquivo{" "}
+              <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">D</kbd>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -262,7 +263,8 @@ export function PreviewStage({ asset, index, total, onPrev, onNext, onOpenDetail
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
-              Abrir detalhes <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">Enter</kbd>
+              Abrir detalhes{" "}
+              <kbd className="ml-1 rounded bg-muted px-1 font-mono text-[10px]">Enter</kbd>
             </TooltipContent>
           </Tooltip>
         </div>

@@ -1,9 +1,23 @@
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
-export type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
+export type Placement = {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  flipH: boolean;
+  flipV: boolean;
+};
 
-const INITIAL_PLACEMENT: Placement = { x: 50, y: 50, scale: 0.6, rotation: 0, flipH: false, flipV: false };
+const INITIAL_PLACEMENT: Placement = {
+  x: 50,
+  y: 50,
+  scale: 0.6,
+  rotation: 0,
+  flipH: false,
+  flipV: false,
+};
 
 interface EditorState {
   placements: Record<string, Placement>;
@@ -14,19 +28,25 @@ interface EditorState {
 export function useMockupEditorState(views: { id: string }[]) {
   const initialPlacements = useMemo(() => {
     const p: Record<string, Placement> = {};
-    views.forEach(v => { p[v.id] = { ...INITIAL_PLACEMENT }; });
+    views.forEach((v) => {
+      p[v.id] = { ...INITIAL_PLACEMENT };
+    });
     return p;
   }, [views]);
 
   const initialHistory = useMemo(() => {
     const h: Record<string, Placement[]> = {};
-    views.forEach(v => { h[v.id] = [{ ...INITIAL_PLACEMENT }]; });
+    views.forEach((v) => {
+      h[v.id] = [{ ...INITIAL_PLACEMENT }];
+    });
     return h;
   }, [views]);
 
   const initialHistoryIndex = useMemo(() => {
     const idx: Record<string, number> = {};
-    views.forEach(v => { idx[v.id] = 0; });
+    views.forEach((v) => {
+      idx[v.id] = 0;
+    });
     return idx;
   }, [views]);
 
@@ -36,36 +56,42 @@ export function useMockupEditorState(views: { id: string }[]) {
     historyIndex: initialHistoryIndex,
   });
 
-  const updatePlacementWithHistory = useCallback((viewId: string, update: Partial<Placement>, commitToHistory = false) => {
-    setState(prev => {
-      const current = prev.placements[viewId] || INITIAL_PLACEMENT;
-      const next = { ...current, ...update };
-      
-      let nextHistory = prev.history;
-      let nextHistoryIndex = prev.historyIndex;
+  const updatePlacementWithHistory = useCallback(
+    (viewId: string, update: Partial<Placement>, commitToHistory = false) => {
+      setState((prev) => {
+        const current = prev.placements[viewId] || INITIAL_PLACEMENT;
+        const next = { ...current, ...update };
 
-      if (commitToHistory) {
-        const viewHistory = prev.history[viewId] || [];
-        const currentIdx = prev.historyIndex[viewId];
-        const newHistory = viewHistory.slice(0, currentIdx + 1);
-        newHistory.push({ ...next });
-        if (newHistory.length > 50) newHistory.shift();
-        
-        nextHistory = { ...prev.history, [viewId]: newHistory };
-        nextHistoryIndex = { ...prev.historyIndex, [viewId]: Math.min(newHistory.length - 1, 49) };
-      }
+        let nextHistory = prev.history;
+        let nextHistoryIndex = prev.historyIndex;
 
-      return {
-        ...prev,
-        placements: { ...prev.placements, [viewId]: next },
-        history: nextHistory,
-        historyIndex: nextHistoryIndex
-      };
-    });
-  }, []);
+        if (commitToHistory) {
+          const viewHistory = prev.history[viewId] || [];
+          const currentIdx = prev.historyIndex[viewId];
+          const newHistory = viewHistory.slice(0, currentIdx + 1);
+          newHistory.push({ ...next });
+          if (newHistory.length > 50) newHistory.shift();
+
+          nextHistory = { ...prev.history, [viewId]: newHistory };
+          nextHistoryIndex = {
+            ...prev.historyIndex,
+            [viewId]: Math.min(newHistory.length - 1, 49),
+          };
+        }
+
+        return {
+          ...prev,
+          placements: { ...prev.placements, [viewId]: next },
+          history: nextHistory,
+          historyIndex: nextHistoryIndex,
+        };
+      });
+    },
+    [],
+  );
 
   const undo = useCallback((viewId: string) => {
-    setState(prev => {
+    setState((prev) => {
       const currentIdx = prev.historyIndex[viewId];
       if (currentIdx > 0) {
         const newIdx = currentIdx - 1;
@@ -74,7 +100,7 @@ export function useMockupEditorState(views: { id: string }[]) {
         return {
           ...prev,
           placements: { ...prev.placements, [viewId]: prevPlacement },
-          historyIndex: { ...prev.historyIndex, [viewId]: newIdx }
+          historyIndex: { ...prev.historyIndex, [viewId]: newIdx },
         };
       }
       return prev;
@@ -82,7 +108,7 @@ export function useMockupEditorState(views: { id: string }[]) {
   }, []);
 
   const redo = useCallback((viewId: string) => {
-    setState(prev => {
+    setState((prev) => {
       const viewHistory = prev.history[viewId] || [];
       const currentIdx = prev.historyIndex[viewId];
       if (currentIdx < viewHistory.length - 1) {
@@ -92,7 +118,7 @@ export function useMockupEditorState(views: { id: string }[]) {
         return {
           ...prev,
           placements: { ...prev.placements, [viewId]: nextPlacement },
-          historyIndex: { ...prev.historyIndex, [viewId]: newIdx }
+          historyIndex: { ...prev.historyIndex, [viewId]: newIdx },
         };
       }
       return prev;
@@ -100,9 +126,9 @@ export function useMockupEditorState(views: { id: string }[]) {
   }, []);
 
   const setPlacements = useCallback((placements: Record<string, Placement>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      placements: { ...prev.placements, ...placements }
+      placements: { ...prev.placements, ...placements },
     }));
   }, []);
 
@@ -113,6 +139,6 @@ export function useMockupEditorState(views: { id: string }[]) {
     updatePlacement: updatePlacementWithHistory,
     undo,
     redo,
-    setPlacements
+    setPlacements,
   };
 }

@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResultsPagination } from "@/components/ResultsPagination";
 import { LayoutGrid, List, Search, Image as ImageIcon, Check } from "lucide-react";
@@ -73,7 +79,16 @@ const TYPE_OPTIONS: { value: AssetType | "all"; label: string }[] = [
 const PAGE_SIZE = 24;
 
 export function AssetPicker(props: AssetPickerProps) {
-  const { open, onOpenChange, defaultClientId, clientId, defaultAssetType, lockClient, title, excludeAssetIds } = props;
+  const {
+    open,
+    onOpenChange,
+    defaultClientId,
+    clientId,
+    defaultAssetType,
+    lockClient,
+    title,
+    excludeAssetIds,
+  } = props;
   const initialClientId = defaultClientId ?? clientId ?? "all";
   const multiSelect = props.multiSelect === true;
 
@@ -101,7 +116,9 @@ export function AssetPicker(props: AssetPickerProps) {
     try {
       if (page > 1) sessionStorage.setItem(sessionKey, String(page));
       else sessionStorage.removeItem(sessionKey);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [page, sessionKey]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedMap, setSelectedMap] = useState<Map<string, Asset>>(new Map());
@@ -125,9 +142,16 @@ export function AssetPicker(props: AssetPickerProps) {
     }
   }, [open, defaultAssetType, initialClientId, sessionKey]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, assetType, activeClientId, tags]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, assetType, activeClientId, tags]);
 
-  const { assets: rawAssets, total: rawTotal, totalPages, isLoading } = useAssets(currentOrgId, {
+  const {
+    assets: rawAssets,
+    total: rawTotal,
+    totalPages,
+    isLoading,
+  } = useAssets(currentOrgId, {
     clientId: activeClientId === "all" ? undefined : activeClientId,
     assetType,
     tags,
@@ -141,7 +165,10 @@ export function AssetPicker(props: AssetPickerProps) {
     () => (excludeSet.size === 0 ? rawAssets : rawAssets.filter((a) => !excludeSet.has(a.id))),
     [rawAssets, excludeSet],
   );
-  const total = excludeSet.size === 0 ? rawTotal : Math.max(0, rawTotal - rawAssets.filter((a) => excludeSet.has(a.id)).length);
+  const total =
+    excludeSet.size === 0
+      ? rawTotal
+      : Math.max(0, rawTotal - rawAssets.filter((a) => excludeSet.has(a.id)).length);
 
   const availableTags = useMemo(() => {
     const set = new Set<string>();
@@ -216,23 +243,49 @@ export function AssetPicker(props: AssetPickerProps) {
             )}
           </div>
           <Select value={assetType} onValueChange={(v) => setAssetType(v as AssetType | "all")}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {TYPE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              {TYPE_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {!lockClient && (
             <Select value={activeClientId} onValueChange={setActiveClientId}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Cliente" /></SelectTrigger>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Cliente" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os clientes</SelectItem>
-                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           )}
           <div className="flex border border-border rounded-md overflow-hidden">
-            <Button variant={view === "grid" ? "secondary" : "ghost"} size="sm" className="rounded-none h-9" onClick={() => setView("grid")}><LayoutGrid className="w-4 h-4" /></Button>
-            <Button variant={view === "list" ? "secondary" : "ghost"} size="sm" className="rounded-none h-9" onClick={() => setView("list")}><List className="w-4 h-4" /></Button>
+            <Button
+              variant={view === "grid" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-none h-9"
+              onClick={() => setView("grid")}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={view === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-none h-9"
+              onClick={() => setView("list")}
+            >
+              <List className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
@@ -244,7 +297,9 @@ export function AssetPicker(props: AssetPickerProps) {
         <div className="overflow-y-auto flex-1 -mx-1 px-1">
           {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-lg" />
+              ))}
             </div>
           ) : assets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -292,7 +347,8 @@ export function AssetPicker(props: AssetPickerProps) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{a.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {a.asset_type} · v{a.version}{a.tags?.length ? ` · ${a.tags.join(", ")}` : ""}
+                        {a.asset_type} · v{a.version}
+                        {a.tags?.length ? ` · ${a.tags.join(", ")}` : ""}
                       </p>
                     </div>
                     {multiSelect && (

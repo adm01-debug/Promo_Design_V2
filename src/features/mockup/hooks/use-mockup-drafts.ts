@@ -105,18 +105,12 @@ export function useMockupDrafts() {
 
   const saveDraft = useCallback(
     (draft: Parameters<typeof saveMutation.mutateAsync>[0]) => saveMutation.mutateAsync(draft),
-    [saveMutation]
+    [saveMutation],
   );
 
-  const deleteDraft = useCallback(
-    (id: string) => deleteMutation.mutateAsync(id),
-    [deleteMutation]
-  );
+  const deleteDraft = useCallback((id: string) => deleteMutation.mutateAsync(id), [deleteMutation]);
 
-  const getDraft = useCallback(
-    (id: string) => drafts.find((d) => d.id === id) ?? null,
-    [drafts]
-  );
+  const getDraft = useCallback((id: string) => drafts.find((d) => d.id === id) ?? null, [drafts]);
 
   return { drafts, isLoading, saveDraft, deleteDraft, getDraft, isSaving: saveMutation.isPending };
 }

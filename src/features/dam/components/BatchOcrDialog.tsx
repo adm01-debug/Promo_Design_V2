@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -209,7 +216,8 @@ export function BatchOcrDialog({ open, onOpenChange, assets }: BatchOcrDialogPro
             <ScanText className="w-4 h-4" /> Reprocessar OCR em lote
           </DialogTitle>
           <DialogDescription>
-            Selecione assets visíveis na biblioteca e execute a extração de texto um a um, com progresso e logs.
+            Selecione assets visíveis na biblioteca e execute a extração de texto um a um, com
+            progresso e logs.
           </DialogDescription>
         </DialogHeader>
 
@@ -283,7 +291,10 @@ export function BatchOcrDialog({ open, onOpenChange, assets }: BatchOcrDialogPro
                       <div className="flex items-center gap-1.5 shrink-0">
                         <StatusIcon status={log.status} />
                         {log.message && (
-                          <span className="text-[10px] text-muted-foreground max-w-[160px] truncate" title={log.message}>
+                          <span
+                            className="text-[10px] text-muted-foreground max-w-[160px] truncate"
+                            title={log.message}
+                          >
                             {log.message}
                           </span>
                         )}
@@ -311,8 +322,12 @@ export function BatchOcrDialog({ open, onOpenChange, assets }: BatchOcrDialogPro
               <span className="flex flex-wrap gap-2">
                 {summary.ok ? <span className="text-emerald-500">{summary.ok} ok</span> : null}
                 {summary.empty ? <span>{summary.empty} sem texto</span> : null}
-                {summary.skipped ? <span className="text-amber-500">{summary.skipped} ignorados</span> : null}
-                {summary.failed ? <span className="text-destructive">{summary.failed} falhas</span> : null}
+                {summary.skipped ? (
+                  <span className="text-amber-500">{summary.skipped} ignorados</span>
+                ) : null}
+                {summary.failed ? (
+                  <span className="text-destructive">{summary.failed} falhas</span>
+                ) : null}
               </span>
             </div>
           </div>
@@ -335,7 +350,8 @@ export function BatchOcrDialog({ open, onOpenChange, assets }: BatchOcrDialogPro
               </>
             ) : (
               <>
-                <ScanText className="w-4 h-4 mr-2" /> Processar {totalToRun > 0 ? `(${totalToRun})` : ""}
+                <ScanText className="w-4 h-4 mr-2" /> Processar{" "}
+                {totalToRun > 0 ? `(${totalToRun})` : ""}
               </>
             )}
           </Button>

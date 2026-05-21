@@ -48,7 +48,7 @@ async function downloadAs(url: string, fileName: string, format: "png" | "jpg") 
         URL.revokeObjectURL(a.href);
       },
       mimeType,
-      format === "jpg" ? 0.92 : undefined
+      format === "jpg" ? 0.92 : undefined,
     );
   } catch {
     // Fallback direct download
@@ -74,10 +74,16 @@ const DownloadMenu = ({ imageUrl, fileName = "mockup" }: Props) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onClick={() => downloadAs(imageUrl, fileName, "png")} className="gap-2 text-xs">
+        <DropdownMenuItem
+          onClick={() => downloadAs(imageUrl, fileName, "png")}
+          className="gap-2 text-xs"
+        >
           <ImageIcon className="w-3.5 h-3.5" /> Baixar PNG
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadAs(imageUrl, fileName, "jpg")} className="gap-2 text-xs">
+        <DropdownMenuItem
+          onClick={() => downloadAs(imageUrl, fileName, "jpg")}
+          className="gap-2 text-xs"
+        >
           <FileImage className="w-3.5 h-3.5" /> Baixar JPG
         </DropdownMenuItem>
         <DropdownMenuSeparator />

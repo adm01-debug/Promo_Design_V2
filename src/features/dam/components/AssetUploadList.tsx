@@ -15,18 +15,18 @@ interface Props {
   onResetAllPdfs: () => void;
 }
 
-export function AssetUploadList({ 
-  entries, 
-  isUploading, 
-  onRemove, 
-  onChangePdfPage, 
+export function AssetUploadList({
+  entries,
+  isUploading,
+  onRemove,
+  onChangePdfPage,
   onOpenPdfSelector,
-  onResetAllPdfs 
+  onResetAllPdfs,
 }: Props) {
   if (entries.length === 0) return null;
 
   const eligiblePdfs = entries.filter(
-    (e) => e.kind === "pdf" && e.status !== "done" && e.status !== "uploading"
+    (e) => e.kind === "pdf" && e.status !== "done" && e.status !== "uploading",
   );
   const needsReset = eligiblePdfs.filter((e) => (e.pdfPage ?? 1) !== 1).length;
 
@@ -44,7 +44,11 @@ export function AssetUploadList({
             className="h-7 text-xs"
             onClick={onResetAllPdfs}
             disabled={needsReset === 0}
-            title={needsReset === 0 ? "Todos os PDFs já usam a página 1" : `Usar página 1 em ${needsReset} PDF(s)`}
+            title={
+              needsReset === 0
+                ? "Todos os PDFs já usam a página 1"
+                : `Usar página 1 em ${needsReset} PDF(s)`
+            }
           >
             Usar página 1 em todos
           </Button>
@@ -62,7 +66,9 @@ export function AssetUploadList({
             ) : e.kind === "ai" || e.kind === "psd" ? (
               <div className="w-10 h-10 rounded bg-muted flex flex-col items-center justify-center">
                 <FileType className="w-4 h-4 text-muted-foreground" />
-                <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">{e.kind}</span>
+                <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">
+                  {e.kind}
+                </span>
               </div>
             ) : (
               <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
@@ -73,17 +79,27 @@ export function AssetUploadList({
             <div className="flex-1 min-w-0">
               <div className="text-sm truncate flex items-center gap-2">
                 {e.file.name}
-                {e.status === "done" && <Badge variant="secondary" className="text-[10px]">ok</Badge>}
-                {e.status === "error" && <Badge variant="destructive" className="text-[10px]">erro</Badge>}
+                {e.status === "done" && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    ok
+                  </Badge>
+                )}
+                {e.status === "error" && (
+                  <Badge variant="destructive" className="text-[10px]">
+                    erro
+                  </Badge>
+                )}
               </div>
               <div className="text-xs text-muted-foreground">
                 {(e.file.size / 1024).toFixed(1)} KB
               </div>
-              
+
               {e.kind === "pdf" && e.status !== "done" && e.status !== "uploading" && (
                 <div className="mt-1 space-y-0.5">
                   <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                    <Label htmlFor={`pdf-page-${e.id}`} className="m-0 text-[11px]">Thumb:</Label>
+                    <Label htmlFor={`pdf-page-${e.id}`} className="m-0 text-[11px]">
+                      Thumb:
+                    </Label>
                     <Input
                       id={`pdf-page-${e.id}`}
                       type="number"
@@ -94,15 +110,15 @@ export function AssetUploadList({
                       className="h-5 w-12 text-[10px] px-1"
                     />
                     {e.pdfPageCount && <span>de {e.pdfPageCount}</span>}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-5 px-1.5 text-[10px] text-primary"
                       onClick={() => onOpenPdfSelector(e.id)}
                     >
                       <Layers className="w-3 h-3 mr-1" />
-                      {e.pdfPages && e.pdfPages.length > 1 
-                        ? `${e.pdfPages.length} selecionadas` 
+                      {e.pdfPages && e.pdfPages.length > 1
+                        ? `${e.pdfPages.length} selecionadas`
                         : "Selecionar..."}
                     </Button>
                   </div>
@@ -111,7 +127,9 @@ export function AssetUploadList({
                       Páginas: {formatPagesString(e.pdfPages)}
                     </div>
                   )}
-                  {e.pdfPageError && <div className="text-[9px] text-destructive">{e.pdfPageError}</div>}
+                  {e.pdfPageError && (
+                    <div className="text-[9px] text-destructive">{e.pdfPageError}</div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,12 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AuditAdvancedOp =
-  | "contains"
-  | "equals"
-  | "not_equals"
-  | "starts_with"
-  | "ends_with";
+export type AuditAdvancedOp = "contains" | "equals" | "not_equals" | "starts_with" | "ends_with";
 
 export interface AuditAdvancedCondition {
   key: string;
@@ -117,7 +112,10 @@ export function useDeleteAuditAlertRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("audit_alert_rules" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("audit_alert_rules" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

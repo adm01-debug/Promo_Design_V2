@@ -5,7 +5,11 @@ import { BrowserRouter } from "react-router-dom";
 import { SectionTitle, ArtUploadField } from "@/features/service-orders";
 import EmptyState from "@/components/EmptyState";
 import LoadingScreen from "@/components/LoadingScreen";
-import { StatCardSkeleton, ProjectCardSkeleton, ChartSkeleton } from "@/components/DashboardSkeleton";
+import {
+  StatCardSkeleton,
+  ProjectCardSkeleton,
+  ChartSkeleton,
+} from "@/components/DashboardSkeleton";
 import { Package, FolderOpen } from "lucide-react";
 
 // ============================================================
@@ -64,20 +68,14 @@ describe("ArtUploadField", () => {
         {...defaultProps}
         artFile="logo.png"
         artFileDataUrl="data:image/png;base64,abc"
-      />
+      />,
     );
     expect(screen.getByAltText("Arte")).toBeInTheDocument();
     expect(screen.getByText("logo.png")).toBeInTheDocument();
   });
 
   it("shows non-image file without preview", () => {
-    render(
-      <ArtUploadField
-        {...defaultProps}
-        artFile="design.ai"
-        artFileDataUrl=""
-      />
-    );
+    render(<ArtUploadField {...defaultProps} artFile="design.ai" artFileDataUrl="" />);
     expect(screen.getByText("design.ai")).toBeInTheDocument();
     expect(screen.getByText(/formato não-imagem/i)).toBeInTheDocument();
   });
@@ -90,7 +88,7 @@ describe("ArtUploadField", () => {
         artFile="logo.png"
         artFileDataUrl="data:image/png;base64,abc"
         onRemove={onRemove}
-      />
+      />,
     );
     const removeBtn = screen.getByText("Remover");
     await userEvent.click(removeBtn);
@@ -103,20 +101,14 @@ describe("ArtUploadField", () => {
         {...defaultProps}
         artFile="logo.png"
         artFileDataUrl="data:image/png;base64,abc"
-      />
+      />,
     );
     expect(screen.getByText("Trocar")).toBeInTheDocument();
     expect(screen.getByText("Remover")).toBeInTheDocument();
   });
 
   it("shows remove button for non-image files", () => {
-    render(
-      <ArtUploadField
-        {...defaultProps}
-        artFile="design.ai"
-        artFileDataUrl=""
-      />
-    );
+    render(<ArtUploadField {...defaultProps} artFile="design.ai" artFileDataUrl="" />);
     expect(screen.getByText("Remover")).toBeInTheDocument();
   });
 });
@@ -135,7 +127,7 @@ describe("EmptyState", () => {
           actionLabel="Criar mockup"
           actionPath="/mockup/new"
         />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
     expect(screen.getByText("Nenhum projeto")).toBeInTheDocument();
     expect(screen.getByText("Comece criando seu primeiro mockup.")).toBeInTheDocument();
@@ -151,7 +143,7 @@ describe("EmptyState", () => {
           actionLabel="Criar"
           actionPath="/create"
         />
-      </BrowserRouter>
+      </BrowserRouter>,
     );
     const link = screen.getByText("Criar").closest("a");
     expect(link).toHaveAttribute("href", "/create");
@@ -190,8 +182,10 @@ describe("Dashboard Skeletons", () => {
   it("renders multiple StatCardSkeletons like the dashboard", () => {
     const { container } = render(
       <div className="grid grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
-      </div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <StatCardSkeleton key={i} />
+        ))}
+      </div>,
     );
     const children = container.firstElementChild?.children;
     expect(children?.length).toBe(4);
@@ -201,7 +195,12 @@ describe("Dashboard Skeletons", () => {
 // ============================================================
 // Form validation integration
 // ============================================================
-import { validateForm, ServiceOrderData, TECHNIQUES, generateOsNumber } from "@/features/service-orders";
+import {
+  validateForm,
+  ServiceOrderData,
+  TECHNIQUES,
+  generateOsNumber,
+} from "@/features/service-orders";
 
 describe("Form validation — integration scenarios", () => {
   const makeForm = (overrides: Partial<ServiceOrderData> = {}): ServiceOrderData => ({
@@ -246,18 +245,22 @@ describe("Form validation — integration scenarios", () => {
   });
 
   it("form with emoji in names passes", () => {
-    const errors = validateForm(makeForm({
-      clientName: "João 🎉",
-      productName: "Caneca ★ Premium",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "João 🎉",
+        productName: "Caneca ★ Premium",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   it("form with unicode characters passes", () => {
-    const errors = validateForm(makeForm({
-      clientName: "Müller & Associés",
-      productName: "Ñandú — Édition Spéciale",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "Müller & Associés",
+        productName: "Ñandú — Édition Spéciale",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
@@ -278,12 +281,14 @@ describe("Form validation — integration scenarios", () => {
   });
 
   it("all required fields empty produces 4 errors", () => {
-    const errors = validateForm(makeForm({
-      clientName: "",
-      productName: "",
-      technique: "",
-      quantity: "",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "",
+        productName: "",
+        technique: "",
+        quantity: "",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(4);
   });
 

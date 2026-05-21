@@ -2,15 +2,7 @@ import { useMemo, useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import {
-  ArchiveRestore,
-  Archive,
-  ExternalLink,
-  History,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ArchiveRestore, Archive, ExternalLink, History, Pencil, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,10 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  useLibraryActivity,
-  type LibraryActivityEntry,
-} from "../hooks/use-library-activity";
+import { useLibraryActivity, type LibraryActivityEntry } from "../hooks/use-library-activity";
 
 interface Props {
   open: boolean;
@@ -112,11 +101,21 @@ export function LibraryActivityDialog({ open, onOpenChange, organizationId }: Pr
           className="justify-start flex-wrap gap-1"
           size="sm"
         >
-          <ToggleGroupItem value="ALL" className="h-7 px-2 text-xs">Todos</ToggleGroupItem>
-          <ToggleGroupItem value="UPLOAD" className="h-7 px-2 text-xs">Uploads</ToggleGroupItem>
-          <ToggleGroupItem value="UPDATE" className="h-7 px-2 text-xs">Edições</ToggleGroupItem>
-          <ToggleGroupItem value="ARCHIVE" className="h-7 px-2 text-xs">Arquivar/Restaurar</ToggleGroupItem>
-          <ToggleGroupItem value="DELETE" className="h-7 px-2 text-xs">Removidos</ToggleGroupItem>
+          <ToggleGroupItem value="ALL" className="h-7 px-2 text-xs">
+            Todos
+          </ToggleGroupItem>
+          <ToggleGroupItem value="UPLOAD" className="h-7 px-2 text-xs">
+            Uploads
+          </ToggleGroupItem>
+          <ToggleGroupItem value="UPDATE" className="h-7 px-2 text-xs">
+            Edições
+          </ToggleGroupItem>
+          <ToggleGroupItem value="ARCHIVE" className="h-7 px-2 text-xs">
+            Arquivar/Restaurar
+          </ToggleGroupItem>
+          <ToggleGroupItem value="DELETE" className="h-7 px-2 text-xs">
+            Removidos
+          </ToggleGroupItem>
         </ToggleGroup>
 
         <ScrollArea className="h-[440px] pr-3 -mr-3">
@@ -143,7 +142,9 @@ export function LibraryActivityDialog({ open, onOpenChange, organizationId }: Pr
                       <div className="flex items-center gap-2 flex-wrap">
                         <ActionBadge entry={e} />
                         {e.version !== null && (
-                          <Badge variant="outline" className="text-[10px]">v{e.version}</Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            v{e.version}
+                          </Badge>
                         )}
                         <span className="text-sm font-medium truncate max-w-[260px]">
                           {e.asset_name ?? "(sem nome)"}

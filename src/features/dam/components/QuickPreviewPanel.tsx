@@ -5,7 +5,17 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Download, ExternalLink, Pin, PinOff, Sparkles, ImageIcon, Loader2, GitCompare } from "lucide-react";
+import {
+  Copy,
+  Download,
+  ExternalLink,
+  Pin,
+  PinOff,
+  Sparkles,
+  ImageIcon,
+  Loader2,
+  GitCompare,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
@@ -33,7 +43,15 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApplyTag, sortLabel }: QuickPreviewPanelProps) {
+function PanelBody({
+  asset,
+  pinned,
+  onTogglePin,
+  onOpenDetails,
+  clients,
+  onApplyTag,
+  sortLabel,
+}: QuickPreviewPanelProps) {
   const [url, setUrl] = useState<string | null>(null);
   const [urlLoading, setUrlLoading] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -113,7 +131,9 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Badge variant="secondary" className="capitalize">{asset.asset_type}</Badge>
+            <Badge variant="secondary" className="capitalize">
+              {asset.asset_type}
+            </Badge>
             {asset.version > 1 && <Badge variant="outline">v{asset.version}</Badge>}
             {sortLabel && (
               <Badge
@@ -125,7 +145,11 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
               </Badge>
             )}
             {versionLoading && (
-              <Badge variant="outline" className="gap-1 text-muted-foreground" aria-label="Verificando versão">
+              <Badge
+                variant="outline"
+                className="gap-1 text-muted-foreground"
+                aria-label="Verificando versão"
+              >
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Verificando…
               </Badge>
@@ -153,9 +177,7 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
       </div>
 
       <div className="rounded-md overflow-hidden border bg-muted aspect-square relative">
-        {urlLoading && !url && (
-          <Skeleton className="absolute inset-0 w-full h-full" />
-        )}
+        {urlLoading && !url && <Skeleton className="absolute inset-0 w-full h-full" />}
         <AssetThumbnail asset={asset} className="w-full h-full" />
       </div>
 
@@ -203,7 +225,10 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
                   type="button"
                   onClick={() => {
                     onApplyTag(t);
-                    toast({ title: "Filtro aplicado", description: `Tag "${t}" adicionada aos filtros.` });
+                    toast({
+                      title: "Filtro aplicado",
+                      description: `Tag "${t}" adicionada aos filtros.`,
+                    });
                   }}
                   className="text-[10px] px-1.5 py-0 inline-flex items-center rounded-md border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
                   title={`Filtrar por tag "${t}"`}
@@ -218,7 +243,9 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
               ),
             )}
             {moreTags > 0 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">+{moreTags}</Badge>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                +{moreTags}
+              </Badge>
             )}
           </div>
         </>
@@ -254,20 +281,28 @@ function PanelBody({ asset, pinned, onTogglePin, onOpenDetails, clients, onApply
           <GitCompare className="w-3.5 h-3.5 mr-2" /> Comparar versões
         </Button>
         <div className="flex gap-1.5">
-          <Button size="sm" variant="outline" className="flex-1" onClick={handleCopy} disabled={!url}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={handleCopy}
+            disabled={!url}
+          >
             <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar URL
           </Button>
-          <Button size="sm" variant="outline" className="flex-1" onClick={handleDownload} disabled={!url}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={handleDownload}
+            disabled={!url}
+          >
             <Download className="w-3.5 h-3.5 mr-1.5" /> Baixar
           </Button>
         </div>
       </div>
 
-      <QuickVersionCompareDialog
-        asset={asset}
-        open={compareOpen}
-        onOpenChange={setCompareOpen}
-      />
+      <QuickVersionCompareDialog asset={asset} open={compareOpen} onOpenChange={setCompareOpen} />
     </div>
   );
 }

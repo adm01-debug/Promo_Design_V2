@@ -25,7 +25,12 @@ const PasswordStrength = ({ password }: PasswordStrengthProps) => {
   if (!password) return null;
 
   return (
-    <div className="space-y-1" role="status" aria-live="polite" aria-label={`Força da senha: ${strength.label}`}>
+    <div
+      className="space-y-1"
+      role="status"
+      aria-live="polite"
+      aria-label={`Força da senha: ${strength.label}`}
+    >
       <div className="flex gap-1">
         {[1, 2, 3, 4].map((level) => (
           <motion.div

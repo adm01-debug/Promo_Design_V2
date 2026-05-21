@@ -3,7 +3,9 @@
 ## Edge Functions
 
 ### `asset-ocr`
+
 Extracts text from images using AI.
+
 - **Method**: POST
 - **Auth**: Supabase JWT (Bearer)
 - **Body**:
@@ -24,7 +26,9 @@ Extracts text from images using AI.
   ```
 
 ### `mockup-ai`
+
 Generates mockups from assets.
+
 - **Method**: POST
 - **Auth**: Supabase JWT (Bearer)
 - **Body**:
@@ -37,7 +41,9 @@ Generates mockups from assets.
   ```
 
 ## Database Schema
+
 Most interactions happen directly via Supabase Client (PostgREST).
+
 - **Multi-tenancy**: Strictly enforced via `organization_id` column and RLS.
 - **Optimistic Locking**: Use `lock_version` column for updates.
 - **Audit**: All changes are tracked in `audit_log` table via triggers.

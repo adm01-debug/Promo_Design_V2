@@ -14,10 +14,7 @@ export function installGlobalErrorHandlers() {
   });
 
   window.addEventListener("unhandledrejection", (event) => {
-    const error =
-      event.reason instanceof Error
-        ? event.reason
-        : new Error(String(event.reason));
+    const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
     ErrorLogger.fatal("Unhandled promise rejection", error);
   });
 

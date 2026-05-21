@@ -2,10 +2,25 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 import {
-  MousePointer2, Type, Square, Circle, Image, Download,
-  ZoomIn, ZoomOut, Undo, Redo, Layers, Move,
-  Palette, AlignLeft, AlignCenter, AlignRight, Grid3X3,
-  Upload, Maximize2
+  MousePointer2,
+  Type,
+  Square,
+  Circle,
+  Image,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  Undo,
+  Redo,
+  Layers,
+  Move,
+  Palette,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Grid3X3,
+  Upload,
+  Maximize2,
 } from "lucide-react";
 
 const tools = [
@@ -89,11 +104,19 @@ const Editor = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors">
+              <button
+                onClick={() => setZoom(Math.max(25, zoom - 25))}
+                className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
+              >
                 <ZoomOut className="w-4 h-4" />
               </button>
-              <span className="text-xs font-mono text-muted-foreground w-12 text-center">{zoom}%</span>
-              <button onClick={() => setZoom(Math.min(400, zoom + 25))} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors">
+              <span className="text-xs font-mono text-muted-foreground w-12 text-center">
+                {zoom}%
+              </span>
+              <button
+                onClick={() => setZoom(Math.min(400, zoom + 25))}
+                className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
+              >
                 <ZoomIn className="w-4 h-4" />
               </button>
               <div className="w-px h-5 bg-border mx-1" />
@@ -139,11 +162,15 @@ const Editor = () => {
         >
           {/* Properties */}
           <div className="p-4 border-b border-border">
-            <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Propriedades</h3>
+            <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
+              Propriedades
+            </h3>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-mono text-muted-foreground uppercase">Largura</label>
+                  <label className="text-[10px] font-mono text-muted-foreground uppercase">
+                    Largura
+                  </label>
                   <input
                     type="text"
                     defaultValue="800"
@@ -151,7 +178,9 @@ const Editor = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-mono text-muted-foreground uppercase">Altura</label>
+                  <label className="text-[10px] font-mono text-muted-foreground uppercase">
+                    Altura
+                  </label>
                   <input
                     type="text"
                     defaultValue="600"
@@ -160,7 +189,9 @@ const Editor = () => {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-mono text-muted-foreground uppercase">Formato de Saída</label>
+                <label className="text-[10px] font-mono text-muted-foreground uppercase">
+                  Formato de Saída
+                </label>
                 <select className="w-full mt-1 px-2 py-1.5 rounded-md bg-surface-2 border border-border text-xs font-mono text-foreground focus:outline-none focus:border-primary">
                   <option>PNG - Alta Qualidade</option>
                   <option>JPG - Comprimido</option>
@@ -174,7 +205,9 @@ const Editor = () => {
           {/* Layers */}
           <div className="p-4 flex-1">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Camadas</h3>
+              <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                Camadas
+              </h3>
               <Layers className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
             <div className="space-y-1">
@@ -183,13 +216,15 @@ const Editor = () => {
                   key={layer.name}
                   className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-surface-2 transition-colors cursor-pointer group"
                 >
-                  <div className={`w-2 h-2 rounded-full ${layer.visible ? "bg-primary" : "bg-muted"}`} />
-                  <span className={`text-xs flex-1 truncate ${layer.visible ? "text-foreground" : "text-muted-foreground"}`}>
+                  <div
+                    className={`w-2 h-2 rounded-full ${layer.visible ? "bg-primary" : "bg-muted"}`}
+                  />
+                  <span
+                    className={`text-xs flex-1 truncate ${layer.visible ? "text-foreground" : "text-muted-foreground"}`}
+                  >
                     {layer.name}
                   </span>
-                  {layer.locked && (
-                    <span className="text-[10px] text-muted-foreground">🔒</span>
-                  )}
+                  {layer.locked && <span className="text-[10px] text-muted-foreground">🔒</span>}
                 </div>
               ))}
             </div>

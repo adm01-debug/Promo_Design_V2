@@ -56,7 +56,9 @@ export function AssetThumbnail({
 
   if (!isImage) {
     return (
-      <div className={`flex items-center justify-center bg-muted text-muted-foreground ${className}`}>
+      <div
+        className={`flex items-center justify-center bg-muted text-muted-foreground ${className}`}
+      >
         <FileText className="w-8 h-8" />
       </div>
     );

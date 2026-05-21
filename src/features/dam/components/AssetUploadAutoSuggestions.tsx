@@ -11,7 +11,12 @@ interface Props {
   remainingSlots: number;
 }
 
-export function AssetUploadAutoSuggestions({ suggestions, onAddTag, onAddAll, remainingSlots }: Props) {
+export function AssetUploadAutoSuggestions({
+  suggestions,
+  onAddTag,
+  onAddAll,
+  remainingSlots,
+}: Props) {
   if (suggestions.length === 0) return null;
 
   return (

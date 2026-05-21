@@ -11,11 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 
 import { type CustomSizeRange, type SizeUnit } from "../lib/dam-constants";
@@ -45,7 +41,8 @@ function formatBytes(bytes: number): string {
 export function formatCustomSizeLabel(range: CustomSizeRange | null): string {
   if (!range) return "";
   const { minBytes, maxBytes } = range;
-  if (minBytes != null && maxBytes != null) return `${formatBytes(minBytes)} – ${formatBytes(maxBytes)}`;
+  if (minBytes != null && maxBytes != null)
+    return `${formatBytes(minBytes)} – ${formatBytes(maxBytes)}`;
   if (minBytes != null) return `≥ ${formatBytes(minBytes)}`;
   if (maxBytes != null) return `≤ ${formatBytes(maxBytes)}`;
   return "";
@@ -127,13 +124,17 @@ export function SizeRangeFilter({ value, onChange, className }: Props) {
           variant={value ? "default" : "outline"}
           size="sm"
           className={className}
-          aria-label={value ? `Tamanho personalizado: ${activeLabel}` : "Definir tamanho personalizado"}
+          aria-label={
+            value ? `Tamanho personalizado: ${activeLabel}` : "Definir tamanho personalizado"
+          }
         >
           <HardDrive className="w-3.5 h-3.5 mr-1.5" />
           {value ? (
             <span className="flex items-center gap-1.5">
               <span className="text-xs">{activeLabel}</span>
-              <Badge variant="secondary" className="h-4 px-1 text-[10px]">custom</Badge>
+              <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                custom
+              </Badge>
             </span>
           ) : (
             <span className="text-xs">Personalizado…</span>
@@ -160,7 +161,9 @@ export function SizeRangeFilter({ value, onChange, className }: Props) {
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label htmlFor="size-min" className="text-xs text-muted-foreground">Mínimo</Label>
+              <Label htmlFor="size-min" className="text-xs text-muted-foreground">
+                Mínimo
+              </Label>
               <Input
                 id="size-min"
                 type="text"
@@ -173,7 +176,9 @@ export function SizeRangeFilter({ value, onChange, className }: Props) {
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="size-max" className="text-xs text-muted-foreground">Máximo</Label>
+              <Label htmlFor="size-max" className="text-xs text-muted-foreground">
+                Máximo
+              </Label>
               <Input
                 id="size-max"
                 type="text"
@@ -201,7 +206,9 @@ export function SizeRangeFilter({ value, onChange, className }: Props) {
           </div>
 
           {error && (
-            <p role="alert" className="text-xs text-destructive">{error}</p>
+            <p role="alert" className="text-xs text-destructive">
+              {error}
+            </p>
           )}
 
           <div className="flex justify-end gap-2 pt-1">

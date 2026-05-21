@@ -18,15 +18,15 @@ const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
 
   const handleVerify = async () => {
     if (code.length < 6) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const factors = await supabase.auth.mfa.listFactors();
       if (factors.error) throw factors.error;
 
-      const totpFactor = factors.data.totp.find(f => f.status === 'verified');
+      const totpFactor = factors.data.totp.find((f) => f.status === "verified");
       if (!totpFactor) {
         throw new Error("Nenhum fator MFA verificado encontrado.");
       }
@@ -74,13 +74,7 @@ const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
 
       <div className="space-y-4">
         <div className="flex justify-center">
-          <InputOTP
-            maxLength={6}
-            value={code}
-            onChange={setCode}
-            disabled={loading}
-            autoFocus
-          >
+          <InputOTP maxLength={6} value={code} onChange={setCode} disabled={loading} autoFocus>
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -99,16 +93,16 @@ const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
         )}
 
         <div className="flex flex-col gap-2">
-          <Button 
-            onClick={handleVerify} 
+          <Button
+            onClick={handleVerify}
             disabled={loading || code.length < 6}
             className="w-full bg-gradient-primary"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Verificar Código"}
           </Button>
           {onCancel && (
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={onCancel}
               disabled={loading}
               className="w-full text-xs"

@@ -61,9 +61,12 @@ export function TagChipsInput({
     }
   };
 
-  useEffect(() => () => {
-    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    },
+    [],
+  );
 
   const addTag = (raw: string) => {
     const tag = normalize(raw);
@@ -108,7 +111,10 @@ export function TagChipsInput({
 
   // Show used tags first (highlighted) so the user can confirm choices, then unused.
   const visibleSuggestions = useMemo(() => {
-    const decorated = matchedSuggestions.map((s) => ({ tag: s, used: usedSet.has(s.toLowerCase()) }));
+    const decorated = matchedSuggestions.map((s) => ({
+      tag: s,
+      used: usedSet.has(s.toLowerCase()),
+    }));
     decorated.sort((a, b) => (a.used === b.used ? 0 : a.used ? -1 : 1));
     return decorated.slice(0, 8);
   }, [matchedSuggestions, usedSet]);
@@ -156,7 +162,9 @@ export function TagChipsInput({
         />
       </div>
       {error && (
-        <p className="text-destructive text-xs mt-1" role="alert">{error}</p>
+        <p className="text-destructive text-xs mt-1" role="alert">
+          {error}
+        </p>
       )}
       {focused && visibleSuggestions.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-md border bg-popover p-1 shadow-md">

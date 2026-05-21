@@ -2,12 +2,12 @@ import { motion } from "framer-motion";
 import { Video, Search, Clock, Download, Eye, Play, TrendingUp, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import {
-  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const VideoHistory = () => {
   const [search, setSearch] = useState("");
-  const videos: Array<{ id: string; productName: string; aspectRatio: string; createdAt: string }> = [];
+  const videos: Array<{ id: string; productName: string; aspectRatio: string; createdAt: string }> =
+    [];
 
   return (
     <div className="p-6 max-w-6xl">
@@ -15,7 +15,9 @@ const VideoHistory = () => {
         <h1 className="text-2xl font-display font-bold text-foreground mb-1">
           Histórico de <span className="text-gradient-primary">Vídeos</span>
         </h1>
-        <p className="text-sm text-muted-foreground mb-6">Vídeos publicitários gerados anteriormente</p>
+        <p className="text-sm text-muted-foreground mb-6">
+          Vídeos publicitários gerados anteriormente
+        </p>
 
         {/* Analytics Placeholder */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -28,18 +30,34 @@ const VideoHistory = () => {
               <TrendingUp className="w-3.5 h-3.5 text-primary" /> Produção Semanal
             </h3>
             <ResponsiveContainer width="100%" height={80}>
-              <AreaChart data={[
-                { w: "S1", count: 0 }, { w: "S2", count: 0 }, { w: "S3", count: 0 }, { w: "S4", count: 0 },
-              ]}>
+              <AreaChart
+                data={[
+                  { w: "S1", count: 0 },
+                  { w: "S2", count: 0 },
+                  { w: "S3", count: 0 },
+                  { w: "S4", count: 0 },
+                ]}
+              >
                 <defs>
                   <linearGradient id="videoGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="w" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <XAxis
+                  dataKey="w"
+                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <YAxis hide allowDecimals={false} />
-                <Area type="monotone" dataKey="count" stroke="hsl(var(--accent))" fill="url(#videoGrad)" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  stroke="hsl(var(--accent))"
+                  fill="url(#videoGrad)"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -49,7 +67,15 @@ const VideoHistory = () => {
             </h3>
             <ResponsiveContainer width="100%" height={80}>
               <PieChart>
-                <Pie data={[{ name: "16:9", value: 1 }]} cx="50%" cy="50%" innerRadius={20} outerRadius={35} dataKey="value" stroke="none">
+                <Pie
+                  data={[{ name: "16:9", value: 1 }]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={20}
+                  outerRadius={35}
+                  dataKey="value"
+                  stroke="none"
+                >
                   <Cell fill="hsl(var(--primary))" />
                 </Pie>
               </PieChart>
@@ -80,7 +106,9 @@ const VideoHistory = () => {
               <Video className="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 className="font-display font-semibold text-foreground mb-1">Nenhum vídeo gerado</h3>
-            <p className="text-sm text-muted-foreground">Crie seu primeiro vídeo publicitário no Video Studio</p>
+            <p className="text-sm text-muted-foreground">
+              Crie seu primeiro vídeo publicitário no Video Studio
+            </p>
           </motion.div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -104,7 +132,9 @@ const VideoHistory = () => {
                   </div>
                 </div>
                 <div className="p-3">
-                  <h3 className="text-sm font-display font-semibold text-foreground truncate">{video.productName}</h3>
+                  <h3 className="text-sm font-display font-semibold text-foreground truncate">
+                    {video.productName}
+                  </h3>
                   <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                     <span className="text-[10px] font-mono">{video.aspectRatio}</span>
                     <span className="text-[10px]">·</span>

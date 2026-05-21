@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useCatalog, type CatalogProduct } from "@/features/catalog";
 
@@ -27,7 +31,7 @@ const ProductPicker = ({ value, onChange }: ProductPickerProps) => {
         (p) =>
           p.name.toLowerCase().includes(q) ||
           (p.sku && p.sku.toLowerCase().includes(q)) ||
-          (p.categoryName && p.categoryName.toLowerCase().includes(q))
+          (p.categoryName && p.categoryName.toLowerCase().includes(q)),
       );
   }, [products, search]);
 
@@ -45,12 +49,7 @@ const ProductPicker = ({ value, onChange }: ProductPickerProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2 text-xs"
-        >
+        <Button type="button" variant="outline" size="sm" className="gap-2 text-xs">
           <Package className="w-3.5 h-3.5" />
           {value.name ? "Trocar produto" : "Buscar no catálogo"}
         </Button>

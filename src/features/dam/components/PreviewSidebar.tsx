@@ -37,7 +37,17 @@ interface Props {
 }
 
 export function PreviewSidebar({ filters, clients, assets, total, isLoading }: Props) {
-  const { state, setSearch, setAssetTypes, setClientId, setTags, setTagsMode, setIncludeArchived, setSort, reset } = filters;
+  const {
+    state,
+    setSearch,
+    setAssetTypes,
+    setClientId,
+    setTags,
+    setTagsMode,
+    setIncludeArchived,
+    setSort,
+    reset,
+  } = filters;
 
   const availableTags = Array.from(new Set(assets.flatMap((a) => a.tags))).sort();
 
@@ -73,7 +83,9 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
                   className="cursor-pointer select-none text-xs"
                   onClick={() =>
                     setAssetTypes((prev: AssetType[]) =>
-                      prev.includes(t.value as AssetType) ? prev.filter((x: AssetType) => x !== t.value) : [...prev, t.value as AssetType],
+                      prev.includes(t.value as AssetType)
+                        ? prev.filter((x: AssetType) => x !== t.value)
+                        : [...prev, t.value as AssetType],
                     )
                   }
                 >
@@ -86,7 +98,10 @@ export function PreviewSidebar({ filters, clients, assets, total, isLoading }: P
 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Cliente</Label>
-          <Select value={state.clientId} onValueChange={(v) => setClientId(v as typeof state.clientId)}>
+          <Select
+            value={state.clientId}
+            onValueChange={(v) => setClientId(v as typeof state.clientId)}
+          >
             <SelectTrigger className="h-9">
               <SelectValue />
             </SelectTrigger>

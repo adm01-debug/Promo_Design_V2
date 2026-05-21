@@ -12,7 +12,11 @@ export interface UploadDraft {
   clientId: string | null;
 }
 
-function draftKey(orgId: string, clientId: string | null, parentAssetId: string | null): string | null {
+function draftKey(
+  orgId: string,
+  clientId: string | null,
+  parentAssetId: string | null,
+): string | null {
   if (!orgId) return null;
   if (parentAssetId) return `${DRAFT_PREFIX}${orgId}:parent:${parentAssetId}`;
   if (clientId) return `${DRAFT_PREFIX}${orgId}:client:${clientId}`;
@@ -27,7 +31,9 @@ function readDraft(key: string | null): UploadDraft | null {
     const parsed = JSON.parse(raw) as Partial<UploadDraft>;
     if (!parsed || typeof parsed !== "object") return null;
     return {
-      tags: Array.isArray(parsed.tags) ? parsed.tags.filter((t): t is string => typeof t === "string") : [],
+      tags: Array.isArray(parsed.tags)
+        ? parsed.tags.filter((t): t is string => typeof t === "string")
+        : [],
       tagError: typeof parsed.tagError === "string" ? parsed.tagError : null,
       assetType: (typeof parsed.assetType === "string" ? parsed.assetType : "art") as AssetType,
       clientId: typeof parsed.clientId === "string" ? parsed.clientId : null,
@@ -41,14 +47,18 @@ function writeDraft(key: string | null, draft: UploadDraft) {
   if (!key || typeof window === "undefined") return;
   try {
     localStorage.setItem(key, JSON.stringify(draft));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function clearDraft(key: string | null) {
   if (!key || typeof window === "undefined") return;
   try {
     localStorage.removeItem(key);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function useAssetUploadDraft(
@@ -57,7 +67,7 @@ export function useAssetUploadDraft(
   initialAssetType: AssetType,
   initialTags: string[],
   parentAssetId: string | null,
-  enabled: boolean
+  enabled: boolean,
 ) {
   const [clientId, setClientId] = useState<string | null>(initialClientId);
   const [assetType, setAssetType] = useState<AssetType>(initialAssetType);
@@ -67,7 +77,7 @@ export function useAssetUploadDraft(
 
   const persistKey = useMemo(
     () => draftKey(organizationId, clientId, parentAssetId),
-    [organizationId, clientId, parentAssetId]
+    [organizationId, clientId, parentAssetId],
   );
 
   // Initial hydration
@@ -76,10 +86,10 @@ export function useAssetUploadDraft(
       setHydrated(false);
       return;
     }
-    
+
     const key = draftKey(organizationId, parentAssetId ? null : initialClientId, parentAssetId);
     const draft = readDraft(key);
-    
+
     if (draft) {
       setClientId(parentAssetId ? initialClientId : (draft.clientId ?? initialClientId));
       setAssetType(draft.assetType ?? initialAssetType);
@@ -117,6 +127,6 @@ export function useAssetUploadDraft(
     tagError,
     setTagError,
     persistKey,
-    hydrated
+    hydrated,
   };
 }

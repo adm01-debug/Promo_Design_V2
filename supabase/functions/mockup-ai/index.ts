@@ -9,8 +9,10 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  const isAllowed = ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
-  
+  const isAllowed = ALLOWED_ORIGINS.some(
+    (allowed) => origin === allowed || origin.endsWith(".lovable.app"),
+  );
+
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers":
@@ -61,7 +63,7 @@ serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     );
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
@@ -85,7 +87,11 @@ serve(async (req) => {
       const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
       if (hasQuota === false) {
         console.warn(`[${requestId}] Quota exceeded for org ${orgId}`);
-        return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
+        return jsonResponse(
+          { error: "Quota de IA da organização atingida para este mês.", requestId },
+          403,
+          req,
+        );
       }
     }
 
@@ -110,7 +116,7 @@ serve(async (req) => {
       return jsonResponse(
         { error: "Validação falhou", details: parsed.error.flatten().fieldErrors, requestId },
         400,
-        req
+        req,
       );
     }
 
@@ -149,10 +155,25 @@ serve(async (req) => {
         const t = await response.text().catch(() => "");
         console.error(`[${requestId}] AI gateway error (remove-bg):`, response.status, t);
         if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido. Tente novamente em alguns segundos.", requestId }, 429, req);
+          return jsonResponse(
+            {
+              error: "Limite de requisições excedido. Tente novamente em alguns segundos.",
+              requestId,
+            },
+            429,
+            req,
+          );
         }
         if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.", requestId }, 402, req);
+          return jsonResponse(
+            {
+              error:
+                "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.",
+              requestId,
+            },
+            402,
+            req,
+          );
         }
         return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
@@ -171,7 +192,7 @@ serve(async (req) => {
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
           cost_estimate: 0.01, // Flat estimate for image removal
-          metadata: { action: body.action }
+          metadata: { action: body.action },
         });
       }
 
@@ -223,9 +244,18 @@ Suggest the best placement for a logo on this product, considering:
                 parameters: {
                   type: "object",
                   properties: {
-                    scale: { type: "number", description: "Logo scale relative to area, 0.1 to 1.5" },
-                    xPercent: { type: "number", description: "X position as percentage of area width, 0 to 100" },
-                    yPercent: { type: "number", description: "Y position as percentage of area height, 0 to 100" },
+                    scale: {
+                      type: "number",
+                      description: "Logo scale relative to area, 0.1 to 1.5",
+                    },
+                    xPercent: {
+                      type: "number",
+                      description: "X position as percentage of area width, 0 to 100",
+                    },
+                    yPercent: {
+                      type: "number",
+                      description: "Y position as percentage of area height, 0 to 100",
+                    },
                     rotation: { type: "number", description: "Rotation in degrees, -180 to 180" },
                     blendMode: {
                       type: "string",
@@ -238,9 +268,22 @@ Suggest the best placement for a logo on this product, considering:
                       description: "Best surface warp type",
                     },
                     opacity: { type: "number", description: "Logo opacity percentage, 50 to 100" },
-                    reasoning: { type: "string", description: "Brief explanation of why these values were chosen, in Portuguese" },
+                    reasoning: {
+                      type: "string",
+                      description:
+                        "Brief explanation of why these values were chosen, in Portuguese",
+                    },
                   },
-                  required: ["scale", "xPercent", "yPercent", "rotation", "blendMode", "surfaceType", "opacity", "reasoning"],
+                  required: [
+                    "scale",
+                    "xPercent",
+                    "yPercent",
+                    "rotation",
+                    "blendMode",
+                    "surfaceType",
+                    "opacity",
+                    "reasoning",
+                  ],
                   additionalProperties: false,
                 },
               },
@@ -275,8 +318,9 @@ Suggest the best placement for a logo on this product, considering:
           model_name: "google/gemini-3-flash-preview",
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
-          cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003),
-          metadata: { action: body.action }
+          cost_estimate:
+            (usage.prompt_tokens || 0) * 0.000000075 + (usage.completion_tokens || 0) * 0.0000003,
+          metadata: { action: body.action },
         });
       }
 
@@ -290,13 +334,17 @@ Suggest the best placement for a logo on this product, considering:
       return jsonResponse({ ...suggestion, requestId }, 200, req);
     }
 
-    return jsonResponse({ error: `Unknown action: ${(body as { action: string }).action}` }, 400, req);
+    return jsonResponse(
+      { error: `Unknown action: ${(body as { action: string }).action}` },
+      400,
+      req,
+    );
   } catch (e) {
     console.error(`[${requestId}] mockup-ai fatal error:`, e);
     return jsonResponse(
       { error: e instanceof Error ? e.message : "Unknown error", requestId },
       500,
-      req
+      req,
     );
   }
 });

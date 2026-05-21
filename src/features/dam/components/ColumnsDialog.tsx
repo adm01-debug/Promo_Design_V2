@@ -90,15 +90,28 @@ export function ColumnsDialog<Id extends string>({
         <DialogHeader>
           <DialogTitle className="text-base">{title}</DialogTitle>
           <DialogDescription className="text-xs">
-            {description ?? "Selecione quais colunas incluir no arquivo."} {assetCount} asset(s) serão exportados.
+            {description ?? "Selecione quais colunas incluir no arquivo."} {assetCount} asset(s)
+            serão exportados.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-center gap-2 -mt-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAll} disabled={allChecked}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={selectAll}
+            disabled={allChecked}
+          >
             Selecionar todas
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectNone} disabled={noneChecked}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={selectNone}
+            disabled={noneChecked}
+          >
             Limpar
           </Button>
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectDefault}>
@@ -116,7 +129,10 @@ export function ColumnsDialog<Id extends string>({
             {allColumns.map((col) => {
               const checked = selected.has(col.id);
               return (
-                <div key={col.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50">
+                <div
+                  key={col.id}
+                  className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50"
+                >
                   <Checkbox
                     id={`col-${col.id}`}
                     checked={checked}

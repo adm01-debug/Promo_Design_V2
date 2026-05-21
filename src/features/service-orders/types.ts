@@ -26,10 +26,10 @@ export const serviceOrderSchema = z.object({
     .string()
     .trim()
     .min(1, "Informe a quantidade (mín. 1)")
-    .refine(
-      (v) => { const n = Number(v); return !isNaN(n) && n >= 1; },
-      "Informe a quantidade (mín. 1)"
-    ),
+    .refine((v) => {
+      const n = Number(v);
+      return !isNaN(n) && n >= 1;
+    }, "Informe a quantidade (mín. 1)"),
   observations: z.string(),
   mockupImageUrl: z.string(),
   identificacaoCaixa: z.string(),
@@ -39,11 +39,7 @@ export const serviceOrderSchema = z.object({
   qtdLiberada: z.string(),
   fazParteKit: z.boolean(),
   gravacaoDetalhe: z.string(),
-  artAssetId: z
-    .string()
-    .uuid("artAssetId deve ser um UUID válido")
-    .nullable()
-    .optional(),
+  artAssetId: z.string().uuid("artAssetId deve ser um UUID válido").nullable().optional(),
 });
 
 // ─── Types (derived from Zod) ──────────────────────────────

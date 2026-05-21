@@ -80,7 +80,13 @@ describe("PasswordStrength – getStrength", () => {
 // 2. SERVICE ORDER VALIDATION — comprehensive
 // ═══════════════════════════════════════════════════════════
 
-import { serviceOrderSchema, validateForm, generateOsNumber, TECHNIQUES, type ServiceOrderData } from "@/features/service-orders/types";
+import {
+  serviceOrderSchema,
+  validateForm,
+  generateOsNumber,
+  TECHNIQUES,
+  type ServiceOrderData,
+} from "@/features/service-orders/types";
 
 function buildValidOrder(): ServiceOrderData {
   return {
@@ -190,7 +196,13 @@ describe("ServiceOrder – Zod Validation", () => {
   });
 
   it("multiple errors returned simultaneously", () => {
-    const order = { ...buildValidOrder(), clientName: "", productName: "", technique: "", quantity: "0" };
+    const order = {
+      ...buildValidOrder(),
+      clientName: "",
+      productName: "",
+      technique: "",
+      quantity: "0",
+    };
     const errors = validateForm(order);
     expect(Object.keys(errors).length).toBeGreaterThanOrEqual(3);
   });
@@ -213,7 +225,12 @@ describe("ServiceOrder – Zod Validation", () => {
   });
 
   it("boolean fields accept false", () => {
-    const order = { ...buildValidOrder(), materialEvento: false, aprovarPrimeiraPeca: false, fazParteKit: false };
+    const order = {
+      ...buildValidOrder(),
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      fazParteKit: false,
+    };
     const result = serviceOrderSchema.safeParse(order);
     expect(result.success).toBe(true);
   });
@@ -271,18 +288,30 @@ describe("TECHNIQUES constant", () => {
 // 3. STATUS STATE MACHINE — exhaustive transitions
 // ═══════════════════════════════════════════════════════════
 
-import { canTransition, getNextStatuses, STATUS_CONFIG, STATUS_TRANSITIONS, type OsStatus } from "@/features/service-orders/hooks/use-service-orders";
+import {
+  canTransition,
+  getNextStatuses,
+  STATUS_CONFIG,
+  STATUS_TRANSITIONS,
+  type OsStatus,
+} from "@/features/service-orders/hooks/use-service-orders";
 
 describe("Status State Machine – canTransition", () => {
-  it("aberta → em_producao allowed", () => expect(canTransition("aberta", "em_producao")).toBe(true));
+  it("aberta → em_producao allowed", () =>
+    expect(canTransition("aberta", "em_producao")).toBe(true));
   it("aberta → cancelada allowed", () => expect(canTransition("aberta", "cancelada")).toBe(true));
-  it("aberta → concluida NOT allowed", () => expect(canTransition("aberta", "concluida")).toBe(false));
+  it("aberta → concluida NOT allowed", () =>
+    expect(canTransition("aberta", "concluida")).toBe(false));
   it("aberta → aberta NOT allowed", () => expect(canTransition("aberta", "aberta")).toBe(false));
 
-  it("em_producao → concluida allowed", () => expect(canTransition("em_producao", "concluida")).toBe(true));
-  it("em_producao → cancelada allowed", () => expect(canTransition("em_producao", "cancelada")).toBe(true));
-  it("em_producao → aberta NOT allowed", () => expect(canTransition("em_producao", "aberta")).toBe(false));
-  it("em_producao → em_producao NOT allowed", () => expect(canTransition("em_producao", "em_producao")).toBe(false));
+  it("em_producao → concluida allowed", () =>
+    expect(canTransition("em_producao", "concluida")).toBe(true));
+  it("em_producao → cancelada allowed", () =>
+    expect(canTransition("em_producao", "cancelada")).toBe(true));
+  it("em_producao → aberta NOT allowed", () =>
+    expect(canTransition("em_producao", "aberta")).toBe(false));
+  it("em_producao → em_producao NOT allowed", () =>
+    expect(canTransition("em_producao", "em_producao")).toBe(false));
 
   it("concluida is terminal (no transitions)", () => {
     expect(canTransition("concluida", "aberta")).toBe(false);
@@ -291,9 +320,12 @@ describe("Status State Machine – canTransition", () => {
     expect(canTransition("concluida", "concluida")).toBe(false);
   });
 
-  it("cancelada → aberta allowed (reopen)", () => expect(canTransition("cancelada", "aberta")).toBe(true));
-  it("cancelada → em_producao NOT allowed", () => expect(canTransition("cancelada", "em_producao")).toBe(false));
-  it("cancelada → concluida NOT allowed", () => expect(canTransition("cancelada", "concluida")).toBe(false));
+  it("cancelada → aberta allowed (reopen)", () =>
+    expect(canTransition("cancelada", "aberta")).toBe(true));
+  it("cancelada → em_producao NOT allowed", () =>
+    expect(canTransition("cancelada", "em_producao")).toBe(false));
+  it("cancelada → concluida NOT allowed", () =>
+    expect(canTransition("cancelada", "concluida")).toBe(false));
 });
 
 describe("Status State Machine – getNextStatuses", () => {
@@ -353,7 +385,10 @@ describe("Widget Layout – localStorage logic", () => {
     let order = DEFAULT_ORDER;
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      if (DEFAULT_ORDER.every((id) => parsed.includes(id)) && parsed.length === DEFAULT_ORDER.length) {
+      if (
+        DEFAULT_ORDER.every((id) => parsed.includes(id)) &&
+        parsed.length === DEFAULT_ORDER.length
+      ) {
         order = parsed;
       }
     } catch {
@@ -367,7 +402,10 @@ describe("Widget Layout – localStorage logic", () => {
     let order = DEFAULT_ORDER;
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      if (DEFAULT_ORDER.every((id) => parsed.includes(id)) && parsed.length === DEFAULT_ORDER.length) {
+      if (
+        DEFAULT_ORDER.every((id) => parsed.includes(id)) &&
+        parsed.length === DEFAULT_ORDER.length
+      ) {
         order = parsed;
       }
     } catch {
@@ -381,7 +419,10 @@ describe("Widget Layout – localStorage logic", () => {
     let order = DEFAULT_ORDER;
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      if (DEFAULT_ORDER.every((id) => parsed.includes(id)) && parsed.length === DEFAULT_ORDER.length) {
+      if (
+        DEFAULT_ORDER.every((id) => parsed.includes(id)) &&
+        parsed.length === DEFAULT_ORDER.length
+      ) {
         order = parsed;
       }
     } catch {
@@ -395,7 +436,10 @@ describe("Widget Layout – localStorage logic", () => {
     let order = DEFAULT_ORDER;
     try {
       const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-      if (DEFAULT_ORDER.every((id) => parsed.includes(id)) && parsed.length === DEFAULT_ORDER.length) {
+      if (
+        DEFAULT_ORDER.every((id) => parsed.includes(id)) &&
+        parsed.length === DEFAULT_ORDER.length
+      ) {
         order = parsed;
       }
     } catch {
@@ -435,9 +479,12 @@ describe("Dashboard – getUserFirstName", () => {
   it("undefined returns empty", () => expect(getUserFirstName(undefined)).toBe(""));
   it("empty string returns empty", () => expect(getUserFirstName("")).toBe(""));
   it("simple email extracts name", () => expect(getUserFirstName("joao@test.com")).toBe("Joao"));
-  it("email with dot splits correctly", () => expect(getUserFirstName("joao.silva@test.com")).toBe("Joao"));
-  it("email with underscore splits", () => expect(getUserFirstName("joao_silva@test.com")).toBe("Joao"));
-  it("email with hyphen splits", () => expect(getUserFirstName("joao-silva@test.com")).toBe("Joao"));
+  it("email with dot splits correctly", () =>
+    expect(getUserFirstName("joao.silva@test.com")).toBe("Joao"));
+  it("email with underscore splits", () =>
+    expect(getUserFirstName("joao_silva@test.com")).toBe("Joao"));
+  it("email with hyphen splits", () =>
+    expect(getUserFirstName("joao-silva@test.com")).toBe("Joao"));
   it("single char email", () => expect(getUserFirstName("j@test.com")).toBe("J"));
   it("capitalizes first letter", () => expect(getUserFirstName("admin@test.com")).toBe("Admin"));
 });
@@ -547,7 +594,7 @@ describe("lazyWithRetry – retryImport logic", () => {
   async function retryImport(
     factory: () => Promise<{ default: unknown }>,
     retries: number,
-    delay: number
+    delay: number,
   ): Promise<{ default: unknown }> {
     try {
       return await factory();
@@ -565,7 +612,8 @@ describe("lazyWithRetry – retryImport logic", () => {
   });
 
   it("retries on failure then succeeds", async () => {
-    const factory = vi.fn()
+    const factory = vi
+      .fn()
       .mockRejectedValueOnce(new Error("fail"))
       .mockResolvedValue({ default: () => null });
     await retryImport(factory, 3, 10);
@@ -631,14 +679,24 @@ describe("rowToOrder – null field handling", () => {
   }
 
   it("null fields default to empty string", () => {
-    const result = rowToOrder({ delivery_date: null, client_company: null, product_sku: null, quantity: 5 });
+    const result = rowToOrder({
+      delivery_date: null,
+      client_company: null,
+      product_sku: null,
+      quantity: 5,
+    });
     expect(result.deliveryDate).toBe("");
     expect(result.clientCompany).toBe("");
     expect(result.productSku).toBe("");
   });
 
   it("null boolean fields default to false", () => {
-    const result = rowToOrder({ material_evento: null, aprovar_primeira_peca: null, faz_parte_kit: null, quantity: 1 });
+    const result = rowToOrder({
+      material_evento: null,
+      aprovar_primeira_peca: null,
+      faz_parte_kit: null,
+      quantity: 1,
+    });
     expect(result.materialEvento).toBe(false);
     expect(result.aprovarPrimeiraPeca).toBe(false);
     expect(result.fazParteKit).toBe(false);

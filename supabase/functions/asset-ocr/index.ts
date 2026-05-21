@@ -9,8 +9,10 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  const isAllowed = ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
-  
+  const isAllowed = ALLOWED_ORIGINS.some(
+    (allowed) => origin === allowed || origin.endsWith(".lovable.app"),
+  );
+
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers":
@@ -52,7 +54,11 @@ serve(async (req) => {
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
       console.warn(`[${requestId}] Invalid parameters:`, parsed.error.flatten());
-      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400, req);
+      return jsonResponse(
+        { error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId },
+        400,
+        req,
+      );
     }
     const { assetId, filePath, mimeType } = parsed.data;
 
@@ -104,14 +110,16 @@ serve(async (req) => {
     const { data: signed, error: signErr } = await adminClient.storage
       .from("assets")
       .createSignedUrl(filePath, 60 * 60);
-      console.error(`[${requestId}] Failed to generate signed URL:`, signErr);
-      await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
+    console.error(`[${requestId}] Failed to generate signed URL:`, signErr);
+    await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
+    return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
 
     const imgRes = await fetch(signed.signedUrl);
-      console.error(`[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`);
-      await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
-      return jsonResponse({ error: "Falha ao baixar imagem", requestId }, 500, req);
+    console.error(
+      `[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`,
+    );
+    await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
+    return jsonResponse({ error: "Falha ao baixar imagem", requestId }, 500, req);
     const imgBuffer = new Uint8Array(await imgRes.arrayBuffer());
     // Base64 encode
     let binary = "";
@@ -154,7 +162,10 @@ serve(async (req) => {
               parameters: {
                 type: "object",
                 properties: {
-                  text: { type: "string", description: "Texto extraído. Vazio se não houver texto." },
+                  text: {
+                    type: "string",
+                    description: "Texto extraído. Vazio se não houver texto.",
+                  },
                   has_text: { type: "boolean" },
                 },
                 required: ["text", "has_text"],
@@ -172,13 +183,21 @@ serve(async (req) => {
       console.error(`[${requestId}] AI gateway error:`, aiRes.status, errText);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       if (aiRes.status === 429) {
-        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes.", requestId }, 429, req);
+        return jsonResponse(
+          { error: "Muitas requisições. Tente novamente em instantes.", requestId },
+          429,
+          req,
+        );
       }
       if (aiRes.status === 402) {
         return jsonResponse(
-          { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage.", requestId },
+          {
+            error:
+              "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage.",
+            requestId,
+          },
           402,
-          req
+          req,
         );
       }
       return jsonResponse({ error: "Falha no AI Gateway", requestId }, 502, req);
@@ -187,7 +206,7 @@ serve(async (req) => {
     const aiJson = await aiRes.json();
     const usage = aiJson?.usage || {};
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     // Log usage
     await adminClient.from("ai_usage_log").insert({
       organization_id: asset.organization_id,
@@ -196,8 +215,9 @@ serve(async (req) => {
       model_name: "google/gemini-3-flash-preview",
       tokens_in: usage.prompt_tokens || 0,
       tokens_out: usage.completion_tokens || 0,
-      cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003), // Approximate
-      metadata: { assetId }
+      cost_estimate:
+        (usage.prompt_tokens || 0) * 0.000000075 + (usage.completion_tokens || 0) * 0.0000003, // Approximate
+      metadata: { assetId },
     });
 
     let extractedText = "";
@@ -225,14 +245,16 @@ serve(async (req) => {
       return jsonResponse({ error: "Falha ao salvar texto extraído", requestId }, 500, req);
     }
 
-    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}`);
+    console.log(
+      `[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}`,
+    );
     return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId }, 200, req);
   } catch (e) {
     console.error(`[${requestId}] asset-ocr fatal error:`, e);
     return jsonResponse(
       { error: e instanceof Error ? e.message : "Erro desconhecido", requestId },
       500,
-      req
+      req,
     );
   }
 });

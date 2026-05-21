@@ -1,5 +1,17 @@
 import { useState } from "react";
-import { Palette, Info, Bug, Trash2, Download, ChevronDown, ChevronUp, Activity, Shield, QrCode, Smartphone } from "lucide-react";
+import {
+  Palette,
+  Info,
+  Bug,
+  Trash2,
+  Download,
+  ChevronDown,
+  ChevronUp,
+  Activity,
+  Shield,
+  QrCode,
+  Smartphone,
+} from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,19 +57,43 @@ function DiagnosticsPanel() {
         <div className="flex items-center gap-2">
           <Bug className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Diagnóstico</h3>
-          <Badge variant="secondary" className="text-xs">{entries.length}</Badge>
+          <Badge variant="secondary" className="text-xs">
+            {entries.length}
+          </Badge>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => { ErrorLogger.error("Erro de teste manual", new Error("fake-error-diagnostico"), { source: "DiagnosticsPanel" }); refresh(); }} className="text-xs text-yellow-600 dark:text-yellow-400">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              ErrorLogger.error("Erro de teste manual", new Error("fake-error-diagnostico"), {
+                source: "DiagnosticsPanel",
+              });
+              refresh();
+            }}
+            className="text-xs text-yellow-600 dark:text-yellow-400"
+          >
             🧪 Testar
           </Button>
           <Button variant="ghost" size="sm" onClick={refresh} className="text-xs">
             Atualizar
           </Button>
-          <Button variant="ghost" size="sm" onClick={exportJson} disabled={entries.length === 0} className="text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportJson}
+            disabled={entries.length === 0}
+            className="text-xs"
+          >
             <Download className="w-3 h-3 mr-1" /> JSON
           </Button>
-          <Button variant="ghost" size="sm" onClick={clear} disabled={entries.length === 0} className="text-xs text-destructive">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clear}
+            disabled={entries.length === 0}
+            className="text-xs text-destructive"
+          >
             <Trash2 className="w-3 h-3 mr-1" /> Limpar
           </Button>
         </div>
@@ -86,13 +122,22 @@ function DiagnosticsPanel() {
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                     {new Date(e.timestamp).toLocaleTimeString("pt-BR")}
                   </span>
-                  {isOpen ? <ChevronUp className="w-3 h-3 text-muted-foreground" /> : <ChevronDown className="w-3 h-3 text-muted-foreground" />}
+                  {isOpen ? (
+                    <ChevronUp className="w-3 h-3 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                  )}
                 </div>
                 {isOpen && (
                   <div className="mt-2 space-y-1 text-[11px] text-muted-foreground">
-                    <p><strong className="text-foreground">URL:</strong> {e.url}</p>
+                    <p>
+                      <strong className="text-foreground">URL:</strong> {e.url}
+                    </p>
                     {e.context && (
-                      <p><strong className="text-foreground">Contexto:</strong> {JSON.stringify(e.context)}</p>
+                      <p>
+                        <strong className="text-foreground">Contexto:</strong>{" "}
+                        {JSON.stringify(e.context)}
+                      </p>
                     )}
                     {e.stack && (
                       <pre className="mt-1 p-2 rounded bg-muted text-[10px] overflow-x-auto whitespace-pre-wrap break-all">
@@ -124,7 +169,9 @@ function PollingMetricsPanel() {
       <div className="flex items-center gap-2 mb-4">
         <Activity className="w-4 h-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Polling & Rate Limiting</h3>
-        <Badge variant="secondary" className="text-xs">{metrics.length} canais</Badge>
+        <Badge variant="secondary" className="text-xs">
+          {metrics.length} canais
+        </Badge>
       </div>
 
       {metrics.length === 0 ? (
@@ -149,9 +196,14 @@ function PollingMetricsPanel() {
                   <div>
                     <span className="block text-[10px] uppercase tracking-wide">Intervalo</span>
                     <span className="text-sm font-semibold text-foreground">
-                      {m.currentIntervalMs > 0 ? `${(m.currentIntervalMs / 1000).toFixed(0)}s` : "—"}
+                      {m.currentIntervalMs > 0
+                        ? `${(m.currentIntervalMs / 1000).toFixed(0)}s`
+                        : "—"}
                     </span>
-                    <span className="text-[10px]"> / base {(m.baseIntervalMs / 1000).toFixed(0)}s</span>
+                    <span className="text-[10px]">
+                      {" "}
+                      / base {(m.baseIntervalMs / 1000).toFixed(0)}s
+                    </span>
                   </div>
                   <div>
                     <span className="block text-[10px] uppercase tracking-wide">Último poll</span>
@@ -171,7 +223,7 @@ function PollingMetricsPanel() {
 
 const Settings = () => {
   const { isMfaStrong, aal } = useAuth();
-  
+
   return (
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-6 py-4">
@@ -199,26 +251,47 @@ const Settings = () => {
             <h3 className="text-sm font-semibold text-foreground">Segurança</h3>
           </div>
           <div className="space-y-4">
-            <div className={`flex items-start gap-4 p-3 rounded-lg border ${isMfaStrong ? 'bg-green-500/5 border-green-500/20' : 'bg-primary/5 border-primary/10'}`}>
-              <div className={`p-2 rounded-full ${isMfaStrong ? 'bg-green-500/10' : 'bg-primary/10'}`}>
-                <Smartphone className={`w-4 h-4 ${isMfaStrong ? 'text-green-600' : 'text-primary'}`} />
+            <div
+              className={`flex items-start gap-4 p-3 rounded-lg border ${isMfaStrong ? "bg-green-500/5 border-green-500/20" : "bg-primary/5 border-primary/10"}`}
+            >
+              <div
+                className={`p-2 rounded-full ${isMfaStrong ? "bg-green-500/10" : "bg-primary/10"}`}
+              >
+                <Smartphone
+                  className={`w-4 h-4 ${isMfaStrong ? "text-green-600" : "text-primary"}`}
+                />
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider">Autenticação de Dois Fatores (2FA)</h4>
-                  <Badge variant={isMfaStrong ? "default" : "outline"} className={`text-[10px] ${isMfaStrong ? 'bg-green-600' : 'text-muted-foreground border-dashed'}`}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider">
+                    Autenticação de Dois Fatores (2FA)
+                  </h4>
+                  <Badge
+                    variant={isMfaStrong ? "default" : "outline"}
+                    className={`text-[10px] ${isMfaStrong ? "bg-green-600" : "text-muted-foreground border-dashed"}`}
+                  >
                     {isMfaStrong ? "Ativado" : "Recomendado"}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {isMfaStrong 
-                    ? "Sua conta está protegida com autenticação de múltiplos fatores (AAL2)." 
+                  {isMfaStrong
+                    ? "Sua conta está protegida com autenticação de múltiplos fatores (AAL2)."
                     : "Adicione uma camada extra de segurança à sua conta usando um aplicativo de autenticação (Google Authenticator, Authy, etc.)."}
                 </p>
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" variant={isMfaStrong ? "outline" : "default"} className="h-8 text-xs gap-2" asChild>
-                    <a href="https://supabase.com/dashboard/project/_/auth/users" target="_blank" rel="noopener noreferrer">
-                      <QrCode className="w-3.5 h-3.5" /> {isMfaStrong ? "Gerenciar 2FA" : "Configurar 2FA"}
+                  <Button
+                    size="sm"
+                    variant={isMfaStrong ? "outline" : "default"}
+                    className="h-8 text-xs gap-2"
+                    asChild
+                  >
+                    <a
+                      href="https://supabase.com/dashboard/project/_/auth/users"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />{" "}
+                      {isMfaStrong ? "Gerenciar 2FA" : "Configurar 2FA"}
                     </a>
                   </Button>
                 </div>
@@ -230,7 +303,9 @@ const Settings = () => {
               </div>
             </div>
             <div className="p-3 rounded-lg border border-border bg-background/50">
-              <h4 className="text-xs font-semibold uppercase tracking-wider mb-2">Política de Senha</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-2">
+                Política de Senha
+              </h4>
               <ul className="text-[10px] text-muted-foreground space-y-1.5 list-disc pl-4">
                 <li>Mínimo de 10 caracteres (obrigatório).</li>
                 <li>Verificação contra senhas vazadas (HIBP) ativada.</li>
@@ -250,7 +325,10 @@ const Settings = () => {
             <h3 className="text-sm font-semibold text-foreground">Sobre</h3>
           </div>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p><strong className="text-foreground">Promo Design</strong> — Plataforma de criação de mockups e ordens de serviço para produtos promocionais.</p>
+            <p>
+              <strong className="text-foreground">Promo Design</strong> — Plataforma de criação de
+              mockups e ordens de serviço para produtos promocionais.
+            </p>
             <p className="text-xs">Versão 1.0.0</p>
           </div>
         </section>

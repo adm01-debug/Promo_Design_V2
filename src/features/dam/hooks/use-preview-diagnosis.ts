@@ -7,7 +7,7 @@ export function usePreviewDiagnosis(
   activeAsset: Asset | null,
   assets: Asset[],
   filters: UseDamFiltersReturn,
-  clientNameById: Record<string, string>
+  clientNameById: Record<string, string>,
 ) {
   const [lastKnownAsset, setLastKnownAsset] = useState<Asset | null>(null);
 
@@ -24,6 +24,6 @@ export function usePreviewDiagnosis(
   return {
     lastKnownAsset,
     removalCauses,
-    assetRemovedByFilter: removalCauses.length > 0
+    assetRemovedByFilter: removalCauses.length > 0,
   };
 }

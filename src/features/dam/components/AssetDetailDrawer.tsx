@@ -3,7 +3,19 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Download, Copy, Archive, ArchiveRestore, Trash2, GitBranch, Loader2, Star, Pencil, Check, X } from "lucide-react";
+import {
+  Download,
+  Copy,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  GitBranch,
+  Loader2,
+  Star,
+  Pencil,
+  Check,
+  X,
+} from "lucide-react";
 import { useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -34,13 +46,19 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
 
   const { url, handleCopyUrl } = useAssetDetailActions(asset, { onClose, toggleFavorite });
-  const { 
-    ocrText, ocrStatus, ocrLoading, ocrOpen, setOcrOpen, ocrClearing, runOcr, clearOcr 
-  } = useAssetOcr(asset, searchQuery);
-  
+  const { ocrText, ocrStatus, ocrLoading, ocrOpen, setOcrOpen, ocrClearing, runOcr, clearOcr } =
+    useAssetOcr(asset, searchQuery);
+
   const {
-    editingTags, setEditingTags, tagsDraft, setTagsDraft, tagError, setTagError, 
-    savingTags, tagSuggestions, handleSaveTags
+    editingTags,
+    setEditingTags,
+    tagsDraft,
+    setTagsDraft,
+    tagError,
+    setTagError,
+    savingTags,
+    tagSuggestions,
+    handleSaveTags,
   } = useAssetTags(asset, assets, update);
 
   if (!asset) return null;
@@ -55,7 +73,9 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
         <SheetHeader>
           <SheetTitle className="truncate flex items-center gap-2">
             <span className="truncate">{asset.name}</span>
-            <Badge variant="secondary" className="shrink-0 text-[10px]">v{asset.version}</Badge>
+            <Badge variant="secondary" className="shrink-0 text-[10px]">
+              v{asset.version}
+            </Badge>
             <Button
               variant="ghost"
               size="sm"
@@ -67,7 +87,12 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                 toast.success(nowFav ? "Adicionado aos favoritos" : "Removido dos favoritos");
               }}
             >
-              <Star className={cn("w-4 h-4 transition-colors", isFavorite(asset.id) ? "fill-primary text-primary" : "text-muted-foreground")} />
+              <Star
+                className={cn(
+                  "w-4 h-4 transition-colors",
+                  isFavorite(asset.id) ? "fill-primary text-primary" : "text-muted-foreground",
+                )}
+              />
             </Button>
           </SheetTitle>
         </SheetHeader>
@@ -87,7 +112,9 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <div className="text-xs text-muted-foreground">Tipo</div>
-                <Badge variant="secondary" className="capitalize">{asset.asset_type}</Badge>
+                <Badge variant="secondary" className="capitalize">
+                  {asset.asset_type}
+                </Badge>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Versão</div>
@@ -95,7 +122,9 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Dimensões</div>
-                <div>{asset.width && asset.height ? `${asset.width} × ${asset.height}px` : "—"}</div>
+                <div>
+                  {asset.width && asset.height ? `${asset.width} × ${asset.height}px` : "—"}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Tamanho</div>
@@ -110,7 +139,12 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                   <div className="flex items-center gap-2">
                     {editingTags && <TagCounter count={tagsDraft.length} max={20} />}
                     {canEdit && !editingTags && (
-                      <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setEditingTags(true)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => setEditingTags(true)}
+                      >
                         <Pencil className="w-3 h-3 mr-1" /> Editar
                       </Button>
                     )}
@@ -118,22 +152,48 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                 </div>
                 {editingTags ? (
                   <div className="space-y-2">
-                    <TagChipsInput value={tagsDraft} onChange={setTagsDraft} suggestions={tagSuggestions} onValidationChange={setTagError} />
+                    <TagChipsInput
+                      value={tagsDraft}
+                      onChange={setTagsDraft}
+                      suggestions={tagSuggestions}
+                      onValidationChange={setTagError}
+                    />
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" className="h-7" disabled={savingTags} onClick={() => setEditingTags(false)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7"
+                        disabled={savingTags}
+                        onClick={() => setEditingTags(false)}
+                      >
                         <X className="w-3.5 h-3.5 mr-1" /> Cancelar
                       </Button>
-                      <Button size="sm" className="h-7" disabled={savingTags || !!tagError} onClick={handleSaveTags}>
-                        {savingTags ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+                      <Button
+                        size="sm"
+                        className="h-7"
+                        disabled={savingTags || !!tagError}
+                        onClick={handleSaveTags}
+                      >
+                        {savingTags ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5 mr-1" />
+                        )}
                         Salvar
                       </Button>
                     </div>
                   </div>
                 ) : asset.tags.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {asset.tags.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
+                    {asset.tags.map((t) => (
+                      <Badge key={t} variant="outline">
+                        {t}
+                      </Badge>
+                    ))}
                   </div>
-                ) : <div className="text-xs text-muted-foreground italic">Sem tags</div>}
+                ) : (
+                  <div className="text-xs text-muted-foreground italic">Sem tags</div>
+                )}
               </div>
             )}
 
@@ -143,7 +203,10 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                 <div className="flex gap-2">
                   {asset.dominant_colors.map((c, i) => (
                     <div key={i} className="flex flex-col items-center gap-1">
-                      <div className="w-10 h-10 rounded border border-border" style={{ backgroundColor: c }} />
+                      <div
+                        className="w-10 h-10 rounded border border-border"
+                        style={{ backgroundColor: c }}
+                      />
                       <span className="text-[10px] font-mono">{c}</span>
                     </div>
                   ))}
@@ -151,7 +214,11 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
               </div>
             )}
 
-            <RelatedFavorites asset={asset} organizationId={currentOrgId} onSelect={(a) => onSelectAsset?.(a)} />
+            <RelatedFavorites
+              asset={asset}
+              organizationId={currentOrgId}
+              onSelect={(a) => onSelectAsset?.(a)}
+            />
 
             {isImage && (
               <AssetDetailOcrSection
@@ -174,30 +241,64 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
             <div className="flex flex-wrap gap-2">
               {url && (
                 <Button variant="outline" size="sm" asChild>
-                  <a href={url} download={asset.name}><Download className="w-4 h-4 mr-2" />Baixar</a>
+                  <a href={url} download={asset.name}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Baixar
+                  </a>
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={handleCopyUrl} disabled={!url}>
-                <Copy className="w-4 h-4 mr-2" />Copiar URL
+                <Copy className="w-4 h-4 mr-2" />
+                Copiar URL
               </Button>
               {canEdit && (
                 <Button variant="outline" size="sm" onClick={() => setVersionDialogOpen(true)}>
-                  <GitBranch className="w-4 h-4 mr-2" />Nova versão
+                  <GitBranch className="w-4 h-4 mr-2" />
+                  Nova versão
                 </Button>
               )}
               {canEdit && !asset.is_archived && (
-                <Button variant="outline" size="sm" onClick={async () => { await archive.mutateAsync(asset.id); toast.success("Asset arquivado"); onClose(); }}>
-                  <Archive className="w-4 h-4 mr-2" />Arquivar
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await archive.mutateAsync(asset.id);
+                    toast.success("Asset arquivado");
+                    onClose();
+                  }}
+                >
+                  <Archive className="w-4 h-4 mr-2" />
+                  Arquivar
                 </Button>
               )}
               {canEdit && asset.is_archived && (
-                <Button variant="outline" size="sm" onClick={async () => { await restore.mutateAsync(asset.id); toast.success("Asset restaurado"); onClose(); }} disabled={restore.isPending}>
-                  <ArchiveRestore className="w-4 h-4 mr-2" />Restaurar
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await restore.mutateAsync(asset.id);
+                    toast.success("Asset restaurado");
+                    onClose();
+                  }}
+                  disabled={restore.isPending}
+                >
+                  <ArchiveRestore className="w-4 h-4 mr-2" />
+                  Restaurar
                 </Button>
               )}
               {can(["owner", "admin"]) && (
-                <Button variant="destructive" size="sm" onClick={async () => { if (!confirm("Excluir definitivamente este asset?")) return; await remove.mutateAsync(asset); toast.success("Asset excluído"); onClose(); }}>
-                  <Trash2 className="w-4 h-4 mr-2" />Excluir
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={async () => {
+                    if (!confirm("Excluir definitivamente este asset?")) return;
+                    await remove.mutateAsync(asset);
+                    toast.success("Asset excluído");
+                    onClose();
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Excluir
                 </Button>
               )}
             </div>
@@ -209,7 +310,13 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
         </Tabs>
 
         {currentOrgId && (
-          <AssetUploadDialog open={versionDialogOpen} onOpenChange={setVersionDialogOpen} organizationId={currentOrgId} parentAsset={asset} onUploaded={(newAsset) => onSelectAsset?.(newAsset)} />
+          <AssetUploadDialog
+            open={versionDialogOpen}
+            onOpenChange={setVersionDialogOpen}
+            organizationId={currentOrgId}
+            parentAsset={asset}
+            onUploaded={(newAsset) => onSelectAsset?.(newAsset)}
+          />
         )}
       </SheetContent>
     </Sheet>

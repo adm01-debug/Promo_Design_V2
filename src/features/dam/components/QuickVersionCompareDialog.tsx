@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, ImageOff } from "lucide-react";
@@ -38,10 +44,13 @@ function VersionPane({ asset, label }: { asset: Asset | null; label: string }) {
   return (
     <div className="flex flex-col gap-2 min-w-0">
       <div className="flex items-center justify-between gap-2">
-        <Badge variant="outline" className="text-[10px]">{label}</Badge>
+        <Badge variant="outline" className="text-[10px]">
+          {label}
+        </Badge>
         {asset && (
           <span className="text-[11px] text-muted-foreground">
-            v{asset.version} · {formatDistanceToNow(new Date(asset.created_at), { addSuffix: true, locale: ptBR })}
+            v{asset.version} ·{" "}
+            {formatDistanceToNow(new Date(asset.created_at), { addSuffix: true, locale: ptBR })}
           </span>
         )}
       </div>
@@ -76,7 +85,11 @@ function VersionPane({ asset, label }: { asset: Asset | null; label: string }) {
  * the immediately previous one in the same version chain. Avoids opening the
  * heavier asset detail drawer.
  */
-export function QuickVersionCompareDialog({ asset, open, onOpenChange }: QuickVersionCompareDialogProps) {
+export function QuickVersionCompareDialog({
+  asset,
+  open,
+  onOpenChange,
+}: QuickVersionCompareDialogProps) {
   const versionsQuery = useAssetVersions(open ? asset : null);
   const versions = versionsQuery.data ?? [];
 

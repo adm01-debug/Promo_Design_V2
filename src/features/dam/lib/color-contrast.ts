@@ -1,8 +1,18 @@
 function hexToRgb(hex: string): [number, number, number] | null {
   const m = hex.replace("#", "").trim();
-  const full = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
+  const full =
+    m.length === 3
+      ? m
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : m;
   if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
-  return [parseInt(full.slice(0, 2), 16), parseInt(full.slice(2, 4), 16), parseInt(full.slice(4, 6), 16)];
+  return [
+    parseInt(full.slice(0, 2), 16),
+    parseInt(full.slice(2, 4), 16),
+    parseInt(full.slice(4, 6), 16),
+  ];
 }
 
 function relLuminance([r, g, b]: [number, number, number]): number {
@@ -68,7 +78,11 @@ export function normalizeHex(raw: string): string {
   if (!v) return "";
   if (!v.startsWith("#")) v = `#${v}`;
   if (SHORT_HEX_RE.test(v)) {
-    v = `#${v.slice(1).split("").map((c) => c + c).join("")}`;
+    v = `#${v
+      .slice(1)
+      .split("")
+      .map((c) => c + c)
+      .join("")}`;
   }
   return v;
 }

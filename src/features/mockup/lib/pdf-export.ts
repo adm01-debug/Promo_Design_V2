@@ -15,7 +15,11 @@ interface MockupData {
 /** Generate approval layout PDF (A4) */
 export function generateApprovalPdf(data: MockupData): jsPDF {
   const isLandscape = data.dimensions.width > data.dimensions.height;
-  const doc = new jsPDF({ orientation: isLandscape ? "landscape" : "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({
+    orientation: isLandscape ? "landscape" : "portrait",
+    unit: "mm",
+    format: "a4",
+  });
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -62,13 +66,15 @@ export function generateApprovalPdf(data: MockupData): jsPDF {
     startY: tableY,
     margin: { left: margin, right: margin },
     head: [["Produto", "Técnica", "Área", "Dimensões", "Cores"]],
-    body: [[
-      data.productName,
-      data.technique,
-      data.area,
-      `${data.dimensions.width}cm × ${data.dimensions.height}cm`,
-      data.colors.join(", ") || "N/A",
-    ]],
+    body: [
+      [
+        data.productName,
+        data.technique,
+        data.area,
+        `${data.dimensions.width}cm × ${data.dimensions.height}cm`,
+        data.colors.join(", ") || "N/A",
+      ],
+    ],
     theme: "grid",
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [15, 15, 20], textColor: [255, 255, 255] },
@@ -81,7 +87,7 @@ export function generateApprovalPdf(data: MockupData): jsPDF {
     "Este layout é para fins de aprovação. Cores podem sofrer variação conforme material e técnica.",
     pageWidth / 2,
     pageHeight - 8,
-    { align: "center" }
+    { align: "center" },
   );
 
   return doc;

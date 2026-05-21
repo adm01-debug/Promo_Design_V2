@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { cmToPx, pxToCm, detectSurfaceType, calculateAutoFit, PERSPECTIVE_PRESETS } from "@/features/mockup";
+import {
+  cmToPx,
+  pxToCm,
+  detectSurfaceType,
+  calculateAutoFit,
+  PERSPECTIVE_PRESETS,
+} from "@/features/mockup";
 import type { SurfaceType } from "@/features/mockup";
 
 // ============================================================
@@ -188,8 +194,7 @@ describe("detectSurfaceType", () => {
 // ============================================================
 describe("calculateAutoFit", () => {
   // Create a mock image-like object
-  const mockImg = (w: number, h: number) =>
-    ({ width: w, height: h } as HTMLImageElement);
+  const mockImg = (w: number, h: number) => ({ width: w, height: h }) as HTMLImageElement;
 
   it("centers a square logo in a square area", () => {
     const result = calculateAutoFit(mockImg(100, 100), 200, 200);

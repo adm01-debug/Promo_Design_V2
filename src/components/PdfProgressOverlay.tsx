@@ -34,10 +34,7 @@ const PdfProgressOverlay = ({ open, title, progress }: PdfProgressOverlayProps) 
 
   const percent = Math.max(0, Math.min(100, Math.round(progress?.percent ?? 0)));
   const stage = progress?.stage ?? "Preparando…";
-  const counter =
-    progress && progress.total > 0
-      ? `${progress.current}/${progress.total}`
-      : null;
+  const counter = progress && progress.total > 0 ? `${progress.current}/${progress.total}` : null;
 
   return (
     <DialogPrimitive.Root open={open}>

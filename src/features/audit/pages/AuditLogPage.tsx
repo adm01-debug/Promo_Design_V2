@@ -20,7 +20,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -52,9 +59,16 @@ const AuditLogPage = () => {
   const { members } = useOrgMembers(currentOrgId);
   const { data: tables = [] } = useAuditDistinctTables(currentOrgId);
   const { toast } = useToast();
-  
-  const { 
-    filterState, setFilters, page, setPage, pageSize, setPageSize, hasAnyFilter, pageSizeOptions 
+
+  const {
+    filterState,
+    setFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    hasAnyFilter,
+    pageSizeOptions,
   } = useAuditFilters();
 
   const [selected, setSelected] = useState<AuditEntry | null>(null);
@@ -64,11 +78,12 @@ const AuditLogPage = () => {
     currentOrgId,
     hasAnyFilter,
     setFilters,
-    setAlertsOpen
+    setAlertsOpen,
   });
 
   const memberOpts = useMemo(
-    () => members.map((m) => ({ user_id: m.user_id, label: `${m.user_id.slice(0, 8)}… (${m.role})` })),
+    () =>
+      members.map((m) => ({ user_id: m.user_id, label: `${m.user_id.slice(0, 8)}… (${m.role})` })),
     [members],
   );
 
@@ -99,7 +114,7 @@ const AuditLogPage = () => {
   const { exporting, handleExport } = useAuditExport({
     currentOrgId,
     queryFilters,
-    userLabel
+    userLabel,
   });
 
   const { data, isLoading, isFetching } = useAuditLog(queryFilters);
@@ -152,7 +167,9 @@ const AuditLogPage = () => {
     try {
       await navigator.clipboard.writeText(id);
       toast({ title: "ID copiado", description: id });
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   };
 
   return (
@@ -162,7 +179,9 @@ const AuditLogPage = () => {
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <ScrollText className="h-8 w-8" /> Trilha de auditoria
           </h1>
-          <p className="text-muted-foreground">Consulte todas as ações da sua organização com filtros avançados.</p>
+          <p className="text-muted-foreground">
+            Consulte todas as ações da sua organização com filtros avançados.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Tooltip>
@@ -172,15 +191,21 @@ const AuditLogPage = () => {
                 className="hidden md:inline-flex items-center gap-1 font-mono text-[10px] cursor-help"
                 aria-label="Atalhos de teclado disponíveis nesta tela"
               >
-                <Keyboard className="h-3 w-3" />
-                / · Esc · g a
+                <Keyboard className="h-3 w-3" />/ · Esc · g a
               </Badge>
             </TooltipTrigger>
             <TooltipContent className="text-xs">
               <div className="space-y-1">
-                <div><kbd className="font-mono">/</kbd> focar busca por ID</div>
-                <div><kbd className="font-mono">Esc</kbd> limpar filtros</div>
-                <div><kbd className="font-mono">g</kbd> depois <kbd className="font-mono">a</kbd> abrir Alertas</div>
+                <div>
+                  <kbd className="font-mono">/</kbd> focar busca por ID
+                </div>
+                <div>
+                  <kbd className="font-mono">Esc</kbd> limpar filtros
+                </div>
+                <div>
+                  <kbd className="font-mono">g</kbd> depois <kbd className="font-mono">a</kbd> abrir
+                  Alertas
+                </div>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -227,7 +252,12 @@ const AuditLogPage = () => {
 
       <Card>
         <CardContent className="p-4 space-y-4">
-          <AuditFilters state={filterState} onChange={setFilters} tables={tables} members={memberOpts} />
+          <AuditFilters
+            state={filterState}
+            onChange={setFilters}
+            tables={tables}
+            members={memberOpts}
+          />
 
           <div className="flex items-center gap-3">
             <div className="flex-1">
@@ -267,24 +297,38 @@ const AuditLogPage = () => {
             <div className="py-12 flex flex-col items-center justify-center text-center gap-3 text-muted-foreground">
               <SearchX className="h-10 w-10 opacity-40" />
               <p className="text-sm font-medium text-foreground">Nenhum resultado</p>
-              <p className="text-xs max-w-sm">Ajuste ou limpe os filtros acima para ver mais eventos.</p>
-              <Button size="sm" variant="outline" onClick={() => setFilters({
-                actions: [],
-                recordIdQuery: "",
-                valueKey: "",
-                valueQuery: "",
-                ipQuery: "",
-                userAgentQuery: "",
-                from: undefined,
-                to: undefined,
-                tableName: undefined,
-                userId: undefined,
-              })}>
+              <p className="text-xs max-w-sm">
+                Ajuste ou limpe os filtros acima para ver mais eventos.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setFilters({
+                    actions: [],
+                    recordIdQuery: "",
+                    valueKey: "",
+                    valueQuery: "",
+                    ipQuery: "",
+                    userAgentQuery: "",
+                    from: undefined,
+                    to: undefined,
+                    tableName: undefined,
+                    userId: undefined,
+                  })
+                }
+              >
                 <RotateCcw className="h-3.5 w-3.5" /> Limpar filtros
               </Button>
             </div>
           ) : (
-            <div className={cn("transition-opacity animate-fade-in", isLoading && "opacity-60 pointer-events-none")} aria-busy={isLoading}>
+            <div
+              className={cn(
+                "transition-opacity animate-fade-in",
+                isLoading && "opacity-60 pointer-events-none",
+              )}
+              aria-busy={isLoading}
+            >
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -302,9 +346,16 @@ const AuditLogPage = () => {
                       <TableCell>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="text-sm">{format(new Date(e.created_at), "dd/MM/yy HH:mm:ss")}</span>
+                            <span className="text-sm">
+                              {format(new Date(e.created_at), "dd/MM/yy HH:mm:ss")}
+                            </span>
                           </TooltipTrigger>
-                          <TooltipContent>{formatDistanceToNow(new Date(e.created_at), { addSuffix: true, locale: ptBR })}</TooltipContent>
+                          <TooltipContent>
+                            {formatDistanceToNow(new Date(e.created_at), {
+                              addSuffix: true,
+                              locale: ptBR,
+                            })}
+                          </TooltipContent>
                         </Tooltip>
                       </TableCell>
                       <TableCell className="font-mono text-xs">{userLabel(e.user_id)}</TableCell>
@@ -314,18 +365,33 @@ const AuditLogPage = () => {
                       <TableCell className="font-mono text-xs">{e.table_name}</TableCell>
                       <TableCell>
                         {e.record_id ? (
-                          <button onClick={() => copyId(e.record_id!)} className="font-mono text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1" title="Copiar ID">
+                          <button
+                            onClick={() => copyId(e.record_id!)}
+                            className="font-mono text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                            title="Copiar ID"
+                          >
                             {e.record_id.slice(0, 8)}… <Copy className="h-3 w-3" />
                           </button>
-                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="inline-flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setSelected(e)}><Eye className="h-4 w-4" /> Ver</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setSelected(e)}>
+                            <Eye className="h-4 w-4" /> Ver
+                          </Button>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button asChild size="icon" variant="ghost" aria-label="Abrir página completa">
-                                <Link to={`/audit/event/${e.id}`}><ExternalLink className="h-4 w-4" /></Link>
+                              <Button
+                                asChild
+                                size="icon"
+                                variant="ghost"
+                                aria-label="Abrir página completa"
+                              >
+                                <Link to={`/audit/event/${e.id}`}>
+                                  <ExternalLink className="h-4 w-4" />
+                                </Link>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Abrir página completa</TooltipContent>

@@ -108,7 +108,11 @@ export function useSavedSearches(orgId: string | null, userId: string | null) {
   });
 
   const create = useMutation({
-    mutationFn: async (input: { name: string; filters: SavedFiltersPayload; is_pinned?: boolean }) => {
+    mutationFn: async (input: {
+      name: string;
+      filters: SavedFiltersPayload;
+      is_pinned?: boolean;
+    }) => {
       if (!orgId || !userId) throw new Error("Organização ou usuário ausente");
       const parsed = migrateSavedFilters({ ...input.filters, _v: SAVED_FILTERS_VERSION });
       const { data, error } = await supabase
@@ -129,12 +133,18 @@ export function useSavedSearches(orgId: string | null, userId: string | null) {
   });
 
   const update = useMutation({
-    mutationFn: async (input: { id: string; patch: Partial<Pick<SavedSearch, "name" | "is_pinned" | "filters">> }) => {
+    mutationFn: async (input: {
+      id: string;
+      patch: Partial<Pick<SavedSearch, "name" | "is_pinned" | "filters">>;
+    }) => {
       const payload: Record<string, unknown> = {};
       if (input.patch.name !== undefined) payload.name = input.patch.name.trim();
       if (input.patch.is_pinned !== undefined) payload.is_pinned = input.patch.is_pinned;
       if (input.patch.filters !== undefined) {
-        payload.filters = migrateSavedFilters({ ...input.patch.filters, _v: SAVED_FILTERS_VERSION });
+        payload.filters = migrateSavedFilters({
+          ...input.patch.filters,
+          _v: SAVED_FILTERS_VERSION,
+        });
       }
       const { error } = await supabase
         .from("dam_saved_searches")

@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -83,16 +89,28 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
       <div className="flex flex-wrap items-center gap-2">
         {/* Period presets */}
         <div className="flex gap-1">
-          <Button size="sm" variant="outline" onClick={() => setPreset("today")}>Hoje</Button>
-          <Button size="sm" variant="outline" onClick={() => setPreset(7)}>7d</Button>
-          <Button size="sm" variant="outline" onClick={() => setPreset(30)}>30d</Button>
-          <Button size="sm" variant="outline" onClick={() => setPreset(90)}>90d</Button>
+          <Button size="sm" variant="outline" onClick={() => setPreset("today")}>
+            Hoje
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPreset(7)}>
+            7d
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPreset(30)}>
+            30d
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setPreset(90)}>
+            90d
+          </Button>
         </div>
 
         {/* From */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" className={cn(!state.from && "text-muted-foreground")}>
+            <Button
+              size="sm"
+              variant="outline"
+              className={cn(!state.from && "text-muted-foreground")}
+            >
               <CalendarIcon className="h-4 w-4" />
               {state.from ? format(state.from, "dd/MM/yy") : "De"}
             </Button>
@@ -111,7 +129,11 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
         {/* To */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" className={cn(!state.to && "text-muted-foreground")}>
+            <Button
+              size="sm"
+              variant="outline"
+              className={cn(!state.to && "text-muted-foreground")}
+            >
               <CalendarIcon className="h-4 w-4" />
               {state.to ? format(state.to, "dd/MM/yy") : "Até"}
             </Button>
@@ -150,7 +172,9 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
         {/* Table */}
         <Select
           value={state.tableName ?? SENTINEL_ALL}
-          onValueChange={(v) => onChange({ ...state, tableName: v === SENTINEL_ALL ? undefined : v })}
+          onValueChange={(v) =>
+            onChange({ ...state, tableName: v === SENTINEL_ALL ? undefined : v })
+          }
         >
           <SelectTrigger className="h-9 w-[180px]">
             <SelectValue placeholder="Tabela" />
@@ -254,8 +278,9 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
       {/* Hint when only value text is provided without key */}
       {state.valueQuery.length > 0 && state.valueKey.trim().length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Sem uma <span className="font-mono">chave</span>, o filtro de valor é aplicado localmente apenas na página atual.
-          Informe uma chave (ex: <span className="font-mono">status</span>) para buscar em todo o histórico.
+          Sem uma <span className="font-mono">chave</span>, o filtro de valor é aplicado localmente
+          apenas na página atual. Informe uma chave (ex: <span className="font-mono">status</span>)
+          para buscar em todo o histórico.
         </p>
       )}
 
@@ -263,16 +288,25 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
       {hasAny && (
         <div className="flex flex-wrap gap-1.5">
           {state.from && (
-            <Chip label={`De: ${format(state.from, "dd/MM/yy")}`} onRemove={() => onChange({ ...state, from: undefined })} />
+            <Chip
+              label={`De: ${format(state.from, "dd/MM/yy")}`}
+              onRemove={() => onChange({ ...state, from: undefined })}
+            />
           )}
           {state.to && (
-            <Chip label={`Até: ${format(state.to, "dd/MM/yy")}`} onRemove={() => onChange({ ...state, to: undefined })} />
+            <Chip
+              label={`Até: ${format(state.to, "dd/MM/yy")}`}
+              onRemove={() => onChange({ ...state, to: undefined })}
+            />
           )}
           {state.actions.map((a) => (
             <Chip key={a} label={a} onRemove={() => toggleAction(a)} />
           ))}
           {state.tableName && (
-            <Chip label={`Tabela: ${state.tableName}`} onRemove={() => onChange({ ...state, tableName: undefined })} />
+            <Chip
+              label={`Tabela: ${state.tableName}`}
+              onRemove={() => onChange({ ...state, tableName: undefined })}
+            />
           )}
           {state.userId && (
             <Chip
@@ -281,19 +315,34 @@ export function AuditFilters({ state, onChange, tables, members }: Props) {
             />
           )}
           {state.recordIdQuery && (
-            <Chip label={`ID: ${state.recordIdQuery}`} onRemove={() => onChange({ ...state, recordIdQuery: "" })} />
+            <Chip
+              label={`ID: ${state.recordIdQuery}`}
+              onRemove={() => onChange({ ...state, recordIdQuery: "" })}
+            />
           )}
           {state.valueKey && (
-            <Chip label={`Chave: ${state.valueKey}`} onRemove={() => onChange({ ...state, valueKey: "" })} />
+            <Chip
+              label={`Chave: ${state.valueKey}`}
+              onRemove={() => onChange({ ...state, valueKey: "" })}
+            />
           )}
           {state.valueQuery && (
-            <Chip label={`Valor: ${state.valueQuery}`} onRemove={() => onChange({ ...state, valueQuery: "" })} />
+            <Chip
+              label={`Valor: ${state.valueQuery}`}
+              onRemove={() => onChange({ ...state, valueQuery: "" })}
+            />
           )}
           {state.ipQuery && (
-            <Chip label={`IP: ${state.ipQuery}`} onRemove={() => onChange({ ...state, ipQuery: "" })} />
+            <Chip
+              label={`IP: ${state.ipQuery}`}
+              onRemove={() => onChange({ ...state, ipQuery: "" })}
+            />
           )}
           {state.userAgentQuery && (
-            <Chip label={`UA: ${state.userAgentQuery}`} onRemove={() => onChange({ ...state, userAgentQuery: "" })} />
+            <Chip
+              label={`UA: ${state.userAgentQuery}`}
+              onRemove={() => onChange({ ...state, userAgentQuery: "" })}
+            />
           )}
         </div>
       )}
@@ -305,7 +354,11 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <Badge variant="secondary" className="gap-1 pr-1">
       <span>{label}</span>
-      <button onClick={onRemove} className="rounded hover:bg-background/50 p-0.5" aria-label="Remover">
+      <button
+        onClick={onRemove}
+        className="rounded hover:bg-background/50 p-0.5"
+        aria-label="Remover"
+      >
         <X className="h-3 w-3" />
       </button>
     </Badge>

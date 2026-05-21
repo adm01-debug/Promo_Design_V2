@@ -49,7 +49,12 @@ const AppLayout = () => {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+      if (
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable
+      )
+        return;
       if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         setShortcutsOpen(true);
@@ -137,7 +142,10 @@ const AppLayout = () => {
       ) : (
         <>
           <AppSidebar onCollapseChange={setCollapsed} />
-          <main id="main-content" className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
+          <main
+            id="main-content"
+            className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}
+          >
             <div className="p-4 pb-0 flex items-center gap-4">
               <Breadcrumbs />
             </div>

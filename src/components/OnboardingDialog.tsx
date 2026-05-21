@@ -11,7 +11,8 @@ const modules = [
   {
     icon: Image,
     title: "Mockup Studio",
-    description: "Crie layouts técnicos de personalização com posicionamento de logos, áreas de gravação e export PDF.",
+    description:
+      "Crie layouts técnicos de personalização com posicionamento de logos, áreas de gravação e export PDF.",
     path: "/mockup/new",
     color: "text-primary",
     bg: "bg-primary/10",
@@ -19,7 +20,8 @@ const modules = [
   {
     icon: Sparkles,
     title: "Magic Up",
-    description: "Gere imagens publicitárias com IA a partir de prompts otimizados para o segmento promocional.",
+    description:
+      "Gere imagens publicitárias com IA a partir de prompts otimizados para o segmento promocional.",
     path: "/magicup/generate",
     color: "text-secondary",
     bg: "bg-secondary/10",
@@ -48,7 +50,12 @@ const OnboardingDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-border">
         <div className="p-6 pb-0 text-center">
           <motion.div
@@ -79,7 +86,9 @@ const OnboardingDialog = () => {
                 onClick={handleClose}
                 className="flex items-center gap-4 p-3 rounded-xl border border-border bg-card hover:border-primary/40 transition-all group"
               >
-                <div className={`w-10 h-10 rounded-lg ${mod.bg} flex items-center justify-center shrink-0`}>
+                <div
+                  className={`w-10 h-10 rounded-lg ${mod.bg} flex items-center justify-center shrink-0`}
+                >
                   <mod.icon className={`w-5 h-5 ${mod.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -93,7 +102,10 @@ const OnboardingDialog = () => {
         </div>
 
         <div className="p-6 pt-4 flex justify-center">
-          <Button onClick={handleClose} className="bg-gradient-primary text-primary-foreground px-8">
+          <Button
+            onClick={handleClose}
+            className="bg-gradient-primary text-primary-foreground px-8"
+          >
             Começar a criar
           </Button>
         </div>

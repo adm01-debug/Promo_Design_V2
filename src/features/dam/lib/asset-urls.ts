@@ -16,7 +16,9 @@ export async function getAssetSignedUrl(filePath: string, expiresIn = 3600): Pro
   if (cached && cached.expiresAt - Date.now() > SAFETY_WINDOW_MS) {
     return cached.url;
   }
-  const { data, error } = await supabase.storage.from("assets").createSignedUrl(filePath, expiresIn);
+  const { data, error } = await supabase.storage
+    .from("assets")
+    .createSignedUrl(filePath, expiresIn);
   if (error || !data?.signedUrl) {
     throw new Error("Asset não encontrado ou sem permissão");
   }

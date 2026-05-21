@@ -5,12 +5,7 @@ import { toast as sonnerToast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,16 +69,10 @@ function diffFilters(a: SavedFiltersPayload, b: SavedFiltersPayload): string[] {
     !a.assetTypes.every((t) => b.assetTypes.includes(t))
   )
     diffs.push("assetTypes");
-  const tagsDiffer =
-    a.tags.length !== b.tags.length || !a.tags.every((t) => b.tags.includes(t));
+  const tagsDiffer = a.tags.length !== b.tags.length || !a.tags.every((t) => b.tags.includes(t));
   if (tagsDiffer) diffs.push("tags");
   // tagsMode só conta como diff se ambos têm 2+ tags (caso contrário é irrelevante)
-  if (
-    a.tagsMode !== b.tagsMode &&
-    a.tags.length > 1 &&
-    b.tags.length > 1
-  )
-    diffs.push("tagsMode");
+  if (a.tagsMode !== b.tagsMode && a.tags.length > 1 && b.tags.length > 1) diffs.push("tagsMode");
   if (a.includeArchived !== b.includeArchived) diffs.push("includeArchived");
   if (a.sort !== b.sort) diffs.push("sort");
   return diffs;
@@ -126,7 +115,11 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
       URL.revokeObjectURL(url);
       toast({ title: "Filtros exportados", description: "JSON baixado com sucesso." });
     } catch (e) {
-      toast({ title: "Erro ao exportar", description: (e as Error).message, variant: "destructive" });
+      toast({
+        title: "Erro ao exportar",
+        description: (e as Error).message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -157,10 +150,7 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
       }),
     [items, currentFilters],
   );
-  const matchById = useMemo(
-    () => new Map(matches.map((m) => [m.id, m])),
-    [matches],
-  );
+  const matchById = useMemo(() => new Map(matches.map((m) => [m.id, m])), [matches]);
   const activeId = matches.find((m) => m.exact)?.id ?? null;
   // Best partial match: smallest diff count (>0), preferring fewer changes
   const partialMatch = useMemo(() => {
@@ -176,15 +166,27 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   const handleSave = async () => {
     const trimmed = name.trim();
     if (trimmed.length < 2) {
-      toast({ title: "Nome muito curto", description: "Use pelo menos 2 caracteres.", variant: "destructive" });
+      toast({
+        title: "Nome muito curto",
+        description: "Use pelo menos 2 caracteres.",
+        variant: "destructive",
+      });
       return;
     }
     if (items.length >= SAVED_SEARCH_LIMIT) {
-      toast({ title: "Limite atingido", description: `Máximo de ${SAVED_SEARCH_LIMIT} filtros salvos.`, variant: "destructive" });
+      toast({
+        title: "Limite atingido",
+        description: `Máximo de ${SAVED_SEARCH_LIMIT} filtros salvos.`,
+        variant: "destructive",
+      });
       return;
     }
     if (items.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
-      toast({ title: "Nome duplicado", description: "Já existe um filtro com esse nome.", variant: "destructive" });
+      toast({
+        title: "Nome duplicado",
+        description: "Já existe um filtro com esse nome.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -267,155 +269,164 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
   return (
     <>
       <TooltipProvider delayDuration={150}>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="default" aria-label="Filtros salvos">
-            <Bookmark className="w-4 h-4 mr-2" />
-            Filtros salvos
-            {activeId && (
-              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
-                Ativo
-              </Badge>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="default" aria-label="Filtros salvos">
+              <Bookmark className="w-4 h-4 mr-2" />
+              Filtros salvos
+              {activeId && (
+                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                  Ativo
+                </Badge>
+              )}
+              {!activeId && partialMatch && (
+                <Badge
+                  variant="outline"
+                  className="ml-2 text-[10px] px-1.5 py-0 border-warning/40 text-warning"
+                  title={`Quase: ${partialMatch.diffs.length} diferença(s)`}
+                >
+                  ~{partialMatch.diffs.length}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Filtros salvos</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => setSaveOpen(true)} className="cursor-pointer">
+              <Plus className="w-4 h-4 mr-2" />
+              Salvar filtros atuais…
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={handleExportFilters} className="cursor-pointer">
+              <Download className="w-4 h-4 mr-2" />
+              Exportar filtros (JSON)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }}
+              className="cursor-pointer"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importar filtros (JSON)…
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {isLoading && (
+              <div className="px-2 py-3 text-xs text-muted-foreground">Carregando…</div>
             )}
-            {!activeId && partialMatch && (
-              <Badge
-                variant="outline"
-                className="ml-2 text-[10px] px-1.5 py-0 border-warning/40 text-warning"
-                title={`Quase: ${partialMatch.diffs.length} diferença(s)`}
-              >
-                ~{partialMatch.diffs.length}
-              </Badge>
+            {!isLoading && sorted.length === 0 && (
+              <div className="px-2 py-3 text-xs text-muted-foreground">
+                Nenhum filtro salvo ainda.
+              </div>
             )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel>Filtros salvos</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={() => setSaveOpen(true)} className="cursor-pointer">
-            <Plus className="w-4 h-4 mr-2" />
-            Salvar filtros atuais…
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleExportFilters} className="cursor-pointer">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar filtros (JSON)
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              fileInputRef.current?.click();
-            }}
-            className="cursor-pointer"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Importar filtros (JSON)…
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {isLoading && (
-            <div className="px-2 py-3 text-xs text-muted-foreground">Carregando…</div>
-          )}
-          {!isLoading && sorted.length === 0 && (
-            <div className="px-2 py-3 text-xs text-muted-foreground">
-              Nenhum filtro salvo ainda.
-            </div>
-          )}
-          {sorted.map((s) => {
-            const match = matchById.get(s.id);
-            const isActive = s.id === activeId;
-            const diffs = match?.diffs ?? [];
-            const isPartial = !isActive && diffs.length > 0 && diffs.length <= 2;
-            const isRenaming = renameId === s.id;
-            return (
-              <div key={s.id} className="px-1 py-0.5">
-                {isRenaming ? (
-                  <div className="flex items-center gap-1 px-1 py-1">
-                    <Input
-                      value={renameValue}
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRename(s.id);
-                        if (e.key === "Escape") setRenameId(null);
-                      }}
-                      className="h-7 text-xs"
-                      autoFocus
-                      maxLength={80}
-                    />
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRename(s.id)} aria-label="Confirmar">
-                      <Check className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 group">
-                    <button
-                      type="button"
-                      onClick={() => onApply(s.filters)}
-                      className="flex-1 flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent text-left min-w-0"
-                    >
-                      {s.is_pinned && <Pin className="w-3 h-3 text-muted-foreground shrink-0" />}
-                      <span className="truncate flex-1">{s.name}</span>
-                      {isActive && (
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
-                          Ativo
-                        </Badge>
-                      )}
-                      {isPartial && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1 py-0 shrink-0 border-warning/40 text-warning"
-                              aria-label={`${diffs.length} diferença(s)`}
-                            >
-                              ~{diffs.length}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent side="left" className="text-xs">
-                            Difere em:{" "}
-                            {diffs.map((d) => FIELD_LABELS[d] ?? d).join(", ")}
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </button>
-                    <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => handleTogglePin(s)}
-                        aria-label={s.is_pinned ? "Desafixar" : "Fixar"}
-                        title={s.is_pinned ? "Desafixar" : "Fixar"}
-                      >
-                        {s.is_pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => {
-                          setRenameId(s.id);
-                          setRenameValue(s.name);
+            {sorted.map((s) => {
+              const match = matchById.get(s.id);
+              const isActive = s.id === activeId;
+              const diffs = match?.diffs ?? [];
+              const isPartial = !isActive && diffs.length > 0 && diffs.length <= 2;
+              const isRenaming = renameId === s.id;
+              return (
+                <div key={s.id} className="px-1 py-0.5">
+                  {isRenaming ? (
+                    <div className="flex items-center gap-1 px-1 py-1">
+                      <Input
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRename(s.id);
+                          if (e.key === "Escape") setRenameId(null);
                         }}
-                        aria-label="Renomear"
-                        title="Renomear"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
+                        className="h-7 text-xs"
+                        autoFocus
+                        maxLength={80}
+                      />
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => setConfirmDeleteId(s.id)}
-                        aria-label="Excluir"
-                        title="Excluir"
+                        className="h-7 w-7"
+                        onClick={() => handleRename(s.id)}
+                        aria-label="Confirmar"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Check className="w-3.5 h-3.5" />
                       </Button>
                     </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+                  ) : (
+                    <div className="flex items-center gap-1 group">
+                      <button
+                        type="button"
+                        onClick={() => onApply(s.filters)}
+                        className="flex-1 flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent text-left min-w-0"
+                      >
+                        {s.is_pinned && <Pin className="w-3 h-3 text-muted-foreground shrink-0" />}
+                        <span className="truncate flex-1">{s.name}</span>
+                        {isActive && (
+                          <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+                            Ativo
+                          </Badge>
+                        )}
+                        {isPartial && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1 py-0 shrink-0 border-warning/40 text-warning"
+                                aria-label={`${diffs.length} diferença(s)`}
+                              >
+                                ~{diffs.length}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="text-xs">
+                              Difere em: {diffs.map((d) => FIELD_LABELS[d] ?? d).join(", ")}
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </button>
+                      <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => handleTogglePin(s)}
+                          aria-label={s.is_pinned ? "Desafixar" : "Fixar"}
+                          title={s.is_pinned ? "Desafixar" : "Fixar"}
+                        >
+                          {s.is_pinned ? (
+                            <PinOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Pin className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => {
+                            setRenameId(s.id);
+                            setRenameValue(s.name);
+                          }}
+                          aria-label="Renomear"
+                          title="Renomear"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => setConfirmDeleteId(s.id)}
+                          aria-label="Excluir"
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TooltipProvider>
 
       <input
@@ -448,8 +459,12 @@ export function SavedSearchesMenu({ currentFilters, onApply }: Props) {
             autoFocus
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setSaveOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={create.isPending}>Salvar</Button>
+            <Button variant="ghost" onClick={() => setSaveOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave} disabled={create.isPending}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

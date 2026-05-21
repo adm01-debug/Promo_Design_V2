@@ -25,20 +25,22 @@ export interface OrgMembership {
 }
 
 function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 40) || `org-${Date.now().toString(36)}`;
+  return (
+    input
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 40) || `org-${Date.now().toString(36)}`
+  );
 }
 
 export function useOrganizations() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [currentOrgId, setCurrentOrgId] = useState<string | null>(
-    () => (typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null),
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null,
   );
 
   const membershipsQuery = useQuery({
@@ -61,16 +63,25 @@ export function useOrganizations() {
     if (!currentOrgId || !list.some((m) => m.organization_id === currentOrgId)) {
       const next = list[0].organization_id;
       setCurrentOrgId(next);
-      try { localStorage.setItem(STORAGE_KEY, next); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        /* ignore */
+      }
     }
   }, [membershipsQuery.data, currentOrgId]);
 
   const switchOrg = useCallback((orgId: string) => {
     setCurrentOrgId(orgId);
-    try { localStorage.setItem(STORAGE_KEY, orgId); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, orgId);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
-  const currentMembership = membershipsQuery.data?.find((m) => m.organization_id === currentOrgId) ?? null;
+  const currentMembership =
+    membershipsQuery.data?.find((m) => m.organization_id === currentOrgId) ?? null;
   const currentRole: AppRole | null = currentMembership?.role ?? null;
 
   const createOrg = useMutation({
@@ -91,14 +102,19 @@ export function useOrganizations() {
     },
   });
 
-  const can = useCallback((roles: AppRole[]) => {
-    if (!currentRole) return false;
-    return roles.includes(currentRole);
-  }, [currentRole]);
+  const can = useCallback(
+    (roles: AppRole[]) => {
+      if (!currentRole) return false;
+      return roles.includes(currentRole);
+    },
+    [currentRole],
+  );
 
   return {
     memberships: membershipsQuery.data ?? [],
-    organizations: (membershipsQuery.data ?? []).map((m) => m.organizations).filter(Boolean) as Organization[],
+    organizations: (membershipsQuery.data ?? [])
+      .map((m) => m.organizations)
+      .filter(Boolean) as Organization[],
     currentOrgId,
     currentMembership,
     currentRole,

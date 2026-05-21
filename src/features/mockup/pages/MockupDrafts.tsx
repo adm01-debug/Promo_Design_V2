@@ -6,12 +6,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMockupDrafts } from "@/features/mockup";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import {
-  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, } from "recharts";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 const MockupDrafts = () => {
@@ -32,7 +36,12 @@ const MockupDrafts = () => {
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const dailyDraftData = useMemo(() => {
@@ -69,13 +78,19 @@ const MockupDrafts = () => {
 
       {/* Analytics */}
       {drafts.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
           <div className="rounded-xl border border-border bg-card p-4">
             <p className="text-2xl font-bold text-foreground">{drafts.length}</p>
             <p className="text-xs text-muted-foreground">Total de Rascunhos</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-2xl font-bold text-foreground">{drafts.filter(d => d.productName).length}</p>
+            <p className="text-2xl font-bold text-foreground">
+              {drafts.filter((d) => d.productName).length}
+            </p>
             <p className="text-xs text-muted-foreground">Com Produto Vinculado</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4 md:col-span-1">
@@ -90,9 +105,20 @@ const MockupDrafts = () => {
                     <stop offset="95%" stopColor="hsl(var(--secondary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="day" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <YAxis hide allowDecimals={false} />
-                <Area type="monotone" dataKey="count" stroke="hsl(var(--secondary))" fill="url(#draftGrad)" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  stroke="hsl(var(--secondary))"
+                  fill="url(#draftGrad)"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -113,7 +139,9 @@ const MockupDrafts = () => {
             <FolderOpen className="w-7 h-7 text-muted-foreground" />
           </div>
           <p className="text-sm font-display font-semibold text-foreground mb-1">Nenhum rascunho</p>
-          <p className="text-xs text-muted-foreground">Seus mockups serão salvos automaticamente aqui</p>
+          <p className="text-xs text-muted-foreground">
+            Seus mockups serão salvos automaticamente aqui
+          </p>
         </motion.div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -128,7 +156,11 @@ const MockupDrafts = () => {
               >
                 <div className="aspect-video bg-muted/30 flex items-center justify-center overflow-hidden">
                   {draft.thumbnailUrl ? (
-                    <img src={draft.thumbnailUrl} alt={draft.name} className="w-full h-full object-contain" />
+                    <img
+                      src={draft.thumbnailUrl}
+                      alt={draft.name}
+                      className="w-full h-full object-contain"
+                    />
                   ) : (
                     <Package className="w-8 h-8 text-muted-foreground/40" />
                   )}
@@ -136,7 +168,9 @@ const MockupDrafts = () => {
                 <div className="p-3">
                   <h3 className="text-sm font-semibold text-foreground truncate">{draft.name}</h3>
                   {draft.productName && (
-                    <p className="text-[10px] text-muted-foreground truncate">{draft.productName}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {draft.productName}
+                    </p>
                   )}
                   <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3" />

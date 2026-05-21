@@ -5,7 +5,8 @@ import { useState } from "react";
 
 const MockupHistory = () => {
   const [search, setSearch] = useState("");
-  const mockups: Array<{ id: string; productName: string; technique: string; createdAt: string }> = [];
+  const mockups: Array<{ id: string; productName: string; technique: string; createdAt: string }> =
+    [];
 
   return (
     <div className="p-6">
@@ -42,7 +43,9 @@ const MockupHistory = () => {
           <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center mb-4">
             <History className="w-7 h-7 text-muted-foreground" />
           </div>
-          <p className="text-sm font-display font-semibold text-foreground mb-1">Nenhum mockup gerado</p>
+          <p className="text-sm font-display font-semibold text-foreground mb-1">
+            Nenhum mockup gerado
+          </p>
           <p className="text-xs text-muted-foreground">Seus mockups exportados aparecerão aqui</p>
         </motion.div>
       ) : (
@@ -66,7 +69,9 @@ const MockupHistory = () => {
               </div>
               <div className="p-3">
                 <h3 className="text-sm font-semibold text-foreground truncate">{m.productName}</h3>
-                <p className="text-xs text-muted-foreground">{m.technique} · {m.createdAt}</p>
+                <p className="text-xs text-muted-foreground">
+                  {m.technique} · {m.createdAt}
+                </p>
               </div>
             </motion.div>
           ))}

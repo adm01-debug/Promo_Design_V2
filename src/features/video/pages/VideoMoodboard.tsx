@@ -3,8 +3,18 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMoodboardStore } from "@/hooks/use-moodboard-preferences";
 import {
-  Palette, Sparkles, Sun, Zap, Heart, Eye, Target,
-  ArrowRight, Plus, X, Check, Image as ImageIcon
+  Palette,
+  Sparkles,
+  Sun,
+  Zap,
+  Heart,
+  Eye,
+  Target,
+  ArrowRight,
+  Plus,
+  X,
+  Check,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -21,12 +31,42 @@ const TONES: { value: Tone; label: string; icon: React.ElementType; desc: string
 ];
 
 const MOODS: { value: Mood; label: string; colors: string[]; desc: string }[] = [
-  { value: "quente", label: "Quente", colors: ["#FF6B35", "#F7931E", "#FFD23F"], desc: "Laranja, amarelo, vermelho" },
-  { value: "frio", label: "Frio", colors: ["#4ECDC4", "#45B7D1", "#96CEB4"], desc: "Azul, verde-água, ciano" },
-  { value: "neutro", label: "Neutro", colors: ["#9B9B9B", "#D4D4D4", "#F5F5F5"], desc: "Cinza, branco, bege" },
-  { value: "vibrante", label: "Vibrante", colors: ["#FF006E", "#8338EC", "#3A86FF"], desc: "Magenta, roxo, azul" },
-  { value: "pastel", label: "Pastel", colors: ["#FFB5E8", "#B5DEFF", "#E8FFB5"], desc: "Rosa, azul, verde suave" },
-  { value: "escuro", label: "Escuro", colors: ["#1A1A2E", "#16213E", "#0F3460"], desc: "Preto, azul escuro" },
+  {
+    value: "quente",
+    label: "Quente",
+    colors: ["#FF6B35", "#F7931E", "#FFD23F"],
+    desc: "Laranja, amarelo, vermelho",
+  },
+  {
+    value: "frio",
+    label: "Frio",
+    colors: ["#4ECDC4", "#45B7D1", "#96CEB4"],
+    desc: "Azul, verde-água, ciano",
+  },
+  {
+    value: "neutro",
+    label: "Neutro",
+    colors: ["#9B9B9B", "#D4D4D4", "#F5F5F5"],
+    desc: "Cinza, branco, bege",
+  },
+  {
+    value: "vibrante",
+    label: "Vibrante",
+    colors: ["#FF006E", "#8338EC", "#3A86FF"],
+    desc: "Magenta, roxo, azul",
+  },
+  {
+    value: "pastel",
+    label: "Pastel",
+    colors: ["#FFB5E8", "#B5DEFF", "#E8FFB5"],
+    desc: "Rosa, azul, verde suave",
+  },
+  {
+    value: "escuro",
+    label: "Escuro",
+    colors: ["#1A1A2E", "#16213E", "#0F3460"],
+    desc: "Preto, azul escuro",
+  },
 ];
 
 const REFERENCE_SCENES = [
@@ -54,14 +94,16 @@ const VideoMoodboard = () => {
   const handleRefImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).slice(0, 6 - referenceImages.length).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        setReferenceImages(prev => [...prev, dataUrl].slice(0, 6));
-      };
-      reader.readAsDataURL(file);
-    });
+    Array.from(files)
+      .slice(0, 6 - referenceImages.length)
+      .forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          setReferenceImages((prev) => [...prev, dataUrl].slice(0, 6));
+        };
+        reader.readAsDataURL(file);
+      });
   };
 
   const handleApply = () => {
@@ -78,7 +120,7 @@ const VideoMoodboard = () => {
 
   const toggleScene = (id: string) => {
     setSelectedScenes((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id].slice(0, 4)
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id].slice(0, 4),
     );
   };
 
@@ -109,8 +151,8 @@ const VideoMoodboard = () => {
           </span>
         </div>
         <Button size="sm" className="text-xs gap-1.5" disabled={!isComplete} onClick={handleApply}>
-            Aplicar ao Vídeo <ArrowRight className="w-3.5 h-3.5" />
-          </Button>
+          Aplicar ao Vídeo <ArrowRight className="w-3.5 h-3.5" />
+        </Button>
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -126,7 +168,11 @@ const VideoMoodboard = () => {
           </motion.div>
 
           {/* Tom Visual */}
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Tom Visual
             </h3>
@@ -141,7 +187,9 @@ const VideoMoodboard = () => {
                       : "border-border hover:border-primary/40"
                   }`}
                 >
-                  <tone.icon className={`w-6 h-6 ${selectedTone === tone.value ? "text-primary" : "text-muted-foreground"}`} />
+                  <tone.icon
+                    className={`w-6 h-6 ${selectedTone === tone.value ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <span className="text-xs font-semibold text-foreground">{tone.label}</span>
                   <span className="text-[9px] text-muted-foreground text-center">{tone.desc}</span>
                 </button>
@@ -150,7 +198,11 @@ const VideoMoodboard = () => {
           </motion.section>
 
           {/* Paleta de Cores */}
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
             <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Paleta de Cores
             </h3>
@@ -167,7 +219,11 @@ const VideoMoodboard = () => {
                 >
                   <div className="flex gap-1">
                     {mood.colors.map((c, i) => (
-                      <div key={i} className="w-5 h-5 rounded-full border border-border/50" style={{ backgroundColor: c }} />
+                      <div
+                        key={i}
+                        className="w-5 h-5 rounded-full border border-border/50"
+                        style={{ backgroundColor: c }}
+                      />
                     ))}
                   </div>
                   <span className="text-xs font-semibold text-foreground">{mood.label}</span>
@@ -205,7 +261,11 @@ const VideoMoodboard = () => {
           </motion.section>
 
           {/* Cenários de Referência */}
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">
               Cenários de Referência
             </h3>
@@ -225,7 +285,9 @@ const VideoMoodboard = () => {
                   >
                     <span className="text-2xl">{scene.emoji}</span>
                     <div>
-                      <span className="text-xs font-semibold text-foreground block">{scene.label}</span>
+                      <span className="text-xs font-semibold text-foreground block">
+                        {scene.label}
+                      </span>
                       <span className="text-[9px] text-muted-foreground">{scene.desc}</span>
                     </div>
                     {isSelected && <Check className="w-4 h-4 text-primary ml-auto shrink-0" />}
@@ -236,7 +298,11 @@ const VideoMoodboard = () => {
           </motion.section>
 
           {/* Keywords */}
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
             <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Palavras-Chave (opcional)
             </h3>
@@ -249,7 +315,12 @@ const VideoMoodboard = () => {
                 placeholder="Ex: promoção, verão, premium..."
                 className="flex-1 px-3 py-2 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
-              <Button size="sm" variant="outline" onClick={addKeyword} disabled={!newKeyword.trim()}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addKeyword}
+                disabled={!newKeyword.trim()}
+              >
                 <Plus className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -269,16 +340,23 @@ const VideoMoodboard = () => {
           </motion.section>
 
           {/* Reference Images (Higgsfield-inspired) */}
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+          >
             <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Imagens de Referência (até 6)
             </h3>
             <div className="grid grid-cols-6 gap-2">
               {referenceImages.map((img, i) => (
-                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
-                  <img src={img} alt={`Ref ${i+1}`} className="w-full h-full object-cover" />
+                <div
+                  key={i}
+                  className="relative aspect-square rounded-lg overflow-hidden border border-border group"
+                >
+                  <img src={img} alt={`Ref ${i + 1}`} className="w-full h-full object-cover" />
                   <button
-                    onClick={() => setReferenceImages(prev => prev.filter((_, idx) => idx !== i))}
+                    onClick={() => setReferenceImages((prev) => prev.filter((_, idx) => idx !== i))}
                     className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="w-3 h-3" />
@@ -289,15 +367,27 @@ const VideoMoodboard = () => {
                 <label className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary/40 flex flex-col items-center justify-center cursor-pointer transition-colors">
                   <ImageIcon className="w-5 h-5 text-muted-foreground mb-1" />
                   <span className="text-[8px] text-muted-foreground">Upload</span>
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleRefImageUpload} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleRefImageUpload}
+                  />
                 </label>
               )}
             </div>
-            <p className="text-[9px] text-muted-foreground mt-1.5">Suba imagens que representem a estética desejada — elas guiarão o estilo de geração</p>
+            <p className="text-[9px] text-muted-foreground mt-1.5">
+              Suba imagens que representem a estética desejada — elas guiarão o estilo de geração
+            </p>
           </motion.section>
 
           {/* Preview Moodboard */}
-          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             <h3 className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
               Preview do Moodboard
             </h3>
@@ -308,7 +398,9 @@ const VideoMoodboard = () => {
                   <span className="text-[10px] font-mono text-muted-foreground uppercase">Tom</span>
                   {selectedTone ? (
                     <div className="p-3 rounded-lg bg-surface-2 border border-border">
-                      <span className="text-sm font-semibold text-foreground capitalize">{selectedTone}</span>
+                      <span className="text-sm font-semibold text-foreground capitalize">
+                        {selectedTone}
+                      </span>
                     </div>
                   ) : (
                     <div className="p-3 rounded-lg border border-dashed border-border text-center">
@@ -319,35 +411,55 @@ const VideoMoodboard = () => {
 
                 {/* Colors */}
                 <div className="space-y-2">
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase">Cores</span>
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                    Cores
+                  </span>
                   {selectedMood ? (
                     <div className="p-3 rounded-lg bg-surface-2 border border-border">
                       <div className="flex gap-1.5 mb-1">
                         {MOODS.find((m) => m.value === selectedMood)?.colors.map((c, i) => (
-                          <div key={i} className="w-6 h-6 rounded-full" style={{ backgroundColor: c }} />
+                          <div
+                            key={i}
+                            className="w-6 h-6 rounded-full"
+                            style={{ backgroundColor: c }}
+                          />
                         ))}
                         {customColors.map((c, i) => (
-                          <div key={`c${i}`} className="w-6 h-6 rounded-full border border-border" style={{ backgroundColor: c }} />
+                          <div
+                            key={`c${i}`}
+                            className="w-6 h-6 rounded-full border border-border"
+                            style={{ backgroundColor: c }}
+                          />
                         ))}
                       </div>
-                      <span className="text-[10px] text-muted-foreground capitalize">{selectedMood}</span>
+                      <span className="text-[10px] text-muted-foreground capitalize">
+                        {selectedMood}
+                      </span>
                     </div>
                   ) : (
                     <div className="p-3 rounded-lg border border-dashed border-border text-center">
-                      <span className="text-[10px] text-muted-foreground">Selecione uma paleta</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Selecione uma paleta
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Scenes */}
                 <div className="space-y-2">
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase">Cenários</span>
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                    Cenários
+                  </span>
                   {selectedScenes.length > 0 ? (
                     <div className="p-3 rounded-lg bg-surface-2 border border-border">
                       <div className="flex gap-1">
                         {selectedScenes.map((s) => {
                           const scene = REFERENCE_SCENES.find((r) => r.id === s);
-                          return <span key={s} className="text-lg">{scene?.emoji}</span>;
+                          return (
+                            <span key={s} className="text-lg">
+                              {scene?.emoji}
+                            </span>
+                          );
                         })}
                       </div>
                       <span className="text-[10px] text-muted-foreground">
@@ -365,10 +477,15 @@ const VideoMoodboard = () => {
               {/* Keywords */}
               {keywords.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase">Keywords</span>
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                    Keywords
+                  </span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {keywords.map((kw, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium">
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium"
+                      >
                         {kw}
                       </span>
                     ))}
@@ -380,15 +497,10 @@ const VideoMoodboard = () => {
 
           {/* Action */}
           <div className="flex items-center justify-center pb-8">
-              <Button
-                size="lg"
-                className="gap-2 px-8"
-                disabled={!isComplete}
-                onClick={handleApply}
-              >
-                <Sparkles className="w-4 h-4" />
-                Aplicar Moodboard e Criar Vídeo
-              </Button>
+            <Button size="lg" className="gap-2 px-8" disabled={!isComplete} onClick={handleApply}>
+              <Sparkles className="w-4 h-4" />
+              Aplicar Moodboard e Criar Vídeo
+            </Button>
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { buildAuditCsv, downloadCsv } from "../lib/audit-csv";
 export function useAuditExport({
   currentOrgId,
   queryFilters,
-  userLabel
+  userLabel,
 }: {
   currentOrgId: string | null;
   queryFilters: AuditFilters;
@@ -34,7 +34,11 @@ export function useAuditExport({
       downloadCsv(`auditoria-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, csv);
       toast({ title: "Exportado", description: `${all.length} eventos baixados.` });
     } catch (err) {
-      toast({ title: "Erro ao exportar", description: (err as Error).message, variant: "destructive" });
+      toast({
+        title: "Erro ao exportar",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
     } finally {
       setExporting(false);
     }

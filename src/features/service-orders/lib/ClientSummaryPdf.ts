@@ -120,7 +120,11 @@ function drawBars(
     const ry = y + idx * rowH;
     doc.setFontSize(8);
     doc.setTextColor(...DARK);
-    doc.text(item.label.length > 28 ? item.label.slice(0, 27) + "…" : item.label, x, ry + rowH * 0.6);
+    doc.text(
+      item.label.length > 28 ? item.label.slice(0, 27) + "…" : item.label,
+      x,
+      ry + rowH * 0.6,
+    );
     const barX = x + 60;
     const barW = (w - 80) * (item.value / max);
     doc.setFillColor(...GREEN);
@@ -146,7 +150,11 @@ export async function generateClientSummaryPdf(
   doc.setFillColor(...GREEN);
   doc.rect(0, 0, pw, 50, "F");
   if (logoDataUrl) {
-    try { doc.addImage(logoDataUrl, "PNG", m, 10, 30, 30); } catch { /* ignore */ }
+    try {
+      doc.addImage(logoDataUrl, "PNG", m, 10, 30, 30);
+    } catch {
+      /* ignore */
+    }
   }
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
@@ -157,14 +165,25 @@ export async function generateClientSummaryPdf(
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   if (client.company) doc.text(client.company, logoDataUrl ? 48 : m, 38);
-  doc.text(`Período: últimos ${periodDays} dias • Gerado em ${new Date().toLocaleDateString("pt-BR")}`, logoDataUrl ? 48 : m, 45);
+  doc.text(
+    `Período: últimos ${periodDays} dias • Gerado em ${new Date().toLocaleDateString("pt-BR")}`,
+    logoDataUrl ? 48 : m,
+    45,
+  );
 
   // ─── KPIs ───
   onProgress?.({ stage: "Calculando KPIs", current: 0, total: 0, percent: 15 });
   const totalOrders = orders.length;
   const totalQty = orders.reduce((s, o) => s + (parseInt(o.quantity) || 0), 0);
-  const byStatus: Record<OsStatus, number> = { aberta: 0, em_producao: 0, concluida: 0, cancelada: 0 };
-  orders.forEach((o) => { byStatus[o.status] = (byStatus[o.status] ?? 0) + 1; });
+  const byStatus: Record<OsStatus, number> = {
+    aberta: 0,
+    em_producao: 0,
+    concluida: 0,
+    cancelada: 0,
+  };
+  orders.forEach((o) => {
+    byStatus[o.status] = (byStatus[o.status] ?? 0) + 1;
+  });
 
   doc.setTextColor(...DARK);
   doc.setFont("helvetica", "bold");
@@ -195,10 +214,16 @@ export async function generateClientSummaryPdf(
   doc.setFontSize(11);
   doc.setTextColor(...DARK);
   doc.text("OSs por status", m, 105);
-  drawDonut(doc, m + 25, 130, 18, (Object.keys(byStatus) as OsStatus[]).map((k) => ({
-    color: STATUS_COLOR[k],
-    value: byStatus[k],
-  })));
+  drawDonut(
+    doc,
+    m + 25,
+    130,
+    18,
+    (Object.keys(byStatus) as OsStatus[]).map((k) => ({
+      color: STATUS_COLOR[k],
+      value: byStatus[k],
+    })),
+  );
   // Legenda
   let lgY = 115;
   (Object.keys(byStatus) as OsStatus[]).forEach((k) => {
@@ -311,7 +336,9 @@ export async function generateClientSummaryPdf(
       if (dataUrl) {
         try {
           doc.addImage(dataUrl, "JPEG", gx + 2, gy + 2, cellW - 4, cellH - 12, undefined, "FAST");
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       doc.setFontSize(7);
       doc.setTextColor(...DARK);
@@ -345,11 +372,13 @@ export async function generateClientSummaryPdf(
 }
 
 export function clientSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40) || "cliente";
+  return (
+    name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "cliente"
+  );
 }

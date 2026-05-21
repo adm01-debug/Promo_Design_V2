@@ -30,9 +30,7 @@ const mockItems: MagicUpHistoryItem[] = [
 ];
 
 vi.mock("@/features/magic-up", async () => {
-  const actual = await vi.importActual<typeof import("@/features/magic-up")>(
-    "@/features/magic-up",
-  );
+  const actual = await vi.importActual<typeof import("@/features/magic-up")>("@/features/magic-up");
   return {
     ...actual,
     useMagicUpHistory: () => ({
@@ -119,7 +117,10 @@ describe("MagicUpHistory — URL ↔ state sync", () => {
     // then "go back" to the filtered URL. We use window.history directly to
     // mimic real browser back/forward — MemoryRouter listens to history.
     const { rerender } = render(
-      <MemoryRouter initialEntries={["/magic-up/history?fav=1", "/magic-up/history"]} initialIndex={0}>
+      <MemoryRouter
+        initialEntries={["/magic-up/history?fav=1", "/magic-up/history"]}
+        initialIndex={0}
+      >
         <MagicUpHistory />
       </MemoryRouter>,
     );

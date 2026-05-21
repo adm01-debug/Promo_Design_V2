@@ -130,7 +130,9 @@ declare module "recharts" {
   interface AxisProps {
     dataKey?: string | number;
     type?: "number" | "category";
-    domain?: ReadonlyArray<number | string | "auto" | "dataMin" | "dataMax" | ((v: number) => number)>;
+    domain?: ReadonlyArray<
+      number | string | "auto" | "dataMin" | "dataMax" | ((v: number) => number)
+    >;
     allowDecimals?: boolean;
     allowDataOverflow?: boolean;
     tick?: boolean | object | ReactNode | ComponentType<unknown>;
@@ -161,7 +163,9 @@ declare module "recharts" {
     className?: string;
     style?: CSSProperties;
   }
-  export const ResponsiveContainer: ComponentType<ResponsiveContainerProps & RefAttributes<HTMLDivElement>>;
+  export const ResponsiveContainer: ComponentType<
+    ResponsiveContainerProps & RefAttributes<HTMLDivElement>
+  >;
 
   // ---- Chart wrappers -----------------------------------------------------
 
@@ -182,17 +186,19 @@ declare module "recharts" {
   export const Bar: ComponentType<SeriesProps>;
   export const Line: ComponentType<SeriesProps>;
   export const Area: ComponentType<SeriesProps>;
-  export const Pie: ComponentType<SeriesProps & {
-    cx?: number | string;
-    cy?: number | string;
-    innerRadius?: number | string;
-    outerRadius?: number | string;
-    startAngle?: number;
-    endAngle?: number;
-    paddingAngle?: number;
-    minAngle?: number;
-    nameKey?: string;
-  }>;
+  export const Pie: ComponentType<
+    SeriesProps & {
+      cx?: number | string;
+      cy?: number | string;
+      innerRadius?: number | string;
+      outerRadius?: number | string;
+      startAngle?: number;
+      endAngle?: number;
+      paddingAngle?: number;
+      minAngle?: number;
+      nameKey?: string;
+    }
+  >;
   export const Radar: ComponentType<SeriesProps>;
   export const RadialBar: ComponentType<SeriesProps>;
   export const Scatter: ComponentType<SeriesProps>;
@@ -205,7 +211,10 @@ declare module "recharts" {
   export const ZAxis: ComponentType<AxisProps>;
   export const PolarAngleAxis: ComponentType<AxisProps>;
   export const PolarRadiusAxis: ComponentType<AxisProps>;
-  export const PolarGrid: ComponentType<{ gridType?: "polygon" | "circle"; [key: string]: unknown }>;
+  export const PolarGrid: ComponentType<{
+    gridType?: "polygon" | "circle";
+    [key: string]: unknown;
+  }>;
   export const CartesianGrid: ComponentType<{
     horizontal?: boolean;
     vertical?: boolean;
@@ -219,9 +228,17 @@ declare module "recharts" {
   export const Legend: ComponentType<LegendProps>;
   export const Brush: ComponentType<{ dataKey?: string; height?: number; [key: string]: unknown }>;
 
-  export const ReferenceLine: ComponentType<{ x?: number | string; y?: number | string; [key: string]: unknown }>;
+  export const ReferenceLine: ComponentType<{
+    x?: number | string;
+    y?: number | string;
+    [key: string]: unknown;
+  }>;
   export const ReferenceArea: ComponentType<{ [key: string]: unknown }>;
-  export const ReferenceDot: ComponentType<{ x?: number | string; y?: number | string; [key: string]: unknown }>;
+  export const ReferenceDot: ComponentType<{
+    x?: number | string;
+    y?: number | string;
+    [key: string]: unknown;
+  }>;
 
   export const Cell: ComponentType<SVGProps<SVGElement> & { [key: string]: unknown }>;
   export const LabelList: ComponentType<{
@@ -230,7 +247,11 @@ declare module "recharts" {
     formatter?: (value: unknown) => ReactNode;
     [key: string]: unknown;
   }>;
-  export const Label: ComponentType<{ value?: string | number; position?: string; [key: string]: unknown }>;
+  export const Label: ComponentType<{
+    value?: string | number;
+    position?: string;
+    [key: string]: unknown;
+  }>;
   export const Sector: ComponentType<SVGProps<SVGPathElement> & { [key: string]: unknown }>;
 
   // ---- Default export (rare, but recharts exposes it) --------------------

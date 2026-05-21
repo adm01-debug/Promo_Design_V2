@@ -1,4 +1,3 @@
-
 import { Wand2, Package, X, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProductImageUrl } from "@/features/mockup";
@@ -20,7 +19,12 @@ const STYLE_OPTIONS = [
 interface MagicUpLeftPanelProps {
   selectedProduct: DbProduct | null;
   setSelectedProduct: (p: DbProduct | null) => void;
-  colorVariants: { id: string; color_hex: string | null; color_name: string | null; name: string }[];
+  colorVariants: {
+    id: string;
+    color_hex: string | null;
+    color_name: string | null;
+    name: string;
+  }[];
   selectedStyle: string;
   setSelectedStyle: (s: string) => void;
   smartPrompt: string;
@@ -30,28 +34,54 @@ interface MagicUpLeftPanelProps {
 }
 
 const MagicUpLeftPanel = ({
-  selectedProduct, setSelectedProduct, colorVariants,
-  selectedStyle, setSelectedStyle, smartPrompt, applySmartPrompt,
-  setPrompt, onOpenProductPicker,
+  selectedProduct,
+  setSelectedProduct,
+  colorVariants,
+  selectedStyle,
+  setSelectedStyle,
+  smartPrompt,
+  applySmartPrompt,
+  setPrompt,
+  onOpenProductPicker,
 }: MagicUpLeftPanelProps) => (
   <div className="w-72 bg-surface-1 border-r border-border flex flex-col overflow-hidden shrink-0">
     <div className="p-3 border-b border-border">
-      <h2 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Produto de Referência</h2>
+      <h2 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
+        Produto de Referência
+      </h2>
       {selectedProduct ? (
         <div className="flex items-center gap-3 p-2 rounded-lg bg-surface-2 border border-border">
           <div className="w-12 h-12 rounded-md bg-card flex items-center justify-center shrink-0 overflow-hidden">
-            <img src={getProductImageUrl(selectedProduct)} alt="" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
+            <img
+              src={getProductImageUrl(selectedProduct)}
+              alt=""
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder.svg";
+              }}
+            />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{selectedProduct.name}</p>
             <p className="text-[10px] text-muted-foreground">{selectedProduct.sku}</p>
           </div>
-          <button onClick={() => { setSelectedProduct(null); setPrompt(""); }} className="p-1 rounded text-muted-foreground hover:text-foreground">
+          <button
+            onClick={() => {
+              setSelectedProduct(null);
+              setPrompt("");
+            }}
+            className="p-1 rounded text-muted-foreground hover:text-foreground"
+          >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
-        <Button variant="outline" size="sm" className="w-full text-xs gap-1.5" onClick={onOpenProductPicker}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full text-xs gap-1.5"
+          onClick={onOpenProductPicker}
+        >
           <Package className="w-3.5 h-3.5" /> Selecionar Produto
         </Button>
       )}
@@ -59,17 +89,29 @@ const MagicUpLeftPanel = ({
 
     {selectedProduct && (
       <div className="p-3 border-b border-border">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Cores do Produto</h3>
+        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
+          Cores do Produto
+        </h3>
         {colorVariants.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {colorVariants.map((v) => (
-              <div key={v.id} className="w-6 h-6 rounded-full border border-border" style={{ backgroundColor: v.color_hex || "#ccc" }} title={v.color_name || v.name} />
+              <div
+                key={v.id}
+                className="w-6 h-6 rounded-full border border-border"
+                style={{ backgroundColor: v.color_hex || "#ccc" }}
+                title={v.color_name || v.name}
+              />
             ))}
           </div>
         ) : selectedProduct.colors?.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {selectedProduct.colors.map((c, i) => (
-              <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-surface-2 border border-border text-foreground">{c}</span>
+              <span
+                key={i}
+                className="text-[10px] px-2 py-0.5 rounded bg-surface-2 border border-border text-foreground"
+              >
+                {c}
+              </span>
             ))}
           </div>
         ) : (
@@ -79,7 +121,9 @@ const MagicUpLeftPanel = ({
     )}
 
     <div className="p-3 border-b border-border">
-      <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Estilo Visual</h3>
+      <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">
+        Estilo Visual
+      </h3>
       <div className="grid grid-cols-2 gap-1.5">
         {STYLE_OPTIONS.map((style) => (
           <button
@@ -100,8 +144,15 @@ const MagicUpLeftPanel = ({
     {selectedProduct && smartPrompt && (
       <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Prompt Inteligente</h3>
-          <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-primary" onClick={applySmartPrompt}>
+          <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+            Prompt Inteligente
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] gap-1 text-primary"
+            onClick={applySmartPrompt}
+          >
             <Wand2 className="w-3 h-3" /> Usar
           </Button>
         </div>
@@ -114,7 +165,9 @@ const MagicUpLeftPanel = ({
     <div className="p-3 flex-1 overflow-auto">
       <div className="flex items-center gap-1.5 mb-3">
         <Target className="w-3.5 h-3.5 text-primary" />
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Gerador de Campanha</h3>
+        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+          Gerador de Campanha
+        </h3>
       </div>
       <PromptGenerator onGenerate={(p) => setPrompt(p)} productName={selectedProduct?.name} />
       <div className="mt-4 pt-4 border-t border-border">
@@ -124,11 +177,26 @@ const MagicUpLeftPanel = ({
 
     {selectedProduct && (
       <div className="p-3 border-t border-border mt-auto">
-        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Detalhes</h3>
+        <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">
+          Detalhes
+        </h3>
         <div className="space-y-1 text-[10px]">
-          {selectedProduct.brand && <p className="text-muted-foreground">Marca: <span className="text-foreground">{selectedProduct.brand}</span></p>}
-          {selectedProduct.engraving_type && <p className="text-muted-foreground">Gravação: <span className="text-primary font-mono">{selectedProduct.engraving_type}</span></p>}
-          {selectedProduct.shape_type && <p className="text-muted-foreground">Formato: <span className="text-foreground">{selectedProduct.shape_type}</span></p>}
+          {selectedProduct.brand && (
+            <p className="text-muted-foreground">
+              Marca: <span className="text-foreground">{selectedProduct.brand}</span>
+            </p>
+          )}
+          {selectedProduct.engraving_type && (
+            <p className="text-muted-foreground">
+              Gravação:{" "}
+              <span className="text-primary font-mono">{selectedProduct.engraving_type}</span>
+            </p>
+          )}
+          {selectedProduct.shape_type && (
+            <p className="text-muted-foreground">
+              Formato: <span className="text-foreground">{selectedProduct.shape_type}</span>
+            </p>
+          )}
         </div>
       </div>
     )}

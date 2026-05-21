@@ -26,10 +26,10 @@ export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, u
     if (!asset || tagError) return;
     setSavingTags(true);
     try {
-      await updateAsset.mutateAsync({ 
-        id: asset.id, 
+      await updateAsset.mutateAsync({
+        id: asset.id,
         patch: { tags: tagsDraft },
-        lockVersion: (asset as any).lock_version 
+        lockVersion: (asset as any).lock_version,
       });
       toast.success("Tags atualizadas");
       setEditingTags(false);
@@ -49,6 +49,6 @@ export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, u
     setTagError,
     savingTags,
     tagSuggestions,
-    handleSaveTags
+    handleSaveTags,
   };
 }

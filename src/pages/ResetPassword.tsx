@@ -45,7 +45,11 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
             <Layers className="w-7 h-7 text-primary-foreground" />
@@ -78,7 +82,11 @@ const ResetPassword = () => {
                 </div>
                 <PasswordStrength password={password} />
               </div>
-              <Button type="submit" disabled={loading} className="w-full bg-gradient-primary text-primary-foreground">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-primary text-primary-foreground"
+              >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar nova senha"}
               </Button>
             </form>

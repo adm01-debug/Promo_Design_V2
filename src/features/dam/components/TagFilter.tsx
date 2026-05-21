@@ -3,7 +3,14 @@ import { Check, Tag as TagIcon, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
@@ -15,9 +22,18 @@ interface TagFilterProps {
   onModeChange?: (mode: "all" | "any") => void;
 }
 
-export function TagFilter({ availableTags, selected, onChange, mode = "all", onModeChange }: TagFilterProps) {
+export function TagFilter({
+  availableTags,
+  selected,
+  onChange,
+  mode = "all",
+  onModeChange,
+}: TagFilterProps) {
   const [open, setOpen] = useState(false);
-  const sorted = useMemo(() => [...availableTags].sort((a, b) => a.localeCompare(b)), [availableTags]);
+  const sorted = useMemo(
+    () => [...availableTags].sort((a, b) => a.localeCompare(b)),
+    [availableTags],
+  );
 
   const toggle = (tag: string) => {
     onChange(selected.includes(tag) ? selected.filter((t) => t !== tag) : [...selected, tag]);
@@ -29,7 +45,8 @@ export function TagFilter({ availableTags, selected, onChange, mode = "all", onM
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-9 gap-2">
             <TagIcon className="w-3.5 h-3.5" />
-            Tags {selected.length > 0 && (
+            Tags{" "}
+            {selected.length > 0 && (
               <Badge variant="secondary" className="ml-1 px-1.5">
                 {selected.length} · {mode === "all" ? "Todas" : "Qualquer"}
               </Badge>
