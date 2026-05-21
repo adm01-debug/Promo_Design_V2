@@ -104,14 +104,19 @@ serve(async (req) => {
     const { data: signed, error: signErr } = await adminClient.storage
       .from("assets")
       .createSignedUrl(filePath, 60 * 60);
+
+    if (signErr || !signed) {
       console.error(`[${requestId}] Failed to generate signed URL:`, signErr);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
+    }
 
     const imgRes = await fetch(signed.signedUrl);
+    if (!imgRes.ok) {
       console.error(`[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       return jsonResponse({ error: "Falha ao baixar imagem", requestId }, 500, req);
+    }
     const imgBuffer = new Uint8Array(await imgRes.arrayBuffer());
     // Base64 encode
     let binary = "";
