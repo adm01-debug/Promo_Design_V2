@@ -50,7 +50,7 @@ const ServiceOrder = () => {
     if (existingOrder && !loadedRef.current) {
       loadedRef.current = true;
       setForm({
-        osNumber: existingOrder.osNumber, date: existingOrder.date, clientName: existingOrder.clientName, clientCompany: existingOrder.clientCompany, clientPhone: existingOrder.clientPhone, clientEmail: existingOrder.clientEmail, productName: existingOrder.productName, productSku: existingOrder.productSku, productMaterial: existingOrder.productMaterial, productColors: existingOrder.productColors, technique: existingOrder.technique, areaName: existingOrder.areaName, areaWidth: existingOrder.areaWidth, areaHeight: existingOrder.areaHeight, areaShape: existingOrder.areaShape, artColors: existingOrder.artColors, artDpi: existingOrder.artDpi, artFile: existingOrder.artFile, artFileDataUrl: existingOrder.artFileDataUrl || "", artAssetId: (existingOrder as { artAssetId?: string | null }).artAssetId ?? null, quantity: existingOrder.quantity, deliveryDate: existingOrder.deliveryDate, observations: existingOrder.observations, mockupImageUrl: existingOrder.mockupImageUrl, identificacaoCaixa: existingOrder.identificacaoCaixa || "", materialEvento: existingOrder.materialEvento || false, aprovarPrimeiraPeca: existingOrder.aprovarPrimeiraPeca || false, qtdCompra: existingOrder.qtdCompra || "", qtdLiberada: existingOrder.qtdLiberada || "", fazParteKit: existingOrder.fazParteKit || false, gravacaoDetalhe: existingOrder.gravacaoDetalhe || "",
+        osNumber: existingOrder.osNumber, date: existingOrder.date, clientName: existingOrder.clientName, clientCompany: existingOrder.clientCompany, clientPhone: existingOrder.clientPhone, clientEmail: existingOrder.clientEmail, productName: existingOrder.productName, productSku: existingOrder.productSku, productMaterial: existingOrder.productMaterial, productColors: existingOrder.productColors, technique: existingOrder.technique, areaName: existingOrder.areaName, areaWidth: existingOrder.areaWidth, areaHeight: existingOrder.areaHeight, areaShape: existingOrder.areaShape, artColors: existingOrder.artColors, artDpi: existingOrder.artDpi, artFile: existingOrder.artFile, artFileDataUrl: existingOrder.artFileDataUrl || "", artAssetId: (existingOrder as { artAssetId?: string | null }).artAssetId ?? null, quantity: existingOrder.quantity, deliveryDate: existingOrder.deliveryDate, observations: existingOrder.observations, mockupImageUrl: existingOrder.mockupImageUrl || "", identificacaoCaixa: existingOrder.identificacaoCaixa || "", materialEvento: existingOrder.materialEvento || false, aprovarPrimeiraPeca: existingOrder.aprovarPrimeiraPeca || false, qtdCompra: existingOrder.qtdCompra || "", qtdLiberada: existingOrder.qtdLiberada || "", fazParteKit: existingOrder.fazParteKit || false, gravacaoDetalhe: existingOrder.gravacaoDetalhe || "",
       });
       setCurrentStatus(existingOrder.status);
       setSaved(true);
@@ -73,6 +73,7 @@ const ServiceOrder = () => {
         artFile: prefill.artFileDataUrl ? "mockup-editor-export.png" : String(prefill.artFile || ""),
         observations: prefill.observations ? String(prefill.observations) : "Importado do Editor de Mockups",
         artColors: String(prefill.artColors || "").trim(),
+        mockupImageUrl: String(prefill.mockupImageUrl || "").trim(),
       };
 
       setForm(prev => ({
