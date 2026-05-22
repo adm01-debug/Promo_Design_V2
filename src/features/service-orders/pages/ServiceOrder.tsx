@@ -24,6 +24,7 @@ import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrde
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import type { Asset } from "@/features/dam";
 import AssetVersionUpdateBanner from "@/features/service-orders/components/AssetVersionUpdateBanner";
+import { ErrorLogger } from "@/lib/error-logger";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
