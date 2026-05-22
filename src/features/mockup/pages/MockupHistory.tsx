@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { History, Search, Filter, Download, Eye, Loader2, Package, Clock } from "lucide-react";
+import { History, Search, Eye, Loader2, Package, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
