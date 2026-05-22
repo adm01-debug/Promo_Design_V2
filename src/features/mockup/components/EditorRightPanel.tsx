@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles,
+  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info, Move, RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -78,14 +78,19 @@ interface EditorRightPanelProps {
   isExporting: boolean;
   watermarkConfig: WatermarkConfig;
   setWatermarkConfig: (v: WatermarkConfig) => void;
+  isSuggestingPlacement: boolean;
+  isRemovingBg: boolean;
+  handleSuggestPlacement: () => void;
+  handleRemoveBg: () => void;
+  suggestedPlacement: { placement: Placement; reasoning: string } | null;
+  applySuggestedPlacement: () => void;
+  setSuggestedPlacement: (v: null) => void;
+  cancelAIRequest: () => void;
 }
 
 
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
-  const [damPickerOpen, setDamPickerOpen] = useState(false);
-  const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
@@ -97,74 +102,9 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     views, approvedViews, toggleApproval,
     exportFormat, setExportFormat, exportQuality, setExportQuality, exportScale, setExportScale, handleExportPdf, handleExportPng, isExporting,
     watermarkConfig, setWatermarkConfig,
+    isSuggestingPlacement, isRemovingBg, handleSuggestPlacement, handleRemoveBg,
+    suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest
   } = props;
-
-
-  const handleAISuggestion = async () => {
-    if (!logoPreview) return;
-    setIsSuggesting(true);
-    const rid = crypto.randomUUID();
-    
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "suggest-placement",
-          productName,
-          templateId: productSku || "custom",
-          areaWidth: props.views[0]?.areaPercent.w || 15,
-          areaHeight: props.views[0]?.areaPercent.h || 15
-        },
-        headers: { "X-Request-Id": rid }
-      });
-
-      if (error) throw error;
-
-      updatePlacement({
-        scale: data.scale,
-        x: (data.xPercent / 100) * 800, // Adjust to virtual canvas size
-        y: (data.yPercent / 100) * 800,
-        rotation: data.rotation
-      });
-
-      if (data.blendMode) setBlendMode(data.blendMode);
-      if (data.surfaceType) setSurfaceType(data.surfaceType);
-      if (data.opacity) setLogoOpacity(data.opacity);
-
-      toast.success("IA: Sugestão aplicada!", {
-        description: data.reasoning,
-        duration: 5000
-      });
-    } catch (err) {
-      console.error("AI Suggestion failed:", err);
-      toast.error("IA: Não foi possível obter sugestão no momento.");
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
-
-  const handleRemoveBg = async () => {
-    if (!logoPreview) return;
-    const loadingToast = toast.loading("IA: Removendo fundo...");
-    const rid = crypto.randomUUID();
-
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "remove-bg",
-          imageBase64: logoPreview
-        },
-        headers: { "X-Request-Id": rid }
-      });
-
-      if (error) throw error;
-      
-      setLogoPreview(data.imageBase64);
-      toast.success("IA: Fundo removido com sucesso!", { id: loadingToast });
-    } catch (err) {
-      console.error("AI BG Removal failed:", err);
-      toast.error("IA: Falha ao remover fundo.", { id: loadingToast });
-    }
-  };
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
