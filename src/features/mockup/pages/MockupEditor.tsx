@@ -59,11 +59,9 @@ const MockupEditor = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { saveDraft, isSaving } = useMockupDrafts();
+  const isMobile = useIsMobile();
   
   const draftId = searchParams.get("id") || searchParams.get("edit");
-
-
-
 
   const productName = searchParams.get("product") || "Produto";
   const productSku = searchParams.get("sku") || "";
@@ -105,13 +103,16 @@ const MockupEditor = () => {
     position: "center"
   });
 
-
-
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements, resetAllHistory } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(!isMobile);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Sync panel visibility with mobile state
+  useEffect(() => {
+    setShowRightPanel(!isMobile);
+  }, [isMobile]);
 
   const { drafts } = useMockupDrafts();
 
