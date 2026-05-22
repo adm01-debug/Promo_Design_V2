@@ -1,7 +1,16 @@
-import { test, expect } from "vitest";
+import { test, expect, beforeAll } from "vitest";
 import { render, screen } from "@testing-library/react";
 import EditorRightPanel from "./EditorRightPanel";
 import React from "react";
+
+// Mock ResizeObserver
+beforeAll(() => {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+});
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient({
