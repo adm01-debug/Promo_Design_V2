@@ -134,7 +134,10 @@ const ServiceOrder = () => {
         reader.onload = (e) => { const dataUrl = e.target?.result; if (typeof dataUrl === "string") { setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl, ...(opts?.keepAssetId ? {} : { artAssetId: null }) })); setSaved(false); } };
         reader.readAsDataURL(file); toast.warning("Upload na nuvem falhou. Arte salva localmente.");
       }
-    } catch { toast.error("Erro ao enviar a arte."); } finally { setUploading(false); }
+    } catch (err) { 
+      ErrorLogger.error("Art upload failed", err);
+      toast.error("Erro ao enviar a arte."); 
+    } finally { setUploading(false); }
   }, [uploadFile]);
 
   const removeArt = () => { setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "", artAssetId: null })); setSaved(false); };
