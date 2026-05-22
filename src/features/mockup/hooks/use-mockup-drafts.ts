@@ -85,12 +85,14 @@ export function useMockupDrafts() {
         .from("mockup_drafts")
         .insert({
           user_id: user.id,
+          organization_id: currentOrgId,
           name: draft.name,
           product_name: draft.productName ?? null,
           product_sku: draft.productSku ?? null,
           thumbnail_url: draft.thumbnailUrl ?? null,
           editor_state: (draft.editorState ?? null) as Json,
         })
+
         .select()
         .single();
       if (error) throw error;
