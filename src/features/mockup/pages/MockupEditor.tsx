@@ -565,7 +565,8 @@ const MockupEditor = () => {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
+        {!isMobile && <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />}
+
 
 
         <div className="flex-1 flex flex-col">
