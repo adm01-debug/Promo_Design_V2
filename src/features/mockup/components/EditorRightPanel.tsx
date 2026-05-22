@@ -91,6 +91,8 @@ interface EditorRightPanelProps {
 
 
 const EditorRightPanel = (props: EditorRightPanelProps) => {
+  const [damPickerOpen, setDamPickerOpen] = useState(false);
+  const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,

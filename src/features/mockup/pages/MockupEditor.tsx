@@ -75,11 +75,14 @@ const MockupEditor = () => {
   const [zoom, setZoom] = useState(100);
   const [showGrid, setShowGrid] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoColors, setLogoColors] = useState<string[]>([]);
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isWarping, setIsWarping] = useState(false);
+  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
+  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
   const [showTexture, setShowTexture] = useState(true);
@@ -103,7 +106,11 @@ const MockupEditor = () => {
     position: "center"
   });
 
-  const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements, resetAllHistory } = useMockupEditorState(VIEWS);
+  const { 
+    placements, history, historyIndex, updatePlacement: updatePlacementCore, 
+    undo: undoCore, redo: redoCore, setPlacements, resetAllHistory,
+    logoPreview, undoLogo, redoLogo, pushLogoToHistory
+  } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showRightPanel, setShowRightPanel] = useState(!isMobile);
@@ -168,8 +175,14 @@ const MockupEditor = () => {
   const viewAreaW = (currentView.areaPercent.w / 100) * VIRTUAL_CANVAS_SIZE;
   const viewAreaH = (currentView.areaPercent.h / 100) * VIRTUAL_CANVAS_SIZE;
 
-  const undo = useCallback(() => undoCore(activeView), [activeView, undoCore]);
-  const redo = useCallback(() => redoCore(activeView), [activeView, redoCore]);
+  const undo = useCallback(() => {
+    undoCore(activeView);
+    undoLogo();
+  }, [activeView, undoCore, undoLogo]);
+  const redo = useCallback(() => {
+    redoCore(activeView);
+    redoLogo();
+  }, [activeView, redoCore, redoLogo]);
 
   const updatePlacement = useCallback((update: Partial<Placement>) => {
     const isHistoryChange = Object.keys(update).some(k => ["rotation", "flipH", "flipV", "scale"].includes(k));
@@ -305,13 +318,117 @@ const MockupEditor = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      clearWarpCache(); setWarpedLogoUrl(null); setLogoPreview(dataUrl);
+      clearWarpCache(); setWarpedLogoUrl(null); 
+      pushLogoToHistory(dataUrl);
       const img = new window.Image();
       img.onload = () => { setLogoColors(countUniqueColors(img)); const fit = calculateAutoFit(img, viewAreaW, viewAreaH); updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale }); toast.success("Logo auto-encaixado na área de gravação"); };
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
-  }, [viewAreaW, viewAreaH]);
+  }, [viewAreaW, viewAreaH, pushLogoToHistory]);
+
+  const handleSuggestPlacement = useCallback(async () => {
+    if (!logoPreview) return;
+    setIsSuggestingPlacement(true);
+    const rid = crypto.randomUUID();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: { 
+          action: "suggest-placement",
+          productName,
+          templateId: productSku || "custom",
+          areaWidth: areaW,
+          areaHeight: areaH
+        },
+        headers: { "X-Request-Id": rid },
+        signal: controller.signal
+      });
+
+      if (error) {
+        if (error.name === 'AbortError') return;
+        throw error;
+      }
+
+      const suggested: Placement = {
+        scale: data.scale,
+        x: (data.xPercent / 100) * VIRTUAL_CANVAS_SIZE,
+        y: (data.yPercent / 100) * VIRTUAL_CANVAS_SIZE,
+        rotation: data.rotation || 0,
+        flipH: false,
+        flipV: false
+      };
+
+      setSuggestedPlacement({
+        placement: suggested,
+        reasoning: data.reasoning || "Sugerido com base na geometria do produto."
+      });
+
+      if (data.blendMode) setBlendMode(data.blendMode);
+      if (data.surfaceType) setSurfaceType(data.surfaceType);
+      if (data.opacity) setLogoOpacity(data.opacity);
+
+      toast.info("Sugestão de IA recebida.");
+    } catch (err) {
+      console.error("AI Suggestion failed:", err);
+      toast.error("IA: Falha ao obter sugestão.");
+    } finally {
+      setIsSuggestingPlacement(false);
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
+    }
+  }, [logoPreview, productName, productSku, areaW, areaH]);
+
+  const applySuggestedPlacement = useCallback(() => {
+    if (!suggestedPlacement) return;
+    updatePlacement(suggestedPlacement.placement);
+    setSuggestedPlacement(null);
+    toast.success("Posicionamento aplicado!");
+  }, [suggestedPlacement, updatePlacement]);
+
+  const handleRemoveBg = useCallback(async () => {
+    if (!logoPreview) return;
+    setIsRemovingBg(true);
+    const rid = crypto.randomUUID();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: { 
+          action: "remove-bg",
+          imageBase64: logoPreview
+        },
+        headers: { "X-Request-Id": rid },
+        signal: controller.signal
+      });
+
+      if (error) {
+        if (error.name === 'AbortError') return;
+        throw error;
+      }
+      
+      pushLogoToHistory(data.imageBase64);
+      toast.success("IA: Fundo removido!");
+    } catch (err) {
+      console.error("AI BG Removal failed:", err);
+      toast.error("IA: Falha ao remover fundo.");
+    } finally {
+      setIsRemovingBg(false);
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
+    }
+  }, [logoPreview, pushLogoToHistory]);
+
+  const cancelAIRequest = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsRemovingBg(false);
+      setIsSuggestingPlacement(false);
+      toast.info("Operação cancelada.");
+    }
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file?.type.startsWith("image/")) handleLogoUpload(file); }, [handleLogoUpload]);
   const handleLogoMouseDown = (e: React.MouseEvent) => {
