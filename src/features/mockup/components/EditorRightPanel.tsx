@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles,
+  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info, Move, RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -8,7 +8,6 @@ import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
@@ -78,6 +77,14 @@ interface EditorRightPanelProps {
   isExporting: boolean;
   watermarkConfig: WatermarkConfig;
   setWatermarkConfig: (v: WatermarkConfig) => void;
+  isSuggestingPlacement: boolean;
+  isRemovingBg: boolean;
+  handleSuggestPlacement: () => void;
+  handleRemoveBg: () => void;
+  suggestedPlacement: { placement: Placement; reasoning: string } | null;
+  applySuggestedPlacement: () => void;
+  setSuggestedPlacement: (v: null) => void;
+  cancelAIRequest: () => void;
 }
 
 
@@ -85,7 +92,6 @@ interface EditorRightPanelProps {
 const EditorRightPanel = (props: EditorRightPanelProps) => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
   const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
@@ -97,74 +103,9 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     views, approvedViews, toggleApproval,
     exportFormat, setExportFormat, exportQuality, setExportQuality, exportScale, setExportScale, handleExportPdf, handleExportPng, isExporting,
     watermarkConfig, setWatermarkConfig,
+    isSuggestingPlacement, isRemovingBg, handleSuggestPlacement, handleRemoveBg,
+    suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest
   } = props;
-
-
-  const handleAISuggestion = async () => {
-    if (!logoPreview) return;
-    setIsSuggesting(true);
-    const rid = crypto.randomUUID();
-    
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "suggest-placement",
-          productName,
-          templateId: productSku || "custom",
-          areaWidth: props.views[0]?.areaPercent.w || 15,
-          areaHeight: props.views[0]?.areaPercent.h || 15
-        },
-        headers: { "X-Request-Id": rid }
-      });
-
-      if (error) throw error;
-
-      updatePlacement({
-        scale: data.scale,
-        x: (data.xPercent / 100) * 800, // Adjust to virtual canvas size
-        y: (data.yPercent / 100) * 800,
-        rotation: data.rotation
-      });
-
-      if (data.blendMode) setBlendMode(data.blendMode);
-      if (data.surfaceType) setSurfaceType(data.surfaceType);
-      if (data.opacity) setLogoOpacity(data.opacity);
-
-      toast.success("IA: Sugestão aplicada!", {
-        description: data.reasoning,
-        duration: 5000
-      });
-    } catch (err) {
-      console.error("AI Suggestion failed:", err);
-      toast.error("IA: Não foi possível obter sugestão no momento.");
-    } finally {
-      setIsSuggesting(false);
-    }
-  };
-
-  const handleRemoveBg = async () => {
-    if (!logoPreview) return;
-    const loadingToast = toast.loading("IA: Removendo fundo...");
-    const rid = crypto.randomUUID();
-
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "remove-bg",
-          imageBase64: logoPreview
-        },
-        headers: { "X-Request-Id": rid }
-      });
-
-      if (error) throw error;
-      
-      setLogoPreview(data.imageBase64);
-      toast.success("IA: Fundo removido com sucesso!", { id: loadingToast });
-    } catch (err) {
-      console.error("AI BG Removal failed:", err);
-      toast.error("IA: Falha ao remover fundo.", { id: loadingToast });
-    }
-  };
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
@@ -226,23 +167,76 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
           </div>
         )}
         {logoPreview && (
-          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
-              onClick={handleAISuggestion}
-              disabled={isSuggesting}
-            >
-              {isSuggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Sugerir
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
-              onClick={handleRemoveBg}
-            >
-              <Sparkles className="w-3 h-3 text-primary" /> Limpar Fundo
+          <div className="space-y-2 mt-2">
+            <div className="grid grid-cols-2 gap-1.5">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+                onClick={handleSuggestPlacement}
+                disabled={isSuggestingPlacement || isRemovingBg}
+              >
+                {isSuggestingPlacement ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Sugerir
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+                onClick={handleRemoveBg}
+                disabled={isRemovingBg || isSuggestingPlacement}
+              >
+                {isRemovingBg ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Limpar Fundo
+              </Button>
+            </div>
+            {(isSuggestingPlacement || isRemovingBg) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full h-7 text-[10px] gap-1 text-destructive hover:bg-destructive/10"
+                onClick={cancelAIRequest}
+              >
+                <XCircle className="w-3 h-3" /> Cancelar IA
+              </Button>
+            )}
+          </div>
+        )}
+        
+        {suggestedPlacement && (
+          <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-1.5 text-primary">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Sugestão de IA</span>
+              </div>
+              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSuggestedPlacement(null)}>
+                <XCircle className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            
+            <p className="text-[10px] text-muted-foreground leading-relaxed flex gap-1.5">
+              <Info className="w-3 h-3 shrink-0 mt-0.5" />
+              {suggestedPlacement.reasoning}
+            </p>
+            
+            <div className="grid grid-cols-2 gap-1.5 py-1.5 border-y border-primary/10">
+              <div className="space-y-0.5">
+                <span className="text-[9px] text-muted-foreground uppercase font-mono">Posição</span>
+                <div className="flex items-center gap-1 text-[10px] font-mono">
+                  <Move className="w-2.5 h-2.5 text-muted-foreground" />
+                  {Math.round(suggestedPlacement.placement.x)}, {Math.round(suggestedPlacement.placement.y)}
+                </div>
+              </div>
+              <div className="space-y-0.5">
+                <span className="text-[9px] text-muted-foreground uppercase font-mono">Escala/Rot</span>
+                <div className="flex items-center gap-1 text-[10px] font-mono">
+                  <RotateCw className="w-2.5 h-2.5 text-muted-foreground" />
+                  {Math.round(suggestedPlacement.placement.scale * 100)}% / {suggestedPlacement.placement.rotation}°
+                </div>
+              </div>
+            </div>
+            
+            <Button size="sm" className="w-full h-7 text-[10px] gap-1 bg-primary hover:bg-primary/90" onClick={applySuggestedPlacement}>
+              <Check className="w-3 h-3" /> Aplicar Sugestão
             </Button>
           </div>
         )}

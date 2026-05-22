@@ -75,6 +75,8 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
+  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
   const [historyIdx, setHistoryIdx] = useState(0);
@@ -184,12 +186,19 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     if (!logoPreview) return;
     setIsRemovingBg(true);
     const requestId = crypto.randomUUID();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    
     try {
       const { data, error } = await supabase.functions.invoke("mockup-ai", { 
         body: { action: "remove-bg", imageBase64: logoPreview },
         headers: { "X-Request-Id": requestId },
+        signal: controller.signal,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.name === 'AbortError') return;
+        throw error;
+      }
       if (data?.error) { toast.error(data.error); return; }
       if (data?.imageBase64) {
         clearWarpCache(); setWarpedLogoUrl(null); setLogoPreview(data.imageBase64);
@@ -198,32 +207,82 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
       }
     } catch (e: unknown) {
       toast.error("Erro ao remover fundo: " + (e instanceof Error ? e.message : "Tente novamente"));
-    } finally { setIsRemovingBg(false); }
+    } finally { 
+      setIsRemovingBg(false);
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
+    }
   }, [logoPreview, placement, pushHistory]);
 
   const handleSuggestPlacement = useCallback(async () => {
     if (!selectedProduct) return;
     setIsSuggestingPlacement(true); setAiReasoning(null);
     const requestId = crypto.randomUUID();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { action: "suggest-placement", productName: selectedProduct.name, templateId: selectedTemplate || "", areaWidth: selectedArea?.max_width || 15, areaHeight: selectedArea?.max_height || 15 },
+        body: { 
+          action: "suggest-placement", 
+          productName: selectedProduct.name, 
+          templateId: selectedTemplate || "", 
+          areaWidth: selectedArea?.max_width || 15, 
+          areaHeight: selectedArea?.max_height || 15 
+        },
         headers: { "X-Request-Id": requestId },
+        signal: controller.signal,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.name === 'AbortError') return;
+        throw error;
+      }
       if (data?.error) { toast.error(data.error); return; }
-      const newPlacement: Placement = { x: (data.xPercent / 100) * areaW, y: (data.yPercent / 100) * areaH, scale: Math.max(0.1, Math.min(1.5, data.scale)), rotation: data.rotation || 0, flipH: false, flipV: false };
-      setPlacement(newPlacement);
-      pushHistory(newPlacement, logoPreview);
+      
+      const newPlacement: Placement = { 
+        x: (data.xPercent / 100) * areaW, 
+        y: (data.yPercent / 100) * areaH, 
+        scale: Math.max(0.1, Math.min(1.5, data.scale)), 
+        rotation: data.rotation || 0, 
+        flipH: false, 
+        flipV: false 
+      };
+      
+      setSuggestedPlacement({
+        placement: newPlacement,
+        reasoning: data.reasoning || "Sugerido com base no tipo de produto."
+      });
+      
       if (data.blendMode) setBlendMode(data.blendMode);
       if (data.surfaceType) setSurfaceType(data.surfaceType);
       if (data.opacity) setLogoOpacity(data.opacity);
       if (data.reasoning) setAiReasoning(data.reasoning);
-      toast.success("Posicionamento sugerido pela IA aplicado!");
+      
+      toast.info("Sugestão de IA recebida. Revise antes de aplicar.");
     } catch (e: unknown) {
       toast.error("Erro na sugestão de IA: " + (e instanceof Error ? e.message : "Tente novamente"));
-    } finally { setIsSuggestingPlacement(false); }
-  }, [selectedProduct, selectedTemplate, selectedArea, areaW, areaH, logoPreview, pushHistory]);
+    } finally { 
+      setIsSuggestingPlacement(false);
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
+    }
+  }, [selectedProduct, selectedTemplate, selectedArea, areaW, areaH]);
+
+  const applySuggestedPlacement = useCallback(() => {
+    if (!suggestedPlacement) return;
+    setPlacement(suggestedPlacement.placement);
+    pushHistory(suggestedPlacement.placement, logoPreview);
+    setSuggestedPlacement(null);
+    toast.success("Posicionamento aplicado!");
+  }, [suggestedPlacement, logoPreview, pushHistory]);
+
+  const cancelAIRequest = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsRemovingBg(false);
+      setIsSuggestingPlacement(false);
+      toast.info("Ação cancelada pelo usuário.");
+    }
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -401,6 +460,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     setExportFormat, setIsResizing,
     // Actions
     undo, redo, autoFitLogo, handleLogoUpload, handleRemoveBg, handleSuggestPlacement,
+    applySuggestedPlacement, cancelAIRequest,
     handleDrop, handleLogoMouseDown, handleMouseMove, handleMouseUp,
     handleExportImage, handleExportPng, handleExportPdf, centerLogo, clearLogo,
     handleSaveDraft, restoreDraft,
