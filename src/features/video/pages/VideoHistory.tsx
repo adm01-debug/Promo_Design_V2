@@ -3,9 +3,9 @@ import { Video, Search, Clock, Download, Eye, Play, TrendingUp, Film, Trash2, Lo
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell,
+  ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
-import { useVideos, type VideoEntry } from "../hooks/use-videos";
+import { useVideos } from "../hooks/use-videos";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
