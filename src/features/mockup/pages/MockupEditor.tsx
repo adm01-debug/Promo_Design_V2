@@ -470,18 +470,27 @@ const MockupEditor = () => {
       
       const mockupImageUrl = canvas.toDataURL("image/png");
       
+      // Calculate final art description
+      const placementInfo = Object.entries(placements)
+        .filter(([id]) => approvedViews.has(id))
+        .map(([id, p]) => {
+          const view = VIEWS.find(v => v.id === id);
+          return `${view?.label}: Escala ${Math.round(p.scale * 100)}%, Rot ${p.rotation}°, X:${Math.round(p.x)} Y:${Math.round(p.y)}`;
+        }).join(" | ");
+
       navigate("/mockup/service-order", {
         state: {
           prefill: {
             productName,
             productSku,
-            technique,
+            technique: technique || "Personalização",
             areaWidth: String(areaW),
             areaHeight: String(areaH),
             areaName,
             artFileDataUrl: logoPreview,
             mockupImageUrl, 
-            observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas.`
+            artColors: logoColors.join(", "),
+            observations: `Importado do Editor: ${approvedViews.size}/${VIEWS.length} vistas aprovadas. Detalhes: ${placementInfo}`
           }
         }
       });
@@ -494,7 +503,8 @@ const MockupEditor = () => {
         state: {
           prefill: {
             productName, productSku, technique, areaWidth: String(areaW), areaHeight: String(areaH),
-            areaName, artFileDataUrl: logoPreview, mockupImageUrl: "", observations: "Importado do Editor (erro no preview)."
+            areaName, artFileDataUrl: logoPreview, mockupImageUrl: "", artColors: logoColors.join(", "),
+            observations: "Importado do Editor (erro no preview)."
           }
         }
       });
