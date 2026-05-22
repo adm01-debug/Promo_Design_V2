@@ -107,7 +107,7 @@ const MockupEditor = () => {
 
 
 
-  const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements } = useMockupEditorState(VIEWS);
+  const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements, resetAllHistory } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [showRightPanel, setShowRightPanel] = useState(true);
@@ -121,7 +121,10 @@ const MockupEditor = () => {
       const draft = drafts.find(d => d.id === draftId);
       if (draft && draft.editorState) {
         const state = draft.editorState as any;
-        if (state.placements) setPlacements(state.placements);
+        if (state.placements) {
+          setPlacements(state.placements);
+          resetAllHistory();
+        }
         if (state.logoPreview) setLogoPreview(state.logoPreview);
         if (state.logoOpacity) setLogoOpacity(state.logoOpacity);
         if (state.blendMode) setBlendMode(state.blendMode);

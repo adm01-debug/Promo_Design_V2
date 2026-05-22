@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library,
+  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -8,6 +8,7 @@ import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
@@ -84,6 +85,7 @@ interface EditorRightPanelProps {
 const EditorRightPanel = (props: EditorRightPanelProps) => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
   const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
@@ -97,6 +99,72 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     watermarkConfig, setWatermarkConfig,
   } = props;
 
+
+  const handleAISuggestion = async () => {
+    if (!logoPreview) return;
+    setIsSuggesting(true);
+    const rid = crypto.randomUUID();
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: { 
+          action: "suggest-placement",
+          productName,
+          templateId: productSku || "custom",
+          areaWidth: props.views[0]?.areaPercent.w || 15,
+          areaHeight: props.views[0]?.areaPercent.h || 15
+        },
+        headers: { "X-Request-Id": rid }
+      });
+
+      if (error) throw error;
+
+      updatePlacement({
+        scale: data.scale,
+        x: (data.xPercent / 100) * 800, // Adjust to virtual canvas size
+        y: (data.yPercent / 100) * 800,
+        rotation: data.rotation
+      });
+
+      if (data.blendMode) setBlendMode(data.blendMode);
+      if (data.surfaceType) setSurfaceType(data.surfaceType);
+      if (data.opacity) setLogoOpacity(data.opacity);
+
+      toast.success("IA: Sugestão aplicada!", {
+        description: data.reasoning,
+        duration: 5000
+      });
+    } catch (err) {
+      console.error("AI Suggestion failed:", err);
+      toast.error("IA: Não foi possível obter sugestão no momento.");
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const handleRemoveBg = async () => {
+    if (!logoPreview) return;
+    const loadingToast = toast.loading("IA: Removendo fundo...");
+    const rid = crypto.randomUUID();
+
+    try {
+      const { data, error } = await supabase.functions.invoke("mockup-ai", {
+        body: { 
+          action: "remove-bg",
+          imageBase64: logoPreview
+        },
+        headers: { "X-Request-Id": rid }
+      });
+
+      if (error) throw error;
+      
+      setLogoPreview(data.imageBase64);
+      toast.success("IA: Fundo removido com sucesso!", { id: loadingToast });
+    } catch (err) {
+      console.error("AI BG Removal failed:", err);
+      toast.error("IA: Falha ao remover fundo.", { id: loadingToast });
+    }
+  };
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
@@ -154,6 +222,27 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
               title="Remover logo e voltar ao estado vazio"
             >
               <Trash2 className="w-3 h-3" /> Remover
+            </Button>
+          </div>
+        )}
+        {logoPreview && (
+          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+              onClick={handleAISuggestion}
+              disabled={isSuggesting}
+            >
+              {isSuggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Sugerir
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+              onClick={handleRemoveBg}
+            >
+              <Sparkles className="w-3 h-3 text-primary" /> Limpar Fundo
             </Button>
           </div>
         )}

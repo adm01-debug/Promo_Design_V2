@@ -106,6 +106,14 @@ export function useMockupEditorState(views: { id: string }[]) {
     }));
   }, []);
 
+  const resetAllHistory = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      history: initialHistory,
+      historyIndex: initialHistoryIndex
+    }));
+  }, [initialHistory, initialHistoryIndex]);
+
   return {
     placements: state.placements,
     history: state.history,
@@ -113,6 +121,7 @@ export function useMockupEditorState(views: { id: string }[]) {
     updatePlacement: updatePlacementWithHistory,
     undo,
     redo,
-    setPlacements
+    setPlacements,
+    resetAllHistory
   };
 }
