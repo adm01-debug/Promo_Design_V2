@@ -367,6 +367,7 @@ const MockupEditor = () => {
       toast.success(`${format.toUpperCase()} exportado com sucesso!`, { id: exportToast });
     } catch (error) {
       console.error("Export error:", error);
+      ErrorLogger.error("Mockup export failed", error, { format, productName, productSku });
       toast.error("Falha na exportação. Tente reduzir a escala ou qualidade.", { id: exportToast });
     } finally {
       setIsExporting(false);
