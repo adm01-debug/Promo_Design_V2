@@ -225,6 +225,27 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </Button>
           </div>
         )}
+        {logoPreview && (
+          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+              onClick={handleAISuggestion}
+              disabled={isSuggesting}
+            >
+              {isSuggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Sugerir
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
+              onClick={handleRemoveBg}
+            >
+              <Sparkles className="w-3 h-3 text-primary" /> Limpar Fundo
+            </Button>
+          </div>
+        )}
         {logoColors.length > 0 && (
           <div className="mt-3">
             <label className="text-[10px] font-mono text-muted-foreground uppercase">Cores Detectadas</label>
