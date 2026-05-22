@@ -15,6 +15,7 @@ import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportOptions } from "../lib/export-service";
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
+import { ErrorLogger } from "@/lib/error-logger";
 
 
 
@@ -176,10 +177,12 @@ const MockupEditor = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Robust check for typing context
-      const isInput = e.target instanceof HTMLInputElement || 
-                      e.target instanceof HTMLTextAreaElement || 
-                      (e.target as HTMLElement)?.isContentEditable ||
-                      (e.target as HTMLElement)?.closest('.cmdk-input'); // Special check for Command Menu
+      const target = e.target as HTMLElement;
+      const isInput = target?.tagName === "INPUT" || 
+                      target?.tagName === "TEXTAREA" || 
+                      target?.isContentEditable ||
+                      target?.closest('[role="combobox"]') ||
+                      target?.closest('.cmdk-input');
       
       if (isInput) return;
 
@@ -220,6 +223,15 @@ const MockupEditor = () => {
     setWarpedLogoUrl(null);
   }, [logoPreview]);
 
+  // Clean up warped logo URL on unmount
+  useEffect(() => {
+    return () => {
+      if (warpedLogoUrl) {
+        URL.revokeObjectURL(warpedLogoUrl);
+      }
+    };
+  }, [warpedLogoUrl]);
+
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") { 
       if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
@@ -231,8 +243,10 @@ const MockupEditor = () => {
     let cancelled = false;
     setIsWarping(true);
     
-    const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
-    const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
+    // Safety check for scale to avoid infinite or zero dimensions
+    const safeScale = Math.max(0.01, currentPlacement.scale);
+    const warpW = Math.max(64, Math.min(2048, Math.round(viewAreaW * safeScale * 2)));
+    const warpH = Math.max(64, Math.min(2048, Math.round(viewAreaH * safeScale * 2)));
     
     const requestWarp = async () => {
       try {
@@ -247,8 +261,11 @@ const MockupEditor = () => {
         );
         
         if (!cancelled) {
-          if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
-          setWarpedLogoUrl(url); 
+          // React state updates are batched, but let's be explicit about the old URL
+          setWarpedLogoUrl(prev => {
+            if (prev) URL.revokeObjectURL(prev);
+            return url;
+          });
           setIsWarping(false);
         } else {
           URL.revokeObjectURL(url);
@@ -256,9 +273,12 @@ const MockupEditor = () => {
       } catch (error) {
         console.error("Warping error:", error);
         if (!cancelled) {
-          if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
-          setWarpedLogoUrl(null);
+          setWarpedLogoUrl(prev => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
           setIsWarping(false);
+          toast.error("Erro ao processar deformação da logo. Tente simplificar a escala.");
         }
       }
     };
@@ -348,6 +368,7 @@ const MockupEditor = () => {
       toast.success(`${format.toUpperCase()} exportado com sucesso!`, { id: exportToast });
     } catch (error) {
       console.error("Export error:", error);
+      ErrorLogger.error("Mockup export failed", error, { format, productName, productSku });
       toast.error("Falha na exportação. Tente reduzir a escala ou qualidade.", { id: exportToast });
     } finally {
       setIsExporting(false);
@@ -387,6 +408,7 @@ const MockupEditor = () => {
       });
       toast.success("PDF gerado e pronto para download", { id: pdfToast });
     } catch (error) {
+      ErrorLogger.error("Mockup PDF export failed", error, { productName, productSku });
       console.error("PDF export error:", error);
       toast.error("Erro ao processar o PDF. Verifique se a logo foi carregada corretamente.", { id: pdfToast });
     } finally {

@@ -24,6 +24,7 @@ import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrde
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import type { Asset } from "@/features/dam";
 import AssetVersionUpdateBanner from "@/features/service-orders/components/AssetVersionUpdateBanner";
+import { ErrorLogger } from "@/lib/error-logger";
 
 const ServiceOrder = () => {
   const [searchParams] = useSearchParams();
@@ -62,15 +63,16 @@ const ServiceOrder = () => {
       
       // Robust mapping with defaults and type coercion
       const mappedData: Partial<ServiceOrderData> = {
-        productName: String(prefill.productName || ""),
-        productSku: String(prefill.productSku || ""),
-        technique: String(prefill.technique || ""),
-        areaWidth: prefill.areaWidth ? String(prefill.areaWidth).replace(",", ".") : "",
-        areaHeight: prefill.areaHeight ? String(prefill.areaHeight).replace(",", ".") : "",
-        areaName: String(prefill.areaName || "Personalização"),
+        productName: String(prefill.productName || "").trim(),
+        productSku: String(prefill.productSku || "").trim(),
+        technique: String(prefill.technique || "").trim(),
+        areaWidth: prefill.areaWidth ? String(prefill.areaWidth).replace(",", ".").trim() : "",
+        areaHeight: prefill.areaHeight ? String(prefill.areaHeight).replace(",", ".").trim() : "",
+        areaName: String(prefill.areaName || "Personalização").trim(),
         artFileDataUrl: String(prefill.artFileDataUrl || ""),
-        artFile: prefill.artFileDataUrl ? "mockup-editor-export.png" : "",
+        artFile: prefill.artFileDataUrl ? "mockup-editor-export.png" : String(prefill.artFile || ""),
         observations: prefill.observations ? String(prefill.observations) : "Importado do Editor de Mockups",
+        artColors: String(prefill.artColors || "").trim(),
       };
 
       setForm(prev => ({
@@ -132,7 +134,10 @@ const ServiceOrder = () => {
         reader.onload = (e) => { const dataUrl = e.target?.result; if (typeof dataUrl === "string") { setForm((prev) => ({ ...prev, artFile: file.name, artFileDataUrl: dataUrl, ...(opts?.keepAssetId ? {} : { artAssetId: null }) })); setSaved(false); } };
         reader.readAsDataURL(file); toast.warning("Upload na nuvem falhou. Arte salva localmente.");
       }
-    } catch { toast.error("Erro ao enviar a arte."); } finally { setUploading(false); }
+    } catch (err) { 
+      ErrorLogger.error("Art upload failed", err);
+      toast.error("Erro ao enviar a arte."); 
+    } finally { setUploading(false); }
   }, [uploadFile]);
 
   const removeArt = () => { setForm((prev) => ({ ...prev, artFile: "", artFileDataUrl: "", artAssetId: null })); setSaved(false); };
@@ -175,6 +180,7 @@ const ServiceOrder = () => {
         setSaved(true); 
       }
     } catch (err) { 
+      ErrorLogger.error("Failed to save service order", err, { editId, osNumber: form.osNumber });
       toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); 
     }
   }, [form, editId, currentStatus, updateOrder, addOrder, navigate]);

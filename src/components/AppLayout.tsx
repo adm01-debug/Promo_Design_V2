@@ -49,7 +49,13 @@ const AppLayout = () => {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) return;
+      const isInput = target?.tagName === "INPUT" || 
+                      target?.tagName === "TEXTAREA" || 
+                      target?.isContentEditable ||
+                      target?.closest('[role="combobox"]') ||
+                      target?.closest('.cmdk-input');
+
+      if (isInput) return;
       if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         setShortcutsOpen(true);
