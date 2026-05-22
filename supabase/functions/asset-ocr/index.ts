@@ -138,7 +138,7 @@ serve(async (req) => {
       return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
     }
 
-    const imgRes = await fetch(signed.signedUrl);
+    const imgRes = await fetchWithRetry(signed.signedUrl);
     if (!imgRes.ok) {
       console.error(`[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
