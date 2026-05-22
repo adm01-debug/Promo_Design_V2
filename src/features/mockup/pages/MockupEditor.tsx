@@ -220,6 +220,15 @@ const MockupEditor = () => {
     setWarpedLogoUrl(null);
   }, [logoPreview]);
 
+  // Clean up warped logo URL on unmount
+  useEffect(() => {
+    return () => {
+      if (warpedLogoUrl) {
+        URL.revokeObjectURL(warpedLogoUrl);
+      }
+    };
+  }, [warpedLogoUrl]);
+
   useEffect(() => {
     if (!logoPreview || surfaceType === "flat") { 
       if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
@@ -231,8 +240,10 @@ const MockupEditor = () => {
     let cancelled = false;
     setIsWarping(true);
     
-    const warpW = Math.max(64, Math.round(viewAreaW * currentPlacement.scale * 2));
-    const warpH = Math.max(64, Math.round(viewAreaH * currentPlacement.scale * 2));
+    // Safety check for scale to avoid infinite or zero dimensions
+    const safeScale = Math.max(0.01, currentPlacement.scale);
+    const warpW = Math.max(64, Math.min(2048, Math.round(viewAreaW * safeScale * 2)));
+    const warpH = Math.max(64, Math.min(2048, Math.round(viewAreaH * safeScale * 2)));
     
     const requestWarp = async () => {
       try {
@@ -247,8 +258,11 @@ const MockupEditor = () => {
         );
         
         if (!cancelled) {
-          if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
-          setWarpedLogoUrl(url); 
+          // React state updates are batched, but let's be explicit about the old URL
+          setWarpedLogoUrl(prev => {
+            if (prev) URL.revokeObjectURL(prev);
+            return url;
+          });
           setIsWarping(false);
         } else {
           URL.revokeObjectURL(url);
@@ -256,9 +270,12 @@ const MockupEditor = () => {
       } catch (error) {
         console.error("Warping error:", error);
         if (!cancelled) {
-          if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
-          setWarpedLogoUrl(null);
+          setWarpedLogoUrl(prev => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+          });
           setIsWarping(false);
+          toast.error("Erro ao processar deformação da logo. Tente simplificar a escala.");
         }
       }
     };
