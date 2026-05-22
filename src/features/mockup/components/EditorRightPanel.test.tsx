@@ -2,9 +2,21 @@ import { test, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import EditorRightPanel from "./EditorRightPanel";
 import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Mock ThemeProvider since it might not be easily accessible in test environment
-const ThemeProvider = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+const Wrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={queryClient}>
+    {children}
+  </QueryClientProvider>
+);
 
 // Mock props
 const defaultProps: any = {
@@ -65,9 +77,9 @@ const defaultProps: any = {
 
 test("EditorRightPanel renders AI buttons", () => {
   render(
-    <ThemeProvider>
+    <Wrapper>
       <EditorRightPanel {...defaultProps} />
-    </ThemeProvider>
+    </Wrapper>
   );
   expect(screen.getByText("Sugerir")).toBeDefined();
   expect(screen.getByText("Limpar Fundo")).toBeDefined();
@@ -75,9 +87,9 @@ test("EditorRightPanel renders AI buttons", () => {
 
 test("EditorRightPanel shows loading states", () => {
   render(
-    <ThemeProvider>
+    <Wrapper>
       <EditorRightPanel {...defaultProps} isSuggestingPlacement={true} />
-    </ThemeProvider>
+    </Wrapper>
   );
   expect(screen.getByText("Sugerir")).toBeDefined();
   // Loader icon should be present (via className or aria-hidden)
@@ -89,9 +101,9 @@ test("EditorRightPanel shows suggested placement preview", () => {
     reasoning: "Looks good here."
   };
   render(
-    <ThemeProvider>
+    <Wrapper>
       <EditorRightPanel {...defaultProps} suggestedPlacement={suggestedPlacement} />
-    </ThemeProvider>
+    </Wrapper>
   );
   expect(screen.getByText("Looks good here.")).toBeDefined();
   expect(screen.getByText("10, 20")).toBeDefined();
