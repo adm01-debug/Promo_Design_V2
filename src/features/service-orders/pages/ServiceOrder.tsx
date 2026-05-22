@@ -62,15 +62,16 @@ const ServiceOrder = () => {
       
       // Robust mapping with defaults and type coercion
       const mappedData: Partial<ServiceOrderData> = {
-        productName: String(prefill.productName || ""),
-        productSku: String(prefill.productSku || ""),
-        technique: String(prefill.technique || ""),
-        areaWidth: prefill.areaWidth ? String(prefill.areaWidth).replace(",", ".") : "",
-        areaHeight: prefill.areaHeight ? String(prefill.areaHeight).replace(",", ".") : "",
-        areaName: String(prefill.areaName || "Personalização"),
+        productName: String(prefill.productName || "").trim(),
+        productSku: String(prefill.productSku || "").trim(),
+        technique: String(prefill.technique || "").trim(),
+        areaWidth: prefill.areaWidth ? String(prefill.areaWidth).replace(",", ".").trim() : "",
+        areaHeight: prefill.areaHeight ? String(prefill.areaHeight).replace(",", ".").trim() : "",
+        areaName: String(prefill.areaName || "Personalização").trim(),
         artFileDataUrl: String(prefill.artFileDataUrl || ""),
-        artFile: prefill.artFileDataUrl ? "mockup-editor-export.png" : "",
+        artFile: prefill.artFileDataUrl ? "mockup-editor-export.png" : String(prefill.artFile || ""),
         observations: prefill.observations ? String(prefill.observations) : "Importado do Editor de Mockups",
+        artColors: String(prefill.artColors || "").trim(),
       };
 
       setForm(prev => ({
