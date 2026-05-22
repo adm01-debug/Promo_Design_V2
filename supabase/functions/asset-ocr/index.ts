@@ -155,7 +155,7 @@ serve(async (req) => {
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
     // Call Lovable AI Gateway with structured tool
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
