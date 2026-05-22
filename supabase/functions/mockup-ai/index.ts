@@ -205,8 +205,9 @@ serve(async (req) => {
         return jsonResponse({ error: "IA não retornou imagem processada", requestId }, 500, req);
       }
 
-      console.log(`[${requestId}] remove-bg completed successfully`);
-      return jsonResponse({ imageBase64: resultImage, requestId }, 200, req);
+      const executionTimeMs = Date.now() - startTimestamp;
+      console.log(`[${requestId}] remove-bg completed successfully in ${executionTimeMs}ms`);
+      return jsonResponse({ imageBase64: resultImage, requestId, executionTimeMs }, 200, req);
     }
 
     // ─── Action: Suggest Placement ──────────────────────────
