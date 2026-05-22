@@ -12,8 +12,9 @@ Deno.test("mockup-ai: should fail with 401 if no auth header", async () => {
   });
   
   assertEquals(response.status, 401);
-  await response.body?.cancel();
+  await response.text();
 });
+
 
 
 Deno.test("mockup-ai: should fail with 400 if invalid action", async () => {
@@ -27,6 +28,7 @@ Deno.test("mockup-ai: should fail with 400 if invalid action", async () => {
   });
   
   assertEquals(response.status, 400);
-  await response.body?.cancel();
+  await response.text();
 });
+
 

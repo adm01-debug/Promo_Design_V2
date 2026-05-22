@@ -14,8 +14,9 @@ Deno.test("asset-ocr: should fail with 401 if no auth header", async () => {
   });
   
   assertEquals(response.status, 401);
-  await response.body?.cancel();
+  await response.text();
 });
+
 
 
 Deno.test("asset-ocr: should fail with 400 if invalid body", async () => {
@@ -29,6 +30,7 @@ Deno.test("asset-ocr: should fail with 400 if invalid body", async () => {
   });
   
   assertEquals(response.status, 400);
-  await response.body?.cancel();
+  await response.text();
 });
+
 
