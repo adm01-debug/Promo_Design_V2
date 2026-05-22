@@ -176,10 +176,12 @@ const MockupEditor = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Robust check for typing context
-      const isInput = e.target instanceof HTMLInputElement || 
-                      e.target instanceof HTMLTextAreaElement || 
-                      (e.target as HTMLElement)?.isContentEditable ||
-                      (e.target as HTMLElement)?.closest('.cmdk-input'); // Special check for Command Menu
+      const target = e.target as HTMLElement;
+      const isInput = target?.tagName === "INPUT" || 
+                      target?.tagName === "TEXTAREA" || 
+                      target?.isContentEditable ||
+                      target?.closest('[role="combobox"]') ||
+                      target?.closest('.cmdk-input');
       
       if (isInput) return;
 
