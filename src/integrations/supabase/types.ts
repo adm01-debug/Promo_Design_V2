@@ -1068,6 +1068,78 @@ export type Database = {
           },
         ]
       }
+      videos: {
+        Row: {
+          aspect_ratio: string
+          client_id: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          duration: number
+          id: string
+          metadata: Json | null
+          name: string
+          organization_id: string
+          product_name: string | null
+          product_sku: string | null
+          style: string | null
+          thumbnail_url: string | null
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          aspect_ratio: string
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          duration: number
+          id?: string
+          metadata?: Json | null
+          name: string
+          organization_id: string
+          product_name?: string | null
+          product_sku?: string | null
+          style?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          aspect_ratio?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          duration?: number
+          id?: string
+          metadata?: Json | null
+          name?: string
+          organization_id?: string
+          product_name?: string | null
+          product_sku?: string | null
+          style?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

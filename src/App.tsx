@@ -33,7 +33,7 @@ const ServiceOrderList = lazyWithRetry(() => import("./features/service-orders/p
 const ServiceOrderDashboard = lazyWithRetry(() => import("./features/service-orders/pages/ServiceOrderDashboard"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
 const Templates = lazyWithRetry(() => import("./pages/Templates"));
-const Editor = lazyWithRetry(() => import("./pages/Editor"));
+// Editor page removed in favor of MockupEditor
 const Auth = lazyWithRetry(() => import("./pages/Auth"));
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
@@ -91,7 +91,7 @@ const App = () => (
                   <Route path="/video/history" element={<VideoHistory />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/templates" element={<Templates />} />
-                  <Route path="/editor" element={<Editor />} />
+                  <Route path="/editor" element={<Navigate to="/mockup/editor" replace />} />
                   <Route path="/organization" element={<OrganizationPage />} />
                   <Route path="/clients" element={<ClientsPage />} />
                   <Route path="/clients/:clientId/brand" element={<BrandGuidelinesPage />} />

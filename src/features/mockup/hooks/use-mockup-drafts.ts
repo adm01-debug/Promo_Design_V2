@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useOrganizations } from "@/hooks/use-organization";
+
 import type { Json, Tables } from "@/integrations/supabase/types";
 
 export interface MockupDraft {
@@ -30,8 +32,10 @@ function rowToDraft(row: Tables<"mockup_drafts">): MockupDraft {
 
 export function useMockupDrafts() {
   const { user } = useAuth();
+  const { currentOrgId } = useOrganizations();
   const qc = useQueryClient();
-  const key = ["mockup-drafts", user?.id];
+  const key = ["mockup-drafts", user?.id, currentOrgId];
+
 
   const { data: drafts = [], isLoading } = useQuery({
     queryKey: key,
@@ -81,12 +85,14 @@ export function useMockupDrafts() {
         .from("mockup_drafts")
         .insert({
           user_id: user.id,
+          organization_id: currentOrgId,
           name: draft.name,
           product_name: draft.productName ?? null,
           product_sku: draft.productSku ?? null,
           thumbnail_url: draft.thumbnailUrl ?? null,
           editor_state: (draft.editorState ?? null) as Json,
         })
+
         .select()
         .single();
       if (error) throw error;

@@ -7,9 +7,9 @@ import {
   Trash2, Square,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
-
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportOptions } from "../lib/export-service";
@@ -59,11 +59,9 @@ const MockupEditor = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { saveDraft, isSaving } = useMockupDrafts();
+  const isMobile = useIsMobile();
   
   const draftId = searchParams.get("id") || searchParams.get("edit");
-
-
-
 
   const productName = searchParams.get("product") || "Produto";
   const productSku = searchParams.get("sku") || "";
@@ -105,13 +103,16 @@ const MockupEditor = () => {
     position: "center"
   });
 
-
-
   const { placements, history, historyIndex, updatePlacement: updatePlacementCore, undo: undoCore, redo: redoCore, setPlacements, resetAllHistory } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [showRightPanel, setShowRightPanel] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(!isMobile);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Sync panel visibility with mobile state
+  useEffect(() => {
+    setShowRightPanel(!isMobile);
+  }, [isMobile]);
 
   const { drafts } = useMockupDrafts();
 
@@ -564,7 +565,8 @@ const MockupEditor = () => {
       />
 
       <div className="flex-1 flex overflow-hidden">
-        <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />
+        {!isMobile && <EditorViewThumbnails views={VIEWS} activeView={activeView} setActiveView={setActiveView} productImage={productImage} approvedViews={approvedViews} />}
+
 
 
         <div className="flex-1 flex flex-col">
