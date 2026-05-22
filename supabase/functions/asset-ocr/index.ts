@@ -33,6 +33,32 @@ function jsonResponse(data: unknown, status = 200, req?: Request) {
   });
 }
 
+/**
+ * Exponential backoff fetch
+ */
+async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      // Retry on 5xx or 429
+      if (response.ok || (response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+      console.warn(`Fetch attempt ${i + 1} failed with status ${response.status}. Retrying...`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`Fetch attempt ${i + 1} threw error: ${lastError.message}. Retrying...`);
+    }
+    if (i < maxRetries - 1) {
+      const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError || new Error(`Fetch failed after ${maxRetries} attempts`);
+}
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
