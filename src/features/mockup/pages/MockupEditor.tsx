@@ -408,6 +408,7 @@ const MockupEditor = () => {
       });
       toast.success("PDF gerado e pronto para download", { id: pdfToast });
     } catch (error) {
+      ErrorLogger.error("Mockup PDF export failed", error, { productName, productSku });
       console.error("PDF export error:", error);
       toast.error("Erro ao processar o PDF. Verifique se a logo foi carregada corretamente.", { id: pdfToast });
     } finally {
