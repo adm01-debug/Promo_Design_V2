@@ -32,8 +32,7 @@ function jsonResponse(data: unknown, status: number, req: Request) {
 async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
   let lastError: Error | null = null;
   for (let i = 0; i < maxRetries; i++) {
-  const startTimestamp = Date.now();
-  try {
+    try {
       const response = await fetch(url, options);
       if (response.ok || (response.status < 500 && response.status !== 429)) {
         return response;
@@ -73,6 +72,7 @@ serve(async (req) => {
   }
 
   const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  const startTimestamp = Date.now();
   console.log(`[${requestId}] mockup-ai started`);
 
   try {
@@ -115,14 +115,13 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData?.user) {
       console.warn(`[${requestId}] Invalid session:`, userErr);
       return jsonResponse({ error: "Unauthorized", requestId }, 401, req);
     }
 
-    // Fetch user's organization (assuming first one for simplicity or logic needs improvement)
+    // Fetch user's organization
     const { data: orgData } = await supabase
       .from("organization_members")
       .select("organization_id")
@@ -136,31 +135,28 @@ serve(async (req) => {
     if (orgId) {
       const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
       if (hasQuota === false) {
-        console.warn(`[${requestId}] Quota exceeded for org ${orgId}`);
+        console.warn(`[${requestId}] Quota exceeded for org \${orgId}`);
         return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
       }
     }
-
-    // supabase client setup
-
 
     // ─── Action: Remove Background ─────────────────────────
     if (body.action === "remove-bg") {
       const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer \${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
+          model: "google/gemini-2.0-flash-exp",
           messages: [
             {
               role: "user",
               content: [
                 {
                   type: "text",
-                  text: "Remove the background from this image completely. Keep only the main subject/logo with a transparent or clean white background. Output the cleaned image.",
+                  text: "Remove the background from this image completely. Keep only the main subject/logo with a transparent background. Output the cleaned image.",
                 },
                 {
                   type: "image_url",
@@ -195,10 +191,10 @@ serve(async (req) => {
           organization_id: orgId,
           user_id: userData.user.id,
           feature_name: "mockup-ai:remove-bg",
-          model_name: "google/gemini-2.5-flash-image",
+          model_name: "google/gemini-2.0-flash-exp",
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
-          cost_estimate: 0.01, // Flat estimate for image removal
+          cost_estimate: 0.01,
           metadata: { action: body.action }
         });
       }
@@ -209,7 +205,7 @@ serve(async (req) => {
       }
 
       const executionTimeMs = Date.now() - startTimestamp;
-      console.log(`[${requestId}] remove-bg completed successfully in ${executionTimeMs}ms`);
+      console.log(`[${requestId}] remove-bg completed successfully in \${executionTimeMs}ms`);
       return jsonResponse({ imageBase64: resultImage, requestId, executionTimeMs }, 200, req);
     }
 
@@ -218,29 +214,19 @@ serve(async (req) => {
       const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer \${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-1.5-flash",
           messages: [
             {
               role: "system",
-              content: `You are a mockup placement expert for promotional products. Given a product type and print area dimensions, suggest optimal logo placement parameters. Always respond using the suggest_placement tool.`,
+              content: "You are a mockup placement expert. Suggest optimal parameters. Always use the suggest_placement tool.",
             },
             {
               role: "user",
-              content: `Product: ${body.productName || "Generic product"}
-Template: ${body.templateId || "custom"}
-Print area: ${body.areaWidth || 15}cm × ${body.areaHeight || 15}cm
-
-Suggest the best placement for a logo on this product, considering:
-- Centering and visual balance
-- Typical branding conventions for this product type
-- Optimal scale to fill the area without overcrowding
-- Whether the logo should be rotated
-- Best blend mode for this product material
-- Recommended surface warp type`,
+              content: `Product: \${body.productName || "Generic product"} | Template: \${body.templateId || "custom"} | Area: \${body.areaWidth || 15}x\${body.areaHeight || 15}cm`,
             },
           ],
           tools: [
@@ -248,29 +234,20 @@ Suggest the best placement for a logo on this product, considering:
               type: "function",
               function: {
                 name: "suggest_placement",
-                description: "Suggest optimal placement parameters for a logo on a product mockup",
+                description: "Suggest optimal parameters",
                 parameters: {
                   type: "object",
                   properties: {
-                    scale: { type: "number", description: "Logo scale relative to area, 0.1 to 1.5" },
-                    xPercent: { type: "number", description: "X position as percentage of area width, 0 to 100" },
-                    yPercent: { type: "number", description: "Y position as percentage of area height, 0 to 100" },
-                    rotation: { type: "number", description: "Rotation in degrees, -180 to 180" },
-                    blendMode: {
-                      type: "string",
-                      enum: ["normal", "multiply", "screen", "overlay", "darken", "color-burn"],
-                      description: "Recommended blend mode",
-                    },
-                    surfaceType: {
-                      type: "string",
-                      enum: ["flat", "curved", "cylindrical", "spherical", "angled"],
-                      description: "Best surface warp type",
-                    },
-                    opacity: { type: "number", description: "Logo opacity percentage, 50 to 100" },
-                    reasoning: { type: "string", description: "Brief explanation of why these values were chosen, in Portuguese" },
+                    scale: { type: "number" },
+                    xPercent: { type: "number" },
+                    yPercent: { type: "number" },
+                    rotation: { type: "number" },
+                    blendMode: { type: "string", enum: ["normal", "multiply", "screen", "overlay", "darken", "color-burn"] },
+                    surfaceType: { type: "string", enum: ["flat", "curved", "cylindrical", "spherical", "angled"] },
+                    opacity: { type: "number" },
+                    reasoning: { type: "string" },
                   },
                   required: ["scale", "xPercent", "yPercent", "rotation", "blendMode", "surfaceType", "opacity", "reasoning"],
-                  additionalProperties: false,
                 },
               },
             },
@@ -282,12 +259,6 @@ Suggest the best placement for a logo on this product, considering:
       if (!response.ok) {
         const t = await response.text().catch(() => "");
         console.error(`[${requestId}] AI gateway error (suggest-placement):`, response.status, t);
-        if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido.", requestId }, 429, req);
-        }
-        if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados.", requestId }, 402, req);
-        }
         return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
 
@@ -295,32 +266,30 @@ Suggest the best placement for a logo on this product, considering:
       const usage = data.usage || {};
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
 
-      // Log usage
       if (orgId) {
         await supabase.from("ai_usage_log").insert({
           organization_id: orgId,
           user_id: userData.user.id,
           feature_name: "mockup-ai:suggest-placement",
-          model_name: "google/gemini-3-flash-preview",
+          model_name: "google/gemini-1.5-flash",
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
-          cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003),
+          cost_estimate: 0.001,
           metadata: { action: body.action }
         });
       }
 
       if (!toolCall) {
-        console.warn(`[${requestId}] AI did not return a suggestion`);
         return jsonResponse({ error: "IA não retornou sugestão", requestId }, 500, req);
       }
 
       const suggestion = JSON.parse(toolCall.function.arguments);
       const executionTimeMs = Date.now() - startTimestamp;
-      console.log(`[${requestId}] suggest-placement completed successfully in ${executionTimeMs}ms`);
+      console.log(`[${requestId}] suggest-placement completed successfully in \${executionTimeMs}ms`);
       return jsonResponse({ ...suggestion, requestId, executionTimeMs }, 200, req);
     }
 
-    return jsonResponse({ error: `Unknown action: ${(body as { action: string }).action}` }, 400, req);
+    return jsonResponse({ error: "Ação desconhecida" }, 400, req);
   } catch (e) {
     console.error(`[${requestId}] mockup-ai fatal error:`, e);
     return jsonResponse(
