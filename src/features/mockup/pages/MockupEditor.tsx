@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, GripVertical, Grid3X3, Maximize,
   FlipHorizontal, FlipVertical, RotateCw, ZoomIn, ZoomOut, Check, Undo2, Redo2,
-  Trash2, Square,
+  Trash2, Square, PanelRight,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
-
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
 import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
 import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportOptions } from "../lib/export-service";
