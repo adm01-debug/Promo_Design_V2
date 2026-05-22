@@ -83,11 +83,38 @@ serve(async (req) => {
       return jsonResponse({ error: "Unauthorized", requestId }, 401, req);
     }
 
+    // ─── API Key check early ───────────────────────────────
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
+      return jsonResponse({ error: "Configuração do servidor incompleta", requestId }, 500, req);
+    }
+
+    // ─── Input Validation early ──────────────────────────
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return jsonResponse({ error: "Corpo da requisição inválido", requestId }, 400, req);
+    }
+
+    const parsed = RequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      console.warn(`[${requestId}] Validation failed:`, parsed.error.flatten().fieldErrors);
+      return jsonResponse(
+        { error: "Validação falhou", details: parsed.error.flatten().fieldErrors, requestId },
+        400,
+        req
+      );
+    }
+    const body = parsed.data;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
+
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr || !userData?.user) {
@@ -114,32 +141,8 @@ serve(async (req) => {
       }
     }
 
-    // ─── API Key ───────────────────────────────────────────
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    // supabase client setup
 
-    // ─── Input Validation ──────────────────────────────────
-    let rawBody: unknown;
-    try {
-      rawBody = await req.json();
-    } catch {
-      return jsonResponse({ error: "Invalid JSON body" }, 400, req);
-    }
-
-    const parsed = RequestSchema.safeParse(rawBody);
-    if (!parsed.success) {
-      console.warn(`[${requestId}] Validation failed:`, parsed.error.flatten().fieldErrors);
-      return jsonResponse(
-        { error: "Validação falhou", details: parsed.error.flatten().fieldErrors, requestId },
-        400,
-        req
-      );
-    }
-
-    const body = parsed.data;
 
     // ─── Action: Remove Background ─────────────────────────
     if (body.action === "remove-bg") {
