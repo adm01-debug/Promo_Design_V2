@@ -65,7 +65,12 @@ export function validateForm(form: ServiceOrderData): ValidationErrors {
   for (const issue of result.error.issues) {
     const field = issue.path[0] as string;
     if (!errors[field]) {
-      errors[field] = issue.message;
+      // Improve readability of Zod errors for the user
+      let message = issue.message;
+      if (issue.code === "invalid_type" && issue.expected === "string") {
+        message = "Este campo é obrigatório";
+      }
+      errors[field] = message;
     }
   }
   return errors;
