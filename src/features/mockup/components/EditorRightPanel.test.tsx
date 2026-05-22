@@ -1,8 +1,10 @@
-import { test, expect } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { test, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
 import EditorRightPanel from "./EditorRightPanel";
-import { ThemeProvider } from "@/components/theme-provider";
 import React from "react";
+
+// Mock ThemeProvider since it might not be easily accessible in test environment
+const ThemeProvider = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
 
 // Mock props
 const defaultProps: any = {

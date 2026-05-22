@@ -460,6 +460,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     setExportFormat, setIsResizing,
     // Actions
     undo, redo, autoFitLogo, handleLogoUpload, handleRemoveBg, handleSuggestPlacement,
+    applySuggestedPlacement, cancelAIRequest,
     handleDrop, handleLogoMouseDown, handleMouseMove, handleMouseUp,
     handleExportImage, handleExportPng, handleExportPdf, centerLogo, clearLogo,
     handleSaveDraft, restoreDraft,

@@ -150,7 +150,7 @@ export function useMockupEditorState(views: { id: string }[]) {
       ...prev,
       history: initialHistory,
       historyIndex: initialHistoryIndex,
-      logoPreviews: prev.logoPreviews, // Keep current logo state or reset? Usually reset in "reset all"
+      logoPreviews: prev.logoPreviews,
       logoHistoryIndex: prev.logoHistoryIndex
     }));
   }, [initialHistory, initialHistoryIndex]);

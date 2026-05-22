@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -133,7 +134,7 @@ const MockupEditor = () => {
           setPlacements(state.placements);
           resetAllHistory();
         }
-        if (state.logoPreview) setLogoPreview(state.logoPreview);
+        if (state.logoPreview) pushLogoToHistory(state.logoPreview);
         if (state.logoOpacity) setLogoOpacity(state.logoOpacity);
         if (state.blendMode) setBlendMode(state.blendMode);
         if (state.surfaceType) setSurfaceType(state.surfaceType);
@@ -772,7 +773,7 @@ const MockupEditor = () => {
                         <FlipVertical className="mr-2 h-4 w-4" /> <span>Espelhar Vertical</span>
                       </ContextMenuItem>
                       <ContextMenuSeparator />
-                      <ContextMenuItem onClick={() => { setLogoPreview(null); setLogoFile(null); }} className="text-destructive focus:text-destructive">
+                      <ContextMenuItem onClick={() => { setLogoFile(null); pushLogoToHistory(""); }} className="text-destructive focus:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" /> <span>Remover Logo</span>
                         <ContextMenuShortcut>Del</ContextMenuShortcut>
                       </ContextMenuItem>
@@ -825,7 +826,7 @@ const MockupEditor = () => {
                 productName={productName} productSku={productSku} productImage={productImage} technique={technique}
                 logoFile={logoFile} logoPreview={logoPreview} logoColors={logoColors} showLogo={showLogo} setShowLogo={setShowLogo}
                 fileInputRef={fileInputRef} handleLogoUpload={handleLogoUpload}
-                setLogoPreview={setLogoPreview} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
+                setLogoPreview={pushLogoToHistory} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
                 blendMode={blendMode} setBlendMode={setBlendMode} logoOpacity={logoOpacity} setLogoOpacity={setLogoOpacity}
                 showTexture={showTexture} setShowTexture={setShowTexture}
                 shadowEnabled={shadowEnabled} setShadowEnabled={setShadowEnabled} shadowIntensity={shadowIntensity} setShadowIntensity={setShadowIntensity}
