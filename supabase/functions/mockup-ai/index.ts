@@ -312,8 +312,9 @@ Suggest the best placement for a logo on this product, considering:
       }
 
       const suggestion = JSON.parse(toolCall.function.arguments);
-      console.log(`[${requestId}] suggest-placement completed successfully`);
-      return jsonResponse({ ...suggestion, requestId }, 200, req);
+      const executionTimeMs = Date.now() - startTimestamp;
+      console.log(`[${requestId}] suggest-placement completed successfully in ${executionTimeMs}ms`);
+      return jsonResponse({ ...suggestion, requestId, executionTimeMs }, 200, req);
     }
 
     return jsonResponse({ error: `Unknown action: ${(body as { action: string }).action}` }, 400, req);
