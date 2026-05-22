@@ -257,8 +257,9 @@ serve(async (req) => {
       return jsonResponse({ error: "Falha ao salvar texto extraído", requestId }, 500, req);
     }
 
-    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}`);
-    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId }, 200, req);
+    const executionTimeMs = Date.now() - startTimestamp;
+    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}. Duration: ${executionTimeMs}ms`);
+    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId, executionTimeMs }, 200, req);
   } catch (e) {
     console.error(`[${requestId}] asset-ocr fatal error:`, e);
     return jsonResponse(
