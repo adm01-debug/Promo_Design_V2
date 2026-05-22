@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrganization } from "@/hooks/use-organization";
+import { useOrganizations } from "@/hooks/use-organization";
 import { toast } from "sonner";
 
 export interface VideoEntry {
@@ -21,18 +21,18 @@ export interface VideoEntry {
 }
 
 export function useVideos(options: { search?: string } = {}) {
-  const { organization } = useOrganization();
+  const { currentOrgId } = useOrganizations();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["videos", organization?.id, options.search],
+    queryKey: ["videos", currentOrgId, options.search],
     queryFn: async () => {
-      if (!organization?.id) return [];
+      if (!currentOrgId) return [];
 
       let q = supabase
         .from("videos")
         .select("*")
-        .eq("organization_id", organization.id)
+        .eq("organization_id", currentOrgId)
         .order("created_at", { ascending: false });
 
       if (options.search) {
@@ -43,7 +43,7 @@ export function useVideos(options: { search?: string } = {}) {
       if (error) throw error;
       return data as VideoEntry[];
     },
-    enabled: !!organization?.id,
+    enabled: !!currentOrgId,
   });
 
   const deleteVideo = useMutation({
