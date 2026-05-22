@@ -177,6 +177,7 @@ const ServiceOrder = () => {
         setSaved(true); 
       }
     } catch (err) { 
+      ErrorLogger.error("Failed to save service order", err, { editId, osNumber: form.osNumber });
       toast.error("Erro ao salvar: " + (err instanceof Error ? err.message : "tente novamente")); 
     }
   }, [form, editId, currentStatus, updateOrder, addOrder, navigate]);
