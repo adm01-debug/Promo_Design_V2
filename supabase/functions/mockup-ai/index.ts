@@ -26,6 +26,31 @@ function jsonResponse(data: unknown, status: number, req: Request) {
   });
 }
 
+/**
+ * Exponential backoff fetch
+ */
+async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < maxRetries; i++) {
+  const startTimestamp = Date.now();
+  try {
+      const response = await fetch(url, options);
+      if (response.ok || (response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+      console.warn(`Fetch attempt ${i + 1} failed with status ${response.status}. Retrying...`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`Fetch attempt ${i + 1} threw error: ${lastError.message}. Retrying...`);
+    }
+    if (i < maxRetries - 1) {
+      const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError || new Error(`Fetch failed after ${maxRetries} attempts`);
+}
+
 // ─── Zod Schemas ───────────────────────────────────────────
 const RemoveBgSchema = z.object({
   action: z.literal("remove-bg"),
@@ -118,7 +143,7 @@ serve(async (req) => {
 
     // ─── Action: Remove Background ─────────────────────────
     if (body.action === "remove-bg") {
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -180,13 +205,14 @@ serve(async (req) => {
         return jsonResponse({ error: "IA não retornou imagem processada", requestId }, 500, req);
       }
 
-      console.log(`[${requestId}] remove-bg completed successfully`);
-      return jsonResponse({ imageBase64: resultImage, requestId }, 200, req);
+      const executionTimeMs = Date.now() - startTimestamp;
+      console.log(`[${requestId}] remove-bg completed successfully in ${executionTimeMs}ms`);
+      return jsonResponse({ imageBase64: resultImage, requestId, executionTimeMs }, 200, req);
     }
 
     // ─── Action: Suggest Placement ──────────────────────────
     if (body.action === "suggest-placement") {
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -286,8 +312,9 @@ Suggest the best placement for a logo on this product, considering:
       }
 
       const suggestion = JSON.parse(toolCall.function.arguments);
-      console.log(`[${requestId}] suggest-placement completed successfully`);
-      return jsonResponse({ ...suggestion, requestId }, 200, req);
+      const executionTimeMs = Date.now() - startTimestamp;
+      console.log(`[${requestId}] suggest-placement completed successfully in ${executionTimeMs}ms`);
+      return jsonResponse({ ...suggestion, requestId, executionTimeMs }, 200, req);
     }
 
     return jsonResponse({ error: `Unknown action: ${(body as { action: string }).action}` }, 400, req);

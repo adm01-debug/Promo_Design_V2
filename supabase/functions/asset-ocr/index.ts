@@ -33,6 +33,32 @@ function jsonResponse(data: unknown, status = 200, req?: Request) {
   });
 }
 
+/**
+ * Exponential backoff fetch
+ */
+async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      // Retry on 5xx or 429
+      if (response.ok || (response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+      console.warn(`Fetch attempt ${i + 1} failed with status ${response.status}. Retrying...`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`Fetch attempt ${i + 1} threw error: ${lastError.message}. Retrying...`);
+    }
+    if (i < maxRetries - 1) {
+      const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError || new Error(`Fetch failed after ${maxRetries} attempts`);
+}
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
 
@@ -56,6 +82,7 @@ serve(async (req) => {
     }
     const { assetId, filePath, mimeType } = parsed.data;
 
+    const startTimestamp = Date.now();
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -111,7 +138,7 @@ serve(async (req) => {
       return jsonResponse({ error: "Falha ao gerar URL assinada", requestId }, 500, req);
     }
 
-    const imgRes = await fetch(signed.signedUrl);
+    const imgRes = await fetchWithRetry(signed.signedUrl);
     if (!imgRes.ok) {
       console.error(`[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
@@ -128,7 +155,7 @@ serve(async (req) => {
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
     // Call Lovable AI Gateway with structured tool
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -230,8 +257,9 @@ serve(async (req) => {
       return jsonResponse({ error: "Falha ao salvar texto extraído", requestId }, 500, req);
     }
 
-    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}`);
-    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId }, 200, req);
+    const executionTimeMs = Date.now() - startTimestamp;
+    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}. Duration: ${executionTimeMs}ms`);
+    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId, executionTimeMs }, 200, req);
   } catch (e) {
     console.error(`[${requestId}] asset-ocr fatal error:`, e);
     return jsonResponse(
