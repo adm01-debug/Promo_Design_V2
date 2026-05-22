@@ -838,6 +838,14 @@ const MockupEditor = () => {
                 exportScale={exportScale} setExportScale={setExportScale}
                 handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
                 watermarkConfig={watermarkConfig} setWatermarkConfig={setWatermarkConfig}
+                isSuggestingPlacement={isSuggestingPlacement}
+                isRemovingBg={isRemovingBg}
+                handleSuggestPlacement={handleSuggestPlacement}
+                handleRemoveBg={handleRemoveBg}
+                suggestedPlacement={suggestedPlacement}
+                applySuggestedPlacement={applySuggestedPlacement}
+                setSuggestedPlacement={setSuggestedPlacement}
+                cancelAIRequest={cancelAIRequest}
               />
             </motion.div>
           )}
