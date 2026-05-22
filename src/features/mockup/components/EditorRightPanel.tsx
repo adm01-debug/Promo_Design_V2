@@ -8,7 +8,6 @@ import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
@@ -107,6 +106,8 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     isSuggestingPlacement, isRemovingBg, handleSuggestPlacement, handleRemoveBg,
     suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest
   } = props;
+  const [damPickerOpen, setDamPickerOpen] = useState(false);
+  const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
@@ -173,10 +174,10 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
               variant="secondary" 
               size="sm" 
               className="h-7 text-[10px] gap-1 bg-primary/5 hover:bg-primary/10 border-primary/20"
-              onClick={handleAISuggestion}
-              disabled={isSuggesting}
+              onClick={handleSuggestPlacement}
+              disabled={isSuggestingPlacement || isRemovingBg}
             >
-              {isSuggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Sugerir
+              {isSuggestingPlacement ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 text-primary" />} Sugerir
             </Button>
             <Button 
               variant="secondary" 
