@@ -125,10 +125,10 @@ export function useMockupEditorState(views: { id: string }[]) {
     });
   }, []);
 
-  const pushLogoToHistory = useCallback((logo: string) => {
+  const pushLogoToHistory = useCallback((logo: string | null) => {
     setState(prev => {
       const nextPreviews = prev.logoPreviews.slice(0, prev.logoHistoryIndex + 1);
-      nextPreviews.push(logo);
+      nextPreviews.push(logo || "");
       if (nextPreviews.length > 30) nextPreviews.shift();
       return {
         ...prev,
