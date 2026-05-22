@@ -32,7 +32,8 @@ function jsonResponse(data: unknown, status: number, req: Request) {
 async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
   let lastError: Error | null = null;
   for (let i = 0; i < maxRetries; i++) {
-    try {
+  const startTimestamp = Date.now();
+  try {
       const response = await fetch(url, options);
       if (response.ok || (response.status < 500 && response.status !== 429)) {
         return response;
