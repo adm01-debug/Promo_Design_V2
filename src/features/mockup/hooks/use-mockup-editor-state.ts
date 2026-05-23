@@ -2,6 +2,16 @@ import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 
 export type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
+export type AISuggestion = { 
+  id: string; 
+  timestamp: number; 
+  type: 'placement' | 'remove-bg'; 
+  data: { 
+    placement?: Placement; 
+    reasoning?: string; 
+    logoPreview?: string;
+  } 
+};
 
 const INITIAL_PLACEMENT: Placement = { x: 50, y: 50, scale: 0.6, rotation: 0, flipH: false, flipV: false };
 
@@ -11,6 +21,8 @@ interface EditorState {
   historyIndex: Record<string, number>;
   logoPreviews: string[];
   logoHistoryIndex: number;
+  aiSuggestions: AISuggestion[];
+  aiHistoryIndex: number;
 }
 
 export function useMockupEditorState(views: { id: string }[]) {
@@ -37,8 +49,37 @@ export function useMockupEditorState(views: { id: string }[]) {
     history: initialHistory,
     historyIndex: initialHistoryIndex,
     logoPreviews: [],
-    logoHistoryIndex: -1
+    logoHistoryIndex: -1,
+    aiSuggestions: [],
+    aiHistoryIndex: -1
   });
+
+  const pushAISuggestion = useCallback((suggestion: Omit<AISuggestion, 'id' | 'timestamp'>) => {
+    setState(prev => {
+      const newSuggestion: AISuggestion = {
+        ...suggestion,
+        id: crypto.randomUUID(),
+        timestamp: Date.now()
+      };
+      const nextSuggestions = prev.aiSuggestions.slice(0, prev.aiHistoryIndex + 1);
+      nextSuggestions.push(newSuggestion);
+      if (nextSuggestions.length > 20) nextSuggestions.shift();
+      
+      return {
+        ...prev,
+        aiSuggestions: nextSuggestions,
+        aiHistoryIndex: nextSuggestions.length - 1
+      };
+    });
+  }, []);
+
+  const clearAISuggestions = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      aiSuggestions: [],
+      aiHistoryIndex: -1
+    }));
+  }, []);
 
   const updatePlacementWithHistory = useCallback((viewId: string, update: Partial<Placement>, commitToHistory = false) => {
     setState(prev => {
@@ -160,12 +201,16 @@ export function useMockupEditorState(views: { id: string }[]) {
     history: state.history,
     historyIndex: state.historyIndex,
     logoPreview: state.logoPreviews[state.logoHistoryIndex] || null,
+    aiSuggestions: state.aiSuggestions,
+    aiHistoryIndex: state.aiHistoryIndex,
     updatePlacement: updatePlacementWithHistory,
     undo,
     redo,
     undoLogo,
     redoLogo,
     pushLogoToHistory,
+    pushAISuggestion,
+    clearAISuggestions,
     setPlacements,
     resetAllHistory
   };
