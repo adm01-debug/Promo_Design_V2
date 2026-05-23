@@ -78,8 +78,12 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Ref usage for cleanup to satisfy linter
   useEffect(() => {
-    if (abortControllerRef.current) console.log("AI request active");
+    return () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
   }, []);
   
 
