@@ -92,6 +92,7 @@ const MockupEditor = () => {
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
+  const [isPreviewingAI, setIsPreviewingAI] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
 
@@ -878,10 +879,12 @@ const MockupEditor = () => {
                 suggestedPlacement={suggestedPlacement}
                 applySuggestedPlacement={applySuggestedPlacement}
                 setSuggestedPlacement={setSuggestedPlacement}
-                cancelAIRequest={cancelAIRequest}
-                aiSuggestions={aiSuggestions}
-                clearAISuggestions={clearAISuggestions}
-              />
+            cancelAIRequest={cancelAIRequest}
+            aiSuggestions={aiSuggestions}
+            clearAISuggestions={clearAISuggestions}
+            isPreviewingAI={isPreviewingAI}
+            setIsPreviewingAI={setIsPreviewingAI}
+          />
             </motion.div>
           )}
         </AnimatePresence>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info, Move, RotateCw,
+  Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -87,6 +87,8 @@ interface EditorRightPanelProps {
   cancelAIRequest: () => void;
   aiSuggestions: any[];
   clearAISuggestions: () => void;
+  isPreviewingAI: boolean;
+  setIsPreviewingAI: (v: boolean) => void;
 }
 
 
@@ -107,7 +109,8 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     watermarkConfig, setWatermarkConfig,
     isSuggestingPlacement, isRemovingBg, handleSuggestPlacement, handleRemoveBg,
     suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest,
-    aiSuggestions, clearAISuggestions
+    aiSuggestions, clearAISuggestions,
+    isPreviewingAI, setIsPreviewingAI
   } = props;
 
   return (
@@ -211,7 +214,7 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Sugestão de IA</span>
               </div>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setSuggestedPlacement(null)}>
+              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setSuggestedPlacement(null); setIsPreviewingAI(false); }}>
                 <XCircle className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -221,26 +224,47 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
               {suggestedPlacement.reasoning}
             </p>
             
-            <div className="grid grid-cols-2 gap-1.5 py-1.5 border-y border-primary/10">
-              <div className="space-y-0.5">
-                <span className="text-[9px] text-muted-foreground uppercase font-mono">Posição</span>
-                <div className="flex items-center gap-1 text-[10px] font-mono">
-                  <Move className="w-2.5 h-2.5 text-muted-foreground" />
-                  {Math.round(suggestedPlacement.placement.x)}, {Math.round(suggestedPlacement.placement.y)}
+            <div className="space-y-1.5 py-1.5 border-y border-primary/10">
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="space-y-0.5">
+                  <span className="text-[9px] text-muted-foreground uppercase font-mono">Posição</span>
+                  <div className="flex flex-col text-[10px] font-mono leading-tight">
+                    <span className="text-muted-foreground line-through">
+                      {Math.round(currentPlacement.x)}, {Math.round(currentPlacement.y)}
+                    </span>
+                    <span className="text-primary font-bold">
+                      {Math.round(suggestedPlacement.placement.x)}, {Math.round(suggestedPlacement.placement.y)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-0.5">
-                <span className="text-[9px] text-muted-foreground uppercase font-mono">Escala/Rot</span>
-                <div className="flex items-center gap-1 text-[10px] font-mono">
-                  <RotateCw className="w-2.5 h-2.5 text-muted-foreground" />
-                  {Math.round(suggestedPlacement.placement.scale * 100)}% / {suggestedPlacement.placement.rotation}°
+                <div className="space-y-0.5">
+                  <span className="text-[9px] text-muted-foreground uppercase font-mono">Escala / Rot</span>
+                  <div className="flex flex-col text-[10px] font-mono leading-tight">
+                    <span className="text-muted-foreground line-through">
+                      {Math.round(currentPlacement.scale * 100)}% / {currentPlacement.rotation}°
+                    </span>
+                    <span className="text-primary font-bold">
+                      {Math.round(suggestedPlacement.placement.scale * 100)}% / {suggestedPlacement.placement.rotation}°
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
             
-            <Button size="sm" className="w-full h-7 text-[10px] gap-1 bg-primary hover:bg-primary/90" onClick={applySuggestedPlacement}>
-              <Check className="w-3 h-3" /> Aplicar Sugestão
-            </Button>
+            <div className="flex items-center gap-2 pt-1">
+              <Button 
+                variant={isPreviewingAI ? "secondary" : "outline"}
+                size="sm" 
+                className="flex-1 h-7 text-[10px] gap-1"
+                onClick={() => setIsPreviewingAI(!isPreviewingAI)}
+              >
+                {isPreviewingAI ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                {isPreviewingAI ? "Ver Atual" : "Ver Sugestão"}
+              </Button>
+              <Button size="sm" className="flex-1 h-7 text-[10px] gap-1 bg-primary hover:bg-primary/90" onClick={applySuggestedPlacement}>
+                <Check className="w-3 h-3" /> Aplicar
+              </Button>
+            </div>
           </div>
         )}
         {logoColors.length > 0 && (

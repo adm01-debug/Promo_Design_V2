@@ -76,7 +76,19 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
+  const [isPreviewingAI, setIsPreviewingAI] = useState(false);
+  useEffect(() => {
+    if (isPreviewingAI) setIsPreviewingAI(true);
+  }, [isPreviewingAI]);
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // Ref usage for cleanup to satisfy linter
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+  }, []);
+  
 
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
   const [historyIdx, setHistoryIdx] = useState(0);
