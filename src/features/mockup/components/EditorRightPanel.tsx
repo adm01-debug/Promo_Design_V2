@@ -83,7 +83,7 @@ interface EditorRightPanelProps {
   handleRemoveBg: () => void;
   suggestedPlacement: { placement: Placement; reasoning: string } | null;
   applySuggestedPlacement: () => void;
-  setSuggestedPlacement: (v: null) => void;
+  setSuggestedPlacement: (v: { placement: Placement; reasoning: string } | null) => void;
   cancelAIRequest: () => void;
   aiSuggestions: any[];
   clearAISuggestions: () => void;
