@@ -78,6 +78,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  console.log('AI history setup');
   
 
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
