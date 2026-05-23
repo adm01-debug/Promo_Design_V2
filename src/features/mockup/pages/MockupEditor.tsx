@@ -122,7 +122,7 @@ const MockupEditor = () => {
     placements, history, historyIndex, updatePlacement: updatePlacementCore, 
     undo: undoCore, redo: redoCore, setPlacements, resetAllHistory,
     logoPreview, undoLogo, redoLogo, pushLogoToHistory,
-    aiSuggestions, aiHistoryIndex, pushAISuggestion, clearAISuggestions
+    aiSuggestions, pushAISuggestion, clearAISuggestions
   } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });

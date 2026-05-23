@@ -251,6 +251,43 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
             </div>
           </div>
         )}
+        {aiSuggestions.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-border">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[10px] font-mono text-muted-foreground uppercase">Histórico IA</label>
+              <Button variant="ghost" size="sm" className="h-5 text-[9px] px-1.5" onClick={clearAISuggestions}>Limpar</Button>
+            </div>
+            <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+              {aiSuggestions.slice().reverse().map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    if (s.type === 'placement' && s.data.placement) {
+                      setSuggestedPlacement({ placement: s.data.placement, reasoning: s.data.reasoning || "" });
+                    } else if (s.type === 'remove-bg' && s.data.logoPreview) {
+                      setLogoPreview(s.data.logoPreview);
+                      toast.success("Versão da IA restaurada");
+                    }
+                  }}
+                  className="w-full text-left p-2 rounded bg-muted/50 hover:bg-primary/5 border border-border hover:border-primary/20 transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-bold text-primary flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5" />
+                      {s.type === 'placement' ? 'Posição' : 'Fundo'}
+                    </span>
+                    <span className="text-[8px] text-muted-foreground font-mono">
+                      {new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-muted-foreground line-clamp-2 group-hover:text-foreground transition-colors leading-tight">
+                    {s.data.reasoning || "Sugestão aplicada."}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Appearance */}
