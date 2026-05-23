@@ -879,6 +879,8 @@ const MockupEditor = () => {
                 applySuggestedPlacement={applySuggestedPlacement}
                 setSuggestedPlacement={setSuggestedPlacement}
                 cancelAIRequest={cancelAIRequest}
+                aiSuggestions={aiSuggestions}
+                clearAISuggestions={clearAISuggestions}
               />
             </motion.div>
           )}
