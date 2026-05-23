@@ -18,8 +18,6 @@ import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { ErrorLogger } from "@/lib/error-logger";
 
-
-
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
@@ -32,6 +30,17 @@ import {
   ContextMenuTrigger,
   ContextMenuShortcut,
 } from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 
 /**
@@ -84,6 +93,8 @@ const MockupEditor = () => {
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
   const [showTexture, setShowTexture] = useState(true);
@@ -422,6 +433,10 @@ const MockupEditor = () => {
   }, [logoPreview, pushLogoToHistory]);
 
   const cancelAIRequest = useCallback(() => {
+    setIsCancelConfirmOpen(true);
+  }, []);
+
+  const confirmCancelAIRequest = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -429,7 +444,9 @@ const MockupEditor = () => {
       setIsSuggestingPlacement(false);
       toast.info("Operação cancelada.");
     }
+    setIsCancelConfirmOpen(false);
   }, []);
+
 
   const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file?.type.startsWith("image/")) handleLogoUpload(file); }, [handleLogoUpload]);
   const handleLogoMouseDown = (e: React.MouseEvent) => {
@@ -851,8 +868,25 @@ const MockupEditor = () => {
           )}
         </AnimatePresence>
 
+        <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancelar execução da IA?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação interromperá o processamento atual e você poderá perder a sugestão que está sendo gerada.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continuar processando</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmCancelAIRequest} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Confirmar cancelamento
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
       </div>
+
     </div>
   );
 };
