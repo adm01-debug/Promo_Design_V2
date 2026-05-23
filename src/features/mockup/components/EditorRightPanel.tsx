@@ -85,6 +85,8 @@ interface EditorRightPanelProps {
   applySuggestedPlacement: () => void;
   setSuggestedPlacement: (v: null) => void;
   cancelAIRequest: () => void;
+  aiSuggestions: any[];
+  clearAISuggestions: () => void;
 }
 
 
@@ -104,7 +106,8 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     exportFormat, setExportFormat, exportQuality, setExportQuality, exportScale, setExportScale, handleExportPdf, handleExportPng, isExporting,
     watermarkConfig, setWatermarkConfig,
     isSuggestingPlacement, isRemovingBg, handleSuggestPlacement, handleRemoveBg,
-    suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest
+    suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest,
+    aiSuggestions, clearAISuggestions
   } = props;
 
   return (

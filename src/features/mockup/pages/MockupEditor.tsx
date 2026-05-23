@@ -121,7 +121,8 @@ const MockupEditor = () => {
   const { 
     placements, history, historyIndex, updatePlacement: updatePlacementCore, 
     undo: undoCore, redo: redoCore, setPlacements, resetAllHistory,
-    logoPreview, undoLogo, redoLogo, pushLogoToHistory
+    logoPreview, undoLogo, redoLogo, pushLogoToHistory,
+    aiSuggestions, aiHistoryIndex, pushAISuggestion, clearAISuggestions
   } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -376,6 +377,14 @@ const MockupEditor = () => {
       setSuggestedPlacement({
         placement: suggested,
         reasoning: data.reasoning || "Sugerido com base na geometria do produto."
+      });
+
+      pushAISuggestion({
+        type: 'placement',
+        data: {
+          placement: suggested,
+          reasoning: data.reasoning
+        }
       });
 
       if (data.blendMode) setBlendMode(data.blendMode);
