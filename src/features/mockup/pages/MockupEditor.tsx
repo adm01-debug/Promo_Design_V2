@@ -121,7 +121,8 @@ const MockupEditor = () => {
   const { 
     placements, history, historyIndex, updatePlacement: updatePlacementCore, 
     undo: undoCore, redo: redoCore, setPlacements, resetAllHistory,
-    logoPreview, undoLogo, redoLogo, pushLogoToHistory
+    logoPreview, undoLogo, redoLogo, pushLogoToHistory,
+    aiSuggestions, pushAISuggestion, clearAISuggestions
   } = useMockupEditorState(VIEWS);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -378,6 +379,14 @@ const MockupEditor = () => {
         reasoning: data.reasoning || "Sugerido com base na geometria do produto."
       });
 
+      pushAISuggestion({
+        type: 'placement',
+        data: {
+          placement: suggested,
+          reasoning: data.reasoning
+        }
+      });
+
       if (data.blendMode) setBlendMode(data.blendMode);
       if (data.surfaceType) setSurfaceType(data.surfaceType);
       if (data.opacity) setLogoOpacity(data.opacity);
@@ -422,6 +431,13 @@ const MockupEditor = () => {
       }
       
       pushLogoToHistory(data.imageBase64);
+      pushAISuggestion({
+        type: 'remove-bg',
+        data: {
+          logoPreview: data.imageBase64,
+          reasoning: "Fundo removido automaticamente via IA."
+        }
+      });
       toast.success("IA: Fundo removido!");
     } catch (err) {
       console.error("AI BG Removal failed:", err);
@@ -863,6 +879,8 @@ const MockupEditor = () => {
                 applySuggestedPlacement={applySuggestedPlacement}
                 setSuggestedPlacement={setSuggestedPlacement}
                 cancelAIRequest={cancelAIRequest}
+                aiSuggestions={aiSuggestions}
+                clearAISuggestions={clearAISuggestions}
               />
             </motion.div>
           )}
