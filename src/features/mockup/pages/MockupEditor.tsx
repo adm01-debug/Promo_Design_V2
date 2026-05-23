@@ -431,6 +431,13 @@ const MockupEditor = () => {
       }
       
       pushLogoToHistory(data.imageBase64);
+      pushAISuggestion({
+        type: 'remove-bg',
+        data: {
+          logoPreview: data.imageBase64,
+          reasoning: "Fundo removido automaticamente via IA."
+        }
+      });
       toast.success("IA: Fundo removido!");
     } catch (err) {
       console.error("AI BG Removal failed:", err);
