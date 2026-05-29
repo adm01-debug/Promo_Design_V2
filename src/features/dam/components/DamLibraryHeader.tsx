@@ -19,7 +19,7 @@ interface Props {
   onOpenActivity: () => void;
   onOpenBatchOcr: () => void;
   onOpenReset: () => void;
-  quickPreview: any;
+  quickPreview: { enabled: boolean; toggleEnabled: () => void };
   assets: Asset[];
   clients: Client[];
   total: number;
@@ -50,10 +50,12 @@ export function DamLibraryHeader({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 1800);
-    } catch {}
+    } catch (err) {
+      console.warn("Failed to copy link:", err);
+    }
   };
 
-  const currentSavedFilters: any = {
+  const currentSavedFilters = {
     _v: 1,
     search: debouncedSearch.trim(),
     assetTypes: state.assetTypes,
@@ -91,11 +93,11 @@ export function DamLibraryHeader({
         <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={(snap) => {
           filters.setSearch(snap.search ?? "");
           filters.setAssetTypes(snap.assetTypes ?? []);
-          filters.setClientId((snap.clientId as any) ?? "all");
+          filters.setClientId((snap.clientId as string) ?? "all");
           filters.setTags(snap.tags ?? []);
           filters.setTagsMode(snap.tagsMode ?? "all");
           filters.setIncludeArchived(Boolean(snap.includeArchived));
-          filters.setSort((snap.sort as any) ?? "created_desc");
+          filters.setSort((snap.sort as "created_desc" | "updated_at" | "name" | "file_size" | "version" | "relevance") ?? "created_desc");
         }} />
         <Button variant="outline" size="sm" onClick={handleCopyLink} data-testid="dam-copy-link">
           <Link2 className="w-4 h-4 mr-2" />
@@ -110,8 +112,8 @@ export function DamLibraryHeader({
           clients={clients}
           total={total}
           organizationId={organizationId}
-          filters={{} as any}
-          filtersSummary={{} as any}
+          filters={state}
+          filtersSummary={currentSavedFilters}
         />
         <Toggle
           pressed={quickPreview.enabled}
