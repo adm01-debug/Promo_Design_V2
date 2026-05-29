@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -48,8 +49,9 @@ const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/Bra
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider>
-    <QueryClientProvider client={queryClient}>
+  <AuthProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <OnlineIndicator />
         <Toaster />
@@ -108,6 +110,7 @@ const App = () => (
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
+  </AuthProvider>
 );
 
 export default App;
