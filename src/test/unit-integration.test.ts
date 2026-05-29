@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { formatCurrency, formatDate, cn } from './utils';
+import { formatCurrency, formatDate, cn } from '../lib/utils';
 
 describe('lib/utils', () => {
   describe('formatCurrency', () => {
@@ -31,7 +31,7 @@ describe('Integration: Mocked External APIs', () => {
     
     try {
       await fetch('https://api.external.com');
-    } catch (e) {
+    } catch (e: any) {
       expect(e.message).toBe('API Down');
     }
   });
