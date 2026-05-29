@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
+import { OrganizationProvider } from "./contexts/OrganizationContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -50,8 +51,9 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <AuthProvider>
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
+    <OrganizationProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <OnlineIndicator />
         <Toaster />
@@ -108,8 +110,9 @@ const App = () => (
           </RouteErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </OrganizationProvider>
   </AuthProvider>
 );
 
