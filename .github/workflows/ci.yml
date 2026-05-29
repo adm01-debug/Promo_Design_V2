@@ -34,6 +34,12 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Run load tests
+        run: npm run test:load
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
       - name: Run E2E tests
         run: npx playwright install --with-deps && npx playwright test
 
