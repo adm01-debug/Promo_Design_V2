@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState, type DragEvent } from "react";
+import type { FileEntry } from "../hooks/use-asset-upload-entries";
+import type { UploadPhase } from "../hooks/use-asset-upload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -122,7 +124,7 @@ export function AssetUploadDialog({
     addFiles(Array.from(e.dataTransfer.files));
   };
 
-  const uploadEntries = async (targets: any[]) => {
+  const uploadEntries = async (targets: FileEntry[]) => {
     const cleanTags = Array.from(new Set(tags.map(t => t.trim().toLowerCase()).filter(t => t.length > 0)));
     setIsUploading(true);
     let okCount = 0;
@@ -152,8 +154,8 @@ export function AssetUploadDialog({
             parentAsset: parentAsset ?? undefined,
             pdfPage: page,
             name: overrideName,
-            onPhase: (phase) => {
-              const phaseProgress: any = { analyzing: 10, "rendering-pdf": 25, "rasterizing-svg": 25, "processing-image": 25, "uploading-file": 55, "uploading-thumb": 80, "saving-record": 92, done: 100 };
+            onPhase: (phase: UploadPhase) => {
+              const phaseProgress: Record<UploadPhase, number> = { analyzing: 10, "rendering-pdf": 25, "rasterizing-svg": 25, "processing-image": 25, "uploading-file": 55, "uploading-thumb": 80, "saving-record": 92, done: 100 };
               const scaled = Math.round(((i + (phaseProgress[phase] || 0) / 100) / pages.length) * 100);
               setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, phase, pdfPage: page, progress: Math.max(e.progress, scaled) } : e));
             },
@@ -162,9 +164,10 @@ export function AssetUploadDialog({
         }
         setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, status: "done", progress: 100, phase: "done" } : e));
         okCount++;
-      } catch (err: any) {
-        setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, status: "error", error: err.message } : e));
-        toast.error(`${entry.file.name}: ${err.message}`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Erro desconhecido";
+        setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, status: "error", error: message } : e));
+        toast.error(`${entry.file.name}: ${message}`);
         errCount++;
       }
     }
