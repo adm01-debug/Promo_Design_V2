@@ -50,70 +50,70 @@ const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/Bra
 const queryClient = new QueryClient();
 
 const App = () => (
-  <AuthProvider>
-    <OrganizationProvider>
-      <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <OnlineIndicator />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <RouteErrorBoundary>
-            <Suspense fallback={<LoadingScreen />}>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
-                  <Route path="/mockup/new" element={<MockupNew />} />
-                  <Route path="/mockup/drafts" element={<MockupDrafts />} />
-                  <Route path="/mockup/history" element={<MockupHistory />} />
-                  <Route path="/mockup/editor" element={<MockupEditor />} />
-                  <Route path="/mockup/service-order" element={<ServiceOrder />} />
-                  <Route path="/mockup/service-orders" element={<ServiceOrderList />} />
-                  <Route path="/mockup/service-dashboard" element={<ServiceOrderDashboard />} />
-                  <Route path="/catalog" element={<CatalogPage />} />
-                  <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
-                  <Route path="/magicup/generate" element={<MagicUpGenerate />} />
-                  <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
-                  <Route path="/magicup/history" element={<MagicUpHistory />} />
-                  <Route path="/video" element={<Navigate to="/video/new" replace />} />
-                  <Route path="/video/new" element={<VideoNew />} />
-                  <Route path="/video/moodboard" element={<VideoMoodboard />} />
-                  <Route path="/video/photodump" element={<VideoPhotodump />} />
-                  <Route path="/video/gallery" element={<VideoGallery />} />
-                  <Route path="/video/cinema" element={<VideoCinema />} />
-                  <Route path="/video/characters" element={<CharacterStudio />} />
-                  <Route path="/video/history" element={<VideoHistory />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/templates" element={<Templates />} />
-                  <Route path="/editor" element={<Navigate to="/mockup/editor" replace />} />
-                  <Route path="/organization" element={<OrganizationPage />} />
-                  <Route path="/clients" element={<ClientsPage />} />
-                  <Route path="/clients/:clientId/brand" element={<BrandGuidelinesPage />} />
-                  <Route path="/dam" element={<DamLibraryPage />} />
-                  <Route path="/dam/preview" element={<DamPreviewPage />} />
-                  <Route path="/audit" element={<AuditLogPage />} />
-                  <Route path="/audit/event/:eventId" element={<AuditEventDetailPage />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </RouteErrorBoundary>
-        </BrowserRouter>
-      </TooltipProvider>
-        </QueryClientProvider>
-      </ThemeProvider>
-    </OrganizationProvider>
-  </AuthProvider>
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <OrganizationProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <OnlineIndicator />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <RouteErrorBoundary>
+                <Suspense fallback={<LoadingScreen />}>
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route
+                      element={
+                        <ProtectedRoute>
+                          <AppLayout />
+                        </ProtectedRoute>
+                      }
+                    >
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
+                      <Route path="/mockup/new" element={<MockupNew />} />
+                      <Route path="/mockup/drafts" element={<MockupDrafts />} />
+                      <Route path="/mockup/history" element={<MockupHistory />} />
+                      <Route path="/mockup/editor" element={<MockupEditor />} />
+                      <Route path="/mockup/service-order" element={<ServiceOrder />} />
+                      <Route path="/mockup/service-orders" element={<ServiceOrderList />} />
+                      <Route path="/mockup/service-dashboard" element={<ServiceOrderDashboard />} />
+                      <Route path="/catalog" element={<CatalogPage />} />
+                      <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
+                      <Route path="/magicup/generate" element={<MagicUpGenerate />} />
+                      <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
+                      <Route path="/magicup/history" element={<MagicUpHistory />} />
+                      <Route path="/video" element={<Navigate to="/video/new" replace />} />
+                      <Route path="/video/new" element={<VideoNew />} />
+                      <Route path="/video/moodboard" element={<VideoMoodboard />} />
+                      <Route path="/video/photodump" element={<VideoPhotodump />} />
+                      <Route path="/video/gallery" element={<VideoGallery />} />
+                      <Route path="/video/cinema" element={<VideoCinema />} />
+                      <Route path="/video/characters" element={<CharacterStudio />} />
+                      <Route path="/video/history" element={<VideoHistory />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/templates" element={<Templates />} />
+                      <Route path="/editor" element={<Navigate to="/mockup/editor" replace />} />
+                      <Route path="/organization" element={<OrganizationPage />} />
+                      <Route path="/clients" element={<ClientsPage />} />
+                      <Route path="/clients/:clientId/brand" element={<BrandGuidelinesPage />} />
+                      <Route path="/dam" element={<DamLibraryPage />} />
+                      <Route path="/dam/preview" element={<DamPreviewPage />} />
+                      <Route path="/audit" element={<AuditLogPage />} />
+                      <Route path="/audit/event/:eventId" element={<AuditEventDetailPage />} />
+                    </Route>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </RouteErrorBoundary>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
+      </OrganizationProvider>
+    </AuthProvider>
+  </QueryClientProvider>
 );
 
 export default App;
