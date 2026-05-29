@@ -56,7 +56,7 @@ export function DamLibraryHeader({
   };
 
   const currentSavedFilters = {
-    _v: 1,
+    _v: 1 as const,
     search: debouncedSearch.trim(),
     assetTypes: state.assetTypes,
     clientId: state.clientId,
