@@ -127,7 +127,7 @@ const AuditLogPage = () => {
     }
   }, [isFetching, filtersKey, appliedFiltersKey]);
 
-  const rawRows = data?.rows ?? [];
+  const rawRows = useMemo(() => data?.rows ?? [], [data?.rows]);
   const serverTotal = data?.count ?? 0;
 
   const needsClientValueFilter =

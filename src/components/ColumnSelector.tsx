@@ -58,7 +58,9 @@ export function getDefaultColumns(): ColumnCount {
       const parsed = parseInt(saved, 10) as ColumnCount;
       if ([3, 4, 5].includes(parsed)) return parsed;
     }
-  } catch {}
+  } catch (error) {
+    console.warn("Failed to read column preference from localStorage:", error);
+  }
   return 4;
 }
 
@@ -110,7 +112,11 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
                 )}
                 onClick={() => {
                   onChange(opt.value);
-                  try { localStorage.setItem(STORAGE_KEY, String(opt.value)); } catch {}
+                  try { 
+                    localStorage.setItem(STORAGE_KEY, String(opt.value)); 
+                  } catch (error) {
+                    console.warn("Failed to save column preference to localStorage:", error);
+                  }
                 }}
               >
                 {value === opt.value && (

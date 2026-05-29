@@ -33,7 +33,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const { isFavorite, toggleFavorite } = useAssetFavorites(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
 
-  const { url, handleCopyUrl } = useAssetDetailActions(asset, { onClose, toggleFavorite });
+  const { url, handleCopyUrl } = useAssetDetailActions(asset, { toggleFavorite });
   const { 
     ocrText, ocrStatus, ocrLoading, ocrOpen, setOcrOpen, ocrClearing, runOcr, clearOcr 
   } = useAssetOcr(asset, searchQuery);

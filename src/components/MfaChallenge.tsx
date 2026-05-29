@@ -47,8 +47,9 @@ const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
         description: "Autenticação MFA concluída.",
       });
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Código inválido. Tente novamente.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      setError(message || "Código inválido. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -58,6 +59,7 @@ const MfaChallenge = ({ onSuccess, onCancel }: MfaChallengeProps) => {
     if (code.length === 6) {
       handleVerify();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   return (

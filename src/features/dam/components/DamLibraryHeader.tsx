@@ -9,7 +9,8 @@ import { Toggle } from "@/components/ui/toggle";
 import { MIN_SEARCH_LENGTH } from "../hooks/use-assets";
 import { SORT_OPTIONS } from "../lib/dam-constants";
 import type { UseDamFiltersReturn } from "../hooks/use-dam-filters";
-import type { Asset } from "../hooks/use-assets";
+import type { Asset, AssetType } from "../hooks/use-assets";
+import type { SortValue } from "../lib/dam-constants";
 import type { Client } from "@/features/clients/hooks/use-clients";
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
   onOpenActivity: () => void;
   onOpenBatchOcr: () => void;
   onOpenReset: () => void;
-  quickPreview: any;
+  quickPreview: { enabled: boolean; toggleEnabled: () => void };
   assets: Asset[];
   clients: Client[];
   total: number;
@@ -50,18 +51,20 @@ export function DamLibraryHeader({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 1800);
-    } catch {}
+    } catch (err) {
+      console.warn("Failed to copy link:", err);
+    }
   };
 
-  const currentSavedFilters: any = {
-    _v: 1,
+  const currentSavedFilters = {
+    _v: 1 as const,
     search: debouncedSearch.trim(),
-    assetTypes: state.assetTypes,
+    assetTypes: state.assetTypes as AssetType[],
     clientId: state.clientId,
     tags: state.tags,
     tagsMode: state.tagsMode,
     includeArchived: state.includeArchived,
-    sort: state.sort,
+    sort: state.sort as SortValue,
   };
 
   return (
@@ -80,7 +83,7 @@ export function DamLibraryHeader({
           <Badge
             variant="outline"
             className="gap-1 pr-1 border-dashed cursor-pointer hover:bg-muted/40 transition"
-            onClick={() => setSort("relevance")}
+            onClick={() => setSort("created_desc")}
             role="button"
           >
             <span className="text-xs">
@@ -91,11 +94,11 @@ export function DamLibraryHeader({
         <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={(snap) => {
           filters.setSearch(snap.search ?? "");
           filters.setAssetTypes(snap.assetTypes ?? []);
-          filters.setClientId((snap.clientId as any) ?? "all");
+          filters.setClientId((snap.clientId as string) ?? "all");
           filters.setTags(snap.tags ?? []);
           filters.setTagsMode(snap.tagsMode ?? "all");
           filters.setIncludeArchived(Boolean(snap.includeArchived));
-          filters.setSort((snap.sort as any) ?? "created_desc");
+          filters.setSort((snap.sort as SortValue) ?? "created_desc");
         }} />
         <Button variant="outline" size="sm" onClick={handleCopyLink} data-testid="dam-copy-link">
           <Link2 className="w-4 h-4 mr-2" />
@@ -110,8 +113,8 @@ export function DamLibraryHeader({
           clients={clients}
           total={total}
           organizationId={organizationId}
-          filters={{} as any}
-          filtersSummary={{} as any}
+          filters={state}
+          filtersSummary={currentSavedFilters}
         />
         <Toggle
           pressed={quickPreview.enabled}

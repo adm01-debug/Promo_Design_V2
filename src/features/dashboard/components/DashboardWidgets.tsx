@@ -1,143 +1,18 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Video, Film, FolderOpen, ClipboardList, BarChart3, Image, CalendarDays } from "lucide-react";
+import { CalendarDays, FolderOpen, BarChart3 } from "lucide-react";
 import ProjectCard from "@/components/ProjectCard";
 import MockupListItem from "@/components/MockupListItem";
 import EmptyState from "@/components/EmptyState";
 import { LayoutPopover } from "@/components/LayoutPopover";
 import type { ColumnCount } from "@/components/ColumnSelector";
 import { StatCardSkeleton } from "@/components/DashboardSkeleton";
-import { useCountUp } from "@/hooks/use-count-up";
-import MiniSparkline from "@/components/MiniSparkline";
 import type { WidgetId } from "@/hooks/use-widget-layout";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-// ─── Constants ────────────────────────────────────────────────────────
-
-export const quickActions = [
-  { title: "Novo Mockup", description: "Layout técnico de personalização", icon: Image, path: "/mockup/new", color: "text-primary", bg: "bg-primary/10" },
-  { title: "Magic Up", description: "Imagem publicitária com IA", icon: Sparkles, path: "/magicup/generate", color: "text-secondary", bg: "bg-secondary/10" },
-  { title: "Nova OS", description: "Ordem de serviço", icon: ClipboardList, path: "/mockup/service-order", color: "text-accent", bg: "bg-accent/10" },
-  { title: "Dashboard OS", description: "Métricas de produção", icon: BarChart3, path: "/mockup/service-dashboard", color: "text-primary", bg: "bg-primary/10" },
-  { title: "Cinema Mode", description: "Color grading cinematográfico", icon: Film, path: "/video/cinema", color: "text-secondary", bg: "bg-secondary/10" },
-  { title: "Novo Vídeo", description: "Vídeo publicitário animado", icon: Video, path: "/video/new", color: "text-accent", bg: "bg-accent/10" },
-];
-
-export const columnClasses: Record<number, string> = {
-  3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
-  4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
-  5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────
-
-export function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Bom dia";
-  if (h < 18) return "Boa tarde";
-  return "Boa noite";
-}
-
-export function getUserFirstName(email?: string): string {
-  if (!email) return "";
-  const local = email.split("@")[0];
-  return local.charAt(0).toUpperCase() + local.slice(1).split(/[._-]/)[0];
-}
-
-export function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "agora";
-  if (mins < 60) return `${mins}min atrás`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h atrás`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d atrás`;
-  return date.toLocaleDateString("pt-BR");
-}
-
-export function buildWeeklyActivity(
-  orders: { createdAt: string }[],
-  drafts: { createdAt: string }[],
-  magicUp: { createdAt: string }[],
-) {
-  const weeks: { label: string; os: number; mockups: number; ia: number }[] = [];
-  const now = new Date();
-  for (let w = 7; w >= 0; w--) {
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - w * 7);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 7);
-    const inRange = (d: string) => { const date = new Date(d); return date >= weekStart && date < weekEnd; };
-    const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
-    weeks.push({
-      label,
-      os: orders.filter((o) => inRange(o.createdAt)).length,
-      mockups: drafts.filter((d) => inRange(d.createdAt)).length,
-      ia: magicUp.filter((m) => inRange(m.createdAt)).length,
-    });
-  }
-  return weeks;
-}
-
-export function buildMonthlyHeatmap(
-  orders: { createdAt: string }[],
-  drafts: { createdAt: string }[],
-  magicUp: { createdAt: string }[],
-) {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-  const allDates = [...orders.map((o) => o.createdAt), ...drafts.map((d) => d.createdAt), ...magicUp.map((m) => m.createdAt)];
-  const countByDay: Record<number, number> = {};
-  for (const d of allDates) {
-    const date = new Date(d);
-    if (date.getFullYear() === year && date.getMonth() === month) {
-      const day = date.getDate();
-      countByDay[day] = (countByDay[day] || 0) + 1;
-    }
-  }
-  const days: { day: number; count: number; weekday: number; week: number }[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dayOfWeek = (firstDayOfWeek + d - 1) % 7;
-    const week = Math.floor((firstDayOfWeek + d - 1) / 7);
-    days.push({ day: d, count: countByDay[d] || 0, weekday: dayOfWeek, week });
-  }
-  const maxCount = Math.max(1, ...days.map((d) => d.count));
-  const monthName = new Date(year, month).toLocaleDateString("pt-BR", { month: "long" });
-  return { days, maxCount, monthName, year, today: now.getDate(), firstDayOfWeek };
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────
-
-export const StatCard = ({ label, value, icon: Icon, change, index, sparkData }: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; index: number; sparkData?: number[] }) => {
-  const count = useCountUp(value, 1200, index * 100);
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="p-3 sm:p-4 rounded-xl bg-card border border-border">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between">
-            <p className="text-xl sm:text-2xl font-bold text-foreground font-display tabular-nums">{count}</p>
-            {sparkData && <MiniSparkline data={sparkData} />}
-          </div>
-          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{label}</p>
-        </div>
-      </div>
-      <p className="text-[9px] sm:text-[10px] text-primary/70 mt-2 font-medium">{change}</p>
-    </motion.div>
-  );
-};
-
-// ─── Widget renderers ─────────────────────────────────────────────────
+import { StatCard } from "./StatCard";
+import { quickActions, columnClasses } from "../constants";
+import type { buildMonthlyHeatmap } from "../helpers";
 
 export interface WidgetProps {
   stats: { label: string; value: number; icon: React.ComponentType<{ className?: string }>; change: string; sparkData: number[] }[];

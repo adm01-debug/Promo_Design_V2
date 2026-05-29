@@ -23,7 +23,7 @@ import {
   getGreeting, getUserFirstName, formatRelativeDate,
   buildWeeklyActivity, buildMonthlyHeatmap,
   WIDGET_RENDERERS, type WidgetProps,
-} from "@/components/DashboardWidgets";
+} from "@/features/dashboard";
 
 const Dashboard = () => {
   const { user } = useAuth();
