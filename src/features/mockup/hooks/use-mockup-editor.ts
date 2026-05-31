@@ -77,9 +77,6 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
-  useEffect(() => {
-    if (isPreviewingAI) setIsPreviewingAI(true);
-  }, [isPreviewingAI]);
   const abortControllerRef = useRef<AbortController | null>(null);
   
   // Ref usage for cleanup to satisfy linter
@@ -101,8 +98,16 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
 
   const pushHistory = useCallback((p: Placement, logo: string | null) => {
-    setHistory(prev => [...prev.slice(0, historyIdx + 1), { placement: p, logoPreview: logo }]);
-    setHistoryIdx(prev => prev + 1);
+    const MAX_HISTORY = 50;
+    setHistory(prev => {
+      const newHistory = [...prev.slice(0, historyIdx + 1), { placement: p, logoPreview: logo }];
+      if (newHistory.length > MAX_HISTORY) return newHistory.slice(newHistory.length - MAX_HISTORY);
+      return newHistory;
+    });
+    setHistoryIdx(prev => {
+      const nextIdx = prev + 1;
+      return nextIdx >= MAX_HISTORY ? MAX_HISTORY - 1 : nextIdx;
+    });
   }, [historyIdx]);
 
   const undo = useCallback(() => {
