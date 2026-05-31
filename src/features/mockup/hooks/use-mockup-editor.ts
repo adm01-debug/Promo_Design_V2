@@ -76,7 +76,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
-  const [isPreviewingAI, setIsPreviewingAI] = useState(false);
+  
   const abortControllerRef = useRef<AbortController | null>(null);
   
   // Ref usage for cleanup to satisfy linter
@@ -299,7 +299,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     setIsRemovingBg(false);
     setIsSuggestingPlacement(false);
     setSuggestedPlacement(null);
-    setIsPreviewingAI(false);
+    
     toast.info("Ação cancelada pelo usuário.");
   }, []);
 
@@ -471,17 +471,12 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     shadowEnabled, setShadowEnabled, shadowIntensity, setShadowIntensity,
     exportFormat, setExportFormat, isRemovingBg, handleRemoveBg,
     isSuggestingPlacement, handleSuggestPlacement, aiReasoning, suggestedPlacement, applySuggestedPlacement, cancelAIRequest,
-    handleLogoUpload, clearLogo: () => { setLogoPreview(null); setLogoFile(null); setWarpedLogoUrl(null); clearWarpCache(); },
+    handleLogoUpload, clearLogo,
     handleLogoMouseDown, handleMouseMove, handleMouseUp, handleDrop,
-    handleExportPdf: () => generateApprovalPdf(selectedProduct!, selectedArea!, logoPreview, placement, logoColors),
-    handleExportPng: () => handleExportImage("png"),
+    handleExportPdf, handleExportPng,
     areaRef, canvasContainerRef, fileInputRef,
     historyIdx, history, undo, redo, isSaving, handleSaveDraft, restoreDraft,
     autoFitLogo, areaW, areaH,
-    centerLogo: () => {
-      const newPlacement = { ...placement, x: areaW / 2 - 50, y: areaH / 2 - 50 };
-      setPlacement(newPlacement);
-      pushHistory(newPlacement, logoPreview);
-    },
+    centerLogo,
   };
 }
