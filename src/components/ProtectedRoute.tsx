@@ -5,7 +5,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { ErrorLogger } from "@/lib/error-logger";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, session, isMfaStrong } = useAuth();
+  const { user, loading, isMfaStrong } = useAuth();
   const location = useLocation();
   const [isTimedOut, setIsTimedOut] = useState(false);
 

@@ -1,4 +1,4 @@
-import { useOrganizationContext } from "@/contexts/OrganizationContext";
+import { useOrganizationContext, type AppRole } from "@/contexts/OrganizationContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 

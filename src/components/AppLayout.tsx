@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Breadcrumbs from "./Breadcrumbs";
