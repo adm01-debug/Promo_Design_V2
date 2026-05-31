@@ -138,6 +138,42 @@ Esta função atua como um middleware de segurança e padronização para comuni
 
 ---
 
-## 5. Padrões de Tratamento de Erro
+## 5. Padrões Obrigatórios: `external-db-bridge`
+
+Para garantir a consistência e segurança, todos os novos módulos que integrarem com sistemas externos devem seguir estas regras:
+
+### Regras de Ouro
+1. **Validação com Zod:** Toda entrada deve ser validada usando esquemas Zod discriminados pela `action`.
+2. **Tratamento de Erros:** Nunca retorne erros crus do banco. Use o objeto de erro padronizado (ver seção 4).
+3. **Logs com Request ID:** Todas as operações devem logar o `requestId` para rastreabilidade.
+4. **Idempotência:** Ações de `sync_order` devem ser seguras para repetição (UPSERT).
+
+### Exemplo de Request (Sync Order)
+```json
+{
+  "action": "sync_order",
+  "table": "service_orders",
+  "params": {
+    "data": {
+      "os_number": "OS-2024-001",
+      "client_name": "ACME Corp",
+      "status": "aberta"
+    }
+  }
+}
+```
+
+### Exemplo de Response (Erro de Validação)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PAYLOAD",
+    "message": "O campo 'os_number' é obrigatório e deve seguir o padrão OS-YYYY-NNN"
+  }
+}
+```
+
+## 6. Padrões de Tratamento de Erro
 - **Frontend:** Uso de `ErrorBoundary` para falhas críticas de renderização e `Sonner/Toast` para falhas de mutação.
 - **Backend:** Validação rigorosa de payload com Zod (ou similar) e logs estruturados em cada etapa do processamento na Edge Function.
