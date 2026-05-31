@@ -23,13 +23,16 @@
 
 ---
 
-## 🛡️ Relatórios de Auditoria
+## 🛡️ Documentação Técnica e Auditoria
 
-Para manter a transparência e excelência técnica 10/10, o sistema dispõe de documentação de auditoria enterprise:
+Para manter a transparência e excelência técnica 10/10, o sistema dispõe de documentação enterprise:
 
+- **[Guia de Arquitetura (Markdown)](ARCHITECTURE.md)**: Mapa do projeto, fluxos de dados, contratos de API e padrões de desenvolvimento.
 - **[Enterprise Audit Report (Markdown)](docs/enterprise-audit-report.md)**: Inventário detalhado de funcionalidades, matriz de riscos e checklist operacional.
 - **[Senior Front-End Audit (Markdown)](docs/senior-frontend-audit.md)**: Análise técnica de performance, acessibilidade e arquitetura front-end.
 - **[Relatório de Auditoria (PDF)](docs/audit_report.pdf)**: Versão exportável do relatório (disponível no repositório).
+
+Você também pode acessar a documentação diretamente na aplicação através da rota `/docs` no dashboard.
 
 ---
 33: 
