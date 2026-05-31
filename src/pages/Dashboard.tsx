@@ -8,6 +8,7 @@ import {
 import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
 import { getDefaultColumns, type ColumnCount } from "@/components/ColumnSelector";
 import { useServiceOrders } from "@/features/service-orders";
+import { useOrganizations } from "@/hooks/use-organization";
 import { useMagicUpHistory } from "@/features/magic-up";
 import { useMockupDrafts } from "@/features/mockup";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,7 +35,10 @@ const Dashboard = () => {
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
   const { widgetOrder, updateOrder, resetOrder, isDefault } = useWidgetLayout();
-  const { invites, acceptInvite } = useOrganizationInvites(null); // Fetch all invites for current user email
+  const { invites, acceptInvite } = useOrganizationInvites(null);
+  const { hasNoOrg } = useWidgetLayout(); // Assuming useWidgetLayout or similar might need it, but I'll use it from OrgContext directly if needed. 
+  // Wait, I added hasNoOrg to OrganizationContext.
+  const { memberships, hasNoOrg: noOrg } = useOrganizations();
   
   const userInvites = useMemo(() => {
     if (!user?.email) return [];
@@ -104,6 +108,23 @@ const Dashboard = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl">
+      {noOrg && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-8 p-8 rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col items-center text-center"
+        >
+          <Building2 className="h-12 w-12 text-primary mb-4 opacity-50" />
+          <h2 className="text-xl font-bold mb-2">Você ainda não faz parte de uma Organização</h2>
+          <p className="text-muted-foreground max-w-md mb-6">
+            Para começar a criar e gerenciar seus projetos, você precisa criar uma organização ou ser convidado para uma existente.
+          </p>
+          <Button onClick={() => window.location.href = '/organization'} className="gap-2">
+            Configurar Organização
+          </Button>
+        </motion.div>
+      )}
+
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8 flex items-start justify-between">
         <div data-tour="greeting" className="flex-1">
           {userInvites.length > 0 && (
