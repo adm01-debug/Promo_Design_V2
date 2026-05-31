@@ -1,7 +1,7 @@
 import React from "react";
 import {
   Grid3X3, Ruler, AlignCenter, Maximize, FlipHorizontal, FlipVertical,
-  RotateCw, ZoomOut, ZoomIn, Upload, GripVertical,
+  RotateCw, ZoomOut, ZoomIn, Upload, GripVertical, Sparkles,
 } from "lucide-react";
 import type { DbProduct, DbPrintAreaTechnique } from "@/features/mockup";
 import type { Placement } from "@/features/mockup/hooks/use-mockup-editor";
