@@ -36,9 +36,7 @@ const Dashboard = () => {
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
   const { widgetOrder, updateOrder, resetOrder, isDefault } = useWidgetLayout();
   const { invites, acceptInvite } = useOrganizationInvites(null);
-  const { hasNoOrg } = useWidgetLayout(); // Assuming useWidgetLayout or similar might need it, but I'll use it from OrgContext directly if needed. 
-  // Wait, I added hasNoOrg to OrganizationContext.
-  const { memberships, hasNoOrg: noOrg } = useOrganizations();
+  const { hasNoOrg: noOrg } = useOrganizations();
   
   const userInvites = useMemo(() => {
     if (!user?.email) return [];
