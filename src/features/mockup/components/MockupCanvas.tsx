@@ -42,6 +42,7 @@ interface MockupCanvasProps {
   fileInputRef: React.RefObject<HTMLInputElement>;
   areaRef: React.RefObject<HTMLDivElement>;
   canvasContainerRef: React.RefObject<HTMLDivElement>;
+  suggestedPlacement: { placement: Placement; reasoning: string } | null;
 }
 
 const CANVAS_SIZE = 500;
@@ -53,7 +54,7 @@ const MockupCanvas = ({
   surfaceType, blendMode, logoOpacity, shadowEnabled, shadowIntensity,
   isDragging, isWarping, areaW, areaH,
   centerLogo, handleLogoMouseDown, handleMouseMove, handleMouseUp, handleDrop,
-  setIsResizing, fileInputRef, areaRef, canvasContainerRef,
+  setIsResizing, fileInputRef, areaRef, canvasContainerRef, suggestedPlacement,
 }: MockupCanvasProps) => (
   <div className="flex-1 flex flex-col">
     {/* Toolbar */}
@@ -201,6 +202,26 @@ const MockupCanvas = ({
                 <GripVertical className="w-2.5 h-2.5 text-primary-foreground rotate-[-45deg]" aria-hidden="true" />
               </button>
               <div className="absolute inset-0 border border-primary/60 rounded-sm pointer-events-none" aria-hidden="true" />
+            </div>
+          )}
+          
+          {logoPreview && showLogo && suggestedPlacement && (
+            <div
+              className="absolute pointer-events-none opacity-40 border border-primary border-dashed rounded-sm"
+              style={{ left: suggestedPlacement.placement.x, top: suggestedPlacement.placement.y, width: `${suggestedPlacement.placement.scale * 100}%` }}
+            >
+              <img
+                src={logoPreview}
+                alt="AI Suggestion"
+                className="w-full h-full object-contain grayscale brightness-110"
+                style={{
+                  mixBlendMode: blendMode as React.CSSProperties["mixBlendMode"],
+                  ...(surfaceType === "flat" ? { transform: `rotate(${suggestedPlacement.placement.rotation}deg)` } : {}),
+                }}
+              />
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[8px] px-1 rounded flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5" /> Sugestão IA
+              </div>
             </div>
           )}
 

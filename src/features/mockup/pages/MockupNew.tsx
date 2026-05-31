@@ -104,6 +104,7 @@ const MockupNew = () => {
                 handleMouseUp={editor.handleMouseUp} handleDrop={editor.handleDrop}
                 setIsResizing={editor.setIsResizing}
                 fileInputRef={editor.fileInputRef} areaRef={editor.areaRef} canvasContainerRef={editor.canvasContainerRef}
+                suggestedPlacement={editor.suggestedPlacement}
               />
               <MockupRightPanel
                 selectedProduct={selectedProduct} selectedProductImage={selectedProductImage} selectedArea={selectedArea}
