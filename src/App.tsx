@@ -46,6 +46,8 @@ const AuditEventDetailPage = lazyWithRetry(() => import("./features/audit/pages/
 const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
+const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
+
 
 const queryClient = new QueryClient();
 
@@ -103,7 +105,9 @@ const App = () => (
                       <Route path="/dam/preview" element={<DamPreviewPage />} />
                       <Route path="/audit" element={<AuditLogPage />} />
                       <Route path="/audit/event/:eventId" element={<AuditEventDetailPage />} />
+                      <Route path="/docs" element={<ArchitectureDocs />} />
                     </Route>
+
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
