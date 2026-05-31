@@ -463,25 +463,25 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   }, [getDraft, searchParams]);
 
   return {
-    // State
-    draftId, logoFile, logoPreview, logoColors, zoom, placement, isDragging, isResizing,
-    showGrid, showRulers, showGuides, lockAspect, showLogo, isExporting,
-    surfaceType, warpedLogoUrl, isWarping, blendMode, logoOpacity,
-    shadowEnabled, shadowIntensity, exportFormat, isRemovingBg, isSuggestingPlacement, aiReasoning,
-    history, historyIdx, isSaving,
-    // Refs
-    fileInputRef, areaRef, canvasContainerRef,
-    // Computed
-    areaW, areaH,
-    // Setters
-    setZoom, setPlacement, setShowGrid, setShowRulers, setShowGuides, setShowLogo,
-    setSurfaceType, setBlendMode, setLogoOpacity, setShadowEnabled, setShadowIntensity,
-    setExportFormat, setIsResizing,
-    // Actions
-    undo, redo, autoFitLogo, handleLogoUpload, handleRemoveBg, handleSuggestPlacement,
-    applySuggestedPlacement, cancelAIRequest,
-    handleDrop, handleLogoMouseDown, handleMouseMove, handleMouseUp,
-    handleExportImage, handleExportPng, handleExportPdf, centerLogo, clearLogo,
-    handleSaveDraft, restoreDraft,
+    draftId, logoFile, logoPreview, logoColors, zoom, setZoom,
+    placement, setPlacement, isDragging, isResizing, setIsResizing,
+    showGrid, setShowGrid, showRulers, setShowRulers, showGuides, setShowGuides,
+    showLogo, setShowLogo, isExporting, surfaceType, setSurfaceType,
+    warpedLogoUrl, isWarping, blendMode, setBlendMode, logoOpacity, setLogoOpacity,
+    shadowEnabled, setShadowEnabled, shadowIntensity, setShadowIntensity,
+    exportFormat, setExportFormat, isRemovingBg, handleRemoveBg,
+    isSuggestingPlacement, handleSuggestPlacement, aiReasoning, suggestedPlacement, applySuggestedPlacement, cancelAIRequest,
+    handleLogoUpload, clearLogo: () => { setLogoPreview(null); setLogoFile(null); setWarpedLogoUrl(null); clearWarpCache(); },
+    handleLogoMouseDown, handleMouseMove, handleMouseUp, handleDrop,
+    handleExportPdf: () => generateApprovalPdf(selectedProduct!, selectedArea!, logoPreview, placement, logoColors),
+    handleExportPng: () => handleExportImage("png"),
+    areaRef, canvasContainerRef, fileInputRef,
+    historyIdx, history, undo, redo, isSaving, handleSaveDraft, restoreDraft,
+    autoFitLogo, areaW, areaH,
+    centerLogo: () => {
+      const newPlacement = { ...placement, x: areaW / 2 - 50, y: areaH / 2 - 50 };
+      setPlacement(newPlacement);
+      pushHistory(newPlacement, logoPreview);
+    },
   };
 }
