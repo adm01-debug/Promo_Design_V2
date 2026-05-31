@@ -1,4 +1,4 @@
-import { useOrganizationContext } from "@/contexts/OrganizationContext";
+import { useOrganizationContext, type AppRole } from "@/contexts/OrganizationContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,7 +26,7 @@ export function useOrgMembers(organizationId: string | null) {
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: string; role: any }) => {
+    mutationFn: async ({ memberId, role }: { memberId: string; role: AppRole }) => {
       const { error } = await supabase
         .from("organization_members")
         .update({ role })

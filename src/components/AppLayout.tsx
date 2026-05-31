@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Breadcrumbs from "./Breadcrumbs";
@@ -21,30 +21,33 @@ const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const touchStartRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartRef.current = e.targetTouches[0].clientX;
+    };
+    
     const handleTouchEnd = (e: TouchEvent) => {
-      if (touchStart === null) return;
+      if (touchStartRef.current === null) return;
       const touchEnd = e.changedTouches[0].clientX;
-      const distance = touchEnd - touchStart;
+      const distance = touchEnd - touchStartRef.current;
       // Swipe right to go back (min 100px)
-      if (distance > 100 && touchStart < 50) {
+      if (distance > 100 && touchStartRef.current < 50) {
         navigate(-1);
       }
-      setTouchStart(null);
+      touchStartRef.current = null;
     };
 
     if (isMobile) {
-      window.addEventListener("touchstart", handleTouchStart);
-      window.addEventListener("touchend", handleTouchEnd);
+      window.addEventListener("touchstart", handleTouchStart, { passive: true });
+      window.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
     return () => {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [touchStart, navigate, isMobile]);
+  }, [navigate, isMobile]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

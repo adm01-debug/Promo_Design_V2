@@ -32,8 +32,9 @@ interface OrganizationContextType {
   currentRole: AppRole | null;
   isLoading: boolean;
   switchOrg: (orgId: string) => void;
-  createOrg: any; // Using any for mutation because it's complex to type exactly here
+  createOrg: any;
   can: (roles: AppRole[]) => boolean;
+  hasNoOrg: boolean;
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
@@ -120,6 +121,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     switchOrg,
     createOrg,
     can,
+    hasNoOrg: membershipsQuery.isSuccess && (membershipsQuery.data?.length === 0),
   };
 
   return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;

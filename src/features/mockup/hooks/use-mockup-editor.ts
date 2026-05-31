@@ -76,10 +76,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
   const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
-  const [isPreviewingAI, setIsPreviewingAI] = useState(false);
-  useEffect(() => {
-    if (isPreviewingAI) setIsPreviewingAI(true);
-  }, [isPreviewingAI]);
+  
   const abortControllerRef = useRef<AbortController | null>(null);
   
   // Ref usage for cleanup to satisfy linter
@@ -101,8 +98,16 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const areaH = selectedArea ? Math.min(selectedArea.max_height * 20, 400) : 200;
 
   const pushHistory = useCallback((p: Placement, logo: string | null) => {
-    setHistory(prev => [...prev.slice(0, historyIdx + 1), { placement: p, logoPreview: logo }]);
-    setHistoryIdx(prev => prev + 1);
+    const MAX_HISTORY = 50;
+    setHistory(prev => {
+      const newHistory = [...prev.slice(0, historyIdx + 1), { placement: p, logoPreview: logo }];
+      if (newHistory.length > MAX_HISTORY) return newHistory.slice(newHistory.length - MAX_HISTORY);
+      return newHistory;
+    });
+    setHistoryIdx(prev => {
+      const nextIdx = prev + 1;
+      return nextIdx >= MAX_HISTORY ? MAX_HISTORY - 1 : nextIdx;
+    });
   }, [historyIdx]);
 
   const undo = useCallback(() => {
@@ -290,10 +295,12 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      setIsRemovingBg(false);
-      setIsSuggestingPlacement(false);
-      toast.info("Ação cancelada pelo usuário.");
     }
+    setIsRemovingBg(false);
+    setIsSuggestingPlacement(false);
+    setSuggestedPlacement(null);
+    
+    toast.info("Ação cancelada pelo usuário.");
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -456,25 +463,20 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   }, [getDraft, searchParams]);
 
   return {
-    // State
-    draftId, logoFile, logoPreview, logoColors, zoom, placement, isDragging, isResizing,
-    showGrid, showRulers, showGuides, lockAspect, showLogo, isExporting,
-    surfaceType, warpedLogoUrl, isWarping, blendMode, logoOpacity,
-    shadowEnabled, shadowIntensity, exportFormat, isRemovingBg, isSuggestingPlacement, aiReasoning,
-    history, historyIdx, isSaving,
-    // Refs
-    fileInputRef, areaRef, canvasContainerRef,
-    // Computed
-    areaW, areaH,
-    // Setters
-    setZoom, setPlacement, setShowGrid, setShowRulers, setShowGuides, setShowLogo,
-    setSurfaceType, setBlendMode, setLogoOpacity, setShadowEnabled, setShadowIntensity,
-    setExportFormat, setIsResizing,
-    // Actions
-    undo, redo, autoFitLogo, handleLogoUpload, handleRemoveBg, handleSuggestPlacement,
-    applySuggestedPlacement, cancelAIRequest,
-    handleDrop, handleLogoMouseDown, handleMouseMove, handleMouseUp,
-    handleExportImage, handleExportPng, handleExportPdf, centerLogo, clearLogo,
-    handleSaveDraft, restoreDraft,
+    draftId, logoFile, logoPreview, logoColors, zoom, setZoom,
+    placement, setPlacement, isDragging, isResizing, setIsResizing,
+    showGrid, setShowGrid, showRulers, setShowRulers, showGuides, setShowGuides,
+    showLogo, setShowLogo, isExporting, surfaceType, setSurfaceType,
+    warpedLogoUrl, isWarping, blendMode, setBlendMode, logoOpacity, setLogoOpacity,
+    shadowEnabled, setShadowEnabled, shadowIntensity, setShadowIntensity,
+    exportFormat, setExportFormat, isRemovingBg, handleRemoveBg,
+    isSuggestingPlacement, handleSuggestPlacement, aiReasoning, suggestedPlacement, applySuggestedPlacement, cancelAIRequest,
+    handleLogoUpload, clearLogo,
+    handleLogoMouseDown, handleMouseMove, handleMouseUp, handleDrop,
+    handleExportPdf, handleExportPng,
+    areaRef, canvasContainerRef, fileInputRef,
+    historyIdx, history, undo, redo, isSaving, handleSaveDraft, restoreDraft,
+    autoFitLogo, areaW, areaH,
+    centerLogo,
   };
 }
