@@ -178,7 +178,13 @@ const Dashboard = () => {
           <div className="space-y-0">
             {widgetOrder.map((widgetId) => (
               <DashboardWidgetWrapper key={widgetId} id={widgetId} isEditing={isEditing}>
-                {WIDGET_RENDERERS[widgetId](widgetProps)}
+                {WIDGET_RENDERERS[widgetId] ? (
+                  WIDGET_RENDERERS[widgetId](widgetProps)
+                ) : (
+                  <div className="p-4 border border-dashed rounded-xl text-muted-foreground text-xs italic">
+                    Widget "{widgetId}" não encontrado ou desabilitado.
+                  </div>
+                )}
               </DashboardWidgetWrapper>
             ))}
           </div>

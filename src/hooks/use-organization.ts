@@ -26,7 +26,7 @@ export function useOrgMembers(organizationId: string | null) {
   });
 
   const updateRole = useMutation({
-    mutationFn: async ({ memberId, role }: { memberId: string; role: any }) => {
+    mutationFn: async ({ memberId, role }: { memberId: string; role: AppRole }) => {
       const { error } = await supabase
         .from("organization_members")
         .update({ role })
