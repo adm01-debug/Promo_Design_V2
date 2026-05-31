@@ -114,6 +114,9 @@ const MockupNew = () => {
                 isRemovingBg={editor.isRemovingBg} handleRemoveBg={editor.handleRemoveBg}
                 isSuggestingPlacement={editor.isSuggestingPlacement} handleSuggestPlacement={editor.handleSuggestPlacement}
                 aiReasoning={editor.aiReasoning}
+                suggestedPlacement={editor.suggestedPlacement}
+                applySuggestedPlacement={editor.applySuggestedPlacement}
+                cancelAIRequest={editor.cancelAIRequest}
                 blendMode={editor.blendMode} setBlendMode={editor.setBlendMode}
                 logoOpacity={editor.logoOpacity} setLogoOpacity={editor.setLogoOpacity}
                 shadowEnabled={editor.shadowEnabled} setShadowEnabled={editor.setShadowEnabled}

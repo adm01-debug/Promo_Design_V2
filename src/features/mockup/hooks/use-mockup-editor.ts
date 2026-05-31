@@ -295,10 +295,12 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      setIsRemovingBg(false);
-      setIsSuggestingPlacement(false);
-      toast.info("Ação cancelada pelo usuário.");
     }
+    setIsRemovingBg(false);
+    setIsSuggestingPlacement(false);
+    setSuggestedPlacement(null);
+    setIsPreviewingAI(false);
+    toast.info("Ação cancelada pelo usuário.");
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {

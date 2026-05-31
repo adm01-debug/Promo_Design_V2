@@ -33,6 +33,9 @@ interface MockupRightPanelProps {
   isSuggestingPlacement: boolean;
   handleSuggestPlacement: () => void;
   aiReasoning: string | null;
+  suggestedPlacement: { placement: Placement; reasoning: string } | null;
+  applySuggestedPlacement: () => void;
+  cancelAIRequest: () => void;
   blendMode: BlendMode;
   setBlendMode: (bm: BlendMode) => void;
   logoOpacity: number;
@@ -63,7 +66,7 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
     selectedProduct, selectedProductImage, selectedArea, colorVariants, selectedVariant, setSelectedVariant,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo, clearLogo,
     fileInputRef, handleLogoUpload, isRemovingBg, handleRemoveBg,
-    isSuggestingPlacement, handleSuggestPlacement, aiReasoning,
+    isSuggestingPlacement, handleSuggestPlacement, aiReasoning, suggestedPlacement, applySuggestedPlacement, cancelAIRequest,
     blendMode, setBlendMode, logoOpacity, setLogoOpacity,
     shadowEnabled, setShadowEnabled, shadowIntensity, setShadowIntensity,
     autoFitLogo, surfaceType, setSurfaceType, isWarping, warpedLogoUrl,
@@ -171,11 +174,30 @@ const MockupRightPanel = (props: MockupRightPanelProps) => {
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Wand2 className="w-3 h-3 text-primary" /> IA Posicionamento</h3>
-          <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 border-primary/30 hover:bg-primary/10" disabled={isSuggestingPlacement} onClick={handleSuggestPlacement}>
-            {isSuggestingPlacement ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} {isSuggestingPlacement ? "Analisando..." : "Sugerir"}
-          </Button>
+          {!suggestedPlacement ? (
+            <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 border-primary/30 hover:bg-primary/10" disabled={isSuggestingPlacement} onClick={handleSuggestPlacement}>
+              {isSuggestingPlacement ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} {isSuggestingPlacement ? "Analisando..." : "Sugerir"}
+            </Button>
+          ) : (
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-destructive" onClick={() => cancelAIRequest()}>Cancelar</Button>
+              <Button variant="default" size="sm" className="h-6 text-[10px] bg-primary text-primary-foreground" onClick={applySuggestedPlacement}>Aplicar</Button>
+            </div>
+          )}
         </div>
+        {isSuggestingPlacement && (
+          <div className="flex items-center gap-2 text-[9px] text-primary animate-pulse mb-2">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>IA está analisando o produto e a logo...</span>
+          </div>
+        )}
         {aiReasoning && <p className="text-[9px] text-muted-foreground bg-primary/5 border border-primary/10 rounded p-2 mt-1.5 leading-relaxed">💡 {aiReasoning}</p>}
+        {suggestedPlacement && !isSuggestingPlacement && (
+          <div className="mt-2 p-2 rounded bg-primary/10 border border-primary/20">
+            <p className="text-[9px] font-semibold text-primary mb-1">Sugestão pronta!</p>
+            <p className="text-[9px] text-muted-foreground leading-tight">{suggestedPlacement.reasoning}</p>
+          </div>
+        )}
       </div>
 
       {/* Appearance */}
