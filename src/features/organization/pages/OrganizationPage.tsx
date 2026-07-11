@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Building2, Plus, Trash2, Crown, Mail, Send, X as XIcon, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganizationInvites } from "../hooks/use-invites";
+import { AiUsagePanel } from "../components/AiUsagePanel";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -113,6 +114,9 @@ const OrganizationPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {currentOrgId && canManage && <AiUsagePanel organizationId={currentOrgId} />}
+
 
       {currentOrgId && (
         <Card>
