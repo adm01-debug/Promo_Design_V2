@@ -121,6 +121,7 @@ const App = () => (
                 </Suspense>
               </RouteErrorBoundary>
             </BrowserRouter>
+            </MotionConfig>
           </TooltipProvider>
         </ThemeProvider>
       </OrganizationProvider>
