@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.add_creator_as_owner() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.audit_trigger_func() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.handle_asset_update() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.log_asset_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.log_generic_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.log_status_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_audit_alert() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_os_created() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_os_status_change() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.write_audit_log() FROM PUBLIC, anon, authenticated;
