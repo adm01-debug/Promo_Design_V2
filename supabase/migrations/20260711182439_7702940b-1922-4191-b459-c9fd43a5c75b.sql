@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS idx_audit_log_user_created ON public.audit_log (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action_created ON public.audit_log (action, created_at DESC);
