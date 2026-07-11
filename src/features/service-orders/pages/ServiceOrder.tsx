@@ -230,11 +230,20 @@ const ServiceOrder = () => {
       return; 
     }
     const doc = generateServiceOrderPdf(form, logoRef.current);
-    const blob = doc.output("blob"); 
+    const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    const w = window.open(url); 
+    const w = window.open(url);
     if (w) {
       w.onload = () => { w.print(); };
+      // Revoga o object URL quando a janela fechar, evitando memory leak em impressões repetidas
+      const revoke = () => URL.revokeObjectURL(url);
+      w.addEventListener("beforeunload", revoke, { once: true });
+      // Fallback: revoga após 60s se a janela ficar aberta
+      setTimeout(revoke, 60_000);
+    } else {
+      // Popup bloqueado: revoga imediatamente
+      URL.revokeObjectURL(url);
+      toast.error("Habilite popups para imprimir a OS");
     }
   }, [form]);
 
