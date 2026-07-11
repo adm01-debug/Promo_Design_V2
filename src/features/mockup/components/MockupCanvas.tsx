@@ -164,7 +164,7 @@ const MockupCanvas = ({
 
       <div
         className="relative bg-white rounded-xl border border-border shadow-lg select-none"
-        style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}
+        style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, transform: `scale(${(zoom / 100) * displayScale})`, transformOrigin: "center" }}
       >
         {selectedProductImage && (
           <img src={selectedProductImage} alt={selectedProduct.name} className="w-full h-full object-contain pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
