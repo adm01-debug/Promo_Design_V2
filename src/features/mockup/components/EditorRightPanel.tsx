@@ -214,8 +214,14 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
                 <Sparkles className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Sugestão de IA</span>
               </div>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setSuggestedPlacement(null); setIsPreviewingAI(false); }}>
-                <XCircle className="w-3.5 h-3.5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={() => { setSuggestedPlacement(null); setIsPreviewingAI(false); }}
+                aria-label="Descartar sugestão de posicionamento da IA"
+              >
+                <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
               </Button>
             </div>
             

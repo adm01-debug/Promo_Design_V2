@@ -38,15 +38,19 @@ const ServiceOrderTopBar = ({
   return (
     <div className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-6 py-3 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ChevronLeft className="w-4 h-4" />
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Voltar para a lista de ordens">
+          <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </Button>
         <div>
           <h1 className="text-base font-display font-bold text-foreground">Ordem de Serviço</h1>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="font-mono">{osNumber}</span>
-            <button onClick={handleCopyOs} className="hover:text-primary transition-colors">
-              {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+            <button
+              onClick={handleCopyOs}
+              className="hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded"
+              aria-label={copied ? "Número da OS copiado" : "Copiar número da OS"}
+            >
+              {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-500" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
             </button>
           </div>
         </div>
