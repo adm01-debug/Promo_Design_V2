@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue } from "react";
 import { motion } from "framer-motion";
 import { Package, Plus, Search, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,10 +23,12 @@ const CatalogPage = () => {
   const [newCatName, setNewCatName] = useState("");
   const [newCatDesc, setNewCatDesc] = useState("");
 
+  const deferredSearch = useDeferredValue(search);
+  const deferredCatFilter = useDeferredValue(catFilter);
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return products.filter((p) => catFilter === "all" || p.categoryId === catFilter).filter((p) => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)));
-  }, [products, search, catFilter]);
+    const q = deferredSearch.toLowerCase();
+    return products.filter((p) => deferredCatFilter === "all" || p.categoryId === deferredCatFilter).filter((p) => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)));
+  }, [products, deferredSearch, deferredCatFilter]);
 
   const openNew = () => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (p: CatalogProduct) => { setEditingId(p.id); setForm({ name: p.name, sku: p.sku || "", material: p.material || "", colors: p.colors || "", imageUrl: p.imageUrl || "", categoryId: p.categoryId || "" }); setDialogOpen(true); };
