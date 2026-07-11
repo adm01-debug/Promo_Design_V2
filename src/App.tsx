@@ -9,10 +9,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import OnlineIndicator from "@/components/OnlineIndicator";
 import RouteErrorBoundary from "@/components/RouteErrorBoundary";
+import ModuleErrorBoundary from "@/components/ModuleErrorBoundary";
 import LoadingScreen from "@/components/LoadingScreen";
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
+
+/** Envelopa lazy element em ModuleErrorBoundary — isolamento por feature. */
+const guard = (moduleName: string, node: React.ReactNode) => (
+  <ModuleErrorBoundary moduleName={moduleName}>{node}</ModuleErrorBoundary>
+);
 
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const CatalogPage = lazyWithRetry(() => import("./features/catalog/pages/CatalogPage"));
@@ -73,39 +79,39 @@ const App = () => (
                         </ProtectedRoute>
                       }
                     >
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/" element={guard("Dashboard", <Dashboard />)} />
                       <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
-                      <Route path="/mockup/new" element={<MockupNew />} />
-                      <Route path="/mockup/drafts" element={<MockupDrafts />} />
-                      <Route path="/mockup/history" element={<MockupHistory />} />
-                      <Route path="/mockup/editor" element={<MockupEditor />} />
-                      <Route path="/mockup/service-order" element={<ServiceOrder />} />
-                      <Route path="/mockup/service-orders" element={<ServiceOrderList />} />
-                      <Route path="/mockup/service-dashboard" element={<ServiceOrderDashboard />} />
-                      <Route path="/catalog" element={<CatalogPage />} />
+                      <Route path="/mockup/new" element={guard("Mockup", <MockupNew />)} />
+                      <Route path="/mockup/drafts" element={guard("Mockup", <MockupDrafts />)} />
+                      <Route path="/mockup/history" element={guard("Mockup", <MockupHistory />)} />
+                      <Route path="/mockup/editor" element={guard("Editor de Mockup", <MockupEditor />)} />
+                      <Route path="/mockup/service-order" element={guard("Ordem de Serviço", <ServiceOrder />)} />
+                      <Route path="/mockup/service-orders" element={guard("Ordens de Serviço", <ServiceOrderList />)} />
+                      <Route path="/mockup/service-dashboard" element={guard("Dashboard OS", <ServiceOrderDashboard />)} />
+                      <Route path="/catalog" element={guard("Catálogo", <CatalogPage />)} />
                       <Route path="/magicup" element={<Navigate to="/magicup/generate" replace />} />
-                      <Route path="/magicup/generate" element={<MagicUpGenerate />} />
-                      <Route path="/magicup/prompts" element={<MagicUpPrompts />} />
-                      <Route path="/magicup/history" element={<MagicUpHistory />} />
+                      <Route path="/magicup/generate" element={guard("Magic Up", <MagicUpGenerate />)} />
+                      <Route path="/magicup/prompts" element={guard("Magic Up", <MagicUpPrompts />)} />
+                      <Route path="/magicup/history" element={guard("Magic Up", <MagicUpHistory />)} />
                       <Route path="/video" element={<Navigate to="/video/new" replace />} />
-                      <Route path="/video/new" element={<VideoNew />} />
-                      <Route path="/video/moodboard" element={<VideoMoodboard />} />
-                      <Route path="/video/photodump" element={<VideoPhotodump />} />
-                      <Route path="/video/gallery" element={<VideoGallery />} />
-                      <Route path="/video/cinema" element={<VideoCinema />} />
-                      <Route path="/video/characters" element={<CharacterStudio />} />
-                      <Route path="/video/history" element={<VideoHistory />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/templates" element={<Templates />} />
+                      <Route path="/video/new" element={guard("Video Studio", <VideoNew />)} />
+                      <Route path="/video/moodboard" element={guard("Video Moodboard", <VideoMoodboard />)} />
+                      <Route path="/video/photodump" element={guard("Video Photodump", <VideoPhotodump />)} />
+                      <Route path="/video/gallery" element={guard("Galeria de Vídeo", <VideoGallery />)} />
+                      <Route path="/video/cinema" element={guard("Video Cinema", <VideoCinema />)} />
+                      <Route path="/video/characters" element={guard("Character Studio", <CharacterStudio />)} />
+                      <Route path="/video/history" element={guard("Histórico de Vídeo", <VideoHistory />)} />
+                      <Route path="/settings" element={guard("Configurações", <Settings />)} />
+                      <Route path="/templates" element={guard("Templates", <Templates />)} />
                       <Route path="/editor" element={<Navigate to="/mockup/editor" replace />} />
-                      <Route path="/organization" element={<OrganizationPage />} />
-                      <Route path="/clients" element={<ClientsPage />} />
-                      <Route path="/clients/:clientId/brand" element={<BrandGuidelinesPage />} />
-                      <Route path="/dam" element={<DamLibraryPage />} />
-                      <Route path="/dam/preview" element={<DamPreviewPage />} />
-                      <Route path="/audit" element={<AuditLogPage />} />
-                      <Route path="/audit/event/:eventId" element={<AuditEventDetailPage />} />
-                      <Route path="/docs" element={<ArchitectureDocs />} />
+                      <Route path="/organization" element={guard("Organização", <OrganizationPage />)} />
+                      <Route path="/clients" element={guard("Clientes", <ClientsPage />)} />
+                      <Route path="/clients/:clientId/brand" element={guard("Brand Guidelines", <BrandGuidelinesPage />)} />
+                      <Route path="/dam" element={guard("DAM", <DamLibraryPage />)} />
+                      <Route path="/dam/preview" element={guard("DAM Preview", <DamPreviewPage />)} />
+                      <Route path="/audit" element={guard("Auditoria", <AuditLogPage />)} />
+                      <Route path="/audit/event/:eventId" element={guard("Auditoria", <AuditEventDetailPage />)} />
+                      <Route path="/docs" element={guard("Documentação", <ArchitectureDocs />)} />
                     </Route>
 
                     <Route path="*" element={<NotFound />} />
