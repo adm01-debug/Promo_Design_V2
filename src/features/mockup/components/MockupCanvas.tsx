@@ -55,7 +55,25 @@ const MockupCanvas = ({
   isDragging, isWarping, areaW, areaH,
   centerLogo, handleLogoMouseDown, handleMouseMove, handleMouseUp, handleDrop,
   setIsResizing, fileInputRef, areaRef, canvasContainerRef, suggestedPlacement,
-}: MockupCanvasProps) => (
+}: MockupCanvasProps) => {
+  // Responsive display scaling: fits the fixed virtual canvas inside the container.
+  const [displayScale, setDisplayScale] = useState(1);
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const compute = () => {
+      const rect = el.getBoundingClientRect();
+      const pad = 48;
+      const available = Math.max(200, Math.min(rect.width - pad, rect.height - pad));
+      setDisplayScale(Math.min(1, available / CANVAS_SIZE));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [canvasContainerRef]);
+
+  return (
   <div className="flex-1 flex flex-col">
     {/* Toolbar */}
     <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de edição de mockup">
