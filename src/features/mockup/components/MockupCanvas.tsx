@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Grid3X3, Ruler, AlignCenter, Maximize, FlipHorizontal, FlipVertical,
   RotateCw, ZoomOut, ZoomIn, Upload, GripVertical, Sparkles,
@@ -55,7 +55,25 @@ const MockupCanvas = ({
   isDragging, isWarping, areaW, areaH,
   centerLogo, handleLogoMouseDown, handleMouseMove, handleMouseUp, handleDrop,
   setIsResizing, fileInputRef, areaRef, canvasContainerRef, suggestedPlacement,
-}: MockupCanvasProps) => (
+}: MockupCanvasProps) => {
+  // Responsive display scaling: fits the fixed virtual canvas inside the container.
+  const [displayScale, setDisplayScale] = useState(1);
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const compute = () => {
+      const rect = el.getBoundingClientRect();
+      const pad = 48;
+      const available = Math.max(200, Math.min(rect.width - pad, rect.height - pad));
+      setDisplayScale(Math.min(1, available / CANVAS_SIZE));
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [canvasContainerRef]);
+
+  return (
   <div className="flex-1 flex flex-col">
     {/* Toolbar */}
     <div className="h-10 bg-card border-b border-border flex items-center justify-between px-3" role="toolbar" aria-label="Ferramentas de edição de mockup">
@@ -146,7 +164,7 @@ const MockupCanvas = ({
 
       <div
         className="relative bg-white rounded-xl border border-border shadow-lg select-none"
-        style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, transform: `scale(${zoom / 100})`, transformOrigin: "center" }}
+        style={{ width: CANVAS_SIZE, height: CANVAS_SIZE, transform: `scale(${(zoom / 100) * displayScale})`, transformOrigin: "center" }}
       >
         {selectedProductImage && (
           <img src={selectedProductImage} alt={selectedProduct.name} className="w-full h-full object-contain pointer-events-none" draggable={false} onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
@@ -240,6 +258,7 @@ const MockupCanvas = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default MockupCanvas;
