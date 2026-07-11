@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS public.idx_magicup_history_user; DROP INDEX IF EXISTS public.idx_mockup_drafts_user;
