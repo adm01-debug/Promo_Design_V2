@@ -32,10 +32,17 @@ const ResetPassword = () => {
       setSuccess(true);
       setTimeout(() => navigate("/", { replace: true }), 2000);
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Não foi possível redefinir a senha.";
+      const raw = error instanceof Error ? error.message : "";
+      const lower = raw.toLowerCase();
+      let description = raw || "Não foi possível redefinir a senha.";
+      if (lower.includes("pwned") || lower.includes("compromised") || lower.includes("leaked") || lower.includes("breach")) {
+        description = "Esta senha foi encontrada em vazamentos públicos de dados. Escolha uma senha única e mais forte.";
+      } else if (lower.includes("weak") || lower.includes("password should")) {
+        description = "Senha muito fraca. Use pelo menos 10 caracteres, com letras maiúsculas, números e símbolos.";
+      }
       toast({
-        title: "Erro",
-        description: msg,
+        title: "Senha não aceita",
+        description,
         variant: "destructive",
       });
     } finally {
