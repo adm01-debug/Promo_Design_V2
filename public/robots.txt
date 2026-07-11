@@ -1,3 +1,5 @@
+Sitemap: https://render-canvas-dreams.lovable.app/sitemap.xml
+
 User-agent: Googlebot
 Allow: /
 
