@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { MotionConfig } from "framer-motion";
 import { AuthProvider } from "./contexts/AuthContext";
 import { OrganizationProvider } from "./contexts/OrganizationContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -63,6 +64,7 @@ const App = () => (
       <OrganizationProvider>
         <ThemeProvider>
           <TooltipProvider>
+            <MotionConfig reducedMotion="user">
             <OnlineIndicator />
             <Toaster />
             <Sonner />
@@ -119,6 +121,7 @@ const App = () => (
                 </Suspense>
               </RouteErrorBoundary>
             </BrowserRouter>
+            </MotionConfig>
           </TooltipProvider>
         </ThemeProvider>
       </OrganizationProvider>
