@@ -258,6 +258,7 @@ const MockupCanvas = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default MockupCanvas;
