@@ -1,0 +1,14 @@
+{
+  "name": "Promo Design",
+  "short_name": "Promo Design",
+  "description": "Ferramenta completa para designers criarem mockups, arte final e vídeos publicitários para o segmento promocional.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0b12",
+  "theme_color": "#0b0b12",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

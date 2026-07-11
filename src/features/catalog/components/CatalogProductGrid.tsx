@@ -48,7 +48,7 @@ const CatalogProductGrid = ({
           <motion.div key={p.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className={`group relative rounded-xl border p-4 transition-shadow hover:shadow-md ${!p.active ? "opacity-60" : ""}`}>
             <div className="flex items-start gap-3">
               {p.imageUrl ? (
-                <img src={p.imageUrl} alt={p.name} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" className="w-14 h-14 rounded-lg object-cover shrink-0 bg-muted" />
               ) : (
                 <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0"><Package className="w-6 h-6 text-muted-foreground" /></div>
               )}
