@@ -466,6 +466,9 @@ export function MaintenancePanel() {
           )}
         </div>
 
+        {/* Retenção configurável por organização */}
+        <RetentionSettingsPanel />
+
         {/* Latência (percentis) */}
         <MaintenanceDurationPanel />
 
