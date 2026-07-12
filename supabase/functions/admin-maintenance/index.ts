@@ -106,6 +106,18 @@ serve(async (req) => {
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }
+    if (params.action === "size_history") {
+      const days = params.size_history_days ?? 90;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await admin
+        .from("table_size_snapshots")
+        .select("table_name,total_bytes,captured_at")
+        .gte("captured_at", since)
+        .order("captured_at", { ascending: true });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, history: data ?? [], days, requestId });
+    }
+
 
     // cleanup
     console.log(`[${requestId}] manual cleanup requested by ${userData.user.id}`);
