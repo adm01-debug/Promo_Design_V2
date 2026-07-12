@@ -729,7 +729,7 @@ const MockupEditor = () => {
     }, 2000); // 2s debounce
     
     return () => clearTimeout(timer);
-  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft]);
+  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig]);
 
   return (
     <div className="h-screen flex flex-col">
