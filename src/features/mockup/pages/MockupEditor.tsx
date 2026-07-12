@@ -338,12 +338,16 @@ const MockupEditor = () => {
       cancelled = true; 
       clearTimeout(timer);
     };
+    // warpedLogoUrl é atualizado via setter funcional; não precisa ser dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
     const img = new window.Image();
     img.onload = () => { const fit = calculateAutoFit(img, viewAreaW, viewAreaH); updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale }); toast.success("Logo auto-encaixado"); };
     img.src = dataUrl;
+    // updatePlacement vem de um reducer estável do hook.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewAreaW, viewAreaH]);
 
   const handleLogoUpload = useCallback((file: File) => {
