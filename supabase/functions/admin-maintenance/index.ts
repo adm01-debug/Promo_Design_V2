@@ -477,6 +477,15 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "check_replication_slot_alerts") {
+      console.log(`[${requestId}] check_replication_slot_alerts by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("check_replication_slot_alerts", {
+        _max_retained_bytes: 1073741824,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
