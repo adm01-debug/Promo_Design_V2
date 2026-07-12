@@ -28,7 +28,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 // Test-only partial props; typed as Record to avoid coupling to the full component API.
-const defaultProps: Record<string, unknown> = {
+const defaultProps = ({ {
   productName: "Test Product",
   productSku: "SKU-123",
   productImage: "/test.jpg",
