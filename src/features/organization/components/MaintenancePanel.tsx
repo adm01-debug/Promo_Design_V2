@@ -31,6 +31,7 @@ import { TableBloatPanel } from "./TableBloatPanel";
 import { TopWritersPanel } from "./TopWritersPanel";
 import { CacheHitPanel } from "./CacheHitPanel";
 import { LiveActivityPanel } from "./LiveActivityPanel";
+import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -518,6 +519,9 @@ export function MaintenancePanel() {
 
         {/* Atividade em tempo real: queries, locks e conexões */}
         <LiveActivityPanel />
+
+        {/* Status de replicação e WAL */}
+        <ReplicationStatusPanel />
 
 
 
