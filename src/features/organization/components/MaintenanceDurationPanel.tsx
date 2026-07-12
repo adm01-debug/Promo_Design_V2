@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Activity, Loader2, RefreshCcw } from "lucide-react";
+import { Activity, Loader2, RefreshCcw, Download } from "lucide-react";
+import { toast } from "sonner";
 
 type SourceKey = "cron" | "manual" | "snapshot_cron" | "snapshot_manual";
 
@@ -57,6 +58,46 @@ export function MaintenanceDurationPanel() {
   const data = query.data;
   const sources: SourceKey[] = ["cron", "manual", "snapshot_cron", "snapshot_manual"];
 
+  const exportCsv = async () => {
+    try {
+      const { data: resp, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "history", history_limit: 1000 },
+      });
+      if (error) throw error;
+      if (resp?.error) throw new Error(resp.error);
+      const rows = (resp?.history ?? []) as Array<Record<string, unknown>>;
+      if (rows.length === 0) {
+        toast.info("Sem histórico para exportar");
+        return;
+      }
+      const headers = [
+        "id", "source", "status", "created_at", "started_at", "finished_at",
+        "duration_ms", "audit_deleted", "notifications_deleted", "status_audit_deleted", "error_message",
+      ];
+      const escape = (v: unknown): string => {
+        if (v == null) return "";
+        const s = String(v).replace(/"/g, '""');
+        return /[",\n;]/.test(s) ? `"${s}"` : s;
+      };
+      const csv = [
+        headers.join(","),
+        ...rows.map((r) => headers.map((h) => escape(r[h])).join(",")),
+      ].join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `maintenance-runs-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`${rows.length} execuções exportadas`);
+    } catch (e) {
+      toast.error(`Falha ao exportar CSV: ${(e as Error).message}`);
+    }
+  };
+
   return (
     <div className="space-y-3 pt-4 border-t">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -74,6 +115,15 @@ export function MaintenanceDurationPanel() {
               <SelectItem value="90">Últimos 90 dias</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportCsv}
+            className="h-7 gap-1.5 text-xs"
+            title="Exporta até 1000 execuções recentes"
+          >
+            <Download className="h-3 w-3" /> CSV
+          </Button>
           <Button
             variant="ghost"
             size="icon"
