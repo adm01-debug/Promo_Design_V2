@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
+import { computeDashboardMetrics } from "@/features/service-orders/lib/dashboard-metrics";
 import {
   BarChart3, ClipboardList, TrendingUp, Calendar, ArrowRight,
   FileText, Package, Clock,
@@ -28,65 +29,7 @@ const ServiceOrderDashboard = () => {
   const { orders } = useServiceOrders();
   const navigate = useNavigate();
 
-  const metrics = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const byStatus: Record<OsStatus, number> = { aberta: 0, em_producao: 0, concluida: 0, cancelada: 0 };
-    orders.forEach((o) => { byStatus[o.status]++; });
-
-    const byTechnique: Record<string, number> = {};
-    orders.forEach((o) => {
-      if (o.technique) byTechnique[o.technique] = (byTechnique[o.technique] || 0) + 1;
-    });
-    const techniqueEntries = Object.entries(byTechnique).sort((a, b) => b[1] - a[1]).slice(0, 8);
-
-    const deliveriesThisMonth = orders.filter((o) => {
-      if (!o.deliveryDate) return false;
-      const d = new Date(o.deliveryDate);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const overdue = orders.filter((o) => {
-      if (!o.deliveryDate || o.status === "concluida" || o.status === "cancelada") return false;
-      return new Date(o.deliveryDate) < now;
-    });
-
-    const totalQty = orders.reduce((sum, o) => sum + (parseInt(o.quantity) || 0), 0);
-
-    // Monthly trend (last 6 months)
-    const monthlyTrend: { month: string; total: number; concluidas: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(currentYear, currentMonth - i, 1);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-      const label = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
-      const monthOrders = orders.filter((o) => {
-        const od = new Date(o.createdAt);
-        return od.getMonth() === m && od.getFullYear() === y;
-      });
-      monthlyTrend.push({
-        month: label,
-        total: monthOrders.length,
-        concluidas: monthOrders.filter((o) => o.status === "concluida").length,
-      });
-    }
-
-    // Status pie data
-    const statusPieData = (Object.entries(byStatus) as [OsStatus, number][])
-      .filter(([, v]) => v > 0)
-      .map(([key, value]) => ({ name: STATUS_CONFIG[key].label, value, status: key }));
-
-    // Technique bar data
-    const techniqueBarData = techniqueEntries.map(([name, count]) => ({
-      name: name.length > 18 ? name.slice(0, 16) + "…" : name,
-      fullName: name,
-      count,
-    }));
-
-    return { byStatus, techniqueBarData, deliveriesThisMonth, overdue, totalQty, monthlyTrend, statusPieData };
-  }, [orders]);
+  const metrics = useMemo(() => computeDashboardMetrics(orders), [orders]);
 
   const statusCards: { key: OsStatus; icon: React.ReactNode }[] = [
     { key: "aberta", icon: <FileText className="w-5 h-5" /> },
