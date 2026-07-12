@@ -879,29 +879,38 @@ export type Database = {
       organizations: {
         Row: {
           ai_monthly_quota: number | null
+          audit_retention_days: number
           created_at: string
           created_by: string
           id: string
           name: string
+          notifications_retention_days: number
           slug: string
+          status_audit_retention_days: number
           updated_at: string
         }
         Insert: {
           ai_monthly_quota?: number | null
+          audit_retention_days?: number
           created_at?: string
           created_by: string
           id?: string
           name: string
+          notifications_retention_days?: number
           slug: string
+          status_audit_retention_days?: number
           updated_at?: string
         }
         Update: {
           ai_monthly_quota?: number | null
+          audit_retention_days?: number
           created_at?: string
           created_by?: string
           id?: string
           name?: string
+          notifications_retention_days?: number
           slug?: string
+          status_audit_retention_days?: number
           updated_at?: string
         }
         Relationships: []
