@@ -12,6 +12,7 @@ import { Building2, Plus, Trash2, Crown, Mail, Send, X as XIcon, Clock, Loader2 
 import { useToast } from "@/hooks/use-toast";
 import { useOrganizationInvites } from "../hooks/use-invites";
 import { AiUsagePanel } from "../components/AiUsagePanel";
+import { MaintenancePanel } from "../components/MaintenancePanel";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -116,6 +117,9 @@ const OrganizationPage = () => {
       </Card>
 
       {currentOrgId && canManage && <AiUsagePanel organizationId={currentOrgId} />}
+      {currentOrgId && canManage && <MaintenancePanel />}
+
+
 
 
       {currentOrgId && (

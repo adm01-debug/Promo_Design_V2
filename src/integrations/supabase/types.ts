@@ -1187,6 +1187,7 @@ export type Database = {
         Returns: boolean
       }
       is_mfa_authenticated: { Args: never; Returns: boolean }
+      run_scheduled_cleanup: { Args: never; Returns: Json }
       search_assets_ranked:
         | {
             Args: {
