@@ -297,6 +297,7 @@ export function MaintenancePanel() {
               )}
               Capturar snapshot
             </Button>
+            <SnapshotHistoryDialog />
           </div>
           {growthQuery.isLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
