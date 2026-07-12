@@ -73,7 +73,7 @@ export default function DamLibraryPage() {
     try {
       await restore.mutateAsync(asset.id);
       toast.success(`"${asset.name}" restaurado`);
-    } catch (e) {
+    } catch {
       toast.error("Falha ao restaurar");
     }
   };

@@ -116,9 +116,9 @@ describe("generateServiceOrderPdf", () => {
 
   it("should render production sections on page 2", () => {
     const doc = generateServiceOrderPdf(fullForm);
-    const textCalls = (doc.text as ReturnType<typeof vi.fn>).mock.calls.map((c: any[]) => c[0]);
+    const textCalls = (doc.text as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0]);
     const hasSections = ["Triagem", "Gravação", "Manuseio", "Expedição"].every((s) =>
-      textCalls.some((t: string) => typeof t === "string" && t.includes(s))
+      textCalls.some((t: unknown) => typeof t === "string" && t.includes(s))
     );
     expect(hasSections).toBe(true);
   });
@@ -144,8 +144,8 @@ describe("generateServiceOrderPdf", () => {
       materialEvento: true,
       aprovarPrimeiraPeca: true,
     });
-    const textCalls = (doc.text as ReturnType<typeof vi.fn>).mock.calls.map((c: any[]) => c[0]);
-    const hasSimEntries = textCalls.filter((t: string) => typeof t === "string" && t.includes("SIM"));
+    const textCalls = (doc.text as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0]);
+    const hasSimEntries = textCalls.filter((t: unknown) => typeof t === "string" && t.includes("SIM"));
     expect(hasSimEntries.length).toBeGreaterThanOrEqual(2);
   });
 });

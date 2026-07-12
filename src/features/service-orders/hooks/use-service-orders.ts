@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -171,7 +171,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
     enabled: !!user,
   });
 
-  const orders = data?.orders ?? [];
+  const orders = useMemo<StoredServiceOrder[]>(() => data?.orders ?? [], [data?.orders]);
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

@@ -37,7 +37,7 @@ Deno.test("breaker opens after failureThreshold consecutive failures", () => {
 });
 
 Deno.test("assertCanRequest throws BitrixCircuitOpenError when open", () => {
-  let now = 1000;
+  const now = 1000;
   const cb = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 5000, now: () => now });
   cb.recordFailure();
   try {
