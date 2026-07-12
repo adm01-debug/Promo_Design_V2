@@ -11,7 +11,7 @@ const corsHeaders = {
 const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
-    "capture_snapshot", "size_history", "snapshots_list",
+    "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
   ]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
@@ -25,6 +25,9 @@ const BodySchema = z.object({
   snapshots_to: z.string().datetime().optional(),
   snapshots_page: z.number().int().min(1).max(10_000).optional(),
   snapshots_page_size: z.number().int().min(5).max(200).optional(),
+  // Filters for failures_summary
+  failures_days_back: z.number().int().min(1).max(365).optional(),
+  failures_limit: z.number().int().min(1).max(50).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -164,6 +167,60 @@ serve(async (req) => {
         requestId,
       });
     }
+
+    if (params.action === "failures_summary") {
+      const daysBack = params.failures_days_back ?? 30;
+      const limit = params.failures_limit ?? 10;
+      const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
+
+      // Recent failure/skipped/partial runs
+      const { data: failures, error: failuresErr } = await admin
+        .from("maintenance_runs")
+        .select("id,source,status,duration_ms,error_message,started_at,finished_at,created_at")
+        .in("status", ["error", "skipped", "partial"])
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (failuresErr) return json({ error: failuresErr.message, requestId }, 500);
+
+      // Aggregate counts by status × source in the window
+      const { data: allRuns, error: allErr } = await admin
+        .from("maintenance_runs")
+        .select("source,status")
+        .gte("created_at", since);
+      if (allErr) return json({ error: allErr.message, requestId }, 500);
+
+      const totals: Record<string, number> = { success: 0, error: 0, skipped: 0, partial: 0 };
+      const bySource: Record<string, Record<string, number>> = {};
+      for (const row of allRuns ?? []) {
+        totals[row.status] = (totals[row.status] ?? 0) + 1;
+        bySource[row.source] ??= { success: 0, error: 0, skipped: 0, partial: 0 };
+        bySource[row.source][row.status] = (bySource[row.source][row.status] ?? 0) + 1;
+      }
+
+      // Last success timestamps per source (health signal)
+      const { data: lastOk } = await admin
+        .from("maintenance_runs")
+        .select("source,created_at")
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const lastSuccessBySource: Record<string, string> = {};
+      for (const row of lastOk ?? []) {
+        if (!lastSuccessBySource[row.source]) lastSuccessBySource[row.source] = row.created_at;
+      }
+
+      return json({
+        ok: true,
+        days_back: daysBack,
+        totals,
+        by_source: bySource,
+        failures: failures ?? [],
+        last_success_by_source: lastSuccessBySource,
+        requestId,
+      });
+    }
+
 
 
 
