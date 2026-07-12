@@ -135,12 +135,13 @@ const ServiceOrderList = () => {
 
   const handleDuplicate = async (order: StoredServiceOrder) => {
     try {
-      const { id: _id, osNumber: _os, createdAt: _ca, updatedAt: _ua, status: _st, lockVersion: _lv, deletedAt: _da, ...clonedData } = order;
+      const { id: _id, osNumber, createdAt: _ca, updatedAt: _ua, status: _st, lockVersion: _lv, deletedAt: _da, ...clonedData } = order;
       const newOrder = await addOrder({
         ...clonedData,
-        observations: `Cópia da OS ${order.osNumber}. ${clonedData.observations || ""}`,
+        osNumber: `${osNumber}-COPY`,
+        observations: `Cópia da OS ${osNumber}. ${clonedData.observations || ""}`,
       });
-      toast.success(`OS ${order.osNumber} duplicada com sucesso!`);
+      toast.success(`OS ${osNumber} duplicada com sucesso!`);
       navigate(`/mockup/service-order?edit=${newOrder.id}`);
     } catch {
       toast.error("Erro ao duplicar OS");
