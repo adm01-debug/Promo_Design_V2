@@ -103,7 +103,31 @@ export function LiveActivityPanel() {
           <Activity className="h-4 w-4" /> Atividade em tempo real
           {isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
         </CardTitle>
-        <span className="text-[11px] text-muted-foreground">atualiza a cada 5s</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">atualiza a cada 5s</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              try {
+                const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+                  body: { action: "check_lock_alerts", lock_threshold_ms: 30_000 },
+                });
+                if (error) throw error;
+                const r = (data as { result?: { locks_found?: number; alerts_created?: number } })?.result;
+                if ((r?.locks_found ?? 0) === 0) {
+                  toast.success("Nenhum lock acima de 30s no momento");
+                } else {
+                  toast.warning(`${r?.locks_found} lock(s) detectado(s); ${r?.alerts_created ?? 0} alerta(s) criado(s)`);
+                }
+              } catch (err) {
+                toast.error(`Falha na verificação: ${err instanceof Error ? err.message : String(err)}`);
+              }
+            }}
+          >
+            <Lock className="h-3 w-3 mr-1" /> Verificar locks &gt; 30s
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (

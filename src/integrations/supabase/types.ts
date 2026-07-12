@@ -1240,6 +1240,7 @@ export type Database = {
             Args: { _org_id: string; _required_cost?: number }
             Returns: boolean
           }
+      check_lock_alerts: { Args: { _threshold_ms?: number }; Returns: Json }
       check_slo_regressions: {
         Args: {
           _baseline_days?: number
