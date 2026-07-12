@@ -137,7 +137,7 @@ export function useDamFilters() {
     const minUrl = Number(params.get("sizeMin"));
     const maxUrl = Number(params.get("sizeMax"));
     if (minUrl >= 0 || maxUrl >= 0) {
-      const unit = (params.get("sizeUnit") as any) === "KB" ? "KB" : "MB";
+      const unit = params.get("sizeUnit") === "KB" ? "KB" : "MB";
       const factor = unit === "KB" ? 1024 : 1024 * 1024;
       customSize = {
         minBytes: params.get("sizeMin") ? minUrl : null,
@@ -148,7 +148,11 @@ export function useDamFilters() {
       };
     } else {
       const customLs = readLS(CUSTOM_SIZE_KEY);
-      if (customLs) try { customSize = JSON.parse(customLs); } catch {}
+      if (customLs) {
+        try { customSize = JSON.parse(customLs); } catch {
+          // ignore parse errors — corrupt LS value falls back to null
+        }
+      }
     }
 
     return {
