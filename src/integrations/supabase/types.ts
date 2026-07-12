@@ -1276,6 +1276,7 @@ export type Database = {
         Args: { _org_id: string; _query?: string }
         Returns: Json
       }
+      get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
       get_slow_queries: { Args: { _limit?: number }; Returns: Json }

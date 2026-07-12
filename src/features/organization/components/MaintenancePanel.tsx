@@ -29,6 +29,7 @@ import { SlowQueriesPanel } from "./SlowQueriesPanel";
 import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
 import { TableBloatPanel } from "./TableBloatPanel";
 import { TopWritersPanel } from "./TopWritersPanel";
+import { CacheHitPanel } from "./CacheHitPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -510,6 +511,9 @@ export function MaintenancePanel() {
 
         {/* Top escritores para tuning de autovacuum */}
         <TopWritersPanel />
+
+        {/* Cache hit ratio e uso de índices por tabela */}
+        <CacheHitPanel />
 
 
 
