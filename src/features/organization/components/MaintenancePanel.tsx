@@ -488,6 +488,9 @@ export function MaintenancePanel() {
         {/* Ranking de crescimento mensal */}
         <MonthlyGrowthPanel />
 
+        {/* Projeção linear de armazenamento */}
+        <StorageProjectionPanel />
+
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
 
