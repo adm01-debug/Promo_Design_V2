@@ -92,21 +92,34 @@ export function DbHealthPanel() {
             <div className="text-sm font-mono font-semibold mt-0.5">{formatBytes(h.db_size_bytes)}</div>
           </div>
           <div className="p-2.5 rounded-md border">
-            <div className="text-[9px] uppercase text-muted-foreground font-mono">Conexões</div>
-            <div className="text-sm font-mono font-semibold mt-0.5">{h.connections.total}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">
-              {h.connections.active} ativas · {h.connections.idle} idle
-            </div>
-          </div>
-          <div className="p-2.5 rounded-md border">
             <div className="text-[9px] uppercase text-muted-foreground font-mono flex items-center justify-between">
-              <span>Cache hit</span>
-              {cacheStatus && (
-                <Badge variant="outline" className={`${cacheStatus.color} text-[8px] h-3.5 px-1`}>
-                  {cacheStatus.label}
+              <span>Conexões</span>
+              {typeof h.connections.saturation_pct === "number" && (
+                <Badge
+                  variant="outline"
+                  className={`text-[8px] h-3.5 px-1 ${
+                    h.connections.saturation_pct >= 80
+                      ? "text-destructive"
+                      : h.connections.saturation_pct >= 60
+                        ? "text-amber-500"
+                        : "text-emerald-500"
+                  }`}
+                >
+                  {h.connections.saturation_pct.toFixed(0)}%
                 </Badge>
               )}
             </div>
+            <div className="text-sm font-mono font-semibold mt-0.5">
+              {h.connections.total}
+              {h.connections.max ? (
+                <span className="text-muted-foreground text-xs"> / {h.connections.max}</span>
+              ) : null}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {h.connections.active} ativas · {h.connections.idle} idle
+              {h.connections.idle_in_transaction ? ` · ${h.connections.idle_in_transaction} idle-txn` : ""}
+            </div>
+          </div>
             <div className={`text-sm font-mono font-semibold mt-0.5 ${cacheStatus?.color ?? ""}`}>
               {h.cache_hit_ratio.toFixed(2)}%
             </div>
