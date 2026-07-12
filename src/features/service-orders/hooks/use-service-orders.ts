@@ -171,7 +171,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
     enabled: !!user,
   });
 
-  const orders = data?.orders ?? [];
+  const orders = useMemo(() => data?.orders ?? [], [data?.orders]);
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
