@@ -11,7 +11,7 @@ const corsHeaders = {
 const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
-    "capture_snapshot", "size_history", "snapshots_list",
+    "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
   ]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
@@ -25,6 +25,9 @@ const BodySchema = z.object({
   snapshots_to: z.string().datetime().optional(),
   snapshots_page: z.number().int().min(1).max(10_000).optional(),
   snapshots_page_size: z.number().int().min(5).max(200).optional(),
+  // Filters for failures_summary
+  failures_days_back: z.number().int().min(1).max(365).optional(),
+  failures_limit: z.number().int().min(1).max(50).optional(),
 });
 
 function json(body: unknown, status = 200) {
