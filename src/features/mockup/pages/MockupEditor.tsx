@@ -257,6 +257,8 @@ const MockupEditor = () => {
 
     window.addEventListener('keydown', handleKeyDown, true); // Use capture to preempt other listeners
     return () => window.removeEventListener('keydown', handleKeyDown, true);
+    // centerLogo é estável (useCallback abaixo). Adicioná-lo criaria dep circular.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
 
 
