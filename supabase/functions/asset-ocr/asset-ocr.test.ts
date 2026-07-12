@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// createClient import removed; tests use fetch directly.
 import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 
