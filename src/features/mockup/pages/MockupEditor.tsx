@@ -269,6 +269,8 @@ const MockupEditor = () => {
     }
     clearWarpCache();
     setWarpedLogoUrl(null);
+    // warpedLogoUrl é revogado propositalmente; ler o valor atual via closure basta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview]);
 
   // Clean up warped logo URL on unmount
