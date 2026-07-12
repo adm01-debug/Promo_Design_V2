@@ -50,7 +50,9 @@ function makeRow(overrides: Partial<Row> = {}): Row {
     updated_at: "2025-01-01T00:00:00.000Z",
     organization_id: "00000000-0000-0000-0000-000000000000",
     created_by: "00000000-0000-0000-0000-000000000000",
-  } as Row;
+    last_modified_by: null,
+    user_id: "00000000-0000-0000-0000-000000000000",
+  } as unknown as Row;
   return { ...base, ...overrides };
 }
 
