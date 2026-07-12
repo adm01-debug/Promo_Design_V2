@@ -392,6 +392,18 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "manual_analyze") {
+      if (!params.analyze_table) {
+        return json({ error: "analyze_table é obrigatório", requestId }, 400);
+      }
+      console.log(`[${requestId}] manual analyze by ${userData.user.id} table=${params.analyze_table}`);
+      const { data, error } = await admin.rpc("run_manual_analyze", {
+        _table_name: params.analyze_table,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
