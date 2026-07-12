@@ -439,6 +439,16 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "check_lock_alerts") {
+      const threshold = params.lock_threshold_ms ?? 30_000;
+      console.log(`[${requestId}] check_lock_alerts threshold=${threshold}ms by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("check_lock_alerts", {
+        _threshold_ms: threshold,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
