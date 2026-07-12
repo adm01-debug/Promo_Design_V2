@@ -138,11 +138,23 @@ const MockupEditor = () => {
   const { drafts } = useMockupDrafts();
 
   // Load draft if draftId is present
+  const draftLoadedRef = useRef(false);
   useEffect(() => {
+    if (draftLoadedRef.current) return;
     if (draftId && drafts.length > 0) {
       const draft = drafts.find(d => d.id === draftId);
       if (draft && draft.editorState) {
-        const state = draft.editorState as any;
+        const state = draft.editorState as {
+          placements?: Record<string, Placement>;
+          logoPreview?: string;
+          logoOpacity?: number;
+          blendMode?: BlendMode;
+          surfaceType?: SurfaceType;
+          shadowEnabled?: boolean;
+          shadowIntensity?: number;
+          approvedViews?: string[];
+          watermarkConfig?: typeof watermarkConfig;
+        };
         if (state.placements) {
           setPlacements(state.placements);
           resetAllHistory();
@@ -156,11 +168,14 @@ const MockupEditor = () => {
         if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
         if (state.watermarkConfig) setWatermarkConfig(state.watermarkConfig);
 
-        
+        draftLoadedRef.current = true;
         toast.success("Rascunho carregado");
       }
     }
-  }, [draftId, drafts, setPlacements]);
+    // Callbacks abaixo são omitidas propositalmente: são estáveis do hook e
+    // usar draftLoadedRef garante execução única.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId, drafts]);
 
 
 
@@ -242,6 +257,8 @@ const MockupEditor = () => {
 
     window.addEventListener('keydown', handleKeyDown, true); // Use capture to preempt other listeners
     return () => window.removeEventListener('keydown', handleKeyDown, true);
+    // centerLogo é estável (useCallback abaixo). Adicioná-lo criaria dep circular.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
 
 
@@ -252,6 +269,8 @@ const MockupEditor = () => {
     }
     clearWarpCache();
     setWarpedLogoUrl(null);
+    // warpedLogoUrl é revogado propositalmente; ler o valor atual via closure basta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview]);
 
   // Clean up warped logo URL on unmount
@@ -319,12 +338,16 @@ const MockupEditor = () => {
       cancelled = true; 
       clearTimeout(timer);
     };
+    // warpedLogoUrl é atualizado via setter funcional; não precisa ser dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
     const img = new window.Image();
     img.onload = () => { const fit = calculateAutoFit(img, viewAreaW, viewAreaH); updatePlacement({ x: fit.x, y: fit.y, scale: fit.scale }); toast.success("Logo auto-encaixado"); };
     img.src = dataUrl;
+    // updatePlacement vem de um reducer estável do hook.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewAreaW, viewAreaH]);
 
   const handleLogoUpload = useCallback((file: File) => {
@@ -339,6 +362,8 @@ const MockupEditor = () => {
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
+    // updatePlacement vem de reducer estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewAreaW, viewAreaH, pushLogoToHistory]);
 
   const handleSuggestPlacement = useCallback(async () => {
@@ -400,6 +425,8 @@ const MockupEditor = () => {
       setIsSuggestingPlacement(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
+    // pushAISuggestion vem de reducer estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview, productName, productSku, areaW, areaH]);
 
   const applySuggestedPlacement = useCallback(() => {
@@ -447,6 +474,8 @@ const MockupEditor = () => {
       setIsRemovingBg(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
+    // pushAISuggestion vem de reducer estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview, pushLogoToHistory]);
 
   const cancelAIRequest = useCallback(() => {
@@ -700,7 +729,7 @@ const MockupEditor = () => {
     }, 2000); // 2s debounce
     
     return () => clearTimeout(timer);
-  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft]);
+  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig]);
 
   return (
     <div className="h-screen flex flex-col">

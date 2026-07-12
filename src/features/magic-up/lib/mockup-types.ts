@@ -84,7 +84,7 @@ export interface MagicUpGeneration {
   technique?: string;
   favorite: boolean;
   createdAt: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Sample products for demo

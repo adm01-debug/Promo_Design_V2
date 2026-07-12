@@ -8,6 +8,7 @@ import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
+import type { AISuggestion } from "../hooks/use-mockup-editor-state";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
@@ -31,7 +32,7 @@ const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
   { id: "color-burn", label: "Color Burn", desc: "Saturação intensa" },
 ];
 
-interface EditorRightPanelProps {
+export interface EditorRightPanelProps {
   productName: string;
   productSku: string;
   productImage: string;
@@ -85,7 +86,7 @@ interface EditorRightPanelProps {
   applySuggestedPlacement: () => void;
   setSuggestedPlacement: (v: { placement: Placement; reasoning: string } | null) => void;
   cancelAIRequest: () => void;
-  aiSuggestions: any[];
+  aiSuggestions: AISuggestion[];
   clearAISuggestions: () => void;
   isPreviewingAI: boolean;
   setIsPreviewingAI: (v: boolean) => void;

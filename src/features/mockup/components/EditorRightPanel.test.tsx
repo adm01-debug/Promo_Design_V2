@@ -1,6 +1,6 @@
 import { test, expect, beforeAll, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import EditorRightPanel from "./EditorRightPanel";
+import EditorRightPanel, { type EditorRightPanelProps } from "./EditorRightPanel";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -27,7 +27,8 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
   </QueryClientProvider>
 );
 
-const defaultProps: any = {
+// Partial props for testing; cast satisfies the strict component prop surface.
+const defaultProps = ({
   productName: "Test Product",
   productSku: "SKU-123",
   productImage: "/test.jpg",
@@ -85,7 +86,7 @@ const defaultProps: any = {
   clearAISuggestions: vi.fn(),
   isPreviewingAI: false,
   setIsPreviewingAI: vi.fn(),
-};
+}) as unknown as EditorRightPanelProps;
 
 test("EditorRightPanel renders AI buttons", () => {
   render(

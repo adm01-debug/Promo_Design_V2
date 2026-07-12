@@ -15,7 +15,7 @@ export interface DbProduct {
   images: string[];
   image_url: string | null;
   allows_personalization: boolean;
-  personalization_areas: any[];
+  personalization_areas: unknown[];
   engraving_type: string | null;
   colors: string[];
   materials: string[];
@@ -67,7 +67,7 @@ export interface DbProductVariant {
   product_id: string;
   sku: string;
   name: string;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   stock_quantity: number;
   color_name: string | null;
   color_hex: string | null;

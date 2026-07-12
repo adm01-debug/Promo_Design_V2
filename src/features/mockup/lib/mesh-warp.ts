@@ -364,6 +364,8 @@ export async function getWarpedPreviewWorker(
     w.postMessage({
       type: 'WARP_IMAGE',
       payload: { bitmap, width, height, surface, config, rotation, flipH, flipV }
+    // Worker.postMessage transfer list; lib.dom types are outdated in some TS versions.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }, [bitmap] as any);
   });
 }

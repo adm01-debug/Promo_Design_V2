@@ -1,6 +1,11 @@
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
+// jspdf-autotable augments jsPDF at runtime; declare the method for TS.
+type JsPdfWithAutoTable = jsPDF & {
+  autoTable: (options: Record<string, unknown>) => void;
+};
+
 interface MockupData {
   productName: string;
   technique: string;
@@ -58,7 +63,7 @@ export function generateApprovalPdf(data: MockupData): jsPDF {
   // Technical data table
   const tableY = pageHeight - 60;
   doc.setTextColor(0, 0, 0);
-  (doc as any).autoTable({
+  (doc as JsPdfWithAutoTable).autoTable({
     startY: tableY,
     margin: { left: margin, right: margin },
     head: [["Produto", "Técnica", "Área", "Dimensões", "Cores"]],

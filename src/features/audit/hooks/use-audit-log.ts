@@ -30,6 +30,10 @@ export interface AuditFilters {
   pageSize: number;
 }
 
+// PostgREST/Supabase's fluent query builder is deeply-generic (invariant); a
+// structural type erases too much. Using `any` here is intentional and scoped
+// to a private helper.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyFilters(query: any, f: AuditFilters) {
   query = query.eq("organization_id", f.organizationId!);
   if (f.from) query = query.gte("created_at", f.from);

@@ -36,7 +36,8 @@ const MockupNew = () => {
     selectedProduct, selectedArea, selectedVariant, selectedProductImage, selectedTemplate, step,
   });
 
-  // Restore draft
+  // Restore draft (executa uma vez quando restoreDraft estabilizar).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { editor.restoreDraft(setStep); }, [editor.restoreDraft]);
 
   return (
