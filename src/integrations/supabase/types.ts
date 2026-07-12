@@ -1240,6 +1240,14 @@ export type Database = {
             Args: { _org_id: string; _required_cost?: number }
             Returns: boolean
           }
+      check_slo_regressions: {
+        Args: {
+          _baseline_days?: number
+          _recent_days?: number
+          _threshold?: number
+        }
+        Returns: Json
+      }
       cleanup_expired_data:
         | {
             Args: {
