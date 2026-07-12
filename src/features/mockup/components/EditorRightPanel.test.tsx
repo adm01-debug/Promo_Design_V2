@@ -86,7 +86,7 @@ const defaultProps = ({
   clearAISuggestions: vi.fn(),
   isPreviewingAI: false,
   setIsPreviewingAI: vi.fn(),
-};
+}) as unknown as EditorRightPanelProps;
 
 test("EditorRightPanel renders AI buttons", () => {
   render(
