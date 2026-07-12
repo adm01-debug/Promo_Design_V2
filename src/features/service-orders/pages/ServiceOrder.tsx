@@ -174,7 +174,7 @@ const ServiceOrder = () => {
         setSaved(true); 
       }
       else { 
-        const { lockVersion: _lv, deletedAt: _da, ...formWithoutMeta } = form as any;
+        const { lockVersion: _lv, deletedAt: _da, ...formWithoutMeta } = form as typeof form & { lockVersion?: number; deletedAt?: string | null };
         const newOrder = await addOrder(formWithoutMeta); 
         navigate(`/mockup/service-order?edit=${newOrder.id}`, { replace: true }); 
         toast.success("Ordem de Serviço salva!"); 
