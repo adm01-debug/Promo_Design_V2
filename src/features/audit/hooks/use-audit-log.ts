@@ -30,7 +30,8 @@ export interface AuditFilters {
   pageSize: number;
 }
 
-function applyFilters(query: any, f: AuditFilters) {
+type AuditQueryBuilder = ReturnType<ReturnType<typeof supabase.from<"audit_log">>["select"]>;
+function applyFilters(query: AuditQueryBuilder, f: AuditFilters): AuditQueryBuilder {
   query = query.eq("organization_id", f.organizationId!);
   if (f.from) query = query.gte("created_at", f.from);
   if (f.to) query = query.lte("created_at", f.to);
