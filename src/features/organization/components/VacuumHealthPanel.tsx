@@ -54,6 +54,8 @@ function statusVariant(s: string): "default" | "secondary" | "destructive" {
 }
 
 export function VacuumHealthPanel() {
+  const qc = useQueryClient();
+  const [running, setRunning] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["admin-maintenance", "vacuum_health"],
     queryFn: async () => {
@@ -66,6 +68,23 @@ export function VacuumHealthPanel() {
     staleTime: 60_000,
     refetchInterval: 300_000,
   });
+
+  const runVacuum = async (table: string, mode: "standard" | "analyze" | "full") => {
+    setRunning(`${table}:${mode}`);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "manual_vacuum", vacuum_table: table, vacuum_mode: mode },
+      });
+      if (error) throw error;
+      const dur = data?.result?.duration_ms;
+      toast.success(`VACUUM ${mode} em ${table} concluído${dur ? ` (${dur}ms)` : ""}`);
+      qc.invalidateQueries({ queryKey: ["admin-maintenance", "vacuum_health"] });
+    } catch (e) {
+      toast.error(`Falha em VACUUM ${mode}: ${(e as Error).message}`);
+    } finally {
+      setRunning(null);
+    }
+  };
 
   const items = query.data?.result.items ?? [];
   const critical = items.filter((i) => i.status === "critical").length;
