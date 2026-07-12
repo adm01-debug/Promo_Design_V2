@@ -13,7 +13,7 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes",
+    "unused_indexes", "bloat_health",
   ]),
   slow_queries_limit: z.number().int().min(1).max(100).optional(),
   unused_indexes_min_kb: z.number().int().min(0).max(10485760).optional(),
@@ -381,6 +381,12 @@ serve(async (req) => {
       const { data, error } = await admin.rpc("get_unused_indexes", {
         _min_size_kb: params.unused_indexes_min_kb ?? 64,
       });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
+    if (params.action === "bloat_health") {
+      const { data, error } = await admin.rpc("get_table_bloat_health");
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }

@@ -27,6 +27,7 @@ import { StorageProjectionPanel } from "./StorageProjectionPanel";
 import { DbHealthPanel } from "./DbHealthPanel";
 import { SlowQueriesPanel } from "./SlowQueriesPanel";
 import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
+import { TableBloatPanel } from "./TableBloatPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -502,6 +503,10 @@ export function MaintenancePanel() {
 
         {/* Índices ociosos (candidatos a remoção) */}
         <UnusedIndexesPanel />
+
+        {/* Saúde de vacuum & tuplas mortas */}
+        <TableBloatPanel />
+
 
 
         {/* Heatmap de falhas por dia/hora */}

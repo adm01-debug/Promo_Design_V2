@@ -1279,6 +1279,7 @@ export type Database = {
       get_db_health: { Args: never; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
       get_slow_queries: { Args: { _limit?: number }; Returns: Json }
+      get_table_bloat_health: { Args: never; Returns: Json }
       get_table_growth: { Args: { _days_back?: number }; Returns: Json }
       get_table_sizes: { Args: never; Returns: Json }
       get_unused_indexes: { Args: { _min_size_kb?: number }; Returns: Json }
