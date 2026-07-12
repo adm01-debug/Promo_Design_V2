@@ -27,7 +27,8 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
   </QueryClientProvider>
 );
 
-const defaultProps: any = {
+// Test-only partial props; typed as Record to avoid coupling to the full component API.
+const defaultProps: Record<string, unknown> = {
   productName: "Test Product",
   productSku: "SKU-123",
   productImage: "/test.jpg",
