@@ -18,6 +18,7 @@ import MiniSparkline from "@/components/MiniSparkline";
 import { SnapshotHistoryDialog } from "./SnapshotHistoryDialog";
 import { MaintenanceFailuresPanel } from "./MaintenanceFailuresPanel";
 import { MaintenanceDurationPanel } from "./MaintenanceDurationPanel";
+import { RetentionSettingsPanel } from "./RetentionSettingsPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -464,6 +465,9 @@ export function MaintenancePanel() {
             </div>
           )}
         </div>
+
+        {/* Retenção configurável por organização */}
+        <RetentionSettingsPanel />
 
         {/* Latência (percentis) */}
         <MaintenanceDurationPanel />
