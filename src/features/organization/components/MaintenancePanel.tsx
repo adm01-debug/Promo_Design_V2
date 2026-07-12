@@ -442,6 +442,9 @@ export function MaintenancePanel() {
             </div>
           )}
         </div>
+
+        {/* Falhas & diagnóstico */}
+        <MaintenanceFailuresPanel />
       </CardContent>
     </Card>
   );
