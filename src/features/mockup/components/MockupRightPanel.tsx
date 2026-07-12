@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { PERSPECTIVE_PRESETS } from "@/features/mockup";
-import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
+import type { DbProduct, DbPrintAreaTechnique, DbProductVariant, SurfaceType } from "@/features/mockup";
 import type { Placement, BlendMode, ExportFormat } from "@/features/mockup/hooks/use-mockup-editor";
 import { BLEND_MODES } from "@/features/mockup/hooks/use-mockup-editor";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
