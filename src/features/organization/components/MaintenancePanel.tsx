@@ -25,6 +25,7 @@ import { FailureHeatmapPanel } from "./FailureHeatmapPanel";
 import { MonthlyGrowthPanel } from "./MonthlyGrowthPanel";
 import { StorageProjectionPanel } from "./StorageProjectionPanel";
 import { DbHealthPanel } from "./DbHealthPanel";
+import { SlowQueriesPanel } from "./SlowQueriesPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -494,6 +495,9 @@ export function MaintenancePanel() {
 
         {/* Saúde do Postgres (métricas do servidor) */}
         <DbHealthPanel />
+
+        {/* Queries mais lentas (pg_stat_statements) */}
+        <SlowQueriesPanel />
 
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />

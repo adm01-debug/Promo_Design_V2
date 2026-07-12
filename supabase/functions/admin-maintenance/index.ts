@@ -12,8 +12,9 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats", "cleanup_per_org", "slo_baseline", "db_health",
+    "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
   ]),
+  slow_queries_limit: z.number().int().min(1).max(100).optional(),
   slo_baseline_days: z.number().int().min(14).max(365).optional(),
   slo_recent_days: z.number().int().min(1).max(30).optional(),
   slo_threshold: z.number().min(1.1).max(10).optional(),
@@ -364,6 +365,14 @@ serve(async (req) => {
       const { data, error } = await admin.rpc("get_db_health");
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, health: data, requestId });
+    }
+
+    if (params.action === "slow_queries") {
+      const { data, error } = await admin.rpc("get_slow_queries", {
+        _limit: params.slow_queries_limit ?? 15,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
     }
 
 
