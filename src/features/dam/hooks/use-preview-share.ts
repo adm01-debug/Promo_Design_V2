@@ -11,7 +11,7 @@ export function usePreviewShare({
   activeAsset: Asset | null;
   searchParams: URLSearchParams;
   compareMode: boolean;
-  compare: any;
+  compare: { selectedIds: string[] };
 }) {
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);
