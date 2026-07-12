@@ -23,6 +23,7 @@ import { SloBaselinePanel } from "./SloBaselinePanel";
 import { HealthDashboardPanel } from "./HealthDashboardPanel";
 import { FailureHeatmapPanel } from "./FailureHeatmapPanel";
 import { MonthlyGrowthPanel } from "./MonthlyGrowthPanel";
+import { StorageProjectionPanel } from "./StorageProjectionPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
