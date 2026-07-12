@@ -151,6 +151,7 @@ export function MaintenancePanel() {
       }
       qc.invalidateQueries({ queryKey: ["maintenance-growth", 7] });
       qc.invalidateQueries({ queryKey: ["maintenance-table-sizes"] });
+      qc.invalidateQueries({ queryKey: ["maintenance-size-history", 90] });
     },
     onError: (e: Error) => toast.error(`Falha no snapshot: ${e.message}`),
   });
