@@ -1240,6 +1240,10 @@ export type Database = {
             Args: { _org_id: string; _required_cost?: number }
             Returns: boolean
           }
+      check_and_consume_ai_rate_limit: {
+        Args: { _feature: string; _limit_per_min?: number; _user_id: string }
+        Returns: Json
+      }
       check_connection_saturation_alerts: {
         Args: { _threshold_pct?: number }
         Returns: Json
