@@ -22,6 +22,7 @@ import { RetentionSettingsPanel } from "./RetentionSettingsPanel";
 import { SloBaselinePanel } from "./SloBaselinePanel";
 import { HealthDashboardPanel } from "./HealthDashboardPanel";
 import { FailureHeatmapPanel } from "./FailureHeatmapPanel";
+import { MonthlyGrowthPanel } from "./MonthlyGrowthPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
