@@ -33,6 +33,7 @@ import { CacheHitPanel } from "./CacheHitPanel";
 import { LiveActivityPanel } from "./LiveActivityPanel";
 import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
 import { VacuumHealthPanel } from "./VacuumHealthPanel";
+import { RecentIncidentsPanel } from "./RecentIncidentsPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -226,6 +227,9 @@ export function MaintenancePanel() {
       <CardContent className="space-y-6">
         {/* Painel consolidado de saúde */}
         <HealthDashboardPanel />
+
+        {/* Incidentes recentes (60 min) */}
+        <RecentIncidentsPanel />
 
         <p className="text-xs text-muted-foreground">
           A limpeza automática roda todo domingo às 03:00 UTC. Apenas registros fora do período de retenção são removidos.
