@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   AlertOctagon, CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCcw,
-  ChevronDown, ChevronRight, Bug,
+  ChevronDown, ChevronRight, Bug, Download,
 } from "lucide-react";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
