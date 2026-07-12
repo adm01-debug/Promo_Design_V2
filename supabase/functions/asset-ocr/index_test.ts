@@ -6,7 +6,7 @@ const MOCK_HEADERS = {
 };
 
 Deno.test("asset-ocr: validate schema - missing params", async () => {
-  const req = new Request("http://localhost/asset-ocr", {
+  const _req = new Request("http://localhost/asset-ocr", {
     method: "POST",
     headers: MOCK_HEADERS,
     body: JSON.stringify({}),
@@ -18,7 +18,7 @@ Deno.test("asset-ocr: validate schema - missing params", async () => {
 });
 
 Deno.test("asset-ocr: validate schema - invalid UUID", async () => {
-  const req = new Request("http://localhost/asset-ocr", {
+  const _req = new Request("http://localhost/asset-ocr", {
     method: "POST",
     headers: MOCK_HEADERS,
     body: JSON.stringify({
