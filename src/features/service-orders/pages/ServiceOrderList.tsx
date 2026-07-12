@@ -215,10 +215,9 @@ const ServiceOrderList = () => {
   const handleDateFromChange = (d: Date | undefined) => { setDateFrom(d); setPage(1); };
   const handleDateToChange = (d: Date | undefined) => { setDateTo(d); setPage(1); };
   /** True whenever any filter (basic or advanced) is active. */
-  const hasActiveFilters = !!(
-    search || statusFilter !== "all" || !sortDesc || page > 1 ||
-    productQuery || dateFrom || dateTo
-  );
+  const hasActiveFilters = hasActiveFiltersFn({
+    search, statusFilter, sortDesc, page, productQuery, dateFrom, dateTo,
+  });
   /** Single "Clear filters" entry point — wipes URL params and resets state. */
   const clearAllFilters = () => {
     setSearch("");
