@@ -9,15 +9,20 @@ import { supabase } from "@/integrations/supabase/client";
  */
 describe("RLS Coverage", () => {
   it("should have RLS enabled on all public tables", async () => {
-    const { data, error } = await supabase.rpc("check_rls_enabled" as any);
-    
+    type RlsRow = { table_name: string; rowsecurity: boolean };
+    // RPC not present in generated types; narrow via typed cast (no `any`).
+    const rpc = supabase.rpc as unknown as (
+      fn: "check_rls_enabled",
+    ) => Promise<{ data: RlsRow[] | null; error: { message: string } | null }>;
+    const { data, error } = await rpc("check_rls_enabled");
+
     // Fallback to direct query if RPC doesn't exist (handled by the app logic or manual check)
     if (error) {
       console.warn("RPC check_rls_enabled not found, skipping deep check. Ensure RLS is active manually.");
       return;
     }
 
-    const disabledTables = data?.filter((t: any) => !t.rowsecurity);
+    const disabledTables = (data ?? []).filter((t) => !t.rowsecurity);
     expect(disabledTables).toHaveLength(0);
   });
 
