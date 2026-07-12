@@ -524,6 +524,9 @@ export function MaintenancePanel() {
         {/* Status de replicação e WAL */}
         <ReplicationStatusPanel />
 
+        {/* Saúde de vacuum/analyze por tabela */}
+        <VacuumHealthPanel />
+
 
 
         {/* Heatmap de falhas por dia/hora */}
