@@ -133,10 +133,13 @@ export function VacuumHealthPanel() {
                   <th className="py-2 pr-3">Último vacuum</th>
                   <th className="py-2 pr-3">Último analyze</th>
                   <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {items.slice(0, 20).map((i) => (
+                {items.slice(0, 20).map((i) => {
+                  const busy = running?.startsWith(`${i.table_name}:`);
+                  return (
                   <tr key={i.table_name} className="border-b last:border-0">
                     <td className="py-2 pr-3 font-mono">{i.table_name}</td>
                     <td className="py-2 pr-3">{i.total_pretty}</td>
@@ -156,8 +159,59 @@ export function VacuumHealthPanel() {
                     <td className="py-2 pr-3">
                       <Badge variant={statusVariant(i.status)}>{i.status}</Badge>
                     </td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => runVacuum(i.table_name, "standard")}
+                          title="VACUUM padrão"
+                        >
+                          {busy && running === `${i.table_name}:standard`
+                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                            : <Play className="h-3 w-3" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => runVacuum(i.table_name, "analyze")}
+                          title="VACUUM + ANALYZE"
+                        >
+                          A
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={busy}
+                              title="VACUUM FULL (bloqueia a tabela)"
+                            >
+                              <Zap className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Executar VACUUM FULL?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                VACUUM FULL em <b>{i.table_name}</b> reescreve toda a tabela e bloqueia leituras e escritas durante a operação. Use apenas fora do horário de pico.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => runVacuum(i.table_name, "full")}>
+                                Executar VACUUM FULL
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
