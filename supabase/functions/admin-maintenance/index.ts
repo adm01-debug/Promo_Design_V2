@@ -9,12 +9,13 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  action: z.enum(["stats", "cleanup", "history", "table_sizes", "growth", "capture_snapshot"]),
+  action: z.enum(["stats", "cleanup", "history", "table_sizes", "growth", "capture_snapshot", "size_history"]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
   status_audit_retention_days: z.number().int().min(30).max(3650).optional(),
   history_limit: z.number().int().min(1).max(100).optional(),
   growth_days_back: z.number().int().min(1).max(365).optional(),
+  size_history_days: z.number().int().min(1).max(365).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -105,6 +106,18 @@ serve(async (req) => {
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }
+    if (params.action === "size_history") {
+      const days = params.size_history_days ?? 90;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await admin
+        .from("table_size_snapshots")
+        .select("table_name,total_bytes,captured_at")
+        .gte("captured_at", since)
+        .order("captured_at", { ascending: true });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, history: data ?? [], days, requestId });
+    }
+
 
     // cleanup
     console.log(`[${requestId}] manual cleanup requested by ${userData.user.id}`);

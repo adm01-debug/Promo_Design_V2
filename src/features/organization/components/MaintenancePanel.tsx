@@ -12,6 +12,7 @@ import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock,
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import MiniSparkline from "@/components/MiniSparkline";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -112,6 +113,17 @@ export function MaintenancePanel() {
     queryFn: () => invokeMaintenance<{ ok: true; growth: GrowthRow[]; days_back: number }>({ action: "growth", growth_days_back: 7 }),
   });
 
+  const sizeHistoryQuery = useQuery({
+    queryKey: ["maintenance-size-history", 90],
+    staleTime: 5 * 60_000,
+    queryFn: () =>
+      invokeMaintenance<{
+        ok: true;
+        history: Array<{ table_name: string; total_bytes: number; captured_at: string }>;
+        days: number;
+      }>({ action: "size_history", size_history_days: 90 }),
+  });
+
   const cleanupMutation = useMutation({
     mutationFn: () => invokeMaintenance<{ ok: true; result: CleanupResult }>({ action: "cleanup" }),
     onSuccess: (data) => {
@@ -139,6 +151,7 @@ export function MaintenancePanel() {
       }
       qc.invalidateQueries({ queryKey: ["maintenance-growth", 7] });
       qc.invalidateQueries({ queryKey: ["maintenance-table-sizes"] });
+      qc.invalidateQueries({ queryKey: ["maintenance-size-history", 90] });
     },
     onError: (e: Error) => toast.error(`Falha no snapshot: ${e.message}`),
   });
@@ -148,6 +161,17 @@ export function MaintenancePanel() {
   const tables = sizesQuery.data?.tables ?? [];
   const growth = growthQuery.data?.growth ?? [];
   const maxBytes = tables.reduce((m, t) => Math.max(m, t.total_bytes), 0);
+
+  // Group size history by table into an ordered series of total_bytes values.
+  const sizeSeriesByTable = (() => {
+    const map = new Map<string, number[]>();
+    for (const row of sizeHistoryQuery.data?.history ?? []) {
+      const arr = map.get(row.table_name) ?? [];
+      arr.push(row.total_bytes);
+      map.set(row.table_name, arr);
+    }
+    return map;
+  })();
 
   const rows = [
     { icon: Database, label: "Logs de auditoria (>180 dias)", value: stats?.audit_log_older_180d ?? 0, total: stats?.audit_log_total ?? 0 },
@@ -316,9 +340,14 @@ export function MaintenancePanel() {
 
         {/* Uso em disco */}
         <div className="space-y-3 pt-4 border-t">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-muted-foreground" /> Uso em disco por tabela
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-muted-foreground" /> Uso em disco por tabela
+            </h3>
+            <span className="text-[10px] text-muted-foreground">
+              Sparkline: evolução em 90 dias
+            </span>
+          </div>
           {sizesQuery.isLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
               <Loader2 className="h-4 w-4 animate-spin" /> Medindo tabelas…
@@ -329,11 +358,19 @@ export function MaintenancePanel() {
             <div className="space-y-1.5">
               {tables.map((t) => {
                 const pct = maxBytes > 0 ? (t.total_bytes / maxBytes) * 100 : 0;
+                const series = sizeSeriesByTable.get(t.table) ?? [];
                 return (
                   <div key={t.table} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-muted-foreground">{t.table}</span>
-                      <span className="flex items-center gap-2">
+                    <div className="flex items-center justify-between text-xs gap-2">
+                      <span className="font-mono text-muted-foreground truncate">{t.table}</span>
+                      <span className="flex items-center gap-2 shrink-0">
+                        {series.length >= 2 ? (
+                          <MiniSparkline data={series} width={72} height={18} />
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/60" title="Aguardando snapshots (mínimo 2 pontos)">
+                            —
+                          </span>
+                        )}
                         <span className="text-[10px] text-muted-foreground">
                           ~{t.row_estimate.toLocaleString("pt-BR")} linhas
                         </span>
@@ -351,6 +388,7 @@ export function MaintenancePanel() {
             </div>
           )}
         </div>
+
 
         {/* Histórico de execuções */}
         <div className="space-y-3 pt-4 border-t">
