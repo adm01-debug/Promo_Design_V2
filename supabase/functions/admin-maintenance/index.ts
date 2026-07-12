@@ -12,7 +12,9 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
+    "duration_stats",
   ]),
+  duration_days_back: z.number().int().min(1).max(365).optional(),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
   status_audit_retention_days: z.number().int().min(30).max(3650).optional(),
