@@ -87,7 +87,7 @@ export function SnapshotHistoryDialog() {
       }),
   });
 
-  const rows = query.data?.rows ?? [];
+  const rows = useMemo<SnapshotRow[]>(() => query.data?.rows ?? [], [query.data?.rows]);
   const total = query.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const tables = query.data?.tables ?? [];
