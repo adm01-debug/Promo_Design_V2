@@ -160,6 +160,7 @@ export function TableBloatPanel() {
                     <th className="px-3 py-2 font-medium">Último autovacuum</th>
                     <th className="px-3 py-2 text-right font-medium">Tamanho</th>
                     <th className="px-3 py-2 text-right font-medium">Status</th>
+                    <th className="px-3 py-2 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
