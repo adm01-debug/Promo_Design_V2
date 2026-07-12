@@ -29,8 +29,13 @@ export function IndexBloatPanel() {
     queryKey: ["index-bloat-estimate"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      // @ts-expect-error function returned via RPC
-      const { data, error } = await supabase.rpc("get_index_bloat_estimate", { _min_bytes: 1048576, _limit: 30 });
+      const { data, error } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: IndexBloatRow[] | null; error: Error | null }>)(
+        "get_index_bloat_estimate",
+        { _min_bytes: 1048576, _limit: 30 },
+      );
       if (error) throw error;
       return (data as IndexBloatRow[]) ?? [];
     },
