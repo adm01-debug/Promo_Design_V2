@@ -32,7 +32,7 @@ const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
   { id: "color-burn", label: "Color Burn", desc: "Saturação intensa" },
 ];
 
-interface EditorRightPanelProps {
+export interface EditorRightPanelProps {
   productName: string;
   productSku: string;
   productImage: string;
