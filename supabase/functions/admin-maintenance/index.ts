@@ -385,6 +385,12 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "bloat_health") {
+      const { data, error } = await admin.rpc("get_table_bloat_health");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
