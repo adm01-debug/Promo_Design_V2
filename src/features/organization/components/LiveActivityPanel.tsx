@@ -1,8 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Activity, Lock, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Activity, Lock, AlertTriangle, Ban, Skull } from "lucide-react";
+import { toast } from "sonner";
 
 interface ActivityRow {
   pid: number;
@@ -46,6 +54,9 @@ function formatDuration(ms: number | null): string {
 }
 
 export function LiveActivityPanel() {
+  const qc = useQueryClient();
+  const [killing, setKilling] = useState<number | null>(null);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin-maintenance", "live_activity"],
     queryFn: async () => {
@@ -59,6 +70,27 @@ export function LiveActivityPanel() {
     refetchInterval: 5_000,
     staleTime: 3_000,
   });
+
+  const killBackend = async (pid: number, mode: "cancel" | "terminate") => {
+    setKilling(pid);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "kill_backend", kill_pid: pid, kill_mode: mode },
+      });
+      if (error) throw error;
+      const ok = (data as { result?: { ok?: boolean } })?.result?.ok;
+      if (ok) {
+        toast.success(mode === "cancel" ? `Cancelamento enviado ao PID ${pid}` : `PID ${pid} terminado`);
+      } else {
+        toast.warning(`Comando enviado ao PID ${pid}, mas o backend não confirmou`);
+      }
+      await qc.invalidateQueries({ queryKey: ["admin-maintenance", "live_activity"] });
+    } catch (err) {
+      toast.error(`Falha ao encerrar PID ${pid}: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setKilling(null);
+    }
+  };
 
   const activity = data?.result?.activity ?? [];
   const locks = data?.result?.locks ?? [];
@@ -126,11 +158,13 @@ export function LiveActivityPanel() {
                       <th className="py-2 pr-3 font-medium">Duração</th>
                       <th className="py-2 pr-3 font-medium">Wait</th>
                       <th className="py-2 pr-3 font-medium">Query</th>
+                      <th className="py-2 pr-3 font-medium text-right">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {activity.map((a) => {
                       const long = (a.duration_ms ?? 0) >= 60_000;
+                      const isKilling = killing === a.pid;
                       return (
                         <tr key={a.pid} className="border-b last:border-none align-top">
                           <td className="py-2 pr-3 font-mono">{a.pid}</td>
@@ -148,6 +182,46 @@ export function LiveActivityPanel() {
                           </td>
                           <td className="py-2 pr-3 font-mono text-[11px] max-w-md truncate">
                             {a.query}
+                          </td>
+                          <td className="py-2 pr-3 text-right whitespace-nowrap">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isKilling}
+                                onClick={() => killBackend(a.pid, "cancel")}
+                                title="Cancelar query (pg_cancel_backend)"
+                              >
+                                {isKilling ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3" />}
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    disabled={isKilling}
+                                    title="Terminar sessão (pg_terminate_backend)"
+                                  >
+                                    <Skull className="h-3 w-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Terminar sessão PID {a.pid}?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Isso encerra a conexão à força (rollback da transação atual).
+                                      Prefira <strong>Cancelar</strong> antes de terminar.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => killBackend(a.pid, "terminate")}>
+                                      Terminar sessão
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </td>
                         </tr>
                       );

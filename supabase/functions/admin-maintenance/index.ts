@@ -13,8 +13,10 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity",
+    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend",
   ]),
+  kill_pid: z.number().int().min(1).max(2147483647).optional(),
+  kill_mode: z.enum(["cancel", "terminate"]).optional(),
   slow_queries_limit: z.number().int().min(1).max(100).optional(),
   unused_indexes_min_kb: z.number().int().min(0).max(10485760).optional(),
   analyze_table: z.string().min(1).max(128).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
@@ -418,6 +420,20 @@ serve(async (req) => {
 
     if (params.action === "live_activity") {
       const { data, error } = await admin.rpc("get_live_activity");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
+    if (params.action === "kill_backend") {
+      if (!params.kill_pid) {
+        return json({ error: "kill_pid é obrigatório", requestId }, 400);
+      }
+      const mode = params.kill_mode ?? "cancel";
+      console.log(`[${requestId}] kill_backend pid=${params.kill_pid} mode=${mode} by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("kill_backend", {
+        _pid: params.kill_pid,
+        _mode: mode,
+      });
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }
