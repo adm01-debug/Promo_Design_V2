@@ -13,7 +13,7 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health", "manual_analyze",
+    "unused_indexes", "bloat_health", "manual_analyze", "top_writers",
   ]),
   slow_queries_limit: z.number().int().min(1).max(100).optional(),
   unused_indexes_min_kb: z.number().int().min(0).max(10485760).optional(),
@@ -403,6 +403,13 @@ serve(async (req) => {
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }
+
+    if (params.action === "top_writers") {
+      const { data, error } = await admin.rpc("get_top_writers");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
