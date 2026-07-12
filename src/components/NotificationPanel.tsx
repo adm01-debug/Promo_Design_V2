@@ -34,6 +34,12 @@ function getEventLabel(n: Notification): string {
   if (n.eventType === "os_created") {
     return `Nova OS criada`;
   }
+  if (n.eventType === "slo_regression") {
+    return `Latência acima do baseline em ${n.newStatus}`;
+  }
+  if (n.eventType === "maintenance_failure" || n.eventType === "maintenance_failure_critical") {
+    return n.newStatus || "Falha na manutenção";
+  }
   const oldLabel = n.oldStatus ? (STATUS_CONFIG[n.oldStatus as OsStatus]?.label ?? n.oldStatus) : "–";
   const newLabel = STATUS_CONFIG[n.newStatus as OsStatus]?.label ?? n.newStatus;
   return `${oldLabel} → ${newLabel}`;
