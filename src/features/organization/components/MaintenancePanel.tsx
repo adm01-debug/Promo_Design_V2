@@ -526,6 +526,9 @@ export function MaintenancePanel() {
         {/* Atividade em tempo real: queries, locks e conexões */}
         <LiveActivityPanel />
 
+        {/* Transações longas com opção de encerrar backend */}
+        <LongRunningTxnsPanel />
+
         {/* Status de replicação e WAL */}
         <ReplicationStatusPanel />
 
