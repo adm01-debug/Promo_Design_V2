@@ -9,10 +9,11 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  action: z.enum(["stats", "cleanup"]),
+  action: z.enum(["stats", "cleanup", "history", "table_sizes"]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
   status_audit_retention_days: z.number().int().min(30).max(3650).optional(),
+  history_limit: z.number().int().min(1).max(100).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -43,7 +44,6 @@ serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) return json({ error: "Sessão inválida", requestId }, 401);
 
-    // Autorização: usuário precisa ser owner ou admin em pelo menos 1 organização
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: memberships, error: mErr } = await admin
       .from("organization_members")
@@ -69,24 +69,37 @@ serve(async (req) => {
 
     if (params.action === "stats") {
       const { data, error } = await admin.rpc("get_maintenance_stats");
-      if (error) {
-        console.error(`[${requestId}] stats error:`, error);
-        return json({ error: error.message, requestId }, 500);
-      }
+      if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, stats: data, requestId });
     }
 
-    // action === "cleanup"
+    if (params.action === "history") {
+      const limit = params.history_limit ?? 20;
+      const { data, error } = await admin
+        .from("maintenance_runs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, history: data ?? [], requestId });
+    }
+
+    if (params.action === "table_sizes") {
+      const { data, error } = await admin.rpc("get_table_sizes");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, tables: data, requestId });
+    }
+
+    // cleanup
     console.log(`[${requestId}] manual cleanup requested by ${userData.user.id}`);
     const { data, error } = await admin.rpc("cleanup_expired_data", {
       _audit_retention_days: params.audit_retention_days ?? 180,
       _notifications_read_retention_days: params.notifications_read_retention_days ?? 90,
       _status_audit_retention_days: params.status_audit_retention_days ?? 365,
+      _source: "manual",
+      _triggered_by: userData.user.id,
     });
-    if (error) {
-      console.error(`[${requestId}] cleanup error:`, error);
-      return json({ error: error.message, requestId }, 500);
-    }
+    if (error) return json({ error: error.message, requestId }, 500);
     return json({ ok: true, result: data, requestId });
   } catch (e) {
     console.error(`[${requestId}] fatal:`, e);
