@@ -185,6 +185,23 @@ export function TableBloatPanel() {
                           {statusLabel[row.status]}
                         </Badge>
                       </td>
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 px-2 text-[11px]"
+                          disabled={analyzing === row.table_name}
+                          onClick={() => runAnalyze(row.table_name)}
+                          title="Executa ANALYZE nesta tabela (atualiza estatísticas do planner)"
+                        >
+                          {analyzing === row.table_name ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                          Analisar
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
