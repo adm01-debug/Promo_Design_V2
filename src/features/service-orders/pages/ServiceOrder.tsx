@@ -92,6 +92,8 @@ const ServiceOrder = () => {
       
       window.history.replaceState({}, document.title);
     }
+    // `form` é apenas mesclado; não deve triggerar re-run do import.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, editId]);
 
 
