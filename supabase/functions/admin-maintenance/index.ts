@@ -12,7 +12,7 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats",
+    "duration_stats", "cleanup_per_org",
   ]),
   duration_days_back: z.number().int().min(1).max(365).optional(),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
@@ -21,6 +21,8 @@ const BodySchema = z.object({
   history_limit: z.number().int().min(1).max(100).optional(),
   growth_days_back: z.number().int().min(1).max(365).optional(),
   size_history_days: z.number().int().min(1).max(365).optional(),
+  // For per-org cleanup
+  organization_id: z.string().uuid().optional(),
   // Filters for snapshots_list
   snapshots_table_name: z.string().min(1).max(128).optional(),
   snapshots_from: z.string().datetime().optional(),
