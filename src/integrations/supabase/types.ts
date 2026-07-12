@@ -1281,6 +1281,7 @@ export type Database = {
       get_slow_queries: { Args: { _limit?: number }; Returns: Json }
       get_table_growth: { Args: { _days_back?: number }; Returns: Json }
       get_table_sizes: { Args: never; Returns: Json }
+      get_unused_indexes: { Args: { _min_size_kb?: number }; Returns: Json }
       has_any_role: {
         Args: {
           _org_id: string
