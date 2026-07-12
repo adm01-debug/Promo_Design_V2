@@ -504,6 +504,10 @@ export function MaintenancePanel() {
         {/* Índices ociosos (candidatos a remoção) */}
         <UnusedIndexesPanel />
 
+        {/* Saúde de vacuum & tuplas mortas */}
+        <TableBloatPanel />
+
+
 
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
