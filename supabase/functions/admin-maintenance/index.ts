@@ -360,6 +360,14 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "db_health") {
+      const { data, error } = await admin.rpc("get_db_health");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, health: data, requestId });
+    }
+
+
+
 
     // cleanup
     console.log(`[${requestId}] manual cleanup requested by ${userData.user.id}`);
