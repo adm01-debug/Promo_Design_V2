@@ -11,7 +11,6 @@ vi.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: "user-1", email: "test@test.com" }, session: null, loading: false }),
 }));
 
-// eslint-disable-next-line import/first
 import EditorRightPanel, { type EditorRightPanelProps } from "./EditorRightPanel";
 
 // Mock ResizeObserver
