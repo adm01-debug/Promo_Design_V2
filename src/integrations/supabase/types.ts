@@ -1313,6 +1313,7 @@ export type Database = {
       run_manual_analyze: { Args: { _table_name: string }; Returns: Json }
       run_scheduled_cleanup: { Args: never; Returns: Json }
       run_scheduled_cleanup_per_org: { Args: never; Returns: Json }
+      run_scheduled_lock_check: { Args: never; Returns: Json }
       search_assets_ranked:
         | {
             Args: {
