@@ -6,7 +6,15 @@ import { HeartPulse, Loader2, RefreshCcw } from "lucide-react";
 
 interface DbHealth {
   db_size_bytes: number;
-  connections: { total: number; active: number; idle: number };
+  connections: {
+    total: number;
+    active: number;
+    idle: number;
+    idle_in_transaction?: number;
+    max?: number;
+    saturation_pct?: number;
+  };
+  longest_txn_ms?: number;
   cache_hit_ratio: number;
   deadlocks: number;
   xact_rollback: number;
