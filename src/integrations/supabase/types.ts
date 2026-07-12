@@ -1241,6 +1241,10 @@ export type Database = {
             Returns: boolean
           }
       check_lock_alerts: { Args: { _threshold_ms?: number }; Returns: Json }
+      check_replication_slot_alerts: {
+        Args: { _max_retained_bytes?: number }
+        Returns: Json
+      }
       check_slo_regressions: {
         Args: {
           _baseline_days?: number
@@ -1320,6 +1324,7 @@ export type Database = {
       run_scheduled_cleanup: { Args: never; Returns: Json }
       run_scheduled_cleanup_per_org: { Args: never; Returns: Json }
       run_scheduled_lock_check: { Args: never; Returns: Json }
+      run_scheduled_replication_slot_check: { Args: never; Returns: Json }
       run_scheduled_slo_check: { Args: never; Returns: Json }
       search_assets_ranked:
         | {
