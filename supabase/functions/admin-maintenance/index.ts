@@ -12,8 +12,11 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats", "cleanup_per_org",
+    "duration_stats", "cleanup_per_org", "slo_baseline",
   ]),
+  slo_baseline_days: z.number().int().min(14).max(365).optional(),
+  slo_recent_days: z.number().int().min(1).max(30).optional(),
+  slo_threshold: z.number().min(1.1).max(10).optional(),
   duration_days_back: z.number().int().min(1).max(365).optional(),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
@@ -265,6 +268,71 @@ serve(async (req) => {
         };
       }
       return json({ ok: true, days_back: daysBack, stats, timeline, requestId });
+    }
+
+    if (params.action === "slo_baseline") {
+      const baselineDays = params.slo_baseline_days ?? 60;
+      const recentDays = params.slo_recent_days ?? 7;
+      const threshold = params.slo_threshold ?? 2;
+      const baselineSince = new Date(Date.now() - baselineDays * 86400_000).toISOString();
+      const recentSince = new Date(Date.now() - recentDays * 86400_000).toISOString();
+
+      const { data: runs, error: bErr } = await admin
+        .from("maintenance_runs")
+        .select("source,duration_ms,created_at")
+        .eq("status", "success")
+        .not("duration_ms", "is", null)
+        .gte("created_at", baselineSince);
+      if (bErr) return json({ error: bErr.message, requestId }, 500);
+
+      const p95 = (arr: number[]): number | null => {
+        if (arr.length === 0) return null;
+        const s = [...arr].sort((a, b) => a - b);
+        return s[Math.min(s.length - 1, Math.floor(0.95 * s.length))];
+      };
+
+      const baselineBySource = new Map<string, number[]>();
+      const recentBySource = new Map<string, number[]>();
+      for (const r of runs ?? []) {
+        if (r.duration_ms == null) continue;
+        (baselineBySource.get(r.source) ?? baselineBySource.set(r.source, []).get(r.source)!).push(r.duration_ms);
+        if (r.created_at >= recentSince) {
+          (recentBySource.get(r.source) ?? recentBySource.set(r.source, []).get(r.source)!).push(r.duration_ms);
+        }
+      }
+
+      const results = Array.from(baselineBySource.keys()).map((source) => {
+        const baseArr = baselineBySource.get(source) ?? [];
+        const recentArr = recentBySource.get(source) ?? [];
+        const baselineP95 = p95(baseArr);
+        const recentP95 = p95(recentArr);
+        const ratio =
+          baselineP95 && recentP95 && baselineP95 > 0 ? recentP95 / baselineP95 : null;
+        let status: "ok" | "warning" | "critical" | "insufficient_data" = "insufficient_data";
+        if (baseArr.length < 5 || recentArr.length < 3) status = "insufficient_data";
+        else if (ratio == null) status = "insufficient_data";
+        else if (ratio >= threshold) status = "critical";
+        else if (ratio >= threshold * 0.75) status = "warning";
+        else status = "ok";
+        return {
+          source,
+          baseline_p95_ms: baselineP95,
+          recent_p95_ms: recentP95,
+          baseline_samples: baseArr.length,
+          recent_samples: recentArr.length,
+          ratio,
+          status,
+        };
+      });
+
+      return json({
+        ok: true,
+        baseline_days: baselineDays,
+        recent_days: recentDays,
+        threshold,
+        sources: results,
+        requestId,
+      });
     }
 
     if (params.action === "cleanup_per_org") {

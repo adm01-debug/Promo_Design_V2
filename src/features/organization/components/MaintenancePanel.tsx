@@ -19,6 +19,7 @@ import { SnapshotHistoryDialog } from "./SnapshotHistoryDialog";
 import { MaintenanceFailuresPanel } from "./MaintenanceFailuresPanel";
 import { MaintenanceDurationPanel } from "./MaintenanceDurationPanel";
 import { RetentionSettingsPanel } from "./RetentionSettingsPanel";
+import { SloBaselinePanel } from "./SloBaselinePanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -471,6 +472,9 @@ export function MaintenancePanel() {
 
         {/* Latência (percentis) */}
         <MaintenanceDurationPanel />
+
+        {/* SLO — regressão de p95 */}
+        <SloBaselinePanel />
 
         {/* Falhas & diagnóstico */}
         <MaintenanceFailuresPanel />
