@@ -54,6 +54,9 @@ function formatDuration(ms: number | null): string {
 }
 
 export function LiveActivityPanel() {
+  const qc = useQueryClient();
+  const [killing, setKilling] = useState<number | null>(null);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["admin-maintenance", "live_activity"],
     queryFn: async () => {
@@ -67,6 +70,27 @@ export function LiveActivityPanel() {
     refetchInterval: 5_000,
     staleTime: 3_000,
   });
+
+  const killBackend = async (pid: number, mode: "cancel" | "terminate") => {
+    setKilling(pid);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "kill_backend", kill_pid: pid, kill_mode: mode },
+      });
+      if (error) throw error;
+      const ok = (data as { result?: { ok?: boolean } })?.result?.ok;
+      if (ok) {
+        toast.success(mode === "cancel" ? `Cancelamento enviado ao PID ${pid}` : `PID ${pid} terminado`);
+      } else {
+        toast.warning(`Comando enviado ao PID ${pid}, mas o backend não confirmou`);
+      }
+      await qc.invalidateQueries({ queryKey: ["admin-maintenance", "live_activity"] });
+    } catch (err) {
+      toast.error(`Falha ao encerrar PID ${pid}: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setKilling(null);
+    }
+  };
 
   const activity = data?.result?.activity ?? [];
   const locks = data?.result?.locks ?? [];
