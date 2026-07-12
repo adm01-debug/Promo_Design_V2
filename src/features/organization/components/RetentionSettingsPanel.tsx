@@ -5,7 +5,12 @@ import { useOrganizations } from "@/hooks/use-organization";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, Settings2, RotateCcw } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Save, Settings2, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface RetentionRow {
