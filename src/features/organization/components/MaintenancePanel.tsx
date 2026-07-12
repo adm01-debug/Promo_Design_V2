@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MiniSparkline from "@/components/MiniSparkline";
+import { SnapshotHistoryDialog } from "./SnapshotHistoryDialog";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -281,21 +282,24 @@ export function MaintenancePanel() {
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-muted-foreground" /> Crescimento (últimos 7 dias)
             </h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => snapshotMutation.mutate()}
-              disabled={snapshotMutation.isPending}
-              className="gap-1.5 h-7 text-xs"
-              title="Captura um snapshot manual do tamanho atual"
-            >
-              {snapshotMutation.isPending ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Camera className="h-3 w-3" />
-              )}
-              Capturar snapshot
-            </Button>
+            <div className="flex items-center gap-2">
+              <SnapshotHistoryDialog />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => snapshotMutation.mutate()}
+                disabled={snapshotMutation.isPending}
+                className="gap-1.5 h-7 text-xs"
+                title="Captura um snapshot manual do tamanho atual"
+              >
+                {snapshotMutation.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Camera className="h-3 w-3" />
+                )}
+                Capturar snapshot
+              </Button>
+            </div>
           </div>
           {growthQuery.isLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">

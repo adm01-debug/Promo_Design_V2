@@ -9,13 +9,22 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  action: z.enum(["stats", "cleanup", "history", "table_sizes", "growth", "capture_snapshot", "size_history"]),
+  action: z.enum([
+    "stats", "cleanup", "history", "table_sizes", "growth",
+    "capture_snapshot", "size_history", "snapshots_list",
+  ]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
   status_audit_retention_days: z.number().int().min(30).max(3650).optional(),
   history_limit: z.number().int().min(1).max(100).optional(),
   growth_days_back: z.number().int().min(1).max(365).optional(),
   size_history_days: z.number().int().min(1).max(365).optional(),
+  // Filters for snapshots_list
+  snapshots_table_name: z.string().min(1).max(128).optional(),
+  snapshots_from: z.string().datetime().optional(),
+  snapshots_to: z.string().datetime().optional(),
+  snapshots_page: z.number().int().min(1).max(10_000).optional(),
+  snapshots_page_size: z.number().int().min(5).max(200).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -117,6 +126,46 @@ serve(async (req) => {
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, history: data ?? [], days, requestId });
     }
+
+    if (params.action === "snapshots_list") {
+      const page = params.snapshots_page ?? 1;
+      const pageSize = params.snapshots_page_size ?? 25;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      let query = admin
+        .from("table_size_snapshots")
+        .select("id,table_name,total_bytes,table_bytes,index_bytes,row_estimate,captured_at", { count: "exact" })
+        .order("captured_at", { ascending: false })
+        .range(from, to);
+
+      if (params.snapshots_table_name) query = query.eq("table_name", params.snapshots_table_name);
+      if (params.snapshots_from) query = query.gte("captured_at", params.snapshots_from);
+      if (params.snapshots_to) query = query.lte("captured_at", params.snapshots_to);
+
+      const { data, count, error } = await query;
+      if (error) return json({ error: error.message, requestId }, 500);
+
+      // Distinct table names for filter dropdown (small dataset, fetch top 200)
+      const { data: distinctRows } = await admin
+        .from("table_size_snapshots")
+        .select("table_name")
+        .order("table_name", { ascending: true })
+        .limit(500);
+      const tables = Array.from(new Set((distinctRows ?? []).map((r) => r.table_name)));
+
+      return json({
+        ok: true,
+        rows: data ?? [],
+        total: count ?? 0,
+        page,
+        page_size: pageSize,
+        tables,
+        requestId,
+      });
+    }
+
+
 
 
     // cleanup
