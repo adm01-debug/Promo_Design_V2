@@ -30,6 +30,7 @@ import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
 import { TableBloatPanel } from "./TableBloatPanel";
 import { TopWritersPanel } from "./TopWritersPanel";
 import { CacheHitPanel } from "./CacheHitPanel";
+import { LiveActivityPanel } from "./LiveActivityPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -514,6 +515,9 @@ export function MaintenancePanel() {
 
         {/* Cache hit ratio e uso de índices por tabela */}
         <CacheHitPanel />
+
+        {/* Atividade em tempo real: queries, locks e conexões */}
+        <LiveActivityPanel />
 
 
 

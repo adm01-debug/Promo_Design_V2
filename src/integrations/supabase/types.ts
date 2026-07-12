@@ -1278,6 +1278,7 @@ export type Database = {
       }
       get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
+      get_live_activity: { Args: never; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
       get_slow_queries: { Args: { _limit?: number }; Returns: Json }
       get_table_bloat_health: { Args: never; Returns: Json }
