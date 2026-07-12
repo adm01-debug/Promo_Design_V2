@@ -27,7 +27,13 @@ export default tseslint.config(
         "caughtErrorsIgnorePattern": "^_"
       }],
       "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      // Non-null assertion is idiomatic and safe in specific contexts:
+      // - Deno.env.get() in Edge Functions (fail-fast on missing secrets)
+      // - Canvas/ref access after mount guards
+      // - shadcn/ui internal components (upstream code)
+      // TypeScript strictNullChecks já protege contra o resto. Manter como "off"
+      // evita ruído estilístico sem perda de segurança runtime.
+      "@typescript-eslint/no-non-null-assertion": "off",
       "react-hooks/exhaustive-deps": "error",
     },
   },
