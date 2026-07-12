@@ -455,6 +455,12 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "vacuum_health") {
+      const { data, error } = await admin.rpc("get_vacuum_health");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
