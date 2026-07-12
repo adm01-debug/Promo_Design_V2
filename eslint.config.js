@@ -20,7 +20,10 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // react-refresh só afeta velocidade de HMR em dev, não runtime.
+      // shadcn/ui e contextos co-exportam variants/hooks por design — a regra
+      // gera falso-positivo. Mantida como "off" no lint estrito.
+      "react-refresh/only-export-components": "off",
       "@typescript-eslint/no-unused-vars": ["error", { 
         "argsIgnorePattern": "^_",
         "varsIgnorePattern": "^_",
