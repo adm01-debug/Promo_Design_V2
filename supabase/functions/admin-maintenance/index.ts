@@ -12,7 +12,7 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats", "cleanup_per_org", "slo_baseline",
+    "duration_stats", "cleanup_per_org", "slo_baseline", "db_health",
   ]),
   slo_baseline_days: z.number().int().min(14).max(365).optional(),
   slo_recent_days: z.number().int().min(1).max(30).optional(),
@@ -359,6 +359,14 @@ serve(async (req) => {
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }
+
+    if (params.action === "db_health") {
+      const { data, error } = await admin.rpc("get_db_health");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, health: data, requestId });
+    }
+
+
 
 
     // cleanup
