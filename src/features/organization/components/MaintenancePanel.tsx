@@ -251,6 +251,69 @@ export function MaintenancePanel() {
           </AlertDialog>
         </div>
 
+        {/* Crescimento semanal */}
+        <div className="space-y-3 pt-4 border-t">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" /> Crescimento (últimos 7 dias)
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => snapshotMutation.mutate()}
+              disabled={snapshotMutation.isPending}
+              className="gap-1.5 h-7 text-xs"
+              title="Captura um snapshot manual do tamanho atual"
+            >
+              {snapshotMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Camera className="h-3 w-3" />
+              )}
+              Capturar snapshot
+            </Button>
+          </div>
+          {growthQuery.isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Calculando delta…
+            </div>
+          ) : growth.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Nenhum snapshot histórico. Clique em "Capturar snapshot" para iniciar a coleta de métricas.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {growth.map((g) => {
+                const hasBaseline = g.delta_bytes !== null && g.previous_bytes !== null;
+                const positive = (g.delta_bytes ?? 0) > 0;
+                const negative = (g.delta_bytes ?? 0) < 0;
+                const Icon = !hasBaseline ? Minus : positive ? TrendingUp : negative ? TrendingDown : Minus;
+                const color = !hasBaseline
+                  ? "text-muted-foreground"
+                  : positive
+                    ? "text-amber-500"
+                    : negative
+                      ? "text-emerald-500"
+                      : "text-muted-foreground";
+                return (
+                  <div key={g.table} className="flex items-center justify-between p-2 rounded-md border text-xs">
+                    <span className="font-mono text-muted-foreground truncate">{g.table}</span>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-muted-foreground">{formatBytes(g.current_bytes)}</span>
+                      <Icon className={`h-3 w-3 ${color}`} />
+                      <span className={`${color} min-w-[70px] text-right`}>
+                        {!hasBaseline
+                          ? "—"
+                          : `${positive ? "+" : ""}${formatBytes(Math.abs(g.delta_bytes ?? 0))}${g.delta_pct !== null ? ` (${g.delta_pct > 0 ? "+" : ""}${g.delta_pct}%)` : ""}`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Uso em disco */}
         <div className="space-y-3 pt-4 border-t">
           <h3 className="text-sm font-semibold flex items-center gap-2">
