@@ -1113,6 +1113,39 @@ export type Database = {
           },
         ]
       }
+      table_size_snapshots: {
+        Row: {
+          captured_at: string
+          created_at: string
+          id: string
+          index_bytes: number
+          row_estimate: number
+          table_bytes: number
+          table_name: string
+          total_bytes: number
+        }
+        Insert: {
+          captured_at?: string
+          created_at?: string
+          id?: string
+          index_bytes: number
+          row_estimate: number
+          table_bytes: number
+          table_name: string
+          total_bytes: number
+        }
+        Update: {
+          captured_at?: string
+          created_at?: string
+          id?: string
+          index_bytes?: number
+          row_estimate?: number
+          table_bytes?: number
+          table_name?: string
+          total_bytes?: number
+        }
+        Relationships: []
+      }
       videos: {
         Row: {
           aspect_ratio: string
@@ -1191,6 +1224,7 @@ export type Database = {
     }
     Functions: {
       accept_organization_invite: { Args: { _token: string }; Returns: Json }
+      capture_table_size_snapshot: { Args: never; Returns: Json }
       check_ai_quota:
         | { Args: { _org_id: string }; Returns: boolean }
         | {
@@ -1222,6 +1256,7 @@ export type Database = {
         Returns: Json
       }
       get_maintenance_stats: { Args: never; Returns: Json }
+      get_table_growth: { Args: { _days_back?: number }; Returns: Json }
       get_table_sizes: { Args: never; Returns: Json }
       has_any_role: {
         Args: {

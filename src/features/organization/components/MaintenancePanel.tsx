@@ -8,7 +8,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown, Camera, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -49,6 +49,19 @@ interface TableSize {
   table_bytes: number;
   index_bytes: number;
   row_estimate: number;
+}
+
+interface GrowthRow {
+  table: string;
+  current_bytes: number;
+  previous_bytes: number | null;
+  delta_bytes: number | null;
+  delta_pct: number | null;
+  current_rows: number;
+  previous_rows: number | null;
+  delta_rows: number | null;
+  latest_at: string;
+  previous_at: string | null;
 }
 
 async function invokeMaintenance<T>(body: Record<string, unknown>): Promise<T> {
@@ -93,6 +106,12 @@ export function MaintenancePanel() {
     queryFn: () => invokeMaintenance<{ ok: true; tables: TableSize[] }>({ action: "table_sizes" }),
   });
 
+  const growthQuery = useQuery({
+    queryKey: ["maintenance-growth", 7],
+    staleTime: 5 * 60_000,
+    queryFn: () => invokeMaintenance<{ ok: true; growth: GrowthRow[]; days_back: number }>({ action: "growth", growth_days_back: 7 }),
+  });
+
   const cleanupMutation = useMutation({
     mutationFn: () => invokeMaintenance<{ ok: true; result: CleanupResult }>({ action: "cleanup" }),
     onSuccess: (data) => {
@@ -110,9 +129,24 @@ export function MaintenancePanel() {
     onError: (e: Error) => toast.error(`Falha na limpeza: ${e.message}`),
   });
 
+  const snapshotMutation = useMutation({
+    mutationFn: () => invokeMaintenance<{ ok: true; result: { inserted?: number; skipped?: boolean } }>({ action: "capture_snapshot" }),
+    onSuccess: (data) => {
+      if (data.result?.skipped) {
+        toast.info("Snapshot em andamento por outro processo");
+      } else {
+        toast.success(`Snapshot capturado (${data.result?.inserted ?? 0} tabelas)`);
+      }
+      qc.invalidateQueries({ queryKey: ["maintenance-growth", 7] });
+      qc.invalidateQueries({ queryKey: ["maintenance-table-sizes"] });
+    },
+    onError: (e: Error) => toast.error(`Falha no snapshot: ${e.message}`),
+  });
+
   const stats = statsQuery.data?.stats;
   const history = historyQuery.data?.history ?? [];
   const tables = sizesQuery.data?.tables ?? [];
+  const growth = growthQuery.data?.growth ?? [];
   const maxBytes = tables.reduce((m, t) => Math.max(m, t.total_bytes), 0);
 
   const rows = [
@@ -130,9 +164,10 @@ export function MaintenancePanel() {
     statsQuery.refetch();
     historyQuery.refetch();
     sizesQuery.refetch();
+    growthQuery.refetch();
   };
 
-  const isFetchingAny = statsQuery.isFetching || historyQuery.isFetching || sizesQuery.isFetching;
+  const isFetchingAny = statsQuery.isFetching || historyQuery.isFetching || sizesQuery.isFetching || growthQuery.isFetching;
 
   return (
     <Card>
@@ -214,6 +249,69 @@ export function MaintenancePanel() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+
+        {/* Crescimento semanal */}
+        <div className="space-y-3 pt-4 border-t">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" /> Crescimento (últimos 7 dias)
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => snapshotMutation.mutate()}
+              disabled={snapshotMutation.isPending}
+              className="gap-1.5 h-7 text-xs"
+              title="Captura um snapshot manual do tamanho atual"
+            >
+              {snapshotMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Camera className="h-3 w-3" />
+              )}
+              Capturar snapshot
+            </Button>
+          </div>
+          {growthQuery.isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Calculando delta…
+            </div>
+          ) : growth.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Nenhum snapshot histórico. Clique em "Capturar snapshot" para iniciar a coleta de métricas.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {growth.map((g) => {
+                const hasBaseline = g.delta_bytes !== null && g.previous_bytes !== null;
+                const positive = (g.delta_bytes ?? 0) > 0;
+                const negative = (g.delta_bytes ?? 0) < 0;
+                const Icon = !hasBaseline ? Minus : positive ? TrendingUp : negative ? TrendingDown : Minus;
+                const color = !hasBaseline
+                  ? "text-muted-foreground"
+                  : positive
+                    ? "text-amber-500"
+                    : negative
+                      ? "text-emerald-500"
+                      : "text-muted-foreground";
+                return (
+                  <div key={g.table} className="flex items-center justify-between p-2 rounded-md border text-xs">
+                    <span className="font-mono text-muted-foreground truncate">{g.table}</span>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-muted-foreground">{formatBytes(g.current_bytes)}</span>
+                      <Icon className={`h-3 w-3 ${color}`} />
+                      <span className={`${color} min-w-[70px] text-right`}>
+                        {!hasBaseline
+                          ? "—"
+                          : `${positive ? "+" : ""}${formatBytes(Math.abs(g.delta_bytes ?? 0))}${g.delta_pct !== null ? ` (${g.delta_pct > 0 ? "+" : ""}${g.delta_pct}%)` : ""}`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Uso em disco */}

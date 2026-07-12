@@ -9,11 +9,12 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  action: z.enum(["stats", "cleanup", "history", "table_sizes"]),
+  action: z.enum(["stats", "cleanup", "history", "table_sizes", "growth", "capture_snapshot"]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
   status_audit_retention_days: z.number().int().min(30).max(3650).optional(),
   history_limit: z.number().int().min(1).max(100).optional(),
+  growth_days_back: z.number().int().min(1).max(365).optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -88,6 +89,21 @@ serve(async (req) => {
       const { data, error } = await admin.rpc("get_table_sizes");
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, tables: data, requestId });
+    }
+
+    if (params.action === "growth") {
+      const { data, error } = await admin.rpc("get_table_growth", {
+        _days_back: params.growth_days_back ?? 7,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, growth: data, days_back: params.growth_days_back ?? 7, requestId });
+    }
+
+    if (params.action === "capture_snapshot") {
+      console.log(`[${requestId}] snapshot capture requested by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("capture_table_size_snapshot");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
     }
 
     // cleanup
