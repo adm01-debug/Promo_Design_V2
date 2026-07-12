@@ -340,9 +340,14 @@ export function MaintenancePanel() {
 
         {/* Uso em disco */}
         <div className="space-y-3 pt-4 border-t">
-          <h3 className="text-sm font-semibold flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-muted-foreground" /> Uso em disco por tabela
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-muted-foreground" /> Uso em disco por tabela
+            </h3>
+            <span className="text-[10px] text-muted-foreground">
+              Sparkline: evolução em 90 dias
+            </span>
+          </div>
           {sizesQuery.isLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
               <Loader2 className="h-4 w-4 animate-spin" /> Medindo tabelas…
