@@ -16,7 +16,7 @@ const MagicUpPrompts = () => {
     return matchCategory && matchSearch;
   });
 
-  const usePrompt = (prompt: string) => {
+  const applyPrompt = (prompt: string) => {
     navigate("/magicup/generate", { state: { prompt } });
   };
 
@@ -90,7 +90,7 @@ const MagicUpPrompts = () => {
               <Button
                 size="sm"
                 className="h-7 text-xs gap-1 bg-gradient-primary text-primary-foreground"
-                onClick={() => usePrompt(p.prompt)}
+                onClick={() => applyPrompt(p.prompt)}
               >
                 <Wand2 className="w-3 h-3" /> Usar
               </Button>
