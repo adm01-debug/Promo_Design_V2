@@ -168,6 +168,60 @@ serve(async (req) => {
       });
     }
 
+    if (params.action === "failures_summary") {
+      const daysBack = params.failures_days_back ?? 30;
+      const limit = params.failures_limit ?? 10;
+      const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
+
+      // Recent failure/skipped/partial runs
+      const { data: failures, error: failuresErr } = await admin
+        .from("maintenance_runs")
+        .select("id,source,status,duration_ms,error_message,started_at,finished_at,created_at")
+        .in("status", ["error", "skipped", "partial"])
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (failuresErr) return json({ error: failuresErr.message, requestId }, 500);
+
+      // Aggregate counts by status × source in the window
+      const { data: allRuns, error: allErr } = await admin
+        .from("maintenance_runs")
+        .select("source,status")
+        .gte("created_at", since);
+      if (allErr) return json({ error: allErr.message, requestId }, 500);
+
+      const totals: Record<string, number> = { success: 0, error: 0, skipped: 0, partial: 0 };
+      const bySource: Record<string, Record<string, number>> = {};
+      for (const row of allRuns ?? []) {
+        totals[row.status] = (totals[row.status] ?? 0) + 1;
+        bySource[row.source] ??= { success: 0, error: 0, skipped: 0, partial: 0 };
+        bySource[row.source][row.status] = (bySource[row.source][row.status] ?? 0) + 1;
+      }
+
+      // Last success timestamps per source (health signal)
+      const { data: lastOk } = await admin
+        .from("maintenance_runs")
+        .select("source,created_at")
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const lastSuccessBySource: Record<string, string> = {};
+      for (const row of lastOk ?? []) {
+        if (!lastSuccessBySource[row.source]) lastSuccessBySource[row.source] = row.created_at;
+      }
+
+      return json({
+        ok: true,
+        days_back: daysBack,
+        totals,
+        by_source: bySource,
+        failures: failures ?? [],
+        last_success_by_source: lastSuccessBySource,
+        requestId,
+      });
+    }
+
+
 
 
 
