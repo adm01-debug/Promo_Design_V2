@@ -32,6 +32,7 @@ import { TopWritersPanel } from "./TopWritersPanel";
 import { CacheHitPanel } from "./CacheHitPanel";
 import { LiveActivityPanel } from "./LiveActivityPanel";
 import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
+import { VacuumHealthPanel } from "./VacuumHealthPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -522,6 +523,9 @@ export function MaintenancePanel() {
 
         {/* Status de replicação e WAL */}
         <ReplicationStatusPanel />
+
+        {/* Saúde de vacuum/analyze por tabela */}
+        <VacuumHealthPanel />
 
 
 

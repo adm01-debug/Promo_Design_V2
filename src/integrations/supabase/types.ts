@@ -1288,6 +1288,7 @@ export type Database = {
       get_table_sizes: { Args: never; Returns: Json }
       get_top_writers: { Args: never; Returns: Json }
       get_unused_indexes: { Args: { _min_size_kb?: number }; Returns: Json }
+      get_vacuum_health: { Args: never; Returns: Json }
       has_any_role: {
         Args: {
           _org_id: string
