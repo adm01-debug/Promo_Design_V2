@@ -9,11 +9,12 @@ const corsHeaders = {
 };
 
 const BodySchema = z.object({
-  action: z.enum(["stats", "cleanup", "history", "table_sizes"]),
+  action: z.enum(["stats", "cleanup", "history", "table_sizes", "growth", "capture_snapshot"]),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
   notifications_read_retention_days: z.number().int().min(7).max(3650).optional(),
   status_audit_retention_days: z.number().int().min(30).max(3650).optional(),
   history_limit: z.number().int().min(1).max(100).optional(),
+  growth_days_back: z.number().int().min(1).max(365).optional(),
 });
 
 function json(body: unknown, status = 200) {
