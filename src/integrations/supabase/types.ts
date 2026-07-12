@@ -1291,6 +1291,22 @@ export type Database = {
       }
       get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
+      get_index_bloat_estimate: {
+        Args: { _limit?: number; _min_bytes?: number }
+        Returns: {
+          estimated_bloat_bytes: number
+          estimated_bloat_pct: number
+          index_name: string
+          index_scans: number
+          index_size_bytes: number
+          index_size_pretty: string
+          is_primary: boolean
+          is_unique: boolean
+          schema_name: string
+          severity: string
+          table_name: string
+        }[]
+      }
       get_live_activity: { Args: never; Returns: Json }
       get_long_running_txns: { Args: { _min_seconds?: number }; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
