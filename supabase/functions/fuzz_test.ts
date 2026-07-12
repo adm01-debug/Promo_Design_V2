@@ -1,9 +1,9 @@
-import { assertEquals, assertNotEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
+import { assertNotEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 const BASE_URL = "http://localhost:54321/functions/v1";
 const TOKEN = Deno.env.get("SUPABASE_ANON_KEY") || "mock-token";
 
-async function callFunction(name: string, body: any, headers: Record<string, string> = {}) {
+async function callFunction(name: string, body: unknown, headers: Record<string, string> = {}) {
   try {
     const res = await fetch(`${BASE_URL}/${name}`, {
       method: "POST",
