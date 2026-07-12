@@ -53,6 +53,7 @@ const EVENT_LABELS: Record<string, string> = {
   maintenance_failure_critical: "Falha crítica",
   slo_regression: "Regressão de SLO",
   lock_alert: "Lock prolongado",
+  connection_saturation_alert: "Saturação de conexões",
 };
 
 const EVENT_TONE: Record<string, string> = {
