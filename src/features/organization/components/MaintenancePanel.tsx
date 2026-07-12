@@ -500,6 +500,10 @@ export function MaintenancePanel() {
         {/* Queries mais lentas (pg_stat_statements) */}
         <SlowQueriesPanel />
 
+        {/* Índices ociosos (candidatos a remoção) */}
+        <UnusedIndexesPanel />
+
+
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
 
