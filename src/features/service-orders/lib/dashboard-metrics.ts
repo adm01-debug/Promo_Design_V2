@@ -11,18 +11,21 @@ export interface MonthlyTrendPoint {
   month: string;
   total: number;
   concluidas: number;
+  [key: string]: string | number;
 }
 
 export interface TechniqueBar {
   name: string;
   fullName: string;
   count: number;
+  [key: string]: string | number;
 }
 
 export interface StatusPieSlice {
   name: string;
   value: number;
   status: OsStatus;
+  [key: string]: string | number;
 }
 
 export interface DashboardMetrics {
