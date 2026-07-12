@@ -463,6 +463,20 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "manual_vacuum") {
+      if (!params.vacuum_table) {
+        return json({ error: "vacuum_table é obrigatório", requestId }, 400);
+      }
+      const mode = params.vacuum_mode ?? "standard";
+      console.log(`[${requestId}] manual_vacuum table=${params.vacuum_table} mode=${mode} by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("run_manual_vacuum", {
+        _table_name: params.vacuum_table,
+        _mode: mode,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
