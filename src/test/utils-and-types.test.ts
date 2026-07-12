@@ -108,7 +108,10 @@ describe("getProductImageUrl", () => {
   });
 
   it("handles both undefined", () => {
-    const product = { primary_image_url: undefined, image_url: undefined } as any;
+    const product: { primary_image_url?: string | null; image_url?: string | null } = {
+      primary_image_url: undefined,
+      image_url: undefined,
+    };
     expect(getProductImageUrl(product)).toBe("/placeholder.svg");
   });
 });
