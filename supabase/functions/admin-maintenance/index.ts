@@ -13,7 +13,7 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status", "vacuum_health",
+    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status", "vacuum_health", "manual_vacuum",
   ]),
   lock_threshold_ms: z.number().int().min(1000).max(3_600_000).optional(),
   kill_pid: z.number().int().min(1).max(2147483647).optional(),
@@ -21,6 +21,8 @@ const BodySchema = z.object({
   slow_queries_limit: z.number().int().min(1).max(100).optional(),
   unused_indexes_min_kb: z.number().int().min(0).max(10485760).optional(),
   analyze_table: z.string().min(1).max(128).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
+  vacuum_table: z.string().min(1).max(128).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
+  vacuum_mode: z.enum(["standard", "analyze", "full"]).optional(),
   slo_baseline_days: z.number().int().min(14).max(365).optional(),
   slo_recent_days: z.number().int().min(1).max(30).optional(),
   slo_threshold: z.number().min(1.1).max(10).optional(),
@@ -457,6 +459,20 @@ serve(async (req) => {
 
     if (params.action === "vacuum_health") {
       const { data, error } = await admin.rpc("get_vacuum_health");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
+    if (params.action === "manual_vacuum") {
+      if (!params.vacuum_table) {
+        return json({ error: "vacuum_table é obrigatório", requestId }, 400);
+      }
+      const mode = params.vacuum_mode ?? "standard";
+      console.log(`[${requestId}] manual_vacuum table=${params.vacuum_table} mode=${mode} by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("run_manual_vacuum", {
+        _table_name: params.vacuum_table,
+        _mode: mode,
+      });
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }

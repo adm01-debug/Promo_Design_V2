@@ -1,9 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Wrench, AlertCircle } from "lucide-react";
+import { Loader2, Wrench, AlertCircle, Play, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -46,6 +54,8 @@ function statusVariant(s: string): "default" | "secondary" | "destructive" {
 }
 
 export function VacuumHealthPanel() {
+  const qc = useQueryClient();
+  const [running, setRunning] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["admin-maintenance", "vacuum_health"],
     queryFn: async () => {
@@ -58,6 +68,23 @@ export function VacuumHealthPanel() {
     staleTime: 60_000,
     refetchInterval: 300_000,
   });
+
+  const runVacuum = async (table: string, mode: "standard" | "analyze" | "full") => {
+    setRunning(`${table}:${mode}`);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "manual_vacuum", vacuum_table: table, vacuum_mode: mode },
+      });
+      if (error) throw error;
+      const dur = data?.result?.duration_ms;
+      toast.success(`VACUUM ${mode} em ${table} concluído${dur ? ` (${dur}ms)` : ""}`);
+      qc.invalidateQueries({ queryKey: ["admin-maintenance", "vacuum_health"] });
+    } catch (e) {
+      toast.error(`Falha em VACUUM ${mode}: ${(e as Error).message}`);
+    } finally {
+      setRunning(null);
+    }
+  };
 
   const items = query.data?.result.items ?? [];
   const critical = items.filter((i) => i.status === "critical").length;
@@ -106,10 +133,13 @@ export function VacuumHealthPanel() {
                   <th className="py-2 pr-3">Último vacuum</th>
                   <th className="py-2 pr-3">Último analyze</th>
                   <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {items.slice(0, 20).map((i) => (
+                {items.slice(0, 20).map((i) => {
+                  const busy = running?.startsWith(`${i.table_name}:`);
+                  return (
                   <tr key={i.table_name} className="border-b last:border-0">
                     <td className="py-2 pr-3 font-mono">{i.table_name}</td>
                     <td className="py-2 pr-3">{i.total_pretty}</td>
@@ -129,8 +159,59 @@ export function VacuumHealthPanel() {
                     <td className="py-2 pr-3">
                       <Badge variant={statusVariant(i.status)}>{i.status}</Badge>
                     </td>
+                    <td className="py-2 pr-3">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => runVacuum(i.table_name, "standard")}
+                          title="VACUUM padrão"
+                        >
+                          {busy && running === `${i.table_name}:standard`
+                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                            : <Play className="h-3 w-3" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => runVacuum(i.table_name, "analyze")}
+                          title="VACUUM + ANALYZE"
+                        >
+                          A
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={busy}
+                              title="VACUUM FULL (bloqueia a tabela)"
+                            >
+                              <Zap className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Executar VACUUM FULL?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                VACUUM FULL em <b>{i.table_name}</b> reescreve toda a tabela e bloqueia leituras e escritas durante a operação. Use apenas fora do horário de pico.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => runVacuum(i.table_name, "full")}>
+                                Executar VACUUM FULL
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
