@@ -162,6 +162,17 @@ export function MaintenancePanel() {
   const growth = growthQuery.data?.growth ?? [];
   const maxBytes = tables.reduce((m, t) => Math.max(m, t.total_bytes), 0);
 
+  // Group size history by table into an ordered series of total_bytes values.
+  const sizeSeriesByTable = (() => {
+    const map = new Map<string, number[]>();
+    for (const row of sizeHistoryQuery.data?.history ?? []) {
+      const arr = map.get(row.table_name) ?? [];
+      arr.push(row.total_bytes);
+      map.set(row.table_name, arr);
+    }
+    return map;
+  })();
+
   const rows = [
     { icon: Database, label: "Logs de auditoria (>180 dias)", value: stats?.audit_log_older_180d ?? 0, total: stats?.audit_log_total ?? 0 },
     { icon: Bell, label: "Notificações lidas (>90 dias)", value: stats?.notifications_read_older_90d ?? 0 },
