@@ -1,8 +1,15 @@
 import { test, expect, beforeAll, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import EditorRightPanel, { type EditorRightPanelProps } from "./EditorRightPanel";
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// Mock organization hook — EditorRightPanel imports AssetPicker which requires it.
+vi.mock("@/hooks/use-organization", () => ({
+  useOrganizations: () => ({ currentOrgId: "org-1", can: () => true }),
+}));
+
+// eslint-disable-next-line import/first
+import EditorRightPanel, { type EditorRightPanelProps } from "./EditorRightPanel";
 
 // Mock ResizeObserver
 beforeAll(() => {
