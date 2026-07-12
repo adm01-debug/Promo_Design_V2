@@ -482,6 +482,10 @@ export function MaintenancePanel() {
         <SloBaselinePanel />
 
         {/* Falhas & diagnóstico */}
+        {/* Heatmap de falhas por dia/hora */}
+        <FailureHeatmapPanel />
+
+        {/* Falhas & diagnóstico */}
         <MaintenanceFailuresPanel />
       </CardContent>
     </Card>
