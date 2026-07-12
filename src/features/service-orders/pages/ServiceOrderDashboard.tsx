@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useServiceOrders, STATUS_CONFIG, type OsStatus } from "@/features/service-orders";
+import { computeDashboardMetrics } from "@/features/service-orders/lib/dashboard-metrics";
 import {
   BarChart3, ClipboardList, TrendingUp, Calendar, ArrowRight,
   FileText, Package, Clock,
