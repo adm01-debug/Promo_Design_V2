@@ -425,6 +425,8 @@ const MockupEditor = () => {
       setIsSuggestingPlacement(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
+    // pushAISuggestion vem de reducer estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview, productName, productSku, areaW, areaH]);
 
   const applySuggestedPlacement = useCallback(() => {
