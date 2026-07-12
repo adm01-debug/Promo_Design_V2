@@ -529,6 +529,7 @@ export function MaintenancePanel() {
 
         {/* Transações longas com opção de encerrar backend */}
         <LongRunningTxnsPanel />
+        <IndexBloatPanel />
 
         {/* Status de replicação e WAL */}
         <ReplicationStatusPanel />
