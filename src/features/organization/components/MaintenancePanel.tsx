@@ -512,6 +512,9 @@ export function MaintenancePanel() {
         {/* Top escritores para tuning de autovacuum */}
         <TopWritersPanel />
 
+        {/* Cache hit ratio e uso de índices por tabela */}
+        <CacheHitPanel />
+
 
 
         {/* Heatmap de falhas por dia/hora */}
