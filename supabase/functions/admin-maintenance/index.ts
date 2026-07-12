@@ -377,6 +377,14 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "unused_indexes") {
+      const { data, error } = await admin.rpc("get_unused_indexes", {
+        _min_size_kb: params.unused_indexes_min_kb ?? 64,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
