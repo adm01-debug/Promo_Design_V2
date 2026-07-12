@@ -1244,6 +1244,10 @@ export type Database = {
         Args: { _threshold_pct?: number }
         Returns: Json
       }
+      check_idle_in_txn_alerts: {
+        Args: { _threshold_seconds?: number }
+        Returns: Json
+      }
       check_lock_alerts: { Args: { _threshold_ms?: number }; Returns: Json }
       check_replication_slot_alerts: {
         Args: { _max_retained_bytes?: number }
@@ -1330,6 +1334,7 @@ export type Database = {
       run_scheduled_cleanup: { Args: never; Returns: Json }
       run_scheduled_cleanup_per_org: { Args: never; Returns: Json }
       run_scheduled_connection_saturation_check: { Args: never; Returns: Json }
+      run_scheduled_idle_in_txn_check: { Args: never; Returns: Json }
       run_scheduled_lock_check: { Args: never; Returns: Json }
       run_scheduled_replication_slot_check: { Args: never; Returns: Json }
       run_scheduled_slo_check: { Args: never; Returns: Json }
