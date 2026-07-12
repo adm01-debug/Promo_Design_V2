@@ -32,7 +32,7 @@ interface OrganizationContextType {
   currentRole: AppRole | null;
   isLoading: boolean;
   switchOrg: (orgId: string) => void;
-  createOrg: ReturnType<typeof useMutation<Organization, Error, { name: string }>>;
+  createOrg: ReturnType<typeof useMutation<Organization, Error, string>>;
   can: (roles: AppRole[]) => boolean;
   hasNoOrg: boolean;
 }
