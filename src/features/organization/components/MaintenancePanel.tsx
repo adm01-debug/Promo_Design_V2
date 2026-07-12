@@ -25,6 +25,7 @@ import { FailureHeatmapPanel } from "./FailureHeatmapPanel";
 import { MonthlyGrowthPanel } from "./MonthlyGrowthPanel";
 import { StorageProjectionPanel } from "./StorageProjectionPanel";
 import { DbHealthPanel } from "./DbHealthPanel";
+import { SlowQueriesPanel } from "./SlowQueriesPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
