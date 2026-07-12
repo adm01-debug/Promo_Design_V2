@@ -12,7 +12,7 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats", "cleanup_per_org", "slo_baseline",
+    "duration_stats", "cleanup_per_org", "slo_baseline", "db_health",
   ]),
   slo_baseline_days: z.number().int().min(14).max(365).optional(),
   slo_recent_days: z.number().int().min(1).max(30).optional(),
