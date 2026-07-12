@@ -106,6 +106,12 @@ export function MaintenancePanel() {
     queryFn: () => invokeMaintenance<{ ok: true; tables: TableSize[] }>({ action: "table_sizes" }),
   });
 
+  const growthQuery = useQuery({
+    queryKey: ["maintenance-growth", 7],
+    staleTime: 5 * 60_000,
+    queryFn: () => invokeMaintenance<{ ok: true; growth: GrowthRow[]; days_back: number }>({ action: "growth", growth_days_back: 7 }),
+  });
+
   const cleanupMutation = useMutation({
     mutationFn: () => invokeMaintenance<{ ok: true; result: CleanupResult }>({ action: "cleanup" }),
     onSuccess: (data) => {
@@ -123,9 +129,24 @@ export function MaintenancePanel() {
     onError: (e: Error) => toast.error(`Falha na limpeza: ${e.message}`),
   });
 
+  const snapshotMutation = useMutation({
+    mutationFn: () => invokeMaintenance<{ ok: true; result: { inserted?: number; skipped?: boolean } }>({ action: "capture_snapshot" }),
+    onSuccess: (data) => {
+      if (data.result?.skipped) {
+        toast.info("Snapshot em andamento por outro processo");
+      } else {
+        toast.success(`Snapshot capturado (${data.result?.inserted ?? 0} tabelas)`);
+      }
+      qc.invalidateQueries({ queryKey: ["maintenance-growth", 7] });
+      qc.invalidateQueries({ queryKey: ["maintenance-table-sizes"] });
+    },
+    onError: (e: Error) => toast.error(`Falha no snapshot: ${e.message}`),
+  });
+
   const stats = statsQuery.data?.stats;
   const history = historyQuery.data?.history ?? [];
   const tables = sizesQuery.data?.tables ?? [];
+  const growth = growthQuery.data?.growth ?? [];
   const maxBytes = tables.reduce((m, t) => Math.max(m, t.total_bytes), 0);
 
   const rows = [
