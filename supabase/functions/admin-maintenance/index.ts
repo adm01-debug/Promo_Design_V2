@@ -127,6 +127,46 @@ serve(async (req) => {
       return json({ ok: true, history: data ?? [], days, requestId });
     }
 
+    if (params.action === "snapshots_list") {
+      const page = params.snapshots_page ?? 1;
+      const pageSize = params.snapshots_page_size ?? 25;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      let query = admin
+        .from("table_size_snapshots")
+        .select("id,table_name,total_bytes,table_bytes,index_bytes,row_estimate,captured_at", { count: "exact" })
+        .order("captured_at", { ascending: false })
+        .range(from, to);
+
+      if (params.snapshots_table_name) query = query.eq("table_name", params.snapshots_table_name);
+      if (params.snapshots_from) query = query.gte("captured_at", params.snapshots_from);
+      if (params.snapshots_to) query = query.lte("captured_at", params.snapshots_to);
+
+      const { data, count, error } = await query;
+      if (error) return json({ error: error.message, requestId }, 500);
+
+      // Distinct table names for filter dropdown (small dataset, fetch top 200)
+      const { data: distinctRows } = await admin
+        .from("table_size_snapshots")
+        .select("table_name")
+        .order("table_name", { ascending: true })
+        .limit(500);
+      const tables = Array.from(new Set((distinctRows ?? []).map((r) => r.table_name)));
+
+      return json({
+        ok: true,
+        rows: data ?? [],
+        total: count ?? 0,
+        page,
+        page_size: pageSize,
+        tables,
+        requestId,
+      });
+    }
+
+
+
 
     // cleanup
     console.log(`[${requestId}] manual cleanup requested by ${userData.user.id}`);
