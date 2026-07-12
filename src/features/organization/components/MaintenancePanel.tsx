@@ -473,6 +473,9 @@ export function MaintenancePanel() {
         {/* Latência (percentis) */}
         <MaintenanceDurationPanel />
 
+        {/* SLO — regressão de p95 */}
+        <SloBaselinePanel />
+
         {/* Falhas & diagnóstico */}
         <MaintenanceFailuresPanel />
       </CardContent>
