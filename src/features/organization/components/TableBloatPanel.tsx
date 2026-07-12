@@ -53,6 +53,9 @@ const statusLabel: Record<BloatRow["status"], string> = {
 };
 
 export function TableBloatPanel() {
+  const queryClient = useQueryClient();
+  const [analyzing, setAnalyzing] = useState<string | null>(null);
+
   const query = useQuery({
     queryKey: ["admin-maintenance", "bloat_health"],
     queryFn: async () => {
@@ -65,6 +68,26 @@ export function TableBloatPanel() {
     },
     staleTime: 60_000,
   });
+
+  async function runAnalyze(tableName: string) {
+    setAnalyzing(tableName);
+    try {
+      const { data, error } = await supabase.functions.invoke<{ ok: boolean; result: { duration_ms?: number } }>(
+        "admin-maintenance",
+        { body: { action: "manual_analyze", analyze_table: tableName } },
+      );
+      if (error) throw error;
+      if (!data?.ok) throw new Error("Falha ao executar ANALYZE");
+      toast.success(`ANALYZE em ${tableName} concluído em ${data.result?.duration_ms ?? "?"}ms`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-maintenance", "bloat_health"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-maintenance", "history"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao executar ANALYZE");
+    } finally {
+      setAnalyzing(null);
+    }
+  }
+
 
   const items = (query.data?.items ?? []).slice().sort((a, b) => b.dead_ratio - a.dead_ratio);
   const critical = items.filter((i) => i.status === "critical").length;
