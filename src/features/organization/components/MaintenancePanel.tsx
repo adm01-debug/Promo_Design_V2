@@ -26,6 +26,7 @@ import { MonthlyGrowthPanel } from "./MonthlyGrowthPanel";
 import { StorageProjectionPanel } from "./StorageProjectionPanel";
 import { DbHealthPanel } from "./DbHealthPanel";
 import { SlowQueriesPanel } from "./SlowQueriesPanel";
+import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
