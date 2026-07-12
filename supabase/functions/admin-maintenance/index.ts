@@ -223,6 +223,49 @@ serve(async (req) => {
       });
     }
 
+    if (params.action === "duration_stats") {
+      const daysBack = params.duration_days_back ?? 30;
+      const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
+      const { data: runs, error: rErr } = await admin
+        .from("maintenance_runs")
+        .select("source,duration_ms,created_at")
+        .eq("status", "success")
+        .not("duration_ms", "is", null)
+        .gte("created_at", since)
+        .order("created_at", { ascending: true });
+      if (rErr) return json({ error: rErr.message, requestId }, 500);
+
+      const bySource = new Map<string, number[]>();
+      const timeline: Array<{ created_at: string; duration_ms: number; source: string }> = [];
+      for (const r of runs ?? []) {
+        if (r.duration_ms == null) continue;
+        const arr = bySource.get(r.source) ?? [];
+        arr.push(r.duration_ms);
+        bySource.set(r.source, arr);
+        timeline.push({ created_at: r.created_at, duration_ms: r.duration_ms, source: r.source });
+      }
+      const pct = (arr: number[], p: number) => {
+        if (arr.length === 0) return null;
+        const sorted = [...arr].sort((a, b) => a - b);
+        const idx = Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length));
+        return sorted[idx];
+      };
+      const stats: Record<string, { count: number; p50: number | null; p95: number | null; p99: number | null; max: number | null; avg: number | null }> = {};
+      for (const [src, arr] of bySource.entries()) {
+        const sum = arr.reduce((a, b) => a + b, 0);
+        stats[src] = {
+          count: arr.length,
+          p50: pct(arr, 50),
+          p95: pct(arr, 95),
+          p99: pct(arr, 99),
+          max: Math.max(...arr),
+          avg: Math.round(sum / arr.length),
+        };
+      }
+      return json({ ok: true, days_back: daysBack, stats, timeline, requestId });
+    }
+
+
 
 
 
