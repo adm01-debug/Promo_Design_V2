@@ -1308,6 +1308,7 @@ export type Database = {
         Returns: boolean
       }
       is_mfa_authenticated: { Args: never; Returns: boolean }
+      kill_backend: { Args: { _mode?: string; _pid: number }; Returns: Json }
       run_manual_analyze: { Args: { _table_name: string }; Returns: Json }
       run_scheduled_cleanup: { Args: never; Returns: Json }
       run_scheduled_cleanup_per_org: { Args: never; Returns: Json }
