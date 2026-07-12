@@ -27,6 +27,7 @@ import { StorageProjectionPanel } from "./StorageProjectionPanel";
 import { DbHealthPanel } from "./DbHealthPanel";
 import { SlowQueriesPanel } from "./SlowQueriesPanel";
 import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
+import { TableBloatPanel } from "./TableBloatPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
