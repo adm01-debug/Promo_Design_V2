@@ -54,6 +54,7 @@ const EVENT_LABELS: Record<string, string> = {
   slo_regression: "Regressão de SLO",
   lock_alert: "Lock prolongado",
   connection_saturation_alert: "Saturação de conexões",
+  idle_in_txn_alert: "Sessão ociosa em transação",
 };
 
 const EVENT_TONE: Record<string, string> = {
@@ -64,6 +65,7 @@ const EVENT_TONE: Record<string, string> = {
   slo_regression: "bg-purple-500/15 text-purple-500 border-purple-500/30",
   lock_alert: "bg-red-500/15 text-red-500 border-red-500/30",
   connection_saturation_alert: "bg-cyan-500/15 text-cyan-500 border-cyan-500/30",
+  idle_in_txn_alert: "bg-yellow-500/15 text-yellow-500 border-yellow-500/30",
 };
 
 const WINDOW_OPTIONS = [
