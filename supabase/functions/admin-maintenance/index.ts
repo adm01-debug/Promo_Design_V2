@@ -424,6 +424,20 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "kill_backend") {
+      if (!params.kill_pid) {
+        return json({ error: "kill_pid é obrigatório", requestId }, 400);
+      }
+      const mode = params.kill_mode ?? "cancel";
+      console.log(`[${requestId}] kill_backend pid=${params.kill_pid} mode=${mode} by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("kill_backend", {
+        _pid: params.kill_pid,
+        _mode: mode,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
