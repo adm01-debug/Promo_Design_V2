@@ -17,7 +17,7 @@ describe('Integration: Mocked External APIs', () => {
     
     try {
       await fetch('https://api.external.com');
-    } catch (e: any) {
+    } catch (e) {
       expect(e.message).toBe('API Down');
     }
   });

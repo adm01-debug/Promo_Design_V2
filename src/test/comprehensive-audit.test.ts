@@ -419,7 +419,7 @@ describe("Route module detection", () => {
 // 10. Data mapping robustness (service orders)
 // ============================================================
 describe("Service order row mapping", () => {
-  const rowToOrder = (row: any) => ({
+  const rowToOrder = (row: Record<string, unknown>) => ({
     id: row.id,
     osNumber: row.os_number,
     status: row.status,
