@@ -335,7 +335,7 @@ serve(async (req) => {
       });
     }
 
-
+    if (params.action === "cleanup_per_org") {
       if (!params.organization_id) {
         return json({ error: "organization_id é obrigatório", requestId }, 400);
       }
