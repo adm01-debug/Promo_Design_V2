@@ -410,6 +410,12 @@ serve(async (req) => {
       return json({ ok: true, result: data, requestId });
     }
 
+    if (params.action === "cache_hit") {
+      const { data, error } = await admin.rpc("get_cache_hit_stats");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
