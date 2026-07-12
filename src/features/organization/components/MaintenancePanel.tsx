@@ -508,6 +508,9 @@ export function MaintenancePanel() {
         {/* Saúde de vacuum & tuplas mortas */}
         <TableBloatPanel />
 
+        {/* Top escritores para tuning de autovacuum */}
+        <TopWritersPanel />
+
 
 
         {/* Heatmap de falhas por dia/hora */}
