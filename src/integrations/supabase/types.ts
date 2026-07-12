@@ -1282,6 +1282,7 @@ export type Database = {
       get_table_bloat_health: { Args: never; Returns: Json }
       get_table_growth: { Args: { _days_back?: number }; Returns: Json }
       get_table_sizes: { Args: never; Returns: Json }
+      get_top_writers: { Args: never; Returns: Json }
       get_unused_indexes: { Args: { _min_size_kb?: number }; Returns: Json }
       has_any_role: {
         Args: {
