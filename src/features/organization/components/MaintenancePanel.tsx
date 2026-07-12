@@ -8,7 +8,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown, Camera, Minus } from "lucide-react";
+import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown, Camera, Minus, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { formatDistanceToNow, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -276,6 +278,25 @@ export function MaintenancePanel() {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+
+        {/* Alerta de staleness de snapshot */}
+        {(() => {
+          const hist = sizeHistoryQuery.data?.history ?? [];
+          if (hist.length === 0) return null;
+          const latest = hist.reduce((m, r) => (r.captured_at > m ? r.captured_at : m), hist[0].captured_at);
+          const ageMs = Date.now() - new Date(latest).getTime();
+          if (ageMs < 24 * 60 * 60 * 1000) return null;
+          return (
+            <Alert variant="destructive" className="border-amber-500/40 bg-amber-500/5 text-foreground">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-sm">Snapshot desatualizado</AlertTitle>
+              <AlertDescription className="text-xs">
+                Último snapshot capturado há {formatDistanceToNow(parseISO(latest), { locale: ptBR })}. O cron pode
+                estar falhando — verifique o painel de diagnóstico abaixo ou execute uma captura manual.
+              </AlertDescription>
+            </Alert>
+          );
+        })()}
 
         {/* Crescimento semanal */}
         <div className="space-y-3 pt-4 border-t">

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   AlertOctagon, CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCcw,
-  ChevronDown, ChevronRight, Bug,
+  ChevronDown, ChevronRight, Bug, Download,
 } from "lucide-react";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -80,6 +80,27 @@ export function MaintenanceFailuresPanel() {
   const partialCount = data?.totals.partial ?? 0;
   const problems = errorCount + partialCount;
 
+  const exportCsv = () => {
+    if (!data) return;
+    const rows = data.failures;
+    const header = ["id", "source", "status", "duration_ms", "started_at", "finished_at", "created_at", "error_message"];
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      header.join(","),
+      ...rows.map((r) => header.map((h) => escape((r as unknown as Record<string, unknown>)[h])).join(",")),
+    ].join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `manutencao-falhas-${daysBack}d-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-3 pt-4 border-t">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -97,6 +118,16 @@ export function MaintenanceFailuresPanel() {
               <SelectItem value="90">Últimos 90 dias</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={exportCsv}
+            disabled={!data || (data.failures?.length ?? 0) === 0}
+            title="Exportar falhas em CSV"
+            className="h-7 w-7"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
