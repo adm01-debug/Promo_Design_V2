@@ -358,11 +358,19 @@ export function MaintenancePanel() {
             <div className="space-y-1.5">
               {tables.map((t) => {
                 const pct = maxBytes > 0 ? (t.total_bytes / maxBytes) * 100 : 0;
+                const series = sizeSeriesByTable.get(t.table) ?? [];
                 return (
                   <div key={t.table} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-muted-foreground">{t.table}</span>
-                      <span className="flex items-center gap-2">
+                    <div className="flex items-center justify-between text-xs gap-2">
+                      <span className="font-mono text-muted-foreground truncate">{t.table}</span>
+                      <span className="flex items-center gap-2 shrink-0">
+                        {series.length >= 2 ? (
+                          <MiniSparkline data={series} width={72} height={18} />
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/60" title="Aguardando snapshots (mínimo 2 pontos)">
+                            —
+                          </span>
+                        )}
                         <span className="text-[10px] text-muted-foreground">
                           ~{t.row_estimate.toLocaleString("pt-BR")} linhas
                         </span>
@@ -380,6 +388,7 @@ export function MaintenancePanel() {
             </div>
           )}
         </div>
+
 
         {/* Histórico de execuções */}
         <div className="space-y-3 pt-4 border-t">
