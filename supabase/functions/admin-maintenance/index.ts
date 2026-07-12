@@ -13,7 +13,7 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status",
+    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status", "vacuum_health",
   ]),
   lock_threshold_ms: z.number().int().min(1000).max(3_600_000).optional(),
   kill_pid: z.number().int().min(1).max(2147483647).optional(),
