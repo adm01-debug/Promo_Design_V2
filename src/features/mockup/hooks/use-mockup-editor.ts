@@ -444,7 +444,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     if (!draft?.editorState) return;
     draftRestoredRef.current = true;
     setDraftId(draftParam);
-    const s = draft.editorState as Record<string, any>;
+    const s = draft.editorState as Record<string, unknown>;
     if (s.placement) setPlacement(s.placement as Placement);
     if (s.logoPreview) setLogoPreview(s.logoPreview as string);
     if (s.logoColors) setLogoColors(s.logoColors as string[]);
