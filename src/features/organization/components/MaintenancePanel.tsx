@@ -35,6 +35,7 @@ import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
 import { VacuumHealthPanel } from "./VacuumHealthPanel";
 import { RecentIncidentsPanel } from "./RecentIncidentsPanel";
 import { LongRunningTxnsPanel } from "./LongRunningTxnsPanel";
+import { IndexBloatPanel } from "./IndexBloatPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
