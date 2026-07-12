@@ -51,6 +51,19 @@ interface TableSize {
   row_estimate: number;
 }
 
+interface GrowthRow {
+  table: string;
+  current_bytes: number;
+  previous_bytes: number | null;
+  delta_bytes: number | null;
+  delta_pct: number | null;
+  current_rows: number;
+  previous_rows: number | null;
+  delta_rows: number | null;
+  latest_at: string;
+  previous_at: string | null;
+}
+
 async function invokeMaintenance<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke("admin-maintenance", { body });
   if (error) throw error;
