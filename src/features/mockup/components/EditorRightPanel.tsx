@@ -8,6 +8,7 @@ import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
+import type { AISuggestion } from "../hooks/use-mockup-editor-state";
 
 type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 type ExportFormat = "png" | "jpeg" | "webp";
