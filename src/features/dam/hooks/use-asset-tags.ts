@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import type { Asset } from "../hooks/use-assets";
 
-export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, updateAsset: { mutateAsync: (args: { id: string; patch: Partial<Asset>; lockVersion?: number }) => Promise<Asset> }) {
+export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, updateAsset: { mutateAsync: (args: { id: string; patch: { tags?: string[] } & Record<string, unknown>; lockVersion?: number }) => Promise<Asset> }) {
   const [editingTags, setEditingTags] = useState(false);
   const [tagsDraft, setTagsDraft] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
