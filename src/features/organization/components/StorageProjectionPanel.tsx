@@ -70,7 +70,6 @@ export function StorageProjectionPanel() {
     }
 
     const result: Projection[] = [];
-    const now = Date.now();
     const DAY = 86_400_000;
     const ONE_GB = 1024 ** 3;
 
