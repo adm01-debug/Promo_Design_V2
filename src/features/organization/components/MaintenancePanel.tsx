@@ -484,6 +484,10 @@ export function MaintenancePanel() {
 
         {/* Falhas & diagnóstico */}
         {/* Heatmap de falhas por dia/hora */}
+        {/* Ranking de crescimento mensal */}
+        <MonthlyGrowthPanel />
+
+        {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
 
         {/* Falhas & diagnóstico */}
