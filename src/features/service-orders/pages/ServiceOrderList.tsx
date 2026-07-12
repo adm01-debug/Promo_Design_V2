@@ -25,6 +25,7 @@ import {
 import {
   useServiceOrders, STATUS_CONFIG, getNextStatuses,
   type OsStatus,
+  type StoredServiceOrder,
   generateBatchPdf, getLogoDataUrl,
 } from "@/features/service-orders";
 import { supabase } from "@/integrations/supabase/client";
