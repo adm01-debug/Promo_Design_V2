@@ -31,6 +31,7 @@ import { TableBloatPanel } from "./TableBloatPanel";
 import { TopWritersPanel } from "./TopWritersPanel";
 import { CacheHitPanel } from "./CacheHitPanel";
 import { LiveActivityPanel } from "./LiveActivityPanel";
+import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
