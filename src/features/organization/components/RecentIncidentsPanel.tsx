@@ -53,6 +53,7 @@ const EVENT_LABELS: Record<string, string> = {
   maintenance_failure_critical: "Falha crítica",
   slo_regression: "Regressão de SLO",
   lock_alert: "Lock prolongado",
+  connection_saturation_alert: "Saturação de conexões",
 };
 
 const EVENT_TONE: Record<string, string> = {
@@ -62,6 +63,7 @@ const EVENT_TONE: Record<string, string> = {
   maintenance_failure_critical: "bg-destructive/25 text-destructive border-destructive/40",
   slo_regression: "bg-purple-500/15 text-purple-500 border-purple-500/30",
   lock_alert: "bg-red-500/15 text-red-500 border-red-500/30",
+  connection_saturation_alert: "bg-cyan-500/15 text-cyan-500 border-cyan-500/30",
 };
 
 const WINDOW_OPTIONS = [
