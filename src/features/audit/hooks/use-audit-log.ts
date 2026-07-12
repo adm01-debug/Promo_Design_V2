@@ -30,8 +30,19 @@ export interface AuditFilters {
   pageSize: number;
 }
 
-type AuditQueryBuilder = ReturnType<ReturnType<typeof supabase.from<"audit_log">>["select"]>;
-function applyFilters(query: AuditQueryBuilder, f: AuditFilters): AuditQueryBuilder {
+// The Supabase query builder is a fluent, deeply-generic type; using a minimal
+// structural type keeps the filter application type-safe without pinning
+// implementation details of postgrest-js internals.
+type AuditQueryBuilder = {
+  eq: (column: string, value: unknown) => AuditQueryBuilder;
+  in: (column: string, value: readonly unknown[]) => AuditQueryBuilder;
+  gte: (column: string, value: unknown) => AuditQueryBuilder;
+  lte: (column: string, value: unknown) => AuditQueryBuilder;
+  ilike: (column: string, pattern: string) => AuditQueryBuilder;
+  order: (column: string, opts?: { ascending?: boolean }) => AuditQueryBuilder;
+  range: (from: number, to: number) => AuditQueryBuilder;
+};
+function applyFilters<Q extends AuditQueryBuilder>(query: Q, f: AuditFilters): Q {
   query = query.eq("organization_id", f.organizationId!);
   if (f.from) query = query.gte("created_at", f.from);
   if (f.to) query = query.lte("created_at", f.to);
