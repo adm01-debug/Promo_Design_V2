@@ -465,6 +465,9 @@ export function MaintenancePanel() {
           )}
         </div>
 
+        {/* Latência (percentis) */}
+        <MaintenanceDurationPanel />
+
         {/* Falhas & diagnóstico */}
         <MaintenanceFailuresPanel />
       </CardContent>
