@@ -97,8 +97,8 @@ export function rowToOrder(row: Tables<"service_orders">): StoredServiceOrder {
     fazParteKit: row.faz_parte_kit ?? false,
     gravacaoDetalhe: row.gravacao_detalhe ?? "",
     artAssetId: (row as unknown as { art_asset_id?: string | null }).art_asset_id ?? null,
-    lockVersion: (row as any).lock_version ?? 1,
-    deletedAt: (row as any).deleted_at,
+    lockVersion: (row as unknown as { lock_version?: number }).lock_version ?? 1,
+    deletedAt: (row as unknown as { deleted_at?: string | null }).deleted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -171,7 +171,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
     enabled: !!user,
   });
 
-  const orders = data?.orders ?? [];
+  const orders = useMemo(() => data?.orders ?? [], [data?.orders]);
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

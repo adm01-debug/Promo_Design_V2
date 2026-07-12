@@ -16,7 +16,7 @@ export interface VideoEntry {
   aspect_ratio: string;
   duration: number;
   style?: string;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
 
