@@ -113,6 +113,17 @@ export function MaintenancePanel() {
     queryFn: () => invokeMaintenance<{ ok: true; growth: GrowthRow[]; days_back: number }>({ action: "growth", growth_days_back: 7 }),
   });
 
+  const sizeHistoryQuery = useQuery({
+    queryKey: ["maintenance-size-history", 90],
+    staleTime: 5 * 60_000,
+    queryFn: () =>
+      invokeMaintenance<{
+        ok: true;
+        history: Array<{ table_name: string; total_bytes: number; captured_at: string }>;
+        days: number;
+      }>({ action: "size_history", size_history_days: 90 }),
+  });
+
   const cleanupMutation = useMutation({
     mutationFn: () => invokeMaintenance<{ ok: true; result: CleanupResult }>({ action: "cleanup" }),
     onSuccess: (data) => {
