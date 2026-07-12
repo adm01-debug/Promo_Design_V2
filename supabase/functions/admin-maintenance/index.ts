@@ -13,10 +13,11 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health",
+    "unused_indexes", "bloat_health", "manual_analyze",
   ]),
   slow_queries_limit: z.number().int().min(1).max(100).optional(),
   unused_indexes_min_kb: z.number().int().min(0).max(10485760).optional(),
+  analyze_table: z.string().min(1).max(128).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
   slo_baseline_days: z.number().int().min(14).max(365).optional(),
   slo_recent_days: z.number().int().min(1).max(30).optional(),
   slo_threshold: z.number().min(1.1).max(10).optional(),
@@ -387,6 +388,18 @@ serve(async (req) => {
 
     if (params.action === "bloat_health") {
       const { data, error } = await admin.rpc("get_table_bloat_health");
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
+    if (params.action === "manual_analyze") {
+      if (!params.analyze_table) {
+        return json({ error: "analyze_table é obrigatório", requestId }, 400);
+      }
+      console.log(`[${requestId}] manual analyze by ${userData.user.id} table=${params.analyze_table}`);
+      const { data, error } = await admin.rpc("run_manual_analyze", {
+        _table_name: params.analyze_table,
+      });
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });
     }

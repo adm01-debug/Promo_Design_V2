@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCcw, Recycle, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, RefreshCcw, Recycle, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -52,6 +53,9 @@ const statusLabel: Record<BloatRow["status"], string> = {
 };
 
 export function TableBloatPanel() {
+  const queryClient = useQueryClient();
+  const [analyzing, setAnalyzing] = useState<string | null>(null);
+
   const query = useQuery({
     queryKey: ["admin-maintenance", "bloat_health"],
     queryFn: async () => {
@@ -64,6 +68,26 @@ export function TableBloatPanel() {
     },
     staleTime: 60_000,
   });
+
+  async function runAnalyze(tableName: string) {
+    setAnalyzing(tableName);
+    try {
+      const { data, error } = await supabase.functions.invoke<{ ok: boolean; result: { duration_ms?: number } }>(
+        "admin-maintenance",
+        { body: { action: "manual_analyze", analyze_table: tableName } },
+      );
+      if (error) throw error;
+      if (!data?.ok) throw new Error("Falha ao executar ANALYZE");
+      toast.success(`ANALYZE em ${tableName} concluído em ${data.result?.duration_ms ?? "?"}ms`);
+      await queryClient.invalidateQueries({ queryKey: ["admin-maintenance", "bloat_health"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin-maintenance", "history"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao executar ANALYZE");
+    } finally {
+      setAnalyzing(null);
+    }
+  }
+
 
   const items = (query.data?.items ?? []).slice().sort((a, b) => b.dead_ratio - a.dead_ratio);
   const critical = items.filter((i) => i.status === "critical").length;
@@ -136,6 +160,7 @@ export function TableBloatPanel() {
                     <th className="px-3 py-2 font-medium">Último autovacuum</th>
                     <th className="px-3 py-2 text-right font-medium">Tamanho</th>
                     <th className="px-3 py-2 text-right font-medium">Status</th>
+                    <th className="px-3 py-2 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -159,6 +184,23 @@ export function TableBloatPanel() {
                         <Badge variant="outline" className={statusStyles[row.status]}>
                           {statusLabel[row.status]}
                         </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 gap-1 px-2 text-[11px]"
+                          disabled={analyzing === row.table_name}
+                          onClick={() => runAnalyze(row.table_name)}
+                          title="Executa ANALYZE nesta tabela (atualiza estatísticas do planner)"
+                        >
+                          {analyzing === row.table_name ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3" />
+                          )}
+                          Analisar
+                        </Button>
                       </td>
                     </tr>
                   ))}
