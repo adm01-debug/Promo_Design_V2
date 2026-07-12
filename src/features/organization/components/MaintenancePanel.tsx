@@ -21,6 +21,7 @@ import { MaintenanceDurationPanel } from "./MaintenanceDurationPanel";
 import { RetentionSettingsPanel } from "./RetentionSettingsPanel";
 import { SloBaselinePanel } from "./SloBaselinePanel";
 import { HealthDashboardPanel } from "./HealthDashboardPanel";
+import { FailureHeatmapPanel } from "./FailureHeatmapPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -479,6 +480,10 @@ export function MaintenancePanel() {
 
         {/* SLO — regressão de p95 */}
         <SloBaselinePanel />
+
+        {/* Falhas & diagnóstico */}
+        {/* Heatmap de falhas por dia/hora */}
+        <FailureHeatmapPanel />
 
         {/* Falhas & diagnóstico */}
         <MaintenanceFailuresPanel />
