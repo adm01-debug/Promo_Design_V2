@@ -474,6 +474,8 @@ const MockupEditor = () => {
       setIsRemovingBg(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
+    // pushAISuggestion vem de reducer estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoPreview, pushLogoToHistory]);
 
   const cancelAIRequest = useCallback(() => {
