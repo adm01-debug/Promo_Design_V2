@@ -652,6 +652,51 @@ export type Database = {
           },
         ]
       }
+      maintenance_runs: {
+        Row: {
+          audit_deleted: number
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          notifications_deleted: number
+          source: string
+          started_at: string
+          status: string
+          status_audit_deleted: number
+          triggered_by: string | null
+        }
+        Insert: {
+          audit_deleted?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          notifications_deleted?: number
+          source: string
+          started_at?: string
+          status: string
+          status_audit_deleted?: number
+          triggered_by?: string | null
+        }
+        Update: {
+          audit_deleted?: number
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          notifications_deleted?: number
+          source?: string
+          started_at?: string
+          status?: string
+          status_audit_deleted?: number
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       mockup_drafts: {
         Row: {
           created_at: string
@@ -1152,20 +1197,32 @@ export type Database = {
             Args: { _org_id: string; _required_cost?: number }
             Returns: boolean
           }
-      cleanup_expired_data: {
-        Args: {
-          _audit_retention_days?: number
-          _notifications_read_retention_days?: number
-          _status_audit_retention_days?: number
-        }
-        Returns: Json
-      }
+      cleanup_expired_data:
+        | {
+            Args: {
+              _audit_retention_days?: number
+              _notifications_read_retention_days?: number
+              _status_audit_retention_days?: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _audit_retention_days?: number
+              _notifications_read_retention_days?: number
+              _source?: string
+              _status_audit_retention_days?: number
+              _triggered_by?: string
+            }
+            Returns: Json
+          }
       current_user_orgs: { Args: never; Returns: string[] }
       explain_search_assets_ranked: {
         Args: { _org_id: string; _query?: string }
         Returns: Json
       }
       get_maintenance_stats: { Args: never; Returns: Json }
+      get_table_sizes: { Args: never; Returns: Json }
       has_any_role: {
         Args: {
           _org_id: string
@@ -1182,6 +1239,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_any_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_member_of: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
