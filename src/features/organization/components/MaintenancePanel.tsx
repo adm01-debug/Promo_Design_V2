@@ -34,6 +34,7 @@ import { LiveActivityPanel } from "./LiveActivityPanel";
 import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
 import { VacuumHealthPanel } from "./VacuumHealthPanel";
 import { RecentIncidentsPanel } from "./RecentIncidentsPanel";
+import { LongRunningTxnsPanel } from "./LongRunningTxnsPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -524,6 +525,9 @@ export function MaintenancePanel() {
 
         {/* Atividade em tempo real: queries, locks e conexões */}
         <LiveActivityPanel />
+
+        {/* Transações longas com opção de encerrar backend */}
+        <LongRunningTxnsPanel />
 
         {/* Status de replicação e WAL */}
         <ReplicationStatusPanel />

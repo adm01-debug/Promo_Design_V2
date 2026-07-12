@@ -1284,6 +1284,7 @@ export type Database = {
       get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
       get_live_activity: { Args: never; Returns: Json }
+      get_long_running_txns: { Args: { _min_seconds?: number }; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
       get_recent_incidents: { Args: { _minutes?: number }; Returns: Json }
       get_replication_status: { Args: never; Returns: Json }
@@ -1412,6 +1413,10 @@ export type Database = {
               width: number
             }[]
           }
+      terminate_backend: {
+        Args: { _pid: number; _reason?: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
