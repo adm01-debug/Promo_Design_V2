@@ -140,6 +140,31 @@ serve(async (req) => {
       }
     }
 
+    // ─── Rate limit por usuário (protege contra abuso de custo AI) ──
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+    const featureKey = `mockup-ai:\${body.action}`;
+    const limitPerMin = body.action === "remove-bg" ? 10 : 30;
+    const { data: rl } = await admin.rpc("check_and_consume_ai_rate_limit", {
+      _user_id: userData.user.id,
+      _feature: featureKey,
+      _limit_per_min: limitPerMin,
+    });
+    if (rl && (rl as { allowed?: boolean }).allowed === false) {
+      console.warn(`[${requestId}] Rate limit hit for user \${userData.user.id} on \${featureKey}`);
+      return jsonResponse(
+        {
+          error: "Muitas requisições em pouco tempo. Aguarde alguns segundos e tente novamente.",
+          retryAfterSeconds: 60,
+          requestId,
+        },
+        429,
+        req,
+      );
+    }
+
     // ─── Action: Remove Background ─────────────────────────
     if (body.action === "remove-bg") {
       const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
