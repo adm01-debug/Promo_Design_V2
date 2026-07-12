@@ -11,7 +11,7 @@ export function usePreviewShare({
   activeAsset: Asset | null;
   searchParams: URLSearchParams;
   compareMode: boolean;
-  compare: { selectedIds: string[] };
+  compare: ReturnType<typeof import("./use-compare-selection").useCompareSelection>;
 }) {
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);

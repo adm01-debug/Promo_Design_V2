@@ -18,7 +18,7 @@ export function usePreviewShortcuts({
   compareMode: boolean;
   setCompareMode: (v: boolean | ((prev: boolean) => boolean)) => void;
   activeAsset: Asset | null;
-  compare: { selectedIds: string[] };
+  compare: ReturnType<typeof import("./use-compare-selection").useCompareSelection>;
   goPrev: () => void;
   goNext: () => void;
   onOpenDetails: () => void;
