@@ -8,7 +8,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown, Camera, Minus } from "lucide-react";
+import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown, Camera, Minus, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { formatDistanceToNow, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
