@@ -86,7 +86,7 @@ interface EditorRightPanelProps {
   applySuggestedPlacement: () => void;
   setSuggestedPlacement: (v: { placement: Placement; reasoning: string } | null) => void;
   cancelAIRequest: () => void;
-  aiSuggestions: any[];
+  aiSuggestions: AISuggestion[];
   clearAISuggestions: () => void;
   isPreviewingAI: boolean;
   setIsPreviewingAI: (v: boolean) => void;
