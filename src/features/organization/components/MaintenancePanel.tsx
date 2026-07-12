@@ -496,6 +496,9 @@ export function MaintenancePanel() {
         {/* Saúde do Postgres (métricas do servidor) */}
         <DbHealthPanel />
 
+        {/* Queries mais lentas (pg_stat_statements) */}
+        <SlowQueriesPanel />
+
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
 
