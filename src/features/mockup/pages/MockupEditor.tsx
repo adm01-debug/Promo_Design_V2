@@ -362,6 +362,8 @@ const MockupEditor = () => {
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
+    // updatePlacement vem de reducer estável.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewAreaW, viewAreaH, pushLogoToHistory]);
 
   const handleSuggestPlacement = useCallback(async () => {
