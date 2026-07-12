@@ -90,7 +90,7 @@ export function MaintenanceFailuresPanel() {
     };
     const csv = [
       header.join(","),
-      ...rows.map((r) => header.map((h) => escape((r as Record<string, unknown>)[h])).join(",")),
+      ...rows.map((r) => header.map((h) => escape((r as unknown as Record<string, unknown>)[h])).join(",")),
     ].join("\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
