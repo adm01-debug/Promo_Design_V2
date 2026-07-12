@@ -188,13 +188,13 @@ jobs:
           deno-version: v2.x
       - name: Deno test
         run: |
-          if compgen -G "supabase/functions/**/*_test.ts" > /dev/null; then
-            deno test --allow-net --allow-env --allow-read \
-              supabase/functions/_shared \
-              $(ls supabase/functions/*_test.ts 2>/dev/null || true)
-          else
+          mapfile -t test_files < <(find supabase/functions -name "*_test.ts" -type f 2>/dev/null || true)
+          if [ ${#test_files[@]} -eq 0 ]; then
             echo "No Deno tests found — skipping."
+            exit 0
           fi
+          echo "Running Deno tests: ${test_files[*]}"
+          deno test --allow-net --allow-env --allow-read "${test_files[@]}"
 
   # -------------------------------------------------------------
   # Aggregate gate — a single required check for branch protection.
