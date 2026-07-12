@@ -33,6 +33,7 @@ import { CacheHitPanel } from "./CacheHitPanel";
 import { LiveActivityPanel } from "./LiveActivityPanel";
 import { ReplicationStatusPanel } from "./ReplicationStatusPanel";
 import { VacuumHealthPanel } from "./VacuumHealthPanel";
+import { RecentIncidentsPanel } from "./RecentIncidentsPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
