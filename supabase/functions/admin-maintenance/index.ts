@@ -13,7 +13,7 @@ const BodySchema = z.object({
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
     "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status", "vacuum_health", "manual_vacuum",
+    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status", "vacuum_health", "manual_vacuum", "check_replication_slot_alerts",
   ]),
   lock_threshold_ms: z.number().int().min(1000).max(3_600_000).optional(),
   kill_pid: z.number().int().min(1).max(2147483647).optional(),
@@ -472,6 +472,15 @@ serve(async (req) => {
       const { data, error } = await admin.rpc("run_manual_vacuum", {
         _table_name: params.vacuum_table,
         _mode: mode,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
+    if (params.action === "check_replication_slot_alerts") {
+      console.log(`[${requestId}] check_replication_slot_alerts by ${userData.user.id}`);
+      const { data, error } = await admin.rpc("check_replication_slot_alerts", {
+        _max_retained_bytes: 1073741824,
       });
       if (error) return json({ error: error.message, requestId }, 500);
       return json({ ok: true, result: data, requestId });

@@ -1,9 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, GitBranch, AlertCircle } from "lucide-react";
+import { Loader2, GitBranch, AlertCircle, Bell } from "lucide-react";
+import { toast } from "sonner";
 
 interface Replica {
   pid: number;
@@ -57,6 +60,8 @@ function statusVariant(s: string): "default" | "secondary" | "destructive" {
 }
 
 export function ReplicationStatusPanel() {
+  const qc = useQueryClient();
+  const [checking, setChecking] = useState(false);
   const query = useQuery({
     queryKey: ["admin-maintenance", "replication_status"],
     queryFn: async () => {
@@ -72,18 +77,43 @@ export function ReplicationStatusPanel() {
 
   const result = query.data?.result;
 
+  const checkSlots = async () => {
+    setChecking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "check_replication_slot_alerts" },
+      });
+      if (error) throw error;
+      const r = data?.result;
+      toast.success(
+        `Slots verificados: ${r?.slots_flagged ?? 0} sinalizados, ${r?.alerts_created ?? 0} alertas criados`,
+      );
+      qc.invalidateQueries({ queryKey: ["admin-maintenance", "replication_status"] });
+    } catch (e) {
+      toast.error(`Falha ao verificar slots: ${(e as Error).message}`);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <GitBranch className="h-4 w-4" />
-          Replicação e WAL
-          {result && (
-            <Badge variant="outline" className="ml-2">
-              {result.replicas.length} réplica(s) · {result.slots.length} slot(s)
-            </Badge>
-          )}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4" />
+            Replicação e WAL
+            {result && (
+              <Badge variant="outline" className="ml-2">
+                {result.replicas.length} réplica(s) · {result.slots.length} slot(s)
+              </Badge>
+            )}
+          </CardTitle>
+          <Button size="sm" variant="outline" onClick={checkSlots} disabled={checking}>
+            {checking ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Bell className="h-3 w-3 mr-1" />}
+            Verificar slots agora
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {query.isLoading && (
