@@ -1,6 +1,11 @@
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
+// jspdf-autotable augments jsPDF at runtime; declare the method for TS.
+type JsPdfWithAutoTable = jsPDF & {
+  autoTable: (options: Record<string, unknown>) => void;
+};
+
 interface MockupData {
   productName: string;
   technique: string;
