@@ -367,6 +367,14 @@ serve(async (req) => {
       return json({ ok: true, health: data, requestId });
     }
 
+    if (params.action === "slow_queries") {
+      const { data, error } = await admin.rpc("get_slow_queries", {
+        _limit: params.slow_queries_limit ?? 15,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
+
 
 
 
