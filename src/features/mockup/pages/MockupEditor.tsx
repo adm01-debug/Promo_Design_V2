@@ -138,11 +138,23 @@ const MockupEditor = () => {
   const { drafts } = useMockupDrafts();
 
   // Load draft if draftId is present
+  const draftLoadedRef = useRef(false);
   useEffect(() => {
+    if (draftLoadedRef.current) return;
     if (draftId && drafts.length > 0) {
       const draft = drafts.find(d => d.id === draftId);
       if (draft && draft.editorState) {
-        const state = draft.editorState as any;
+        const state = draft.editorState as {
+          placements?: Placement[];
+          logoPreview?: string;
+          logoOpacity?: number;
+          blendMode?: BlendMode;
+          surfaceType?: SurfaceType;
+          shadowEnabled?: boolean;
+          shadowIntensity?: number;
+          approvedViews?: string[];
+          watermarkConfig?: typeof watermarkConfig;
+        };
         if (state.placements) {
           setPlacements(state.placements);
           resetAllHistory();
@@ -156,11 +168,14 @@ const MockupEditor = () => {
         if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
         if (state.watermarkConfig) setWatermarkConfig(state.watermarkConfig);
 
-        
+        draftLoadedRef.current = true;
         toast.success("Rascunho carregado");
       }
     }
-  }, [draftId, drafts, setPlacements]);
+    // Callbacks abaixo são omitidas propositalmente: são estáveis do hook e
+    // usar draftLoadedRef garante execução única.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId, drafts]);
 
 
 
