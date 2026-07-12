@@ -212,6 +212,9 @@ export function MaintenancePanel() {
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Painel consolidado de saúde */}
+        <HealthDashboardPanel />
+
         <p className="text-xs text-muted-foreground">
           A limpeza automática roda todo domingo às 03:00 UTC. Apenas registros fora do período de retenção são removidos.
         </p>
