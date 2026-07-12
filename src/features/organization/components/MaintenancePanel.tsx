@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import MiniSparkline from "@/components/MiniSparkline";
 import { SnapshotHistoryDialog } from "./SnapshotHistoryDialog";
 import { MaintenanceFailuresPanel } from "./MaintenanceFailuresPanel";
+import { MaintenanceDurationPanel } from "./MaintenanceDurationPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
