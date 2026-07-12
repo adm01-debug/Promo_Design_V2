@@ -520,6 +520,9 @@ export function MaintenancePanel() {
         {/* Atividade em tempo real: queries, locks e conexões */}
         <LiveActivityPanel />
 
+        {/* Status de replicação e WAL */}
+        <ReplicationStatusPanel />
+
 
 
         {/* Heatmap de falhas por dia/hora */}
