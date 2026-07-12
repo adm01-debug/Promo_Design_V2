@@ -492,6 +492,9 @@ export function MaintenancePanel() {
         {/* Projeção linear de armazenamento */}
         <StorageProjectionPanel />
 
+        {/* Saúde do Postgres (métricas do servidor) */}
+        <DbHealthPanel />
+
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
 
