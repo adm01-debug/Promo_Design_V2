@@ -28,6 +28,7 @@ import { DbHealthPanel } from "./DbHealthPanel";
 import { SlowQueriesPanel } from "./SlowQueriesPanel";
 import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
 import { TableBloatPanel } from "./TableBloatPanel";
+import { TopWritersPanel } from "./TopWritersPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
