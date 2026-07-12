@@ -5,7 +5,12 @@ import { useOrganizations } from "@/hooks/use-organization";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Save, Settings2, RotateCcw } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Save, Settings2, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface RetentionRow {
@@ -77,6 +82,34 @@ export function RetentionSettingsPanel() {
     onError: (e: Error) => toast.error(`Falha ao salvar: ${e.message}`),
   });
 
+  const cleanupMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentOrgId) throw new Error("Organização não selecionada");
+      const { data, error } = await supabase.functions.invoke("admin-maintenance", {
+        body: { action: "cleanup_per_org", organization_id: currentOrgId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data.result as {
+        audit_deleted: number;
+        notifications_deleted: number;
+        status_audit_deleted: number;
+        duration_ms: number;
+      };
+    },
+    onSuccess: (r) => {
+      const total = r.audit_deleted + r.notifications_deleted + r.status_audit_deleted;
+      toast.success(
+        total > 0
+          ? `Limpeza da organização concluída: ${total} registros em ${r.duration_ms}ms`
+          : "Limpeza executada — nada elegível nesta organização"
+      );
+      qc.invalidateQueries({ queryKey: ["maintenance-stats"] });
+      qc.invalidateQueries({ queryKey: ["maintenance-history"] });
+    },
+    onError: (e: Error) => toast.error(`Falha na limpeza: ${e.message}`),
+  });
+
   const dirty =
     !!query.data &&
     (form.audit_retention_days !== query.data.audit_retention_days ||
@@ -115,6 +148,40 @@ export function RetentionSettingsPanel() {
               {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
               Salvar
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5"
+                  disabled={cleanupMutation.isPending || !currentOrgId}
+                  title="Aplicar retenção desta organização agora"
+                >
+                  {cleanupMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
+                  Limpar org
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Limpar dados desta organização</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso removerá permanentemente logs de auditoria, notificações lidas e histórico de
+                    status desta organização que estejam fora dos períodos de retenção configurados
+                    acima. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => cleanupMutation.mutate()}>
+                    Executar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
       </div>

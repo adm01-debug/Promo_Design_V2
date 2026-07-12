@@ -12,7 +12,7 @@ const BodySchema = z.object({
   action: z.enum([
     "stats", "cleanup", "history", "table_sizes", "growth",
     "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats",
+    "duration_stats", "cleanup_per_org",
   ]),
   duration_days_back: z.number().int().min(1).max(365).optional(),
   audit_retention_days: z.number().int().min(30).max(3650).optional(),
@@ -21,6 +21,8 @@ const BodySchema = z.object({
   history_limit: z.number().int().min(1).max(100).optional(),
   growth_days_back: z.number().int().min(1).max(365).optional(),
   size_history_days: z.number().int().min(1).max(365).optional(),
+  // For per-org cleanup
+  organization_id: z.string().uuid().optional(),
   // Filters for snapshots_list
   snapshots_table_name: z.string().min(1).max(128).optional(),
   snapshots_from: z.string().datetime().optional(),
@@ -265,9 +267,30 @@ serve(async (req) => {
       return json({ ok: true, days_back: daysBack, stats, timeline, requestId });
     }
 
-
-
-
+    if (params.action === "cleanup_per_org") {
+      if (!params.organization_id) {
+        return json({ error: "organization_id é obrigatório", requestId }, 400);
+      }
+      const { data: orgRole, error: orgRoleErr } = await admin
+        .from("organization_members")
+        .select("role")
+        .eq("user_id", userData.user.id)
+        .eq("organization_id", params.organization_id)
+        .in("role", ["owner", "admin"])
+        .limit(1);
+      if (orgRoleErr) return json({ error: orgRoleErr.message, requestId }, 500);
+      if (!orgRole || orgRole.length === 0) {
+        return json({ error: "Permissão negada nesta organização", requestId }, 403);
+      }
+      console.log(`[${requestId}] per-org cleanup by ${userData.user.id} org=${params.organization_id}`);
+      const { data, error } = await admin.rpc("cleanup_expired_data_for_org", {
+        _org_id: params.organization_id,
+        _source: "manual_per_org",
+        _triggered_by: userData.user.id,
+      });
+      if (error) return json({ error: error.message, requestId }, 500);
+      return json({ ok: true, result: data, requestId });
+    }
 
 
     // cleanup

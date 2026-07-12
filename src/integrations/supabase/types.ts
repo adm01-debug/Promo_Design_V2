@@ -1259,6 +1259,10 @@ export type Database = {
             }
             Returns: Json
           }
+      cleanup_expired_data_for_org: {
+        Args: { _org_id: string; _source?: string; _triggered_by?: string }
+        Returns: Json
+      }
       current_user_orgs: { Args: never; Returns: string[] }
       explain_search_assets_ranked: {
         Args: { _org_id: string; _query?: string }
@@ -1290,6 +1294,7 @@ export type Database = {
       }
       is_mfa_authenticated: { Args: never; Returns: boolean }
       run_scheduled_cleanup: { Args: never; Returns: Json }
+      run_scheduled_cleanup_per_org: { Args: never; Returns: Json }
       search_assets_ranked:
         | {
             Args: {
