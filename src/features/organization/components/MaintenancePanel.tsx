@@ -36,6 +36,7 @@ import { VacuumHealthPanel } from "./VacuumHealthPanel";
 import { RecentIncidentsPanel } from "./RecentIncidentsPanel";
 import { LongRunningTxnsPanel } from "./LongRunningTxnsPanel";
 import { IndexBloatPanel } from "./IndexBloatPanel";
+import { SequenceSaturationPanel } from "./SequenceSaturationPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -530,6 +531,7 @@ export function MaintenancePanel() {
         {/* Transações longas com opção de encerrar backend */}
         <LongRunningTxnsPanel />
         <IndexBloatPanel />
+        <SequenceSaturationPanel />
 
         {/* Status de replicação e WAL */}
         <ReplicationStatusPanel />
