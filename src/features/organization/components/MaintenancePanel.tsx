@@ -516,6 +516,9 @@ export function MaintenancePanel() {
         {/* Cache hit ratio e uso de índices por tabela */}
         <CacheHitPanel />
 
+        {/* Atividade em tempo real: queries, locks e conexões */}
+        <LiveActivityPanel />
+
 
 
         {/* Heatmap de falhas por dia/hora */}
