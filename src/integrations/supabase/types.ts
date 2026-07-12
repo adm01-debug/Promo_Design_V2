@@ -1152,11 +1152,20 @@ export type Database = {
             Args: { _org_id: string; _required_cost?: number }
             Returns: boolean
           }
+      cleanup_expired_data: {
+        Args: {
+          _audit_retention_days?: number
+          _notifications_read_retention_days?: number
+          _status_audit_retention_days?: number
+        }
+        Returns: Json
+      }
       current_user_orgs: { Args: never; Returns: string[] }
       explain_search_assets_ranked: {
         Args: { _org_id: string; _query?: string }
         Returns: Json
       }
+      get_maintenance_stats: { Args: never; Returns: Json }
       has_any_role: {
         Args: {
           _org_id: string
