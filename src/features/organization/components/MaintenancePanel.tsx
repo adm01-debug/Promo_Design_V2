@@ -26,6 +26,7 @@ import { MonthlyGrowthPanel } from "./MonthlyGrowthPanel";
 import { StorageProjectionPanel } from "./StorageProjectionPanel";
 import { DbHealthPanel } from "./DbHealthPanel";
 import { SlowQueriesPanel } from "./SlowQueriesPanel";
+import { UnusedIndexesPanel } from "./UnusedIndexesPanel";
 
 interface MaintenanceStats {
   audit_log_total: number;
@@ -498,6 +499,10 @@ export function MaintenancePanel() {
 
         {/* Queries mais lentas (pg_stat_statements) */}
         <SlowQueriesPanel />
+
+        {/* Índices ociosos (candidatos a remoção) */}
+        <UnusedIndexesPanel />
+
 
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />
