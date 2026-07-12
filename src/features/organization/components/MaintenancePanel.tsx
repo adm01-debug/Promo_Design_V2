@@ -164,9 +164,10 @@ export function MaintenancePanel() {
     statsQuery.refetch();
     historyQuery.refetch();
     sizesQuery.refetch();
+    growthQuery.refetch();
   };
 
-  const isFetchingAny = statsQuery.isFetching || historyQuery.isFetching || sizesQuery.isFetching;
+  const isFetchingAny = statsQuery.isFetching || historyQuery.isFetching || sizesQuery.isFetching || growthQuery.isFetching;
 
   return (
     <Card>
