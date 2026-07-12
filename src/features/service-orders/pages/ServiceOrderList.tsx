@@ -25,6 +25,7 @@ import {
 import {
   useServiceOrders, STATUS_CONFIG, getNextStatuses,
   type OsStatus,
+  type StoredServiceOrder,
   generateBatchPdf, getLogoDataUrl,
 } from "@/features/service-orders";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,17 +133,17 @@ const ServiceOrderList = () => {
     toast.success("Ordem de Serviço excluída");
   };
 
-  const handleDuplicate = async (order: any) => {
+  const handleDuplicate = async (order: StoredServiceOrder) => {
     try {
-      const { id: _id, osNumber: _os, createdAt: _ca, updatedAt: _ua, ...clonedData } = order;
+      const { id: _id, osNumber, createdAt: _ca, updatedAt: _ua, status: _st, lockVersion: _lv, deletedAt: _da, ...clonedData } = order;
       const newOrder = await addOrder({
         ...clonedData,
-        status: "aberta",
-        observations: `Cópia da OS ${order.osNumber}. ${clonedData.observations || ""}`,
+        osNumber: `${osNumber}-COPY`,
+        observations: `Cópia da OS ${osNumber}. ${clonedData.observations || ""}`,
       });
-      toast.success(`OS ${order.osNumber} duplicada com sucesso!`);
+      toast.success(`OS ${osNumber} duplicada com sucesso!`);
       navigate(`/mockup/service-order?edit=${newOrder.id}`);
-    } catch (e) {
+    } catch {
       toast.error("Erro ao duplicar OS");
     }
   };
@@ -206,8 +207,8 @@ const ServiceOrderList = () => {
         fazParteKit: row.faz_parte_kit ?? false,
         gravacaoDetalhe: row.gravacao_detalhe ?? "",
         artAssetId: row.art_asset_id ?? null,
-        lockVersion: (row as any).lock_version ?? 1,
-        deletedAt: (row as any).deleted_at,
+        lockVersion: (row as unknown as { lock_version?: number }).lock_version ?? 1,
+        deletedAt: (row as unknown as { deleted_at?: string | null }).deleted_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }));

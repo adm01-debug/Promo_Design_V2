@@ -55,7 +55,7 @@ const OrganizationPage = () => {
       await createInvite.mutateAsync({ email: inviteEmail.trim(), role: inviteRole });
       setInviteOpen(false);
       setInviteEmail("");
-    } catch (e) {
+    } catch {
       // toast handled in hook
     }
   };
