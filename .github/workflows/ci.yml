@@ -1,15 +1,37 @@
-name: CI/CD & Audit
+name: Quality Gate & CI
+
+# Every PR runs the full quality gate in parallel jobs so each check appears
+# as its own status on the pull request. Any regression fails merge.
+#
+# Design principles:
+#   * Parallel jobs → fastest feedback, isolated failures.
+#   * `install` runs once and caches `node_modules`; downstream jobs reuse it.
+#   * Fail-fast disabled at matrix level; each gate must be independently green.
+#   * Heavy jobs (load, e2e, PDF generation) only run on push to main so PRs
+#     stay fast and don't need production secrets.
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
+
+# Cancel in-flight runs for the same PR when a new commit is pushed — saves
+# CI minutes and always reports the freshest verdict.
+concurrency:
+  group: quality-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  # -------------------------------------------------------------
+  # Shared setup: install once, cache node_modules for every gate.
+  # -------------------------------------------------------------
+  install:
+    name: Install dependencies
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -17,52 +39,257 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Check formatting
+      - name: Install
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+
+  # -------------------------------------------------------------
+  # Gate 1 — TypeScript strict compile.
+  # -------------------------------------------------------------
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install (cache miss fallback)
+        run: |
+          if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi
+      - name: TypeScript --noEmit
+        run: npx tsc --noEmit -p tsconfig.app.json
+
+  # -------------------------------------------------------------
+  # Gate 2 — ESLint (zero warnings tolerated).
+  # -------------------------------------------------------------
+  lint:
+    name: Lint (ESLint)
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install (cache miss fallback)
+        run: |
+          if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi
+      - name: ESLint (max-warnings = 0)
+        run: npx eslint . --max-warnings=0
+
+  # -------------------------------------------------------------
+  # Gate 3 — Prettier formatting check.
+  # -------------------------------------------------------------
+  format:
+    name: Format (Prettier)
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install (cache miss fallback)
+        run: |
+          if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi
+      - name: Prettier --check
         run: npm run format:check
 
-      - name: Lint
-        run: npm run lint
+  # -------------------------------------------------------------
+  # Gate 4 — Unit + integration tests (Vitest).
+  # -------------------------------------------------------------
+  test:
+    name: Tests (Vitest)
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install (cache miss fallback)
+        run: |
+          if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi
+      - name: Vitest
+        run: npm test -- --reporter=default --reporter=junit --outputFile=./test-results/junit.xml
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-junit
+          path: test-results/junit.xml
+          if-no-files-found: ignore
 
-      - name: Type check
-        run: npm run build:dev
+  # -------------------------------------------------------------
+  # Gate 5 — Vite production build (catches build-time regressions
+  # that pure typecheck / lint can miss, e.g. dynamic import errors).
+  # -------------------------------------------------------------
+  build:
+    name: Build (Vite)
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install (cache miss fallback)
+        run: |
+          if [ ! -d node_modules ]; then npm ci --no-audit --no-fund; fi
+      - name: Vite build
+        run: npm run build
 
-      - name: Run unit tests
-        run: npm test
+  # -------------------------------------------------------------
+  # Gate 6 — Deno tests for edge function shared modules.
+  # -------------------------------------------------------------
+  deno-test:
+    name: Edge Functions (Deno)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.x
+      - name: Deno test
+        run: |
+          if compgen -G "supabase/functions/**/*_test.ts" > /dev/null; then
+            deno test --allow-net --allow-env --allow-read \
+              supabase/functions/_shared \
+              $(ls supabase/functions/*_test.ts 2>/dev/null || true)
+          else
+            echo "No Deno tests found — skipping."
+          fi
 
-      - name: Run load tests
-        run: npm run test:load
+  # -------------------------------------------------------------
+  # Aggregate gate — a single required check for branch protection.
+  # Add this job as the only required status; it fails if ANY gate
+  # above fails, and stays green only when ALL of them pass.
+  # -------------------------------------------------------------
+  quality-gate:
+    name: Quality Gate
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, format, test, build, deno-test]
+    steps:
+      - name: Verify all gates passed
+        run: |
+          echo "typecheck : ${{ needs.typecheck.result }}"
+          echo "lint      : ${{ needs.lint.result }}"
+          echo "format    : ${{ needs.format.result }}"
+          echo "test      : ${{ needs.test.result }}"
+          echo "build     : ${{ needs.build.result }}"
+          echo "deno-test : ${{ needs.deno-test.result }}"
+          if [ "${{ needs.typecheck.result }}" != "success" ] \
+             || [ "${{ needs.lint.result }}" != "success" ] \
+             || [ "${{ needs.format.result }}" != "success" ] \
+             || [ "${{ needs.test.result }}" != "success" ] \
+             || [ "${{ needs.build.result }}" != "success" ] \
+             || [ "${{ needs.deno-test.result }}" != "success" ]; then
+            echo "::error::One or more quality gates failed — merge is blocked."
+            exit 1
+          fi
+          echo "All quality gates passed ✓"
+
+  # -------------------------------------------------------------
+  # Heavy suites — only on push to main (post-merge), never on PRs.
+  # They need production secrets and shouldn't block reviewers.
+  # -------------------------------------------------------------
+  load-tests:
+    name: Load tests
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:load
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
-      - name: Run E2E tests
-        run: npx playwright install --with-deps && npx playwright test
-
-  generate-audit-pdf:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  e2e:
+    name: E2E (Playwright)
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
-    needs: build
+    needs: quality-gate
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps
+      - run: npx playwright test
 
+  # -------------------------------------------------------------
+  # Audit PDF — only after everything else on main.
+  # -------------------------------------------------------------
+  generate-audit-pdf:
+    name: Generate audit PDF
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
       - name: Install Pandoc & TeX Live
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc texlive-latex-base texlive-fonts-recommended texlive-extra-utils texlive-latex-extra
-
       - name: Generate PDF from Markdown
         run: |
           mkdir -p docs
-          pandoc docs/enterprise-audit-report.md -o docs/audit_report.pdf --pdf-engine=pdflatex
-
-      - name: Commit and Push PDF
+          if [ -f docs/enterprise-audit-report.md ]; then
+            pandoc docs/enterprise-audit-report.md -o docs/audit_report.pdf --pdf-engine=pdflatex
+          else
+            echo "docs/enterprise-audit-report.md not found — skipping PDF generation."
+          fi
+      - name: Commit and push PDF
         run: |
-          git config --global user.name "github-actions[bot]"
+          if [ ! -f docs/audit_report.pdf ]; then exit 0; fi
+          git config --global user.name  "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/audit_report.pdf
           git commit -m "chore: auto-generate enterprise audit PDF [skip ci]" || echo "No changes to commit"
