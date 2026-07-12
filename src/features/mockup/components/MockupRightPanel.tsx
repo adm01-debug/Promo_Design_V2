@@ -45,8 +45,8 @@ interface MockupRightPanelProps {
   shadowIntensity: number;
   setShadowIntensity: (v: number) => void;
   autoFitLogo: (dataUrl: string) => void;
-  surfaceType: string;
-  setSurfaceType: (s: any) => void;
+  surfaceType: SurfaceType;
+  setSurfaceType: (s: SurfaceType) => void;
   isWarping: boolean;
   warpedLogoUrl: string | null;
   placement: Placement;
