@@ -145,7 +145,7 @@ const MockupEditor = () => {
       const draft = drafts.find(d => d.id === draftId);
       if (draft && draft.editorState) {
         const state = draft.editorState as {
-          placements?: Placement[];
+          placements?: Record<string, Placement>;
           logoPreview?: string;
           logoOpacity?: number;
           blendMode?: BlendMode;
