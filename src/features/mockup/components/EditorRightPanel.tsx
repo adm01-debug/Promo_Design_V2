@@ -4,23 +4,24 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
+import { PERSPECTIVE_PRESETS } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
-import type { AISuggestion } from "../hooks/use-mockup-editor-state";
+import {
+  useMockupEditorContext,
+  type BlendMode,
+} from "../context/mockup-editor-context";
 
-type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
-type ExportFormat = "png" | "jpeg" | "webp";
-type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
-
-interface ViewDef { id: string; label: string; icon: string; areaPercent: { x: number; y: number; w: number; h: number }; bgRotation?: number; }
-interface WatermarkConfig {
-  include: boolean;
-  opacity: number;
-  scale: number;
-  position: "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
-}
+// Re-export shared types so consumers importing them from this module keep working.
+export type {
+  BlendMode,
+  ExportFormat,
+  Placement,
+  ViewDef,
+  WatermarkConfig,
+  MockupEditorContextValue as EditorRightPanelProps,
+} from "../context/mockup-editor-context";
 
 
 const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
@@ -32,69 +33,7 @@ const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
   { id: "color-burn", label: "Color Burn", desc: "Saturação intensa" },
 ];
 
-export interface EditorRightPanelProps {
-  productName: string;
-  productSku: string;
-  productImage: string;
-  technique: string;
-  logoFile: File | null;
-  logoPreview: string | null;
-  logoColors: string[];
-  showLogo: boolean;
-  setShowLogo: (v: boolean) => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  handleLogoUpload: (file: File) => void;
-  setLogoPreview: (v: string | null) => void;
-  setLogoFile: (v: File | null) => void;
-  setLogoColors: (v: string[]) => void;
-  setWarpedLogoUrl: (v: string | null) => void;
-  blendMode: BlendMode;
-  setBlendMode: (bm: BlendMode) => void;
-  logoOpacity: number;
-  setLogoOpacity: (v: number) => void;
-  showTexture: boolean;
-  setShowTexture: (v: boolean) => void;
-  shadowEnabled: boolean;
-  setShadowEnabled: (v: boolean) => void;
-  shadowIntensity: number;
-  setShadowIntensity: (v: number) => void;
-  autoFitLogo: (dataUrl: string) => void;
-  surfaceType: SurfaceType;
-  setSurfaceType: (s: SurfaceType) => void;
-  currentPlacement: Placement;
-  updatePlacement: (u: Partial<Placement>) => void;
-  currentViewLabel: string;
-  views: ViewDef[];
-  approvedViews: Set<string>;
-  toggleApproval: (id: string) => void;
-  exportFormat: ExportFormat;
-  setExportFormat: (f: ExportFormat) => void;
-  exportQuality: number;
-  setExportQuality: (q: number) => void;
-  exportScale: number;
-  setExportScale: (s: number) => void;
-  handleExportPdf: () => void;
-  handleExportPng: () => void;
-  isExporting: boolean;
-  watermarkConfig: WatermarkConfig;
-  setWatermarkConfig: (v: WatermarkConfig) => void;
-  isSuggestingPlacement: boolean;
-  isRemovingBg: boolean;
-  handleSuggestPlacement: () => void;
-  handleRemoveBg: () => void;
-  suggestedPlacement: { placement: Placement; reasoning: string } | null;
-  applySuggestedPlacement: () => void;
-  setSuggestedPlacement: (v: { placement: Placement; reasoning: string } | null) => void;
-  cancelAIRequest: () => void;
-  aiSuggestions: AISuggestion[];
-  clearAISuggestions: () => void;
-  isPreviewingAI: boolean;
-  setIsPreviewingAI: (v: boolean) => void;
-}
-
-
-
-const EditorRightPanel = (props: EditorRightPanelProps) => {
+const EditorRightPanel = () => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
   const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
   const {
@@ -111,8 +50,8 @@ const EditorRightPanel = (props: EditorRightPanelProps) => {
     isSuggestingPlacement, isRemovingBg, handleSuggestPlacement, handleRemoveBg,
     suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement, cancelAIRequest,
     aiSuggestions, clearAISuggestions,
-    isPreviewingAI, setIsPreviewingAI
-  } = props;
+    isPreviewingAI, setIsPreviewingAI,
+  } = useMockupEditorContext();
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
