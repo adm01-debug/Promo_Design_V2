@@ -1,6 +1,6 @@
 import { test, expect, beforeAll, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import React from "react";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Mock hooks — EditorRightPanel imports AssetPicker which requires them.
