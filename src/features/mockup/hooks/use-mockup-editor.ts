@@ -5,24 +5,19 @@ import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/features/mock
 import { generateApprovalPdf } from "@/features/mockup";
 import { toast } from "sonner";
 import { useMockupDrafts } from "@/features/mockup";
-import { supabase } from "@/integrations/supabase/client";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
+import {
+  type Placement,
+  type HistoryEntry,
+  type BlendMode,
+  type ExportFormat,
+  INITIAL_PLACEMENT,
+  BLEND_MODES,
+} from "./use-mockup-editor-types";
+import { useMockupAIActions } from "./use-mockup-ai-actions";
 
-export type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
-export type HistoryEntry = { placement: Placement; logoPreview: string | null };
-export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
-export type ExportFormat = "png" | "jpeg" | "webp";
-
-export const BLEND_MODES: { id: BlendMode; label: string }[] = [
-  { id: "normal", label: "Normal" },
-  { id: "multiply", label: "Multiply" },
-  { id: "screen", label: "Screen" },
-  { id: "overlay", label: "Overlay" },
-  { id: "darken", label: "Darken" },
-  { id: "color-burn", label: "Color Burn" },
-];
-
-export const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.8, rotation: 0, flipH: false, flipV: false };
+export { INITIAL_PLACEMENT, BLEND_MODES };
+export type { Placement, HistoryEntry, BlendMode, ExportFormat };
 
 export const MOCKUP_TEMPLATES = [
   { id: "camiseta-frente", name: "Camiseta - Frente", category: "Vestuário", area: { x: 35, y: 20, w: 30, h: 35 }, aspectHint: "portrait" },
@@ -72,19 +67,8 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [shadowEnabled, setShadowEnabled] = useState(true);
   const [shadowIntensity, setShadowIntensity] = useState(40);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
-  const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
-  const [aiReasoning, setAiReasoning] = useState<string | null>(null);
-  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
-  
-  const abortControllerRef = useRef<AbortController | null>(null);
-  
-  // Ref usage for cleanup to satisfy linter
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, []);
+
+
   
 
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
@@ -199,109 +183,31 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
     reader.readAsDataURL(file);
   }, [placement, pushHistory, areaW, areaH, selectedTemplate]);
 
-  const handleRemoveBg = useCallback(async () => {
-    if (!logoPreview) return;
-    setIsRemovingBg(true);
-    const requestId = crypto.randomUUID();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", { 
-        body: { action: "remove-bg", imageBase64: logoPreview },
-        headers: { "X-Request-Id": requestId },
-        signal: controller.signal,
-      });
-      if (error) {
-        if (error.name === 'AbortError') return;
-        throw error;
-      }
-      if (data?.error) { toast.error(data.error); return; }
-      if (data?.imageBase64) {
-        clearWarpCache(); setWarpedLogoUrl(null); setLogoPreview(data.imageBase64);
-        pushHistory(placement, data.imageBase64);
-        toast.success("Fundo removido com IA!");
-      }
-    } catch (e: unknown) {
-      toast.error("Erro ao remover fundo: " + (e instanceof Error ? e.message : "Tente novamente"));
-    } finally { 
-      setIsRemovingBg(false);
-      if (abortControllerRef.current === controller) abortControllerRef.current = null;
-    }
-  }, [logoPreview, placement, pushHistory]);
-
-  const handleSuggestPlacement = useCallback(async () => {
-    if (!selectedProduct) return;
-    setIsSuggestingPlacement(true); setAiReasoning(null);
-    const requestId = crypto.randomUUID();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "suggest-placement", 
-          productName: selectedProduct.name, 
-          templateId: selectedTemplate || "", 
-          areaWidth: selectedArea?.max_width || 15, 
-          areaHeight: selectedArea?.max_height || 15 
-        },
-        headers: { "X-Request-Id": requestId },
-        signal: controller.signal,
-      });
-      if (error) {
-        if (error.name === 'AbortError') return;
-        throw error;
-      }
-      if (data?.error) { toast.error(data.error); return; }
-      
-      const newPlacement: Placement = { 
-        x: (data.xPercent / 100) * areaW, 
-        y: (data.yPercent / 100) * areaH, 
-        scale: Math.max(0.1, Math.min(1.5, data.scale)), 
-        rotation: data.rotation || 0, 
-        flipH: false, 
-        flipV: false 
-      };
-      
-      setSuggestedPlacement({
-        placement: newPlacement,
-        reasoning: data.reasoning || "Sugerido com base no tipo de produto."
-      });
-      
-      if (data.blendMode) setBlendMode(data.blendMode);
-      if (data.surfaceType) setSurfaceType(data.surfaceType);
-      if (data.opacity) setLogoOpacity(data.opacity);
-      if (data.reasoning) setAiReasoning(data.reasoning);
-      
-      toast.info("Sugestão de IA recebida. Revise antes de aplicar.");
-    } catch (e: unknown) {
-      toast.error("Erro na sugestão de IA: " + (e instanceof Error ? e.message : "Tente novamente"));
-    } finally { 
-      setIsSuggestingPlacement(false);
-      if (abortControllerRef.current === controller) abortControllerRef.current = null;
-    }
-  }, [selectedProduct, selectedTemplate, selectedArea, areaW, areaH]);
-
-  const applySuggestedPlacement = useCallback(() => {
-    if (!suggestedPlacement) return;
-    setPlacement(suggestedPlacement.placement);
-    pushHistory(suggestedPlacement.placement, logoPreview);
-    setSuggestedPlacement(null);
-    toast.success("Posicionamento aplicado!");
-  }, [suggestedPlacement, logoPreview, pushHistory]);
-
-  const cancelAIRequest = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-    setIsRemovingBg(false);
-    setIsSuggestingPlacement(false);
-    setSuggestedPlacement(null);
-    
-    toast.info("Ação cancelada pelo usuário.");
-  }, []);
+  const {
+    isRemovingBg,
+    isSuggestingPlacement,
+    aiReasoning,
+    suggestedPlacement,
+    handleRemoveBg,
+    handleSuggestPlacement,
+    applySuggestedPlacement,
+    cancelAIRequest,
+  } = useMockupAIActions({
+    selectedProduct,
+    selectedArea,
+    selectedTemplate,
+    logoPreview,
+    placement,
+    areaW,
+    areaH,
+    pushHistory,
+    setLogoPreview,
+    setWarpedLogoUrl,
+    setPlacement,
+    setBlendMode,
+    setSurfaceType,
+    setLogoOpacity,
+  });
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
