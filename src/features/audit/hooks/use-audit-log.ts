@@ -30,48 +30,59 @@ export interface AuditFilters {
   pageSize: number;
 }
 
-// PostgREST/Supabase's fluent query builder is deeply-generic (invariant); a
-// structural type erases too much. Using `any` here is intentional and scoped
-// to a private helper.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyFilters(query: any, f: AuditFilters) {
-  query = query.eq("organization_id", f.organizationId!);
-  if (f.from) query = query.gte("created_at", f.from);
-  if (f.to) query = query.lte("created_at", f.to);
+/**
+ * Minimal structural type covering only the fluent builder methods we chain in
+ * `applyFilters`. Using a generic `<Q extends AuditQueryBuilder>` preserves the
+ * caller's concrete builder type end-to-end (including the row typing needed
+ * for `.order().range()` afterwards) without leaking `any`.
+ */
+interface AuditQueryBuilder {
+  eq: (column: string, value: unknown) => this;
+  gte: (column: string, value: unknown) => this;
+  lte: (column: string, value: unknown) => this;
+  in: (column: string, values: readonly unknown[]) => this;
+  ilike: (column: string, pattern: string) => this;
+  or: (filters: string) => this;
+}
+
+function applyFilters<Q extends AuditQueryBuilder>(query: Q, f: AuditFilters): Q {
+  let q = query.eq("organization_id", f.organizationId!);
+  if (f.from) q = q.gte("created_at", f.from);
+  if (f.to) q = q.lte("created_at", f.to);
   if (f.actions && f.actions.length > 0 && f.actions.length < 3) {
-    query = query.in("action", f.actions);
+    q = q.in("action", f.actions);
   }
-  if (f.tableName) query = query.eq("table_name", f.tableName);
-  if (f.userId) query = query.eq("user_id", f.userId);
+  if (f.tableName) q = q.eq("table_name", f.tableName);
+  if (f.userId) q = q.eq("user_id", f.userId);
   if (f.recordIdQuery && f.recordIdQuery.length >= 4) {
-    query = query.ilike("record_id", `%${f.recordIdQuery}%`);
+    q = q.ilike("record_id", `%${f.recordIdQuery}%`);
   }
   if (f.ipQuery && f.ipQuery.trim().length > 0) {
     const term = f.ipQuery.trim().replace(/[,()%]/g, "");
-    query = query.ilike("ip_address", `%${term}%`);
+    q = q.ilike("ip_address", `%${term}%`);
   }
   if (f.userAgentQuery && f.userAgentQuery.trim().length > 0) {
     const term = f.userAgentQuery.trim().replace(/[,()%]/g, "");
-    query = query.ilike("user_agent", `%${term}%`);
+    q = q.ilike("user_agent", `%${term}%`);
   }
-  // Filtro por valor dentro de old_values / new_values
-  // Server-side só funciona quando temos uma CHAVE (PostgREST suporta column->>key=ilike.*x*)
+  // Filtro por valor dentro de old_values / new_values.
+  // Server-side só funciona quando temos uma CHAVE (PostgREST suporta column->>key=ilike.*x*).
   if (f.valueKey && f.valueKey.trim().length > 0) {
     const key = f.valueKey.trim().replace(/[",()]/g, "");
     const term = (f.valueQuery ?? "").trim();
     if (term.length > 0) {
       const safeTerm = term.replace(/[,()]/g, "");
-      query = query.or(
+      q = q.or(
         `old_values->>${key}.ilike.%${safeTerm}%,new_values->>${key}.ilike.%${safeTerm}%`,
       );
     } else {
       // só chave: traz registros onde a chave existe em algum dos lados (não-nulo)
-      query = query.or(
+      q = q.or(
         `old_values->>${key}.not.is.null,new_values->>${key}.not.is.null`,
       );
     }
   }
-  return query;
+  return q;
 }
 
 export function useAuditLog(filters: AuditFilters) {
