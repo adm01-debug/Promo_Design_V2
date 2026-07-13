@@ -190,24 +190,6 @@ export default function DamPreviewPage() {
     return compare.selectedIds.map(id => map.get(id)).filter((a): a is Asset => !!a);
   }, [assets, compare.selectedIds]);
 
-  useEffect(() => {
-    if (assets.length === 0 || !assetIdParam) return;
-    const idx = assets.findIndex(a => a.id === assetIdParam);
-    if (idx >= 0 && idx !== activeIndex) setActiveIndex(idx);
-  }, [assetIdParam, assets, activeIndex]);
-
-  useEffect(() => {
-    if (didInitRef.current || assets.length === 0) return;
-    didInitRef.current = true;
-    if (!assetIdParam) { setActiveIndex(0); return; }
-    const idx = assets.findIndex(a => a.id === assetIdParam);
-    if (idx < 0) setActiveIndex(0);
-  }, [assets, assetIdParam]);
-
-  useEffect(() => {
-    if (activeIndex >= assets.length && assets.length > 0) setActiveIndex(0);
-  }, [assets, activeIndex]);
-
   const clientNameById = useMemo(() => {
     const map: Record<string, string> = {};
     for (const c of clients ?? []) map[c.id] = c.name;
@@ -216,11 +198,42 @@ export default function DamPreviewPage() {
 
   const { lastKnownAsset, removalCauses, assetRemovedByFilter } = usePreviewDiagnosis(activeAsset, assets, filters, clientNameById);
 
+  // Consolida a sincronização de `activeIndex`. Antes existiam 4 efeitos
+  // separados (init once, sync com URL, clamp de bounds, restaurar lastKnown)
+  // que competiam pelo mesmo state. Um único efeito com prioridades explícitas
+  // é determinístico e reduz re-runs:
+  //   1. init: primeiro carregamento → usa `assetIdParam` se existir, senão 0
+  //   2. URL mudou: `assetIdParam` alterou por navegação externa (share, back)
+  //   3. lastKnownAsset: usuário perdeu o ativo por mudança de filtro
+  //   4. clamp: `assets` encolheu abaixo do índice atual
   useEffect(() => {
-    if (!lastKnownAsset || assets.length === 0 || activeAsset?.id === lastKnownAsset.id) return;
-    const idx = assets.findIndex(a => a.id === lastKnownAsset.id);
-    if (idx >= 0 && idx !== activeIndex) setActiveIndex(idx);
-  }, [assets, lastKnownAsset, activeAsset, activeIndex]);
+    if (assets.length === 0) return;
+
+    // (1) init once
+    if (!didInitRef.current) {
+      didInitRef.current = true;
+      if (!assetIdParam) { setActiveIndex(0); return; }
+      const idx = assets.findIndex(a => a.id === assetIdParam);
+      setActiveIndex(idx >= 0 ? idx : 0);
+      return;
+    }
+
+    // (2) URL param → índice
+    if (assetIdParam) {
+      const idx = assets.findIndex(a => a.id === assetIdParam);
+      if (idx >= 0 && idx !== activeIndex) { setActiveIndex(idx); return; }
+    }
+
+    // (3) recuperar último asset conhecido quando fora dos filtros
+    if (lastKnownAsset && activeAsset?.id !== lastKnownAsset.id) {
+      const idx = assets.findIndex(a => a.id === lastKnownAsset.id);
+      if (idx >= 0 && idx !== activeIndex) { setActiveIndex(idx); return; }
+    }
+
+    // (4) clamp de bounds
+    if (activeIndex >= assets.length) setActiveIndex(0);
+  }, [assets, assetIdParam, lastKnownAsset, activeAsset, activeIndex]);
+
 
   const assetMissingFromList = !!assetIdParam && assets.length > 0 && !assets.some(a => a.id === assetIdParam);
   useEffect(() => {
