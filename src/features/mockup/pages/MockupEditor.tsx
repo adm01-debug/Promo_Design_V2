@@ -21,6 +21,7 @@ import { ErrorLogger } from "@/lib/error-logger";
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
+import { MockupEditorProvider } from "@/features/mockup/context/mockup-editor-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ContextMenu,
@@ -885,38 +886,37 @@ const MockupEditor = () => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed inset-y-12 right-0 z-40 lg:relative lg:inset-y-0"
             >
-              <EditorRightPanel
-                productName={productName} productSku={productSku} productImage={productImage} technique={technique}
-                logoFile={logoFile} logoPreview={logoPreview} logoColors={logoColors} showLogo={showLogo} setShowLogo={setShowLogo}
-                fileInputRef={fileInputRef} handleLogoUpload={handleLogoUpload}
-                setLogoPreview={pushLogoToHistory} setLogoFile={setLogoFile} setLogoColors={setLogoColors} setWarpedLogoUrl={setWarpedLogoUrl}
-                blendMode={blendMode} setBlendMode={setBlendMode} logoOpacity={logoOpacity} setLogoOpacity={setLogoOpacity}
-                showTexture={showTexture} setShowTexture={setShowTexture}
-                shadowEnabled={shadowEnabled} setShadowEnabled={setShadowEnabled} shadowIntensity={shadowIntensity} setShadowIntensity={setShadowIntensity}
-                autoFitLogo={autoFitLogo} surfaceType={surfaceType} setSurfaceType={setSurfaceType}
-                currentPlacement={currentPlacement} updatePlacement={updatePlacement} currentViewLabel={currentView.label}
-                views={VIEWS} approvedViews={approvedViews} toggleApproval={toggleApproval}
-                exportFormat={exportFormat} setExportFormat={setExportFormat}
-                exportQuality={exportQuality} setExportQuality={setExportQuality}
-                exportScale={exportScale} setExportScale={setExportScale}
-                handleExportPdf={handleExportPdf} handleExportPng={handleExportPng} isExporting={isExporting}
-                watermarkConfig={watermarkConfig} setWatermarkConfig={setWatermarkConfig}
-                isSuggestingPlacement={isSuggestingPlacement}
-                isRemovingBg={isRemovingBg}
-                handleSuggestPlacement={handleSuggestPlacement}
-                handleRemoveBg={handleRemoveBg}
-                suggestedPlacement={suggestedPlacement}
-                applySuggestedPlacement={applySuggestedPlacement}
-                setSuggestedPlacement={setSuggestedPlacement}
-            cancelAIRequest={cancelAIRequest}
-            aiSuggestions={aiSuggestions}
-            clearAISuggestions={clearAISuggestions}
-            isPreviewingAI={isPreviewingAI}
-            setIsPreviewingAI={setIsPreviewingAI}
-          />
+              <MockupEditorProvider
+                value={{
+                  productName, productSku, productImage, technique,
+                  logoFile, logoPreview, logoColors, showLogo, setShowLogo,
+                  fileInputRef, handleLogoUpload,
+                  setLogoPreview: pushLogoToHistory, setLogoFile, setLogoColors, setWarpedLogoUrl,
+                  blendMode, setBlendMode, logoOpacity, setLogoOpacity,
+                  showTexture, setShowTexture,
+                  shadowEnabled, setShadowEnabled, shadowIntensity, setShadowIntensity,
+                  autoFitLogo, surfaceType, setSurfaceType,
+                  currentPlacement, updatePlacement, currentViewLabel: currentView.label,
+                  views: VIEWS, approvedViews, toggleApproval,
+                  exportFormat, setExportFormat,
+                  exportQuality, setExportQuality,
+                  exportScale, setExportScale,
+                  handleExportPdf, handleExportPng, isExporting,
+                  watermarkConfig, setWatermarkConfig,
+                  isSuggestingPlacement, isRemovingBg,
+                  handleSuggestPlacement, handleRemoveBg,
+                  suggestedPlacement, applySuggestedPlacement, setSuggestedPlacement,
+                  cancelAIRequest,
+                  aiSuggestions, clearAISuggestions,
+                  isPreviewingAI, setIsPreviewingAI,
+                }}
+              >
+                <EditorRightPanel />
+              </MockupEditorProvider>
             </motion.div>
           )}
         </AnimatePresence>
+
 
         <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
           <AlertDialogContent>
