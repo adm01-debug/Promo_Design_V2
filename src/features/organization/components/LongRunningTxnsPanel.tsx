@@ -39,12 +39,15 @@ interface Payload {
 }
 
 async function fetchTxns(minSeconds: number): Promise<Payload> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)("get_long_running_txns", {
-    _min_seconds: minSeconds,
-  });
+  const { data, error } = await (supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: Payload | null; error: Error | null }>)(
+    "get_long_running_txns",
+    { _min_seconds: minSeconds },
+  );
   if (error) throw error;
-  return data as Payload;
+  return (data ?? { threshold_seconds: minSeconds, transactions: [], total: 0, captured_at: new Date().toISOString() }) as Payload;
 }
 
 function formatDuration(ms: number) {
@@ -69,13 +72,16 @@ export function LongRunningTxnsPanel() {
   const handleTerminate = async (pid: number) => {
     setTerminatingPid(pid);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: res, error: err } = await (supabase.rpc as any)("terminate_backend", {
-        _pid: pid,
-        _reason: reason.trim() || null,
-      });
+      type TerminateRes = { ok?: boolean; user?: string; elapsed_seconds?: number } | null;
+      const { data: res, error: err } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: TerminateRes; error: Error | null }>)(
+        "terminate_backend",
+        { _pid: pid, _reason: reason.trim() || null },
+      );
       if (err) throw err;
-      const okRes = res as { ok?: boolean; user?: string; elapsed_seconds?: number } | null;
+      const okRes = res;
       toast({
         title: okRes?.ok ? "Backend encerrado" : "Falha ao encerrar",
         description: `PID ${pid} (${okRes?.user ?? "?"}) — ${okRes?.elapsed_seconds ?? 0}s`,

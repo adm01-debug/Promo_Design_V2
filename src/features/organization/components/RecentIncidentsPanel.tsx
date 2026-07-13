@@ -76,12 +76,15 @@ const WINDOW_OPTIONS = [
 ];
 
 async function fetchIncidents(minutes: number): Promise<IncidentsPayload> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)("get_recent_incidents", {
-    _minutes: minutes,
-  });
+  const { data, error } = await (supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: IncidentsPayload | null; error: Error | null }>)(
+    "get_recent_incidents",
+    { _minutes: minutes },
+  );
   if (error) throw error;
-  return data as IncidentsPayload;
+  return (data ?? {}) as IncidentsPayload;
 }
 
 export function RecentIncidentsPanel() {
