@@ -5,24 +5,19 @@ import { getWarpedPreview, clearWarpCache, applyMeshWarp } from "@/features/mock
 import { generateApprovalPdf } from "@/features/mockup";
 import { toast } from "sonner";
 import { useMockupDrafts } from "@/features/mockup";
-import { supabase } from "@/integrations/supabase/client";
 import type { DbProduct, DbPrintAreaTechnique, DbProductVariant } from "@/features/mockup";
+import {
+  type Placement,
+  type HistoryEntry,
+  type BlendMode,
+  type ExportFormat,
+  INITIAL_PLACEMENT,
+  BLEND_MODES,
+} from "./use-mockup-editor-types";
+import { useMockupAIActions } from "./use-mockup-ai-actions";
 
-export type Placement = { x: number; y: number; scale: number; rotation: number; flipH: boolean; flipV: boolean };
-export type HistoryEntry = { placement: Placement; logoPreview: string | null };
-export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
-export type ExportFormat = "png" | "jpeg" | "webp";
-
-export const BLEND_MODES: { id: BlendMode; label: string }[] = [
-  { id: "normal", label: "Normal" },
-  { id: "multiply", label: "Multiply" },
-  { id: "screen", label: "Screen" },
-  { id: "overlay", label: "Overlay" },
-  { id: "darken", label: "Darken" },
-  { id: "color-burn", label: "Color Burn" },
-];
-
-export const INITIAL_PLACEMENT: Placement = { x: 10, y: 10, scale: 0.8, rotation: 0, flipH: false, flipV: false };
+export { INITIAL_PLACEMENT, BLEND_MODES };
+export type { Placement, HistoryEntry, BlendMode, ExportFormat };
 
 export const MOCKUP_TEMPLATES = [
   { id: "camiseta-frente", name: "Camiseta - Frente", category: "Vestuário", area: { x: 35, y: 20, w: 30, h: 35 }, aspectHint: "portrait" },
