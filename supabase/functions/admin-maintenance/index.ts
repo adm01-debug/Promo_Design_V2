@@ -41,15 +41,17 @@ const BodySchema = z.object({
   failures_limit: z.number().int().min(1).max(50).optional(),
 });
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, req?: Request) {
+  const cors = req ? getCorsHeaders(req) : {};
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return corsPreflight(req);
+
 
   const requestId = crypto.randomUUID();
 
