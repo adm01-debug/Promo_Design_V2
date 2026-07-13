@@ -21,6 +21,7 @@ import { ErrorLogger } from "@/lib/error-logger";
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
+import { MockupEditorProvider } from "@/features/mockup/context/mockup-editor-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ContextMenu,
