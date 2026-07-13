@@ -41,7 +41,7 @@ const BodySchema = z.object({
   failures_limit: z.number().int().min(1).max(50).optional(),
 });
 
-function json(req, req: Request, body: unknown, status = 200) {
+function json(req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
