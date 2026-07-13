@@ -45,8 +45,9 @@ interface AuditQueryBuilder {
   or: (filters: string) => this;
 }
 
-function applyFilters<Q extends AuditQueryBuilder>(query: Q, f: AuditFilters): Q {
-  let q = query.eq("organization_id", f.organizationId!);
+function applyFilters<Q>(query: Q, f: AuditFilters): Q {
+  let q = query as unknown as AuditQueryBuilder;
+  q = q.eq("organization_id", f.organizationId!);
   if (f.from) q = q.gte("created_at", f.from);
   if (f.to) q = q.lte("created_at", f.to);
   if (f.actions && f.actions.length > 0 && f.actions.length < 3) {
@@ -82,7 +83,7 @@ function applyFilters<Q extends AuditQueryBuilder>(query: Q, f: AuditFilters): Q
       );
     }
   }
-  return q;
+  return q as unknown as Q;
 }
 
 export function useAuditLog(filters: AuditFilters) {
