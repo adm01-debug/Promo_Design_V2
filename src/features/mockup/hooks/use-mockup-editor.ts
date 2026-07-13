@@ -67,19 +67,8 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   const [shadowEnabled, setShadowEnabled] = useState(true);
   const [shadowIntensity, setShadowIntensity] = useState(40);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
-  const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
-  const [aiReasoning, setAiReasoning] = useState<string | null>(null);
-  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
-  
-  const abortControllerRef = useRef<AbortController | null>(null);
-  
-  // Ref usage for cleanup to satisfy linter
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, []);
+
+
   
 
   const [history, setHistory] = useState<HistoryEntry[]>([{ placement: INITIAL_PLACEMENT, logoPreview: null }]);
