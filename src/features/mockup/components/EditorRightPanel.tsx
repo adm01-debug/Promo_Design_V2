@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info,
 } from "lucide-react";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import {
   useMockupEditorContext,
   type BlendMode,
+  type ExportFormat,
 } from "../context/mockup-editor-context";
 
 // Re-export shared types so consumers importing them from this module keep working.
