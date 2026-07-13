@@ -126,9 +126,8 @@ self.onmessage = async (e: MessageEvent) => {
 
       // Convert result to ImageBitmap for fastest transfer
       const resultBitmap = canvas.transferToImageBitmap();
-      // Worker.postMessage transfer list overload; DOM lib types omit it for DedicatedWorkerGlobalScope.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      self.postMessage({ type: 'WARP_RESULT', payload: { bitmap: resultBitmap } }, [resultBitmap] as any);
+      (self as unknown as { postMessage: (msg: unknown, transfer: Transferable[]) => void })
+        .postMessage({ type: 'WARP_RESULT', payload: { bitmap: resultBitmap } }, [resultBitmap]);
 
     } catch (err) {
       self.postMessage({ type: 'ERROR', payload: { message: (err as Error).message } });
