@@ -190,6 +190,12 @@ export default function DamPreviewPage() {
     return compare.selectedIds.map(id => map.get(id)).filter((a): a is Asset => !!a);
   }, [assets, compare.selectedIds]);
 
+  const clientNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const c of clients ?? []) map[c.id] = c.name;
+    return map;
+  }, [clients]);
+
   const { lastKnownAsset, removalCauses, assetRemovedByFilter } = usePreviewDiagnosis(activeAsset, assets, filters, clientNameById);
 
   // Consolida a sincronização de `activeIndex`. Antes existiam 4 efeitos
