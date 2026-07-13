@@ -41,11 +41,10 @@ const BodySchema = z.object({
   failures_limit: z.number().int().min(1).max(50).optional(),
 });
 
-function json(body: unknown, status = 200, req?: Request) {
-  const cors = req ? getCorsHeaders(req) : {};
+function json(req, req: Request, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, "Content-Type": "application/json" },
+    headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
   });
 }
 
@@ -62,14 +61,14 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return json({ error: "Não autorizado", requestId }, 401);
+      return json(req, { error: "Não autorizado", requestId }, 401);
     }
 
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData?.user) return json({ error: "Sessão inválida", requestId }, 401);
+    if (userErr || !userData?.user) return json(req, { error: "Sessão inválida", requestId }, 401);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
     const { data: memberships, error: mErr } = await admin
@@ -81,23 +80,23 @@ serve(async (req) => {
 
     if (mErr) {
       console.error(`[${requestId}] membership check error:`, mErr);
-      return json({ error: "Falha na verificação de permissão", requestId }, 500);
+      return json(req, { error: "Falha na verificação de permissão", requestId }, 500);
     }
     if (!memberships || memberships.length === 0) {
-      return json({ error: "Permissão negada: requer owner ou admin", requestId }, 403);
+      return json(req, { error: "Permissão negada: requer owner ou admin", requestId }, 403);
     }
 
     const raw = await req.json().catch(() => ({}));
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return json({ error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400);
+      return json(req, { error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400);
     }
     const params = parsed.data;
 
     if (params.action === "stats") {
       const { data, error } = await admin.rpc("get_maintenance_stats");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, stats: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, stats: data, requestId });
     }
 
     if (params.action === "history") {
@@ -107,29 +106,29 @@ serve(async (req) => {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, history: data ?? [], requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, history: data ?? [], requestId });
     }
 
     if (params.action === "table_sizes") {
       const { data, error } = await admin.rpc("get_table_sizes");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, tables: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, tables: data, requestId });
     }
 
     if (params.action === "growth") {
       const { data, error } = await admin.rpc("get_table_growth", {
         _days_back: params.growth_days_back ?? 7,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, growth: data, days_back: params.growth_days_back ?? 7, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, growth: data, days_back: params.growth_days_back ?? 7, requestId });
     }
 
     if (params.action === "capture_snapshot") {
       console.log(`[${requestId}] snapshot capture requested by ${userData.user.id}`);
       const { data, error } = await admin.rpc("capture_table_size_snapshot");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
     if (params.action === "size_history") {
       const days = params.size_history_days ?? 90;
@@ -139,8 +138,8 @@ serve(async (req) => {
         .select("table_name,total_bytes,captured_at")
         .gte("captured_at", since)
         .order("captured_at", { ascending: true });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, history: data ?? [], days, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, history: data ?? [], days, requestId });
     }
 
     if (params.action === "snapshots_list") {
@@ -160,7 +159,7 @@ serve(async (req) => {
       if (params.snapshots_to) query = query.lte("captured_at", params.snapshots_to);
 
       const { data, count, error } = await query;
-      if (error) return json({ error: error.message, requestId }, 500);
+      if (error) return json(req, { error: error.message, requestId }, 500);
 
       // Distinct table names for filter dropdown (small dataset, fetch top 200)
       const { data: distinctRows } = await admin
@@ -170,7 +169,7 @@ serve(async (req) => {
         .limit(500);
       const tables = Array.from(new Set((distinctRows ?? []).map((r) => r.table_name)));
 
-      return json({
+      return json(req, {
         ok: true,
         rows: data ?? [],
         total: count ?? 0,
@@ -194,14 +193,14 @@ serve(async (req) => {
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (failuresErr) return json({ error: failuresErr.message, requestId }, 500);
+      if (failuresErr) return json(req, { error: failuresErr.message, requestId }, 500);
 
       // Aggregate counts by status × source in the window
       const { data: allRuns, error: allErr } = await admin
         .from("maintenance_runs")
         .select("source,status")
         .gte("created_at", since);
-      if (allErr) return json({ error: allErr.message, requestId }, 500);
+      if (allErr) return json(req, { error: allErr.message, requestId }, 500);
 
       const totals: Record<string, number> = { success: 0, error: 0, skipped: 0, partial: 0 };
       const bySource: Record<string, Record<string, number>> = {};
@@ -223,7 +222,7 @@ serve(async (req) => {
         if (!lastSuccessBySource[row.source]) lastSuccessBySource[row.source] = row.created_at;
       }
 
-      return json({
+      return json(req, {
         ok: true,
         days_back: daysBack,
         totals,
@@ -244,7 +243,7 @@ serve(async (req) => {
         .not("duration_ms", "is", null)
         .gte("created_at", since)
         .order("created_at", { ascending: true });
-      if (rErr) return json({ error: rErr.message, requestId }, 500);
+      if (rErr) return json(req, { error: rErr.message, requestId }, 500);
 
       const bySource = new Map<string, number[]>();
       const timeline: Array<{ created_at: string; duration_ms: number; source: string }> = [];
@@ -273,7 +272,7 @@ serve(async (req) => {
           avg: Math.round(sum / arr.length),
         };
       }
-      return json({ ok: true, days_back: daysBack, stats, timeline, requestId });
+      return json(req, { ok: true, days_back: daysBack, stats, timeline, requestId });
     }
 
     if (params.action === "slo_baseline") {
@@ -289,7 +288,7 @@ serve(async (req) => {
         .eq("status", "success")
         .not("duration_ms", "is", null)
         .gte("created_at", baselineSince);
-      if (bErr) return json({ error: bErr.message, requestId }, 500);
+      if (bErr) return json(req, { error: bErr.message, requestId }, 500);
 
       const p95 = (arr: number[]): number | null => {
         if (arr.length === 0) return null;
@@ -331,7 +330,7 @@ serve(async (req) => {
         };
       });
 
-      return json({
+      return json(req, {
         ok: true,
         baseline_days: baselineDays,
         recent_days: recentDays,
@@ -343,7 +342,7 @@ serve(async (req) => {
 
     if (params.action === "cleanup_per_org") {
       if (!params.organization_id) {
-        return json({ error: "organization_id é obrigatório", requestId }, 400);
+        return json(req, { error: "organization_id é obrigatório", requestId }, 400);
       }
       const { data: orgRole, error: orgRoleErr } = await admin
         .from("organization_members")
@@ -352,9 +351,9 @@ serve(async (req) => {
         .eq("organization_id", params.organization_id)
         .in("role", ["owner", "admin"])
         .limit(1);
-      if (orgRoleErr) return json({ error: orgRoleErr.message, requestId }, 500);
+      if (orgRoleErr) return json(req, { error: orgRoleErr.message, requestId }, 500);
       if (!orgRole || orgRole.length === 0) {
-        return json({ error: "Permissão negada nesta organização", requestId }, 403);
+        return json(req, { error: "Permissão negada nesta organização", requestId }, 403);
       }
       console.log(`[${requestId}] per-org cleanup by ${userData.user.id} org=${params.organization_id}`);
       const { data, error } = await admin.rpc("cleanup_expired_data_for_org", {
@@ -362,71 +361,71 @@ serve(async (req) => {
         _source: "manual_per_org",
         _triggered_by: userData.user.id,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "db_health") {
       const { data, error } = await admin.rpc("get_db_health");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, health: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, health: data, requestId });
     }
 
     if (params.action === "slow_queries") {
       const { data, error } = await admin.rpc("get_slow_queries", {
         _limit: params.slow_queries_limit ?? 15,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "unused_indexes") {
       const { data, error } = await admin.rpc("get_unused_indexes", {
         _min_size_kb: params.unused_indexes_min_kb ?? 64,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "bloat_health") {
       const { data, error } = await admin.rpc("get_table_bloat_health");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "manual_analyze") {
       if (!params.analyze_table) {
-        return json({ error: "analyze_table é obrigatório", requestId }, 400);
+        return json(req, { error: "analyze_table é obrigatório", requestId }, 400);
       }
       console.log(`[${requestId}] manual analyze by ${userData.user.id} table=${params.analyze_table}`);
       const { data, error } = await admin.rpc("run_manual_analyze", {
         _table_name: params.analyze_table,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "top_writers") {
       const { data, error } = await admin.rpc("get_top_writers");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "cache_hit") {
       const { data, error } = await admin.rpc("get_cache_hit_stats");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "live_activity") {
       const { data, error } = await admin.rpc("get_live_activity");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "kill_backend") {
       if (!params.kill_pid) {
-        return json({ error: "kill_pid é obrigatório", requestId }, 400);
+        return json(req, { error: "kill_pid é obrigatório", requestId }, 400);
       }
       const mode = params.kill_mode ?? "cancel";
       console.log(`[${requestId}] kill_backend pid=${params.kill_pid} mode=${mode} by ${userData.user.id}`);
@@ -434,8 +433,8 @@ serve(async (req) => {
         _pid: params.kill_pid,
         _mode: mode,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "check_lock_alerts") {
@@ -444,25 +443,25 @@ serve(async (req) => {
       const { data, error } = await admin.rpc("check_lock_alerts", {
         _threshold_ms: threshold,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "replication_status") {
       const { data, error } = await admin.rpc("get_replication_status");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "vacuum_health") {
       const { data, error } = await admin.rpc("get_vacuum_health");
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "manual_vacuum") {
       if (!params.vacuum_table) {
-        return json({ error: "vacuum_table é obrigatório", requestId }, 400);
+        return json(req, { error: "vacuum_table é obrigatório", requestId }, 400);
       }
       const mode = params.vacuum_mode ?? "standard";
       console.log(`[${requestId}] manual_vacuum table=${params.vacuum_table} mode=${mode} by ${userData.user.id}`);
@@ -470,8 +469,8 @@ serve(async (req) => {
         _table_name: params.vacuum_table,
         _mode: mode,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
     if (params.action === "check_replication_slot_alerts") {
@@ -479,8 +478,8 @@ serve(async (req) => {
       const { data, error } = await admin.rpc("check_replication_slot_alerts", {
         _max_retained_bytes: 1073741824,
       });
-      if (error) return json({ error: error.message, requestId }, 500);
-      return json({ ok: true, result: data, requestId });
+      if (error) return json(req, { error: error.message, requestId }, 500);
+      return json(req, { ok: true, result: data, requestId });
     }
 
 
@@ -497,10 +496,10 @@ serve(async (req) => {
       _source: "manual",
       _triggered_by: userData.user.id,
     });
-    if (error) return json({ error: error.message, requestId }, 500);
-    return json({ ok: true, result: data, requestId });
+    if (error) return json(req, { error: error.message, requestId }, 500);
+    return json(req, { ok: true, result: data, requestId });
   } catch (e) {
     console.error(`[${requestId}] fatal:`, e);
-    return json({ error: e instanceof Error ? e.message : "Erro desconhecido", requestId }, 500);
+    return json(req, { error: e instanceof Error ? e.message : "Erro desconhecido", requestId }, 500);
   }
 });
