@@ -65,11 +65,11 @@ export function useMockupEditorShortcuts({
         }
         if (e.key === "ArrowUp") {
           e.preventDefault();
-          updatePlacement({ x: currentPlacement.y - step });
+          updatePlacement({ y: currentPlacement.y - step });
         }
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          updatePlacement({ x: currentPlacement.y + step });
+          updatePlacement({ y: currentPlacement.y + step });
         }
         if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
