@@ -112,7 +112,7 @@ Mesma condição em `cleanup_expired_data(int,int,int)` vs `cleanup_expired_data
 | MFA (TOTP) | ✅ AAL2 forçado | ✅ |
 | Retenção auditoria | 180d | 365d (regulados) |
 | SLO tracking | ✅ p95 baseline vs recent | ✅ |
-| Least privilege em SECDEF | ⚠️ pós-fix | ✅ |
+| Least privilege em SECDEF | ✅ | ✅ |
 | Observabilidade DB | ✅ 8+ painéis | ✅ |
 
 ---
