@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
 import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
-import { generateFinalArtPdf as generateArtPdf } from "@/features/mockup";
+
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { useMockupEditorAI } from "../hooks/use-mockup-editor-ai";
