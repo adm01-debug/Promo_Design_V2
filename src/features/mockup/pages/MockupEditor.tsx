@@ -16,6 +16,7 @@ import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { useMockupEditorAI } from "../hooks/use-mockup-editor-ai";
 import { useMockupEditorExports } from "../hooks/use-mockup-editor-exports";
+import { useMockupEditorShortcuts } from "../hooks/use-mockup-editor-shortcuts";
 
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
@@ -214,47 +215,8 @@ const MockupEditor = () => {
   }, [activeView, updatePlacementCore]);
 
 
-  // Keyboard shortcuts and nudge functionality
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Robust check for typing context
-      const target = e.target as HTMLElement;
-      const isInput = target?.tagName === "INPUT" || 
-                      target?.tagName === "TEXTAREA" || 
-                      target?.isContentEditable ||
-                      target?.closest('[role="combobox"]') ||
-                      target?.closest('.cmdk-input');
-      
-      if (isInput) return;
-
-      const step = e.shiftKey ? 10 : 2;
-
-      // Undo/Redo shortcuts
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault();
-        if (e.shiftKey) redo();
-        else undo();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
-        e.preventDefault();
-        redo();
-      }
-
-      // Nudge logo with arrow keys, including snap-to-center shortcut
-      if (logoPreview && showLogo) {
-        if (e.key === 'ArrowLeft') { e.preventDefault(); updatePlacement({ x: currentPlacement.x - step }); }
-        if (e.key === 'ArrowRight') { e.preventDefault(); updatePlacement({ x: currentPlacement.x + step }); }
-        if (e.key === 'ArrowUp') { e.preventDefault(); updatePlacement({ x: currentPlacement.y - step }); }
-        if (e.key === 'ArrowDown') { e.preventDefault(); updatePlacement({ x: currentPlacement.y + step }); }
-        if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); centerLogo(); }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, true); // Use capture to preempt other listeners
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-    // centerLogo é estável (useCallback abaixo). Adicioná-lo criaria dep circular.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [undo, redo, logoPreview, showLogo, currentPlacement, updatePlacement]);
+  // Keyboard shortcuts (undo/redo, nudge, center) — extraído para hook dedicado.
+  // centerLogo é declarado abaixo com useCallback; passamos como referência estável.
 
 
 
@@ -421,6 +383,17 @@ const MockupEditor = () => {
 
   const handleMouseUp = () => setIsDragging(false);
   const centerLogo = () => { if (!areaRef.current) return; const rect = areaRef.current.getBoundingClientRect(); updatePlacement({ x: rect.width * 0.15, y: rect.height * 0.15 }); };
+
+  useMockupEditorShortcuts({
+    undo,
+    redo,
+    logoPreview,
+    showLogo,
+    currentPlacement,
+    updatePlacement,
+    centerLogo,
+  });
+
   const toggleApproval = (viewId: string) => { setApprovedViews(prev => { const next = new Set(prev); if (next.has(viewId)) next.delete(viewId); else next.add(viewId); return next; }); };
   const allApproved = VIEWS.every(v => approvedViews.has(v.id));
 
