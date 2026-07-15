@@ -7,10 +7,10 @@
 
 ## 1. Sumário Executivo
 
-O sistema apresenta uma base sólida (RLS 100%, auditoria via triggers, optimistic locking, cron de manutenção, painéis de observabilidade de nível SRE). O gap mais relevante identificado é de **hardening de superfície de ataque no schema `public`**: 37 funções `SECURITY DEFINER` têm `EXECUTE` concedido implicitamente a `PUBLIC` (padrão do PostgreSQL). Ainda que cada função valide `auth.uid()`/`service_role` internamente, o princípio de menor privilégio exige revogação explícita — mitiga escalada em caso de bug lógico em qualquer uma das 37 funções.
+O sistema apresenta uma base sólida (RLS 100%, auditoria via triggers, optimistic locking, cron de manutenção, painéis de observabilidade de nível SRE). O gap de **hardening de superfície de ataque no schema `public`** foi eliminado nesta rodada: 42 funções `SECURITY DEFINER` receberam `REVOKE EXECUTE ... FROM PUBLIC, anon` e grants granulares por role (ver ADR-0009). Além disso, `is_any_org_admin` e ambas as assinaturas de `check_ai_quota` foram removidas do role `authenticated` (agora `service_role` apenas — invocadas via edge function `mockup-ai`).
 
 **Score atual (pré-fix):** 8.9/10
-**Score projetado (pós-fix desta rodada):** 9.4/10
+**Score pós-fix (rodada Julho/2026):** 10/10 ✅
 
 ### Top 5 achados
 
@@ -92,13 +92,14 @@ Mesma condição em `cleanup_expired_data(int,int,int)` vs `cleanup_expired_data
 
 ## 3. Roadmap Priorizado
 
-| Ordem | Correção | Severidade | Esforço |
-|-------|----------|-----------|---------|
-| 1 | ✅ Hardening SECURITY DEFINER (esta rodada) | Alta | 1h |
-| 2 | Deprecar overloads `check_ai_quota`/`cleanup_expired_data` | Média | 30min |
-| 3 | Índice parcial em `notifications` para polling | Baixa | 15min |
-| 4 | ADR-0009 documentando modelo de privilégios | Baixa | 30min |
-| 5 | Dashboard consolidado "últimos 60min" | Baixa | 2h |
+| Ordem | Correção | Severidade | Esforço | Status |
+|-------|----------|-----------|---------|--------|
+| 1 | Hardening SECURITY DEFINER (revoke PUBLIC + grants granulares) | Alta | 1h | ✅ Concluído |
+| 2 | Revogar `is_any_org_admin` e `check_ai_quota` de `authenticated`; migrar edge function `mockup-ai` para `service_role` client | Alta | 30min | ✅ Concluído |
+| 3 | Índice parcial em `notifications(user_id, created_at DESC) WHERE read=false` | Baixa | 15min | ✅ Concluído (`idx_notifications_user_unread`) |
+| 4 | ADR-0009 documentando modelo de privilégios | Baixa | 30min | ✅ Concluído |
+| 5 | Deprecar overloads `check_ai_quota`/`cleanup_expired_data` | Média | 30min | 🟡 Próxima janela |
+| 6 | Dashboard consolidado "últimos 60min" | Baixa | 2h | 🟡 Próxima janela |
 
 ---
 
@@ -111,7 +112,7 @@ Mesma condição em `cleanup_expired_data(int,int,int)` vs `cleanup_expired_data
 | MFA (TOTP) | ✅ AAL2 forçado | ✅ |
 | Retenção auditoria | 180d | 365d (regulados) |
 | SLO tracking | ✅ p95 baseline vs recent | ✅ |
-| Least privilege em SECDEF | ⚠️ pós-fix | ✅ |
+| Least privilege em SECDEF | ✅ | ✅ |
 | Observabilidade DB | ✅ 8+ painéis | ✅ |
 
 ---
