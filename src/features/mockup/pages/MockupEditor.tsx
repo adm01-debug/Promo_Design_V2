@@ -87,7 +87,7 @@ const MockupEditor = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoColors, setLogoColors] = useState<string[]>([]);
   const [showLogo, setShowLogo] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
+  
   const [isWarping, setIsWarping] = useState(false);
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
 
