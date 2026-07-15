@@ -383,6 +383,17 @@ const MockupEditor = () => {
 
   const handleMouseUp = () => setIsDragging(false);
   const centerLogo = () => { if (!areaRef.current) return; const rect = areaRef.current.getBoundingClientRect(); updatePlacement({ x: rect.width * 0.15, y: rect.height * 0.15 }); };
+
+  useMockupEditorShortcuts({
+    undo,
+    redo,
+    logoPreview,
+    showLogo,
+    currentPlacement,
+    updatePlacement,
+    centerLogo,
+  });
+
   const toggleApproval = (viewId: string) => { setApprovedViews(prev => { const next = new Set(prev); if (next.has(viewId)) next.delete(viewId); else next.add(viewId); return next; }); };
   const allApproved = VIEWS.every(v => approvedViews.has(v.id));
 
