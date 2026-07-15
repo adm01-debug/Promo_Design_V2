@@ -10,13 +10,14 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/features/mockup";
-import { getWarpedPreviewWorker as getWarpedPreview, clearWarpCache } from "@/features/mockup";
+import { clearWarpCache } from "@/features/mockup";
 
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { useMockupEditorAI } from "../hooks/use-mockup-editor-ai";
 import { useMockupEditorExports } from "../hooks/use-mockup-editor-exports";
 import { useMockupEditorShortcuts } from "../hooks/use-mockup-editor-shortcuts";
+import { useMockupWarpEffect } from "../hooks/use-mockup-warp-effect";
 
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
@@ -89,7 +90,7 @@ const MockupEditor = () => {
   const [logoColors, setLogoColors] = useState<string[]>([]);
   const [showLogo, setShowLogo] = useState(true);
   
-  const [isWarping, setIsWarping] = useState(false);
+  // isWarping/warpedLogoUrl fornecidos por useMockupWarpEffect (após currentPlacement)
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
 
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
@@ -97,7 +98,7 @@ const MockupEditor = () => {
   const [showTexture, setShowTexture] = useState(true);
   const [logoOpacity, setLogoOpacity] = useState(100);
   const [surfaceType, setSurfaceType] = useState<SurfaceType>("flat");
-  const [warpedLogoUrl, setWarpedLogoUrl] = useState<string | null>(null);
+  // warpedLogoUrl gerido por useMockupWarpEffect (declarado após currentPlacement)
   const [shadowEnabled, setShadowEnabled] = useState(true);
   const [shadowIntensity, setShadowIntensity] = useState(40);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
@@ -220,84 +221,19 @@ const MockupEditor = () => {
 
 
 
-  useEffect(() => {
-    if (warpedLogoUrl) {
-      URL.revokeObjectURL(warpedLogoUrl);
-    }
-    clearWarpCache();
-    setWarpedLogoUrl(null);
-    // warpedLogoUrl é revogado propositalmente; ler o valor atual via closure basta.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logoPreview]);
+  // Mesh-warp preview extraído para hook dedicado — controla debounce, cancelamento,
+  // revogação de object URLs e reset em unmount/logo change.
+  const { warpedLogoUrl, setWarpedLogoUrl, isWarping } = useMockupWarpEffect({
+    logoPreview,
+    surfaceType,
+    rotation: currentPlacement.rotation,
+    flipH: currentPlacement.flipH,
+    flipV: currentPlacement.flipV,
+    scale: currentPlacement.scale,
+    viewAreaW,
+    viewAreaH,
+  });
 
-  // Clean up warped logo URL on unmount
-  useEffect(() => {
-    return () => {
-      if (warpedLogoUrl) {
-        URL.revokeObjectURL(warpedLogoUrl);
-      }
-    };
-  }, [warpedLogoUrl]);
-
-  useEffect(() => {
-    if (!logoPreview || surfaceType === "flat") { 
-      if (warpedLogoUrl) URL.revokeObjectURL(warpedLogoUrl);
-      setWarpedLogoUrl(null); 
-      setIsWarping(false);
-      return; 
-    }
-    
-    let cancelled = false;
-    setIsWarping(true);
-    
-    // Safety check for scale to avoid infinite or zero dimensions
-    const safeScale = Math.max(0.01, currentPlacement.scale);
-    const warpW = Math.max(64, Math.min(2048, Math.round(viewAreaW * safeScale * 2)));
-    const warpH = Math.max(64, Math.min(2048, Math.round(viewAreaH * safeScale * 2)));
-    
-    const requestWarp = async () => {
-      try {
-        const url = await getWarpedPreview(
-          logoPreview, 
-          warpW, 
-          warpH, 
-          surfaceType, 
-          currentPlacement.rotation, 
-          currentPlacement.flipH, 
-          currentPlacement.flipV
-        );
-        
-        if (!cancelled) {
-          // React state updates are batched, but let's be explicit about the old URL
-          setWarpedLogoUrl(prev => {
-            if (prev) URL.revokeObjectURL(prev);
-            return url;
-          });
-          setIsWarping(false);
-        } else {
-          URL.revokeObjectURL(url);
-        }
-      } catch (error) {
-        console.error("Warping error:", error);
-        if (!cancelled) {
-          setWarpedLogoUrl(prev => {
-            if (prev) URL.revokeObjectURL(prev);
-            return null;
-          });
-          setIsWarping(false);
-          toast.error("Erro ao processar deformação da logo. Tente simplificar a escala.");
-        }
-      }
-    };
-
-    const timer = setTimeout(requestWarp, 150); // Debounce heavy warping
-    return () => { 
-      cancelled = true; 
-      clearTimeout(timer);
-    };
-    // warpedLogoUrl é atualizado via setter funcional; não precisa ser dep.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logoPreview, surfaceType, currentPlacement.rotation, currentPlacement.flipH, currentPlacement.flipV, viewAreaW, viewAreaH, currentPlacement.scale]);
 
   const autoFitLogo = useCallback((dataUrl: string) => {
     const img = new window.Image();
