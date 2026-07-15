@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,6 +16,7 @@ import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportO
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { ErrorLogger } from "@/lib/error-logger";
+import { useMockupEditorAI } from "../hooks/use-mockup-editor-ai";
 
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
@@ -90,12 +90,7 @@ const MockupEditor = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isWarping, setIsWarping] = useState(false);
-  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
-  const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
 
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
@@ -367,132 +362,38 @@ const MockupEditor = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewAreaW, viewAreaH, pushLogoToHistory]);
 
-  const handleSuggestPlacement = useCallback(async () => {
-    if (!logoPreview) return;
-    setIsSuggestingPlacement(true);
-    const rid = crypto.randomUUID();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "suggest-placement",
-          productName,
-          templateId: productSku || "custom",
-          areaWidth: areaW,
-          areaHeight: areaH
-        },
-        headers: { "X-Request-Id": rid },
-        signal: controller.signal
-      });
-
-      if (error) {
-        if (error.name === 'AbortError') return;
-        throw error;
-      }
-
-      const suggested: Placement = {
-        scale: data.scale,
-        x: (data.xPercent / 100) * VIRTUAL_CANVAS_SIZE,
-        y: (data.yPercent / 100) * VIRTUAL_CANVAS_SIZE,
-        rotation: data.rotation || 0,
-        flipH: false,
-        flipV: false
-      };
-
-      setSuggestedPlacement({
-        placement: suggested,
-        reasoning: data.reasoning || "Sugerido com base na geometria do produto."
-      });
-
-      pushAISuggestion({
-        type: 'placement',
-        data: {
-          placement: suggested,
-          reasoning: data.reasoning
-        }
-      });
-
-      if (data.blendMode) setBlendMode(data.blendMode);
-      if (data.surfaceType) setSurfaceType(data.surfaceType);
-      if (data.opacity) setLogoOpacity(data.opacity);
-
-      toast.info("Sugestão de IA recebida.");
-    } catch (err) {
-      console.error("AI Suggestion failed:", err);
-      toast.error("IA: Falha ao obter sugestão.");
-    } finally {
-      setIsSuggestingPlacement(false);
-      if (abortControllerRef.current === controller) abortControllerRef.current = null;
-    }
-    // pushAISuggestion vem de reducer estável.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logoPreview, productName, productSku, areaW, areaH]);
+  const {
+    isSuggestingPlacement,
+    isRemovingBg,
+    suggestedPlacement,
+    setSuggestedPlacement,
+    isCancelConfirmOpen,
+    setIsCancelConfirmOpen,
+    handleSuggestPlacement,
+    handleRemoveBg,
+    cancelAIRequest,
+    confirmCancelAIRequest,
+  } = useMockupEditorAI({
+    logoPreview,
+    productName,
+    productSku,
+    areaW,
+    areaH,
+    virtualCanvasSize: VIRTUAL_CANVAS_SIZE,
+    pushLogoToHistory,
+    pushAISuggestion,
+    setBlendMode,
+    setSurfaceType,
+    setLogoOpacity,
+  });
 
   const applySuggestedPlacement = useCallback(() => {
     if (!suggestedPlacement) return;
     updatePlacement(suggestedPlacement.placement);
     setSuggestedPlacement(null);
     toast.success("Posicionamento aplicado!");
-  }, [suggestedPlacement, updatePlacement]);
+  }, [suggestedPlacement, updatePlacement, setSuggestedPlacement]);
 
-  const handleRemoveBg = useCallback(async () => {
-    if (!logoPreview) return;
-    setIsRemovingBg(true);
-    const rid = crypto.randomUUID();
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      const { data, error } = await supabase.functions.invoke("mockup-ai", {
-        body: { 
-          action: "remove-bg",
-          imageBase64: logoPreview
-        },
-        headers: { "X-Request-Id": rid },
-        signal: controller.signal
-      });
-
-      if (error) {
-        if (error.name === 'AbortError') return;
-        throw error;
-      }
-      
-      pushLogoToHistory(data.imageBase64);
-      pushAISuggestion({
-        type: 'remove-bg',
-        data: {
-          logoPreview: data.imageBase64,
-          reasoning: "Fundo removido automaticamente via IA."
-        }
-      });
-      toast.success("IA: Fundo removido!");
-    } catch (err) {
-      console.error("AI BG Removal failed:", err);
-      toast.error("IA: Falha ao remover fundo.");
-    } finally {
-      setIsRemovingBg(false);
-      if (abortControllerRef.current === controller) abortControllerRef.current = null;
-    }
-    // pushAISuggestion vem de reducer estável.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logoPreview, pushLogoToHistory]);
-
-  const cancelAIRequest = useCallback(() => {
-    setIsCancelConfirmOpen(true);
-  }, []);
-
-  const confirmCancelAIRequest = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsRemovingBg(false);
-      setIsSuggestingPlacement(false);
-      toast.info("Operação cancelada.");
-    }
-    setIsCancelConfirmOpen(false);
-  }, []);
 
 
   const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file?.type.startsWith("image/")) handleLogoUpload(file); }, [handleLogoUpload]);
