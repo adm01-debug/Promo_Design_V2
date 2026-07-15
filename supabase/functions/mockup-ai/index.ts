@@ -131,9 +131,17 @@ serve(async (req) => {
 
     const orgId = orgData?.organization_id;
 
+    // Cliente service_role para invocar RPCs SECURITY DEFINER com privilégio mínimo
+    // (as funções `check_ai_quota` e `check_and_consume_ai_rate_limit` não são mais
+    // expostas ao role `authenticated` — ver ADR-0009).
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+
     // Check quota before call
     if (orgId) {
-      const { data: hasQuota } = await supabase.rpc("check_ai_quota", { _org_id: orgId });
+      const { data: hasQuota } = await admin.rpc("check_ai_quota", { _org_id: orgId });
       if (hasQuota === false) {
         console.warn(`[${requestId}] Quota exceeded for org \${orgId}`);
         return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
@@ -141,10 +149,6 @@ serve(async (req) => {
     }
 
     // ─── Rate limit por usuário (protege contra abuso de custo AI) ──
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
-    );
     const featureKey = `mockup-ai:\${body.action}`;
     const limitPerMin = body.action === "remove-bg" ? 10 : 30;
     const { data: rl } = await admin.rpc("check_and_consume_ai_rate_limit", {
