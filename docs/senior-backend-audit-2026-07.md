@@ -92,13 +92,14 @@ Mesma condição em `cleanup_expired_data(int,int,int)` vs `cleanup_expired_data
 
 ## 3. Roadmap Priorizado
 
-| Ordem | Correção | Severidade | Esforço |
-|-------|----------|-----------|---------|
-| 1 | ✅ Hardening SECURITY DEFINER (esta rodada) | Alta | 1h |
-| 2 | Deprecar overloads `check_ai_quota`/`cleanup_expired_data` | Média | 30min |
-| 3 | Índice parcial em `notifications` para polling | Baixa | 15min |
-| 4 | ADR-0009 documentando modelo de privilégios | Baixa | 30min |
-| 5 | Dashboard consolidado "últimos 60min" | Baixa | 2h |
+| Ordem | Correção | Severidade | Esforço | Status |
+|-------|----------|-----------|---------|--------|
+| 1 | Hardening SECURITY DEFINER (revoke PUBLIC + grants granulares) | Alta | 1h | ✅ Concluído |
+| 2 | Revogar `is_any_org_admin` e `check_ai_quota` de `authenticated`; migrar edge function `mockup-ai` para `service_role` client | Alta | 30min | ✅ Concluído |
+| 3 | Índice parcial em `notifications(user_id, created_at DESC) WHERE read=false` | Baixa | 15min | ✅ Concluído (`idx_notifications_user_unread`) |
+| 4 | ADR-0009 documentando modelo de privilégios | Baixa | 30min | ✅ Concluído |
+| 5 | Deprecar overloads `check_ai_quota`/`cleanup_expired_data` | Média | 30min | 🟡 Próxima janela |
+| 6 | Dashboard consolidado "últimos 60min" | Baixa | 2h | 🟡 Próxima janela |
 
 ---
 
