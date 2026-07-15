@@ -91,12 +91,7 @@ const MockupEditor = () => {
   const [showLogo, setShowLogo] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isWarping, setIsWarping] = useState(false);
-  const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
-  const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
   const [isPreviewingAI, setIsPreviewingAI] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
 
   const [approvedViews, setApprovedViews] = useState<Set<string>>(new Set());
   const [blendMode, setBlendMode] = useState<BlendMode>("normal");
