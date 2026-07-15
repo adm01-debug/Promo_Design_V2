@@ -17,6 +17,7 @@ import { exportMockupImage, exportMockupPdf, renderMultiViewCanvas, type ExportO
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { ErrorLogger } from "@/lib/error-logger";
+import { useMockupEditorAI } from "../hooks/use-mockup-editor-ai";
 
 import EditorTopBar from "@/features/mockup/components/EditorTopBar";
 import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbnails";
