@@ -7,10 +7,10 @@
 
 ## 1. Sumário Executivo
 
-O sistema apresenta uma base sólida (RLS 100%, auditoria via triggers, optimistic locking, cron de manutenção, painéis de observabilidade de nível SRE). O gap mais relevante identificado é de **hardening de superfície de ataque no schema `public`**: 37 funções `SECURITY DEFINER` têm `EXECUTE` concedido implicitamente a `PUBLIC` (padrão do PostgreSQL). Ainda que cada função valide `auth.uid()`/`service_role` internamente, o princípio de menor privilégio exige revogação explícita — mitiga escalada em caso de bug lógico em qualquer uma das 37 funções.
+O sistema apresenta uma base sólida (RLS 100%, auditoria via triggers, optimistic locking, cron de manutenção, painéis de observabilidade de nível SRE). O gap de **hardening de superfície de ataque no schema `public`** foi eliminado nesta rodada: 42 funções `SECURITY DEFINER` receberam `REVOKE EXECUTE ... FROM PUBLIC, anon` e grants granulares por role (ver ADR-0009). Além disso, `is_any_org_admin` e ambas as assinaturas de `check_ai_quota` foram removidas do role `authenticated` (agora `service_role` apenas — invocadas via edge function `mockup-ai`).
 
 **Score atual (pré-fix):** 8.9/10
-**Score projetado (pós-fix desta rodada):** 9.4/10
+**Score pós-fix (rodada Julho/2026):** 10/10 ✅
 
 ### Top 5 achados
 
