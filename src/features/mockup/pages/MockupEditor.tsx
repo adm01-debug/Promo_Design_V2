@@ -426,7 +426,6 @@ const MockupEditor = () => {
 
   const {
     isExporting,
-    handleExportImage,
     handleExportPng,
     handleExportPdf,
     handleExportArt,
