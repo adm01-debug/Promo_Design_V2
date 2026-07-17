@@ -41,6 +41,8 @@ serve(async (req) => {
       _audit_retention_days: auditDays,
       _notifications_read_retention_days: notifDays,
       _status_audit_retention_days: statusDays,
+      _source: "edge_function",
+      _triggered_by: null,
     });
 
     if (error) {
