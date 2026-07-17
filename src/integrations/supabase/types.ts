@@ -1496,12 +1496,10 @@ export type Database = {
     Functions: {
       accept_organization_invite: { Args: { _token: string }; Returns: Json }
       capture_table_size_snapshot: { Args: never; Returns: Json }
-      check_ai_quota:
-        | { Args: { _org_id: string }; Returns: boolean }
-        | {
-            Args: { _org_id: string; _required_cost?: number }
-            Returns: boolean
-          }
+      check_ai_quota: {
+        Args: { _org_id: string; _required_cost?: number }
+        Returns: boolean
+      }
       check_and_consume_ai_rate_limit: {
         Args: { _feature: string; _limit_per_min?: number; _user_id: string }
         Returns: Json
@@ -1527,25 +1525,16 @@ export type Database = {
         }
         Returns: Json
       }
-      cleanup_expired_data:
-        | {
-            Args: {
-              _audit_retention_days?: number
-              _notifications_read_retention_days?: number
-              _status_audit_retention_days?: number
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _audit_retention_days?: number
-              _notifications_read_retention_days?: number
-              _source?: string
-              _status_audit_retention_days?: number
-              _triggered_by?: string
-            }
-            Returns: Json
-          }
+      cleanup_expired_data: {
+        Args: {
+          _audit_retention_days?: number
+          _notifications_read_retention_days?: number
+          _source?: string
+          _status_audit_retention_days?: number
+          _triggered_by?: string
+        }
+        Returns: Json
+      }
       cleanup_expired_data_for_org: {
         Args: { _org_id: string; _source?: string; _triggered_by?: string }
         Returns: Json

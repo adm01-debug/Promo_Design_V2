@@ -141,7 +141,7 @@ serve(async (req) => {
 
     // Check quota before call
     if (orgId) {
-      const { data: hasQuota } = await admin.rpc("check_ai_quota", { _org_id: orgId });
+      const { data: hasQuota } = await admin.rpc("check_ai_quota", { _org_id: orgId, _required_cost: 0 });
       if (hasQuota === false) {
         console.warn(`[${requestId}] Quota exceeded for org \${orgId}`);
         return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
