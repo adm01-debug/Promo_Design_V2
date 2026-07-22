@@ -1574,6 +1574,7 @@ export type Database = {
           table_name: string
         }[]
       }
+      get_last_hour_overview: { Args: { _minutes?: number }; Returns: Json }
       get_live_activity: { Args: never; Returns: Json }
       get_long_running_txns: { Args: { _min_seconds?: number }; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
