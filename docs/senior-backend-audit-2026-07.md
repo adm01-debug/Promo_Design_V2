@@ -99,7 +99,7 @@ Mesma condição em `cleanup_expired_data(int,int,int)` vs `cleanup_expired_data
 | 3 | Índice parcial em `notifications(user_id, created_at DESC) WHERE read=false` | Baixa | 15min | ✅ Concluído (`idx_notifications_user_unread`) |
 | 4 | ADR-0009 documentando modelo de privilégios | Baixa | 30min | ✅ Concluído |
 | 5 | Deprecar overloads `check_ai_quota`/`cleanup_expired_data` | Média | 30min | 🟡 Próxima janela |
-| 6 | Dashboard consolidado "últimos 60min" | Baixa | 2h | 🟡 Próxima janela |
+| 6 | Dashboard consolidado "últimos 60min" | Baixa | 2h | ✅ Concluído (`LastHourOverviewPanel` + RPC `get_last_hour_overview`) |
 
 ---
 
