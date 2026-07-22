@@ -118,6 +118,7 @@ const OrganizationPage = () => {
       </Card>
 
       {currentOrgId && canManage && <AiUsagePanel organizationId={currentOrgId} />}
+      {currentOrgId && canManage && <LastHourOverviewPanel />}
       {currentOrgId && canManage && <MaintenancePanel />}
 
 
