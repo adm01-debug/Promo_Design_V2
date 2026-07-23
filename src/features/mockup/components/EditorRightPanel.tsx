@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info,
 } from "lucide-react";
@@ -7,10 +7,14 @@ import { Slider } from "@/components/ui/slider";
 import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
+import { BrandAdherenceGauge } from "@/features/dam/components/BrandAdherenceGauge";
+import { useBrandGuidelines } from "@/features/dam/hooks/use-brand-guidelines";
+import { computeBrandAdherenceScore } from "@/features/dam/lib/brand-adherence";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClientDesignRecommendation, type DesignRecommendation } from "../hooks/use-client-design-recommendation";
 import { ClientPatternBadge } from "./ClientPatternBadge";
+import { ClientSelector } from "./ClientSelector";
 import {
   useMockupEditorContext,
   type BlendMode,
@@ -40,6 +44,7 @@ const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
 const EditorRightPanel = () => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
   const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { currentOrgId } = useOrganizations();
   const {
     productName, productSku, productImage, technique,
@@ -61,8 +66,36 @@ const EditorRightPanel = () => {
   // Recomendação de padrão do cliente (fallback: agregado da organização)
   const { data: designRecommendation } = useClientDesignRecommendation(
     currentOrgId,
-    null,
+    selectedClientId,
   );
+
+  // Brand guidelines do cliente selecionado → alimenta o gauge de aderência
+  const { guidelines: brandGuidelines } = useBrandGuidelines(
+    currentOrgId,
+    selectedClientId,
+  );
+
+  const adherence = useMemo(() => {
+    if (!brandGuidelines || logoColors.length === 0) return null;
+    return computeBrandAdherenceScore(
+      {
+        dominantColors: logoColors,
+        placement: {
+          x: currentPlacement.x / 100,
+          y: currentPlacement.y / 100,
+          scale: currentPlacement.scale,
+        },
+        surfaceType,
+        blendMode,
+      },
+      {
+        primary_colors: brandGuidelines.primary_colors,
+        secondary_colors: brandGuidelines.secondary_colors,
+        do_rules: brandGuidelines.do_rules,
+        dont_rules: brandGuidelines.dont_rules,
+      },
+    );
+  }, [brandGuidelines, logoColors, currentPlacement, surfaceType, blendMode]);
 
   const applyPatternRecommendation = (rec: DesignRecommendation) => {
     if (rec.suggestedBlendMode) {
@@ -96,14 +129,32 @@ const EditorRightPanel = () => {
         {technique && <span className="inline-block text-[10px] text-primary font-mono mt-2 bg-primary/10 px-1.5 py-0.5 rounded" aria-label={`Técnica: ${technique}`}>{technique}</span>}
       </section>
 
-      {/* Padrão de design recomendado (histórico do cliente/org) */}
-      {designRecommendation && designRecommendation.source !== "none" && (
-        <section className="px-4 pt-4" aria-labelledby="pattern-recommendation-title">
-          <h3 id="pattern-recommendation-title" className="sr-only">Recomendação de padrão de design</h3>
+      {/* Seletor de cliente + padrão de design recomendado */}
+      <section className="p-4 border-b border-border space-y-3" aria-labelledby="pattern-recommendation-title">
+        <h3 id="pattern-recommendation-title" className="sr-only">Cliente e recomendação de padrão de design</h3>
+        <ClientSelector
+          organizationId={currentOrgId}
+          value={selectedClientId}
+          onChange={setSelectedClientId}
+        />
+        {designRecommendation && designRecommendation.source !== "none" && (
           <ClientPatternBadge
             recommendation={designRecommendation}
             onApply={applyPatternRecommendation}
           />
+        )}
+      </section>
+
+      {/* Aderência à identidade da marca (só quando há guidelines do cliente) */}
+      {adherence && (
+        <section className="p-4 border-b border-border" aria-labelledby="brand-adherence-title">
+          <h3
+            id="brand-adherence-title"
+            className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2"
+          >
+            Aderência à marca
+          </h3>
+          <BrandAdherenceGauge result={adherence} />
         </section>
       )}
 
