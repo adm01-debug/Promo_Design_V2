@@ -91,6 +91,9 @@ function makeDefaults(overrides: Partial<MockupEditorContextValue> = {}): Mockup
     clearAISuggestions: vi.fn(),
     isPreviewingAI: false,
     setIsPreviewingAI: vi.fn(),
+    selectedClientId: null,
+    setSelectedClientId: vi.fn(),
+
     ...overrides,
   }) as MockupEditorContextValue;
 }
