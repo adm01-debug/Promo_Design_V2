@@ -12,6 +12,7 @@ export interface BrandRecommendationStats {
     avg_sample_size: number;
   };
   by_source: Record<string, number>;
+  daily: Array<{ day: string; n: number; avg_confidence: number }>;
   recent: Array<{
     created_at: string;
     source: string | null;
