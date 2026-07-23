@@ -145,6 +145,19 @@ const EditorRightPanel = () => {
         )}
       </section>
 
+      {/* Aderência à identidade da marca (só quando há guidelines do cliente) */}
+      {adherence && (
+        <section className="p-4 border-b border-border" aria-labelledby="brand-adherence-title">
+          <h3
+            id="brand-adherence-title"
+            className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2"
+          >
+            Aderência à marca
+          </h3>
+          <BrandAdherenceGauge result={adherence} />
+        </section>
+      )}
+
       {/* Logo */}
       <section className="p-4 border-b border-border" aria-labelledby="logo-section-title">
         <h3 id="logo-section-title" className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Logo</h3>
