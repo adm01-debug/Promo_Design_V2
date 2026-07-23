@@ -161,7 +161,21 @@ export default function BrandGuidelinesPage() {
       return dedupeRules(list, selected.dont_rules).join("\n");
     });
     setInferOpen(false);
+    if (currentHistoryId && clientId) {
+      markApplied.mutate({
+        history_id: currentHistoryId,
+        client_id: clientId,
+        selection: selected,
+      });
+    }
     toast.success("Proposta aplicada. Revise e clique em Salvar para persistir.");
+  };
+
+  const handleReviewHistory = (row: InferHistoryRow) => {
+    setProposal(row.proposal);
+    setAssetsUsed(row.assets_used);
+    setCurrentHistoryId(row.id);
+    setInferOpen(true);
   };
 
   useEffect(() => {
