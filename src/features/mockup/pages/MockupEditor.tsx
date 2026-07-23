@@ -385,7 +385,7 @@ const MockupEditor = () => {
     
     return () => clearTimeout(timer);
 
-  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig]);
+  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig, selectedClientId]);
 
   return (
     <div className="h-screen flex flex-col">
