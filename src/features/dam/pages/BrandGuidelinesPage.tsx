@@ -100,6 +100,7 @@ export default function BrandGuidelinesPage() {
       const res = await infer.mutateAsync({ client_id: clientId });
       setProposal(res.proposal);
       setAssetsUsed(res.assets_used);
+      setCurrentHistoryId(res.history_id);
       if (res.assets_used === 0) {
         toast.warning("Nenhum asset visual disponível para análise deste cliente");
       }
