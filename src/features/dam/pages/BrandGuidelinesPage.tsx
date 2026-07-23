@@ -80,6 +80,81 @@ export default function BrandGuidelinesPage() {
   const [notes, setNotes] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [inferOpen, setInferOpen] = useState(false);
+  const [proposal, setProposal] = useState<InferredGuidelines | null>(null);
+  const [assetsUsed, setAssetsUsed] = useState(0);
+  const infer = useBrandGuidelinesInfer();
+
+  const runInfer = async () => {
+    if (!clientId) return;
+    setInferOpen(true);
+    setProposal(null);
+    try {
+      const res = await infer.mutateAsync({ client_id: clientId });
+      setProposal(res.proposal);
+      setAssetsUsed(res.assets_used);
+      if (res.assets_used === 0) {
+        toast.warning("Nenhum asset visual disponível para análise deste cliente");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao gerar proposta";
+      toast.error(msg);
+      setInferOpen(false);
+    }
+  };
+
+  const applyProposal = (selected: InferredGuidelines) => {
+    // Merge into local state (dedupe by hex/name). User still clicks "Salvar".
+    const dedupeColors = (existing: ColorEntry[], incoming: ColorEntry[]) => {
+      const seen = new Set(existing.map((c) => normalizeHex(c.hex)));
+      const merged = [...existing];
+      for (const c of incoming) {
+        const key = normalizeHex(c.hex);
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push({ ...c, hex: key });
+        }
+      }
+      return merged;
+    };
+    const dedupeFonts = (existing: FontEntry[], incoming: FontEntry[]) => {
+      const seen = new Set(existing.map((f) => f.name.trim().toLowerCase()));
+      const merged = [...existing];
+      for (const f of incoming) {
+        const key = f.name.trim().toLowerCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          merged.push(f);
+        }
+      }
+      return merged;
+    };
+    const dedupeRules = (existing: string[], incoming: string[]) => {
+      const seen = new Set(existing.map((r) => r.toLowerCase()));
+      const merged = [...existing];
+      for (const r of incoming) {
+        if (!seen.has(r.toLowerCase())) {
+          seen.add(r.toLowerCase());
+          merged.push(r);
+        }
+      }
+      return merged;
+    };
+
+    setPrimary((p) => dedupeColors(p, selected.primary_colors));
+    setSecondary((p) => dedupeColors(p, selected.secondary_colors));
+    setFonts((p) => dedupeFonts(p, selected.fonts));
+    setDoRules((prev) => {
+      const list = prev.split("\n").map((s) => s.trim()).filter(Boolean);
+      return dedupeRules(list, selected.do_rules).join("\n");
+    });
+    setDontRules((prev) => {
+      const list = prev.split("\n").map((s) => s.trim()).filter(Boolean);
+      return dedupeRules(list, selected.dont_rules).join("\n");
+    });
+    setInferOpen(false);
+    toast.success("Proposta aplicada. Revise e clique em Salvar para persistir.");
+  };
 
   useEffect(() => {
     if (!guidelines) return;
