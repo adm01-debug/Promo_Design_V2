@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
+import { useBrandGuidelinesInfer, type InferredGuidelines } from "../hooks/use-brand-guidelines-infer";
+import { BrandGuidelinesInferDialog } from "../components/BrandGuidelinesInferDialog";
 
 function FontLivePreview({ name }: { name: string }) {
   const debounced = useDebounce(name.trim(), 300);
