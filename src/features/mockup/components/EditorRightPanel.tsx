@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info,
 } from "lucide-react";
@@ -7,6 +7,9 @@ import { Slider } from "@/components/ui/slider";
 import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
+import { BrandAdherenceGauge } from "@/features/dam/components/BrandAdherenceGauge";
+import { useBrandGuidelines } from "@/features/dam/hooks/use-brand-guidelines";
+import { computeBrandAdherenceScore } from "@/features/dam/lib/brand-adherence";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClientDesignRecommendation, type DesignRecommendation } from "../hooks/use-client-design-recommendation";
