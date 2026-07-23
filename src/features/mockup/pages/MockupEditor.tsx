@@ -374,8 +374,8 @@ const MockupEditor = () => {
             shadowEnabled,
             shadowIntensity,
             approvedViews: Array.from(approvedViews),
-            watermarkConfig
-
+            watermarkConfig,
+            selectedClientId,
           }
         });
       } catch (error) {
@@ -384,6 +384,7 @@ const MockupEditor = () => {
     }, 2000); // 2s debounce
     
     return () => clearTimeout(timer);
+
   }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig]);
 
   return (
