@@ -50,12 +50,27 @@ export function BrandRecommendationPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-primary" />
           Adoção de recomendações de marca
-          <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-            {data?.window_days ?? 30}d
-          </Badge>
+          <div className="ml-auto flex items-center gap-2">
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger className="h-7 w-[180px] text-xs">
+                <SelectValue placeholder="Todos os clientes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos os clientes</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="outline" className="text-[10px] font-mono">
+              {data?.window_days ?? 30}d
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
