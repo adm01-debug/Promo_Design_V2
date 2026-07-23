@@ -38,6 +38,11 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
 import { useBrandGuidelinesInfer, type InferredGuidelines } from "../hooks/use-brand-guidelines-infer";
 import { BrandGuidelinesInferDialog } from "../components/BrandGuidelinesInferDialog";
+import { BrandGuidelinesInferHistoryPanel } from "../components/BrandGuidelinesInferHistoryPanel";
+import {
+  useMarkInferHistoryApplied,
+  type InferHistoryRow,
+} from "../hooks/use-brand-guidelines-infer";
 
 function FontLivePreview({ name }: { name: string }) {
   const debounced = useDebounce(name.trim(), 300);
@@ -83,7 +88,9 @@ export default function BrandGuidelinesPage() {
   const [inferOpen, setInferOpen] = useState(false);
   const [proposal, setProposal] = useState<InferredGuidelines | null>(null);
   const [assetsUsed, setAssetsUsed] = useState(0);
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
   const infer = useBrandGuidelinesInfer();
+  const markApplied = useMarkInferHistoryApplied();
 
   const runInfer = async () => {
     if (!clientId) return;
@@ -93,6 +100,7 @@ export default function BrandGuidelinesPage() {
       const res = await infer.mutateAsync({ client_id: clientId });
       setProposal(res.proposal);
       setAssetsUsed(res.assets_used);
+      setCurrentHistoryId(res.history_id);
       if (res.assets_used === 0) {
         toast.warning("Nenhum asset visual disponível para análise deste cliente");
       }
@@ -153,7 +161,21 @@ export default function BrandGuidelinesPage() {
       return dedupeRules(list, selected.dont_rules).join("\n");
     });
     setInferOpen(false);
+    if (currentHistoryId && clientId) {
+      markApplied.mutate({
+        history_id: currentHistoryId,
+        client_id: clientId,
+        selection: selected,
+      });
+    }
     toast.success("Proposta aplicada. Revise e clique em Salvar para persistir.");
+  };
+
+  const handleReviewHistory = (row: InferHistoryRow) => {
+    setProposal(row.proposal);
+    setAssetsUsed(row.assets_used);
+    setCurrentHistoryId(row.id);
+    setInferOpen(true);
   };
 
   useEffect(() => {
@@ -615,6 +637,15 @@ export default function BrandGuidelinesPage() {
         onApply={applyProposal}
         onRegenerate={runInfer}
       />
+
+      <div className="pt-4">
+        <BrandGuidelinesInferHistoryPanel
+          clientId={clientId ?? null}
+          onReview={handleReviewHistory}
+        />
+      </div>
+
+
 
 
       <div className="pt-4">
