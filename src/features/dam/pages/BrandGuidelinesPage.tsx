@@ -38,6 +38,11 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
 import { useBrandGuidelinesInfer, type InferredGuidelines } from "../hooks/use-brand-guidelines-infer";
 import { BrandGuidelinesInferDialog } from "../components/BrandGuidelinesInferDialog";
+import { BrandGuidelinesInferHistoryPanel } from "../components/BrandGuidelinesInferHistoryPanel";
+import {
+  useMarkInferHistoryApplied,
+  type InferHistoryRow,
+} from "../hooks/use-brand-guidelines-infer";
 
 function FontLivePreview({ name }: { name: string }) {
   const debounced = useDebounce(name.trim(), 300);
