@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info,
 } from "lucide-react";
@@ -108,10 +109,38 @@ const EditorRightPanel = () => {
     if (rec.opacity !== undefined) {
       setLogoOpacity(Math.round(rec.opacity * 100));
     }
+    // Telemetria: registra a aplicação da recomendação para análises futuras.
+    void (async () => {
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const userId = userRes.user?.id;
+        if (!userId || !currentOrgId) return;
+        await supabase.from("audit_log").insert({
+          user_id: userId,
+          organization_id: currentOrgId,
+          table_name: "mockup_drafts",
+          action: "brand.recommendation_applied",
+          new_values: {
+            source: rec.source,
+            confidence: rec.confidence,
+            sample_size: rec.sampleSize,
+            client_id: selectedClientId ?? null,
+            applied: {
+              blend_mode: rec.suggestedBlendMode ?? null,
+              surface_type: rec.suggestedSurfaceType ?? null,
+              opacity: rec.opacity ?? null,
+            },
+          },
+        });
+      } catch {
+        // telemetria não deve bloquear a UX
+      }
+    })();
     toast.success("Padrão aplicado", {
       description: `Baseado em ${rec.sampleSize} rascunhos (${rec.source === "client" ? "cliente" : "organização"}).`,
     });
   };
+
 
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
