@@ -763,6 +763,75 @@ export type Database = {
           },
         ]
       }
+      client_design_patterns: {
+        Row: {
+          client_id: string | null
+          confidence: number
+          created_at: string
+          id: string
+          last_computed_at: string | null
+          logo_scale_p50: number | null
+          logo_scale_p90: number | null
+          logo_x_percent_p50: number | null
+          logo_y_percent_p50: number | null
+          opacity_p50: number | null
+          organization_id: string
+          preferred_blend_modes: Json
+          preferred_surface_types: Json
+          sample_size: number
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          id?: string
+          last_computed_at?: string | null
+          logo_scale_p50?: number | null
+          logo_scale_p90?: number | null
+          logo_x_percent_p50?: number | null
+          logo_y_percent_p50?: number | null
+          opacity_p50?: number | null
+          organization_id: string
+          preferred_blend_modes?: Json
+          preferred_surface_types?: Json
+          sample_size?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          id?: string
+          last_computed_at?: string | null
+          logo_scale_p50?: number | null
+          logo_scale_p90?: number | null
+          logo_x_percent_p50?: number | null
+          logo_y_percent_p50?: number | null
+          opacity_p50?: number | null
+          organization_id?: string
+          preferred_blend_modes?: Json
+          preferred_surface_types?: Json
+          sample_size?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_design_patterns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_design_patterns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -1623,6 +1692,32 @@ export type Database = {
       }
       is_mfa_authenticated: { Args: never; Returns: boolean }
       kill_backend: { Args: { _mode?: string; _pid: number }; Returns: Json }
+      recompute_client_design_patterns: {
+        Args: { p_client_id?: string; p_organization_id: string }
+        Returns: {
+          client_id: string | null
+          confidence: number
+          created_at: string
+          id: string
+          last_computed_at: string | null
+          logo_scale_p50: number | null
+          logo_scale_p90: number | null
+          logo_x_percent_p50: number | null
+          logo_y_percent_p50: number | null
+          opacity_p50: number | null
+          organization_id: string
+          preferred_blend_modes: Json
+          preferred_surface_types: Json
+          sample_size: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "client_design_patterns"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       run_manual_analyze: { Args: { _table_name: string }; Returns: Json }
       run_manual_vacuum: {
         Args: { _mode?: string; _table_name: string }
