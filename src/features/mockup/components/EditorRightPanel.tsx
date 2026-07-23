@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClientDesignRecommendation, type DesignRecommendation } from "../hooks/use-client-design-recommendation";
 import { ClientPatternBadge } from "./ClientPatternBadge";
+import { ClientSelector } from "./ClientSelector";
 import {
   useMockupEditorContext,
   type BlendMode,
