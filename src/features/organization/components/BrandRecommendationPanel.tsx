@@ -36,7 +36,9 @@ export function BrandRecommendationPanel() {
   const totals = data?.totals;
   const bySource = data?.by_source ?? {};
   const recent = data?.recent ?? [];
+  const daily = data?.daily ?? [];
   const confidencePct = Math.round((totals?.avg_confidence ?? 0) * 100);
+  const maxDaily = Math.max(1, ...daily.map((d) => d.n));
 
   return (
     <Card>
@@ -72,6 +74,27 @@ export function BrandRecommendationPanel() {
             value={totals?.avg_sample_size ?? 0}
           />
         </div>
+
+        {daily.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              Aplicações por dia
+            </p>
+            <div className="flex h-14 items-end gap-0.5 rounded-md border border-border/60 bg-muted/20 p-2">
+              {daily.map((d) => {
+                const h = Math.max(2, Math.round((d.n / maxDaily) * 100));
+                return (
+                  <div
+                    key={d.day}
+                    title={`${d.day}: ${d.n} aplicações · ${Math.round((d.avg_confidence ?? 0) * 100)}% confiança`}
+                    className="flex-1 rounded-sm bg-primary/70 transition-colors hover:bg-primary"
+                    style={{ height: `${h}%` }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {Object.keys(bySource).length > 0 && (
           <div className="space-y-1.5">
