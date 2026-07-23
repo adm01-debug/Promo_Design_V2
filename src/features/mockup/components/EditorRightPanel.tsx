@@ -69,6 +69,34 @@ const EditorRightPanel = () => {
     selectedClientId,
   );
 
+  // Brand guidelines do cliente selecionado → alimenta o gauge de aderência
+  const { guidelines: brandGuidelines } = useBrandGuidelines(
+    currentOrgId,
+    selectedClientId,
+  );
+
+  const adherence = useMemo(() => {
+    if (!brandGuidelines || logoColors.length === 0) return null;
+    return computeBrandAdherenceScore(
+      {
+        dominantColors: logoColors,
+        placement: {
+          x: currentPlacement.x / 100,
+          y: currentPlacement.y / 100,
+          scale: currentPlacement.scale,
+        },
+        surfaceType,
+        blendMode,
+      },
+      {
+        primary_colors: brandGuidelines.primary_colors,
+        secondary_colors: brandGuidelines.secondary_colors,
+        do_rules: brandGuidelines.do_rules,
+        dont_rules: brandGuidelines.dont_rules,
+      },
+    );
+  }, [brandGuidelines, logoColors, currentPlacement, surfaceType, blendMode]);
+
   const applyPatternRecommendation = (rec: DesignRecommendation) => {
     if (rec.suggestedBlendMode) {
       setBlendMode(rec.suggestedBlendMode as BlendMode);
