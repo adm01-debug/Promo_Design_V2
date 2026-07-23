@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Upload, Eye, EyeOff, Trash2, Maximize, Check, Printer, Download, Loader2, Library, Sparkles, XCircle, Info,
 } from "lucide-react";
