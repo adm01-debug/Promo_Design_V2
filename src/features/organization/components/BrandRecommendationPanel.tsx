@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, TrendingUp, Users, Target } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useBrandRecommendationStats } from "../hooks/use-brand-recommendation-stats";
+import { useClients } from "@/features/clients/hooks/use-clients";
+import { useOrganizations } from "@/hooks/use-organization";
 
 const SOURCE_LABEL: Record<string, string> = {
   client_pattern: "Padrão do cliente",
@@ -14,7 +18,10 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export function BrandRecommendationPanel() {
-  const { data, isLoading } = useBrandRecommendationStats(30);
+  const { currentOrgId } = useOrganizations();
+  const [clientId, setClientId] = useState<string>("__all__");
+  const { data: clients = [] } = useClients(currentOrgId);
+  const { data, isLoading } = useBrandRecommendationStats(30, clientId === "__all__" ? null : clientId);
 
   if (isLoading) {
     return (
