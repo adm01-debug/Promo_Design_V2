@@ -110,6 +110,11 @@ export interface MockupEditorContextValue {
   aiSuggestions: AISuggestion[];
   clearAISuggestions: () => void;
   isPreviewingAI: boolean;
+
+  // Client persistence (para inteligência de padrões por cliente)
+  selectedClientId: string | null;
+  setSelectedClientId: (id: string | null) => void;
+
   setIsPreviewingAI: (v: boolean) => void;
 }
 
