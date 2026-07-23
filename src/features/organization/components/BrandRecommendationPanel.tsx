@@ -36,7 +36,9 @@ export function BrandRecommendationPanel() {
   const totals = data?.totals;
   const bySource = data?.by_source ?? {};
   const recent = data?.recent ?? [];
+  const daily = data?.daily ?? [];
   const confidencePct = Math.round((totals?.avg_confidence ?? 0) * 100);
+  const maxDaily = Math.max(1, ...daily.map((d) => d.n));
 
   return (
     <Card>
