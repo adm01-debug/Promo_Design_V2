@@ -599,6 +599,24 @@ export default function BrandGuidelinesPage() {
         onSelect={(a: Asset) => setLogoId(a.id)}
       />
 
+      <BrandGuidelinesInferDialog
+        open={inferOpen}
+        onOpenChange={setInferOpen}
+        loading={infer.isPending}
+        proposal={proposal}
+        assetsUsed={assetsUsed}
+        current={{
+          primary_colors: primary,
+          secondary_colors: secondary,
+          fonts,
+          do_rules: doList,
+          dont_rules: dontList,
+        }}
+        onApply={applyProposal}
+        onRegenerate={runInfer}
+      />
+
+
       <div className="pt-4">
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" /> Brand Preview
