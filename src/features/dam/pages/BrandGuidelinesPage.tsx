@@ -638,6 +638,15 @@ export default function BrandGuidelinesPage() {
         onRegenerate={runInfer}
       />
 
+      <div className="pt-4">
+        <BrandGuidelinesInferHistoryPanel
+          clientId={clientId ?? null}
+          onReview={handleReviewHistory}
+        />
+      </div>
+
+
+
 
       <div className="pt-4">
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
