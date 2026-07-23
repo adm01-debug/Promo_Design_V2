@@ -41,6 +41,7 @@ const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
 const EditorRightPanel = () => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
   const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { currentOrgId } = useOrganizations();
   const {
     productName, productSku, productImage, technique,
@@ -62,7 +63,7 @@ const EditorRightPanel = () => {
   // Recomendação de padrão do cliente (fallback: agregado da organização)
   const { data: designRecommendation } = useClientDesignRecommendation(
     currentOrgId,
-    null,
+    selectedClientId,
   );
 
   const applyPatternRecommendation = (rec: DesignRecommendation) => {
