@@ -413,6 +413,16 @@ export default function BrandGuidelinesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {editable && (
+            <Button variant="outline" onClick={runInfer} disabled={infer.isPending}>
+              {infer.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              Sugerir com IA
+            </Button>
+          )}
           <Button variant="outline" onClick={handleExportPdf} disabled={isExporting}>
             {isExporting ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
