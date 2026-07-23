@@ -22,11 +22,11 @@ export interface BrandRecommendationStats {
   }>;
 }
 
-export function useBrandRecommendationStats(days = 30) {
+export function useBrandRecommendationStats(days = 30, clientId: string | null = null) {
   const { currentOrgId } = useOrganizations();
 
   return useQuery({
-    queryKey: ["brand-recommendation-stats", currentOrgId, days],
+    queryKey: ["brand-recommendation-stats", currentOrgId, days, clientId],
     enabled: !!currentOrgId,
     staleTime: 60_000,
     queryFn: async (): Promise<BrandRecommendationStats | null> => {
@@ -34,6 +34,7 @@ export function useBrandRecommendationStats(days = 30) {
       const { data, error } = await supabase.rpc("get_brand_recommendation_stats", {
         _org_id: currentOrgId,
         _days: days,
+        _client_id: clientId,
       });
       if (error) throw error;
       return data as unknown as BrandRecommendationStats;
