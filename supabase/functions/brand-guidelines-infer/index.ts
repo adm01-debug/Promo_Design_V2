@@ -123,18 +123,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Coleta URLs: se não fornecidas, busca até 8 assets recentes do cliente
+    // Coleta URLs: se não fornecidas, busca assets recentes do cliente e gera signed URLs (bucket privado)
     let imageUrls = asset_urls ?? [];
     if (imageUrls.length === 0) {
       const { data: assets } = await admin
         .from("assets")
-        .select("cdn_url, storage_path")
+        .select("file_path")
         .eq("client_id", client_id)
         .order("created_at", { ascending: false })
         .limit(8);
-      imageUrls = (assets ?? [])
-        .map((a: { cdn_url: string | null }) => a.cdn_url)
-        .filter((u: string | null): u is string => typeof u === "string" && u.length > 0);
+      const paths = (assets ?? [])
+        .map((a: { file_path: string | null }) => a.file_path)
+        .filter((p: string | null): p is string => typeof p === "string" && p.length > 0);
+      for (const p of paths) {
+        const { data: signed } = await admin.storage.from("assets").createSignedUrl(p, 300);
+        if (signed?.signedUrl) imageUrls.push(signed.signedUrl);
+      }
     }
 
     if (imageUrls.length === 0) {
