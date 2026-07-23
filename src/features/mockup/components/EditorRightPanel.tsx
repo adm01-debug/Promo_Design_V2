@@ -4,10 +4,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { PERSPECTIVE_PRESETS } from "@/features/mockup";
+import { PERSPECTIVE_PRESETS, type SurfaceType } from "@/features/mockup";
 import { clearWarpCache } from "@/features/mockup";
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import { toast } from "sonner";
+import { useOrganizations } from "@/hooks/use-organization";
+import { useClientDesignRecommendation, type DesignRecommendation } from "../hooks/use-client-design-recommendation";
+import { ClientPatternBadge } from "./ClientPatternBadge";
 import {
   useMockupEditorContext,
   type BlendMode,
@@ -37,6 +40,7 @@ const BLEND_MODES: { id: BlendMode; label: string; desc: string }[] = [
 const EditorRightPanel = () => {
   const [damPickerOpen, setDamPickerOpen] = useState(false);
   const [isLoadingFromDam, setIsLoadingFromDam] = useState(false);
+  const { currentOrgId } = useOrganizations();
   const {
     productName, productSku, productImage, technique,
     logoFile, logoPreview, logoColors, showLogo, setShowLogo,
@@ -54,6 +58,27 @@ const EditorRightPanel = () => {
     isPreviewingAI, setIsPreviewingAI,
   } = useMockupEditorContext();
 
+  // Recomendação de padrão do cliente (fallback: agregado da organização)
+  const { data: designRecommendation } = useClientDesignRecommendation(
+    currentOrgId,
+    null,
+  );
+
+  const applyPatternRecommendation = (rec: DesignRecommendation) => {
+    if (rec.suggestedBlendMode) {
+      setBlendMode(rec.suggestedBlendMode as BlendMode);
+    }
+    if (rec.suggestedSurfaceType) {
+      setSurfaceType(rec.suggestedSurfaceType as SurfaceType);
+    }
+    if (rec.opacity !== undefined) {
+      setLogoOpacity(Math.round(rec.opacity * 100));
+    }
+    toast.success("Padrão aplicado", {
+      description: `Baseado em ${rec.sampleSize} rascunhos (${rec.source === "client" ? "cliente" : "organização"}).`,
+    });
+  };
+
   return (
     <aside className="w-64 bg-card border-l border-border flex flex-col overflow-y-auto" aria-label="Painel de propriedades">
       {/* Product info */}
@@ -70,6 +95,17 @@ const EditorRightPanel = () => {
         </div>
         {technique && <span className="inline-block text-[10px] text-primary font-mono mt-2 bg-primary/10 px-1.5 py-0.5 rounded" aria-label={`Técnica: ${technique}`}>{technique}</span>}
       </section>
+
+      {/* Padrão de design recomendado (histórico do cliente/org) */}
+      {designRecommendation && designRecommendation.source !== "none" && (
+        <section className="px-4 pt-4" aria-labelledby="pattern-recommendation-title">
+          <h3 id="pattern-recommendation-title" className="sr-only">Recomendação de padrão de design</h3>
+          <ClientPatternBadge
+            recommendation={designRecommendation}
+            onApply={applyPatternRecommendation}
+          />
+        </section>
+      )}
 
       {/* Logo */}
       <section className="p-4 border-b border-border" aria-labelledby="logo-section-title">

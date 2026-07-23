@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     }
 
     // Coleta URLs: se não fornecidas, busca assets recentes do cliente e gera signed URLs (bucket privado)
-    let imageUrls = asset_urls ?? [];
+    const imageUrls: string[] = [...(asset_urls ?? [])];
     if (imageUrls.length === 0) {
       const { data: assets } = await admin
         .from("assets")
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-2.5-flash",
         cost_usd: 0,
       })
-      .then(({ error: e }: { error: any }) => {
+      .then(({ error: e }: { error: { message: string } | null }) => {
         if (e) console.warn(`[${requestId}] ai_usage_log insert failed:`, e.message);
       });
 
