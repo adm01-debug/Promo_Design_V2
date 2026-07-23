@@ -20,7 +20,7 @@ const SOURCE_LABEL: Record<string, string> = {
 export function BrandRecommendationPanel() {
   const { currentOrgId } = useOrganizations();
   const [clientId, setClientId] = useState<string>("__all__");
-  const { data: clients = [] } = useClients(currentOrgId);
+  const { clients = [] } = useClients(currentOrgId);
   const { data, isLoading } = useBrandRecommendationStats(30, clientId === "__all__" ? null : clientId);
 
   if (isLoading) {
