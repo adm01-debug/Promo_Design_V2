@@ -122,7 +122,7 @@ export function useMarkInferHistoryApplied() {
         .update({
           applied: true,
           applied_at: new Date().toISOString(),
-          applied_selection: input.selection as unknown as Record<string, unknown>,
+          applied_selection: input.selection as never,
         })
         .eq("id", input.history_id);
       if (error) throw error;
