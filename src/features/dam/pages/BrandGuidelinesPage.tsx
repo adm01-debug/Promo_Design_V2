@@ -88,7 +88,9 @@ export default function BrandGuidelinesPage() {
   const [inferOpen, setInferOpen] = useState(false);
   const [proposal, setProposal] = useState<InferredGuidelines | null>(null);
   const [assetsUsed, setAssetsUsed] = useState(0);
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
   const infer = useBrandGuidelinesInfer();
+  const markApplied = useMarkInferHistoryApplied();
 
   const runInfer = async () => {
     if (!clientId) return;
