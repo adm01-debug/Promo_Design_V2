@@ -244,10 +244,8 @@ export function scoreRules(art: AdherenceArt, guidelines: AdherenceGuidelines): 
   if (haystack.length === 0) return 50; // sem descriptors — não penaliza
 
   let hits = 0;
-  let misses = 0;
   for (const r of dos) {
     if (ruleMatches(r, haystack)) hits += 1;
-    else misses += 1;
   }
   let violations = 0;
   for (const r of donts) {
