@@ -36,6 +36,8 @@ import { cn } from "@/lib/utils";
 import { useGoogleFonts } from "../lib/google-fonts-loader";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
+import { useBrandGuidelinesInfer, type InferredGuidelines } from "../hooks/use-brand-guidelines-infer";
+import { BrandGuidelinesInferDialog } from "../components/BrandGuidelinesInferDialog";
 
 function FontLivePreview({ name }: { name: string }) {
   const debounced = useDebounce(name.trim(), 300);
@@ -78,6 +80,81 @@ export default function BrandGuidelinesPage() {
   const [notes, setNotes] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [inferOpen, setInferOpen] = useState(false);
+  const [proposal, setProposal] = useState<InferredGuidelines | null>(null);
+  const [assetsUsed, setAssetsUsed] = useState(0);
+  const infer = useBrandGuidelinesInfer();
+
+  const runInfer = async () => {
+    if (!clientId) return;
+    setInferOpen(true);
+    setProposal(null);
+    try {
+      const res = await infer.mutateAsync({ client_id: clientId });
+      setProposal(res.proposal);
+      setAssetsUsed(res.assets_used);
+      if (res.assets_used === 0) {
+        toast.warning("Nenhum asset visual disponível para análise deste cliente");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao gerar proposta";
+      toast.error(msg);
+      setInferOpen(false);
+    }
+  };
+
+  const applyProposal = (selected: InferredGuidelines) => {
+    // Merge into local state (dedupe by hex/name). User still clicks "Salvar".
+    const dedupeColors = (existing: ColorEntry[], incoming: ColorEntry[]) => {
+      const seen = new Set(existing.map((c) => normalizeHex(c.hex)));
+      const merged = [...existing];
+      for (const c of incoming) {
+        const key = normalizeHex(c.hex);
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push({ ...c, hex: key });
+        }
+      }
+      return merged;
+    };
+    const dedupeFonts = (existing: FontEntry[], incoming: FontEntry[]) => {
+      const seen = new Set(existing.map((f) => f.name.trim().toLowerCase()));
+      const merged = [...existing];
+      for (const f of incoming) {
+        const key = f.name.trim().toLowerCase();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          merged.push(f);
+        }
+      }
+      return merged;
+    };
+    const dedupeRules = (existing: string[], incoming: string[]) => {
+      const seen = new Set(existing.map((r) => r.toLowerCase()));
+      const merged = [...existing];
+      for (const r of incoming) {
+        if (!seen.has(r.toLowerCase())) {
+          seen.add(r.toLowerCase());
+          merged.push(r);
+        }
+      }
+      return merged;
+    };
+
+    setPrimary((p) => dedupeColors(p, selected.primary_colors));
+    setSecondary((p) => dedupeColors(p, selected.secondary_colors));
+    setFonts((p) => dedupeFonts(p, selected.fonts));
+    setDoRules((prev) => {
+      const list = prev.split("\n").map((s) => s.trim()).filter(Boolean);
+      return dedupeRules(list, selected.do_rules).join("\n");
+    });
+    setDontRules((prev) => {
+      const list = prev.split("\n").map((s) => s.trim()).filter(Boolean);
+      return dedupeRules(list, selected.dont_rules).join("\n");
+    });
+    setInferOpen(false);
+    toast.success("Proposta aplicada. Revise e clique em Salvar para persistir.");
+  };
 
   useEffect(() => {
     if (!guidelines) return;
@@ -336,6 +413,16 @@ export default function BrandGuidelinesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {editable && (
+            <Button variant="outline" onClick={runInfer} disabled={infer.isPending}>
+              {infer.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              Sugerir com IA
+            </Button>
+          )}
           <Button variant="outline" onClick={handleExportPdf} disabled={isExporting}>
             {isExporting ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -511,6 +598,24 @@ export default function BrandGuidelinesPage() {
         lockClient
         onSelect={(a: Asset) => setLogoId(a.id)}
       />
+
+      <BrandGuidelinesInferDialog
+        open={inferOpen}
+        onOpenChange={setInferOpen}
+        loading={infer.isPending}
+        proposal={proposal}
+        assetsUsed={assetsUsed}
+        current={{
+          primary_colors: primary,
+          secondary_colors: secondary,
+          fonts,
+          do_rules: doList,
+          dont_rules: dontList,
+        }}
+        onApply={applyProposal}
+        onRegenerate={runInfer}
+      />
+
 
       <div className="pt-4">
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
