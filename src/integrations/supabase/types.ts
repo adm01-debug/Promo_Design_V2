@@ -649,6 +649,84 @@ export type Database = {
           },
         ]
       }
+      brand_guidelines_infer_history: {
+        Row: {
+          applied: boolean
+          applied_at: string | null
+          applied_selection: Json | null
+          assets_used: number
+          client_id: string
+          confidence: number | null
+          created_at: string
+          diff: Json
+          id: string
+          inputs: Json
+          model: string | null
+          organization_id: string
+          proposal: Json
+          request_id: string | null
+          sample_size: number
+          snapshot_before: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied?: boolean
+          applied_at?: string | null
+          applied_selection?: Json | null
+          assets_used?: number
+          client_id: string
+          confidence?: number | null
+          created_at?: string
+          diff?: Json
+          id?: string
+          inputs?: Json
+          model?: string | null
+          organization_id: string
+          proposal: Json
+          request_id?: string | null
+          sample_size?: number
+          snapshot_before?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied?: boolean
+          applied_at?: string | null
+          applied_selection?: Json | null
+          assets_used?: number
+          client_id?: string
+          confidence?: number | null
+          created_at?: string
+          diff?: Json
+          id?: string
+          inputs?: Json
+          model?: string | null
+          organization_id?: string
+          proposal?: Json
+          request_id?: string | null
+          sample_size?: number
+          snapshot_before?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_guidelines_infer_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_infer_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalog_products: {
         Row: {
           active: boolean
