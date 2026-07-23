@@ -153,6 +153,7 @@ const MockupEditor = () => {
           shadowIntensity?: number;
           approvedViews?: string[];
           watermarkConfig?: typeof watermarkConfig;
+          selectedClientId?: string | null;
         };
         if (state.placements) {
           setPlacements(state.placements);
@@ -166,6 +167,8 @@ const MockupEditor = () => {
         if (state.shadowIntensity) setShadowIntensity(state.shadowIntensity);
         if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
         if (state.watermarkConfig) setWatermarkConfig(state.watermarkConfig);
+        if (state.selectedClientId !== undefined) setSelectedClientId(state.selectedClientId);
+
 
         draftLoadedRef.current = true;
         toast.success("Rascunho carregado");
