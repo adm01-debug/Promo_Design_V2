@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, TrendingUp, Users, Target } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useBrandRecommendationStats } from "../hooks/use-brand-recommendation-stats";
+import { useClients } from "@/features/clients/hooks/use-clients";
+import { useOrganizations } from "@/hooks/use-organization";
 
 const SOURCE_LABEL: Record<string, string> = {
   client_pattern: "Padrão do cliente",
@@ -14,7 +18,10 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 export function BrandRecommendationPanel() {
-  const { data, isLoading } = useBrandRecommendationStats(30);
+  const { currentOrgId } = useOrganizations();
+  const [clientId, setClientId] = useState<string>("__all__");
+  const { clients = [] } = useClients(currentOrgId);
+  const { data, isLoading } = useBrandRecommendationStats(30, clientId === "__all__" ? null : clientId);
 
   if (isLoading) {
     return (
@@ -43,12 +50,27 @@ export function BrandRecommendationPanel() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
           <Sparkles className="h-4 w-4 text-primary" />
           Adoção de recomendações de marca
-          <Badge variant="outline" className="ml-auto text-[10px] font-mono">
-            {data?.window_days ?? 30}d
-          </Badge>
+          <div className="ml-auto flex items-center gap-2">
+            <Select value={clientId} onValueChange={setClientId}>
+              <SelectTrigger className="h-7 w-[180px] text-xs">
+                <SelectValue placeholder="Todos os clientes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos os clientes</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="outline" className="text-[10px] font-mono">
+              {data?.window_days ?? 30}d
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
