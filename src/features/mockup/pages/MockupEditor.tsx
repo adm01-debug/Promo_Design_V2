@@ -115,6 +115,8 @@ const MockupEditor = () => {
     scale: 0.8,
     position: "center"
   });
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
 
   const { 
     placements, history, historyIndex, updatePlacement: updatePlacementCore, 
