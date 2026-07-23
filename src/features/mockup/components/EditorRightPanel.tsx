@@ -98,16 +98,21 @@ const EditorRightPanel = () => {
         {technique && <span className="inline-block text-[10px] text-primary font-mono mt-2 bg-primary/10 px-1.5 py-0.5 rounded" aria-label={`Técnica: ${technique}`}>{technique}</span>}
       </section>
 
-      {/* Padrão de design recomendado (histórico do cliente/org) */}
-      {designRecommendation && designRecommendation.source !== "none" && (
-        <section className="px-4 pt-4" aria-labelledby="pattern-recommendation-title">
-          <h3 id="pattern-recommendation-title" className="sr-only">Recomendação de padrão de design</h3>
+      {/* Seletor de cliente + padrão de design recomendado */}
+      <section className="p-4 border-b border-border space-y-3" aria-labelledby="pattern-recommendation-title">
+        <h3 id="pattern-recommendation-title" className="sr-only">Cliente e recomendação de padrão de design</h3>
+        <ClientSelector
+          organizationId={currentOrgId}
+          value={selectedClientId}
+          onChange={setSelectedClientId}
+        />
+        {designRecommendation && designRecommendation.source !== "none" && (
           <ClientPatternBadge
             recommendation={designRecommendation}
             onApply={applyPatternRecommendation}
           />
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Logo */}
       <section className="p-4 border-b border-border" aria-labelledby="logo-section-title">
