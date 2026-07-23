@@ -115,6 +115,8 @@ const MockupEditor = () => {
     scale: 0.8,
     position: "center"
   });
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
 
   const { 
     placements, history, historyIndex, updatePlacement: updatePlacementCore, 
@@ -151,6 +153,7 @@ const MockupEditor = () => {
           shadowIntensity?: number;
           approvedViews?: string[];
           watermarkConfig?: typeof watermarkConfig;
+          selectedClientId?: string | null;
         };
         if (state.placements) {
           setPlacements(state.placements);
@@ -164,6 +167,8 @@ const MockupEditor = () => {
         if (state.shadowIntensity) setShadowIntensity(state.shadowIntensity);
         if (state.approvedViews) setApprovedViews(new Set(state.approvedViews));
         if (state.watermarkConfig) setWatermarkConfig(state.watermarkConfig);
+        if (state.selectedClientId !== undefined) setSelectedClientId(state.selectedClientId);
+
 
         draftLoadedRef.current = true;
         toast.success("Rascunho carregado");
@@ -369,8 +374,8 @@ const MockupEditor = () => {
             shadowEnabled,
             shadowIntensity,
             approvedViews: Array.from(approvedViews),
-            watermarkConfig
-
+            watermarkConfig,
+            selectedClientId,
           }
         });
       } catch (error) {
@@ -379,7 +384,8 @@ const MockupEditor = () => {
     }, 2000); // 2s debounce
     
     return () => clearTimeout(timer);
-  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig]);
+
+  }, [placements, logoPreview, logoOpacity, blendMode, surfaceType, shadowEnabled, shadowIntensity, approvedViews, draftId, productName, productSku, saveDraft, watermarkConfig, selectedClientId]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -558,7 +564,9 @@ const MockupEditor = () => {
                   cancelAIRequest,
                   aiSuggestions, clearAISuggestions,
                   isPreviewingAI, setIsPreviewingAI,
+                  selectedClientId, setSelectedClientId,
                 }}
+
               >
                 <EditorRightPanel />
               </MockupEditorProvider>
