@@ -238,11 +238,122 @@ Deno.serve(async (req) => {
         if (e) console.warn(`[${requestId}] ai_usage_log insert failed:`, e.message);
       });
 
+    // Snapshot das guidelines atuais + diff/confidence para o histórico
+    const { data: currentBg } = await admin
+      .from("brand_guidelines")
+      .select("primary_colors, secondary_colors, fonts, do_rules, dont_rules")
+      .eq("client_id", client_id)
+      .maybeSingle();
+
+    const snapshotBefore = currentBg ?? {
+      primary_colors: [],
+      secondary_colors: [],
+      fonts: [],
+      do_rules: [],
+      dont_rules: [],
+    };
+
+    const norm = (s: string) => s.trim().toLowerCase();
+    const normHex = (h: string) => h.trim().toLowerCase();
+    const diffColors = (
+      before: Array<{ hex: string }>,
+      after: Array<{ hex: string }>,
+    ) => {
+      const b = new Set((before ?? []).map((c) => normHex(c.hex)));
+      const a = new Set((after ?? []).map((c) => normHex(c.hex)));
+      return {
+        added: [...a].filter((x) => !b.has(x)),
+        removed: [...b].filter((x) => !a.has(x)),
+        kept: [...a].filter((x) => b.has(x)),
+      };
+    };
+    const diffFonts = (
+      before: Array<{ name: string }>,
+      after: Array<{ name: string }>,
+    ) => {
+      const b = new Set((before ?? []).map((f) => norm(f.name)));
+      const a = new Set((after ?? []).map((f) => norm(f.name)));
+      return {
+        added: [...a].filter((x) => !b.has(x)),
+        removed: [...b].filter((x) => !a.has(x)),
+        kept: [...a].filter((x) => b.has(x)),
+      };
+    };
+    const diffRules = (before: string[], after: string[]) => {
+      const b = new Set((before ?? []).map(norm));
+      const a = new Set((after ?? []).map(norm));
+      return {
+        added: [...a].filter((x) => !b.has(x)),
+        removed: [...b].filter((x) => !a.has(x)),
+        kept: [...a].filter((x) => b.has(x)),
+      };
+    };
+
+    const p = proposal.data;
+    const diff = {
+      primary_colors: diffColors(
+        (snapshotBefore.primary_colors as Array<{ hex: string }>) ?? [],
+        p.primary_colors,
+      ),
+      secondary_colors: diffColors(
+        (snapshotBefore.secondary_colors as Array<{ hex: string }>) ?? [],
+        p.secondary_colors,
+      ),
+      fonts: diffFonts(
+        (snapshotBefore.fonts as Array<{ name: string }>) ?? [],
+        p.fonts,
+      ),
+      do_rules: diffRules(
+        (snapshotBefore.do_rules as string[]) ?? [],
+        p.do_rules,
+      ),
+      dont_rules: diffRules(
+        (snapshotBefore.dont_rules as string[]) ?? [],
+        p.dont_rules,
+      ),
+    };
+
+    // Confiança heurística: coerência do payload + tamanho da amostra
+    const coverage =
+      (p.primary_colors.length >= 2 ? 1 : p.primary_colors.length / 2) * 0.35 +
+      (p.fonts.length >= 1 ? 1 : 0) * 0.2 +
+      (p.do_rules.length >= 2 ? 1 : p.do_rules.length / 2) * 0.15 +
+      (p.dont_rules.length >= 2 ? 1 : p.dont_rules.length / 2) * 0.15;
+    const sampleBoost = Math.min(imageUrls.length / 8, 1) * 0.15;
+    const confidence = Math.max(0, Math.min(1, coverage + sampleBoost));
+
+    const { data: historyRow } = await admin
+      .from("brand_guidelines_infer_history")
+      .insert({
+        organization_id: clientRow.organization_id,
+        client_id,
+        user_id: userId,
+        request_id: requestId,
+        model: "google/gemini-2.5-flash",
+        inputs: {
+          asset_urls_provided: (asset_urls ?? []).length,
+          asset_urls_signed: imageUrls.length,
+          client_name: clientRow.name,
+        },
+        proposal: p,
+        snapshot_before: snapshotBefore,
+        diff,
+        sample_size: imageUrls.length,
+        assets_used: imageUrls.length,
+        confidence: Number(confidence.toFixed(3)),
+      })
+      .select("id")
+      .maybeSingle();
+
     return jsonResponse(
       {
-        proposal: proposal.data,
+        proposal: p,
         client_id,
         assets_used: imageUrls.length,
+        sample_size: imageUrls.length,
+        confidence: Number(confidence.toFixed(3)),
+        diff,
+        history_id: historyRow?.id ?? null,
         dry_run: true,
         requestId,
       },
