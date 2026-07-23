@@ -560,7 +560,9 @@ const MockupEditor = () => {
                   cancelAIRequest,
                   aiSuggestions, clearAISuggestions,
                   isPreviewingAI, setIsPreviewingAI,
+                  selectedClientId, setSelectedClientId,
                 }}
+
               >
                 <EditorRightPanel />
               </MockupEditorProvider>
