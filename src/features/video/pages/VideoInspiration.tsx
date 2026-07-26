@@ -1,0 +1,161 @@
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, Search, Wand2, Clock, Film } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  INSPIRATION_RECIPES,
+  INSPIRATION_CATEGORY_LABELS,
+  buildRemixState,
+  filterInspirationRecipes,
+  sanitizeRecipePresetIds,
+  type InspirationCategory,
+  type InspirationRecipe,
+} from "@/features/video/lib/inspiration-recipes";
+import { getMotionPreset } from "@/features/video/lib/motion-presets";
+import { VIDEO_STYLES } from "@/features/video/components/VideoNewConstants";
+
+const CATEGORIES: (InspirationCategory | "all")[] = [
+  "all",
+  "produto",
+  "lifestyle",
+  "promocional",
+  "cinematografico",
+  "social",
+];
+
+const styleLabel = (value: string) =>
+  VIDEO_STYLES.find((s) => s.value === value)?.label ?? value;
+
+const RecipeCard = ({
+  recipe,
+  onRemix,
+}: {
+  recipe: InspirationRecipe;
+  onRemix: (recipe: InspirationRecipe) => void;
+}) => {
+  const presets = sanitizeRecipePresetIds(recipe).map(getMotionPreset);
+  return (
+    <article className="flex flex-col rounded-xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-colors">
+      <div className="p-4 flex-1 flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-sm font-display font-semibold text-foreground">{recipe.title}</h2>
+          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground shrink-0">
+            {recipe.aspectRatio}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">{recipe.description}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {presets.map((preset) =>
+            preset ? (
+              <span
+                key={preset.id}
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium"
+              >
+                <preset.icon className="w-3 h-3" aria-hidden="true" />
+                {preset.label}
+              </span>
+            ) : null,
+          )}
+        </div>
+        <div className="mt-auto flex items-center gap-3 text-[10px] text-muted-foreground font-mono uppercase">
+          <span className="inline-flex items-center gap-1">
+            <Film className="w-3 h-3" aria-hidden="true" />
+            {styleLabel(recipe.videoStyle)}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock className="w-3 h-3" aria-hidden="true" />
+            {recipe.durationSeconds}s
+          </span>
+          <span>{INSPIRATION_CATEGORY_LABELS[recipe.category]}</span>
+        </div>
+      </div>
+      <div className="p-3 border-t border-border bg-surface-1">
+        <Button
+          size="sm"
+          className="w-full text-xs gap-1.5 bg-gradient-primary text-primary-foreground"
+          onClick={() => onRemix(recipe)}
+          aria-label={`Remixar receita ${recipe.title}`}
+        >
+          <Wand2 className="w-3.5 h-3.5" aria-hidden="true" /> Remixar no Studio
+        </Button>
+      </div>
+    </article>
+  );
+};
+
+const VideoInspiration = () => {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<InspirationCategory | "all">("all");
+
+  const recipes = useMemo(
+    () => filterInspirationRecipes(INSPIRATION_RECIPES, { search, category }),
+    [search, category],
+  );
+
+  const handleRemix = (recipe: InspirationRecipe) => {
+    navigate("/video/new", { state: buildRemixState(recipe) });
+  };
+
+  return (
+    <div className="h-screen flex flex-col">
+      <div className="h-12 bg-surface-1 border-b border-border flex items-center gap-3 px-4 shrink-0">
+        <Sparkles className="w-4 h-4 text-primary" aria-hidden="true" />
+        <h1 className="text-sm font-display font-semibold text-foreground">Feed de Inspiração</h1>
+        <span className="text-xs text-muted-foreground">
+          {recipes.length} receita{recipes.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="p-4 border-b border-border shrink-0 flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="relative flex-1">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por estilo, técnica ou tag..."
+            aria-label="Buscar receitas de inspiração"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:border-primary"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por categoria">
+          {CATEGORIES.map((value) => (
+            <button
+              key={value}
+              onClick={() => setCategory(value)}
+              aria-pressed={category === value}
+              className={`text-[11px] px-2.5 py-1.5 rounded-md border transition-colors ${
+                category === value
+                  ? "bg-primary/20 border-primary/40 text-primary font-medium"
+                  : "bg-surface-2 border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {value === "all" ? "Todas" : INSPIRATION_CATEGORY_LABELS[value]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-4">
+        {recipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Sparkles className="w-10 h-10 text-muted-foreground mb-2" aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">Nenhuma receita encontrada</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+            {recipes.map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe} onRemix={handleRemix} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default VideoInspiration;
