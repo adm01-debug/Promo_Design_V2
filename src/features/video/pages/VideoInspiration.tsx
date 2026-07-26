@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Search, Wand2, Clock, Film, Flame, Link2 } from "lucide-react";
+import { Sparkles, Search, Wand2, Clock, Film, Flame, Link2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   INSPIRATION_RECIPES,
@@ -18,6 +18,14 @@ import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useRemixPopularity, type RemixPopularityItem } from "@/features/video/hooks/use-remix-popularity";
+import { useClients } from "@/features/clients/hooks/use-clients";
+import { useClientDesignRecommendation } from "@/features/mockup/hooks/use-client-design-recommendation";
+import {
+  rankRecipesForClient,
+  indexAffinityById,
+  type RecipeAffinity,
+} from "@/features/video/lib/recipe-affinity";
+
 
 const CATEGORIES: (InspirationCategory | "all")[] = [
   "all",
@@ -34,11 +42,13 @@ const styleLabel = (value: string) =>
 const RecipeCard = ({
   recipe,
   popularity,
+  affinity,
   onRemix,
   onCopyLink,
 }: {
   recipe: InspirationRecipe;
   popularity?: RemixPopularityItem;
+  affinity?: RecipeAffinity;
   onRemix: (recipe: InspirationRecipe) => void;
   onCopyLink: (recipe: InspirationRecipe) => void;
 }) => {
@@ -49,6 +59,15 @@ const RecipeCard = ({
         <div className="flex items-start justify-between gap-2">
           <h2 className="text-sm font-display font-semibold text-foreground">{recipe.title}</h2>
           <div className="flex items-center gap-1.5 shrink-0">
+            {affinity && affinity.score > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-primary/15 text-primary font-medium"
+                title={`Afinidade com o cliente: ${affinity.reasons.join("; ")}`}
+              >
+                <Target className="w-3 h-3" aria-hidden="true" />
+                {Math.round(affinity.score * 100)}%
+              </span>
+            )}
             {popularity && popularity.remixes > 0 && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-foreground font-medium"
@@ -58,6 +77,7 @@ const RecipeCard = ({
                 {popularity.remixes}
               </span>
             )}
+
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground">
               {recipe.aspectRatio}
             </span>
@@ -118,22 +138,47 @@ const VideoInspiration = () => {
   const { currentOrgId } = useOrganizations();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<InspirationCategory | "all">("all");
-  const [sort, setSort] = useState<"curated" | "popular">("curated");
+  const [sort, setSort] = useState<"curated" | "popular" | "client">("curated");
+  const [clientId, setClientId] = useState<string | null>(null);
   const { data: popularity } = useRemixPopularity(currentOrgId ?? null, 30);
+  const { clients } = useClients(currentOrgId ?? null);
+  const { data: recommendation } = useClientDesignRecommendation(
+    currentOrgId ?? null,
+    clientId,
+  );
+
+  // Índice de afinidade: puro e memoizado — recalcula só quando o padrão muda.
+  const affinityById = useMemo(
+    () => indexAffinityById(rankRecipesForClient(recommendation)),
+    [recommendation],
+  );
 
   const recipes = useMemo(() => {
     const filtered = filterInspirationRecipes(INSPIRATION_RECIPES, { search, category });
-    if (sort !== "popular" || !popularity) return filtered;
-    // Ordenação estável: popularidade desc, empate mantém a ordem curada.
-    return filtered
-      .map((recipe, index) => ({
-        recipe,
-        index,
-        remixes: popularity.byRecipeId[recipe.id]?.remixes ?? 0,
-      }))
-      .sort((a, b) => b.remixes - a.remixes || a.index - b.index)
-      .map((entry) => entry.recipe);
-  }, [search, category, sort, popularity]);
+    // Ordenação estável em todos os modos: empate mantém a ordem curada.
+    if (sort === "popular" && popularity) {
+      return filtered
+        .map((recipe, index) => ({
+          recipe,
+          index,
+          score: popularity.byRecipeId[recipe.id]?.remixes ?? 0,
+        }))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map((entry) => entry.recipe);
+    }
+    if (sort === "client") {
+      return filtered
+        .map((recipe, index) => ({
+          recipe,
+          index,
+          score: affinityById[recipe.id]?.score ?? 0,
+        }))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map((entry) => entry.recipe);
+    }
+    return filtered;
+  }, [search, category, sort, popularity, affinityById]);
+
 
   const handleRemix = (recipe: InspirationRecipe) => {
     // Telemetria fire-and-forget: nunca atrasa a navegação.
@@ -194,8 +239,21 @@ const VideoInspiration = () => {
             </button>
           ))}
         </div>
+        <select
+          value={clientId ?? ""}
+          onChange={(e) => setClientId(e.target.value || null)}
+          aria-label="Cliente para sugestões personalizadas"
+          className="text-[11px] px-2.5 py-1.5 rounded-md border border-border bg-surface-2 text-muted-foreground focus:outline-none focus-visible:border-primary max-w-[200px]"
+        >
+          <option value="">Todos os clientes</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id}>
+              {client.name}
+            </option>
+          ))}
+        </select>
         <div className="flex gap-1.5" role="group" aria-label="Ordenação do feed">
-          {(["curated", "popular"] as const).map((value) => (
+          {(["curated", "popular", "client"] as const).map((value) => (
             <button
               key={value}
               onClick={() => setSort(value)}
@@ -206,11 +264,23 @@ const VideoInspiration = () => {
                   : "bg-surface-2 border-border text-muted-foreground hover:text-foreground"
               }`}
             >
-              {value === "curated" ? "Curadoria" : "Mais usadas"}
+              {value === "curated"
+                ? "Curadoria"
+                : value === "popular"
+                  ? "Mais usadas"
+                  : "Para o cliente"}
             </button>
           ))}
         </div>
       </div>
+      {sort === "client" && (
+        <p className="px-4 pb-3 text-[11px] text-muted-foreground shrink-0">
+          {recommendation && recommendation.confidence > 0
+            ? `Sugestões baseadas em ${recommendation.sampleSize} peça(s) (${recommendation.source === "client" ? "padrão do cliente" : "padrão da organização"}).`
+            : "Ainda não há padrão histórico suficiente — exibindo a ordem curada."}
+        </p>
+      )}
+
 
       <div className="flex-1 overflow-auto p-4">
         {recipes.length === 0 ? (
@@ -225,6 +295,8 @@ const VideoInspiration = () => {
                 key={recipe.id}
                 recipe={recipe}
                 popularity={popularity?.byRecipeId[recipe.id]}
+                affinity={affinityById[recipe.id]}
+
                 onRemix={handleRemix}
                 onCopyLink={handleCopyLink}
               />
