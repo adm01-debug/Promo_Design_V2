@@ -1767,6 +1767,10 @@ export type Database = {
       get_long_running_txns: { Args: { _min_seconds?: number }; Returns: Json }
       get_maintenance_stats: { Args: never; Returns: Json }
       get_recent_incidents: { Args: { _minutes?: number }; Returns: Json }
+      get_remix_popularity: {
+        Args: { _days?: number; _org_id: string }
+        Returns: Json
+      }
       get_replication_status: { Args: never; Returns: Json }
       get_sequence_saturation: {
         Args: { _min_pct?: number }

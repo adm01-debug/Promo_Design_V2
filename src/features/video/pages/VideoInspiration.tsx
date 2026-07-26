@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Search, Wand2, Clock, Film } from "lucide-react";
+import { Sparkles, Search, Wand2, Clock, Film, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   INSPIRATION_RECIPES,
@@ -13,6 +13,9 @@ import {
 } from "@/features/video/lib/inspiration-recipes";
 import { getMotionPreset } from "@/features/video/lib/motion-presets";
 import { VIDEO_STYLES } from "@/features/video/components/VideoNewConstants";
+import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
+import { useOrganizations } from "@/hooks/use-organization";
+import { useRemixPopularity, type RemixPopularityItem } from "@/features/video/hooks/use-remix-popularity";
 
 const CATEGORIES: (InspirationCategory | "all")[] = [
   "all",
@@ -28,9 +31,11 @@ const styleLabel = (value: string) =>
 
 const RecipeCard = ({
   recipe,
+  popularity,
   onRemix,
 }: {
   recipe: InspirationRecipe;
+  popularity?: RemixPopularityItem;
   onRemix: (recipe: InspirationRecipe) => void;
 }) => {
   const presets = sanitizeRecipePresetIds(recipe).map(getMotionPreset);
@@ -39,9 +44,20 @@ const RecipeCard = ({
       <div className="p-4 flex-1 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <h2 className="text-sm font-display font-semibold text-foreground">{recipe.title}</h2>
-          <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground shrink-0">
-            {recipe.aspectRatio}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {popularity && popularity.remixes > 0 && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-foreground font-medium"
+                title={`${popularity.remixes} remix(es) por ${popularity.uniqueUsers} usuário(s)`}
+              >
+                <Flame className="w-3 h-3" aria-hidden="true" />
+                {popularity.remixes}
+              </span>
+            )}
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground">
+              {recipe.aspectRatio}
+            </span>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">{recipe.description}</p>
         <div className="flex flex-wrap gap-1.5">
@@ -85,15 +101,29 @@ const RecipeCard = ({
 
 const VideoInspiration = () => {
   const navigate = useNavigate();
+  const { currentOrgId } = useOrganizations();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<InspirationCategory | "all">("all");
+  const [sort, setSort] = useState<"curated" | "popular">("curated");
+  const { data: popularity } = useRemixPopularity(currentOrgId ?? null, 30);
 
-  const recipes = useMemo(
-    () => filterInspirationRecipes(INSPIRATION_RECIPES, { search, category }),
-    [search, category],
-  );
+  const recipes = useMemo(() => {
+    const filtered = filterInspirationRecipes(INSPIRATION_RECIPES, { search, category });
+    if (sort !== "popular" || !popularity) return filtered;
+    // Ordenação estável: popularidade desc, empate mantém a ordem curada.
+    return filtered
+      .map((recipe, index) => ({
+        recipe,
+        index,
+        remixes: popularity.byRecipeId[recipe.id]?.remixes ?? 0,
+      }))
+      .sort((a, b) => b.remixes - a.remixes || a.index - b.index)
+      .map((entry) => entry.recipe);
+  }, [search, category, sort, popularity]);
 
   const handleRemix = (recipe: InspirationRecipe) => {
+    // Telemetria fire-and-forget: nunca atrasa a navegação.
+    void logRemixApplied(recipe, currentOrgId);
     navigate("/video/new", { state: buildRemixState(recipe) });
   };
 
@@ -138,6 +168,22 @@ const VideoInspiration = () => {
             </button>
           ))}
         </div>
+        <div className="flex gap-1.5" role="group" aria-label="Ordenação do feed">
+          {(["curated", "popular"] as const).map((value) => (
+            <button
+              key={value}
+              onClick={() => setSort(value)}
+              aria-pressed={sort === value}
+              className={`text-[11px] px-2.5 py-1.5 rounded-md border transition-colors ${
+                sort === value
+                  ? "bg-accent/20 border-accent/40 text-accent-foreground font-medium"
+                  : "bg-surface-2 border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {value === "curated" ? "Curadoria" : "Mais usadas"}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-4">
@@ -149,7 +195,12 @@ const VideoInspiration = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
             {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} onRemix={handleRemix} />
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                popularity={popularity?.byRecipeId[recipe.id]}
+                onRemix={handleRemix}
+              />
             ))}
           </div>
         )}

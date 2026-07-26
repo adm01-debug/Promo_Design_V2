@@ -23,6 +23,7 @@ const isPeriod = (v: unknown): v is Period =>
 const COMPLIANCE_LABEL: Record<string, string> = {
   "order.edit_blocked": "Edições bloqueadas (ERR_ORDER_EDIT)",
   "brand.recommendation_applied": "Recomendações de marca aplicadas",
+  "video.remix_applied": "Remixes de inspiração aplicados",
 };
 
 function relative(iso: string | null | undefined): string {
