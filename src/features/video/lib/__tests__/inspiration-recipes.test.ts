@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   INSPIRATION_RECIPES,
   buildRemixState,
+  buildRecipeDeepLink,
+  parseRemixFromSearch,
   filterInspirationRecipes,
   getInspirationRecipe,
   parseRemixState,
