@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, TrendingUp, Users, Target } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Target, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { downloadCsv } from "@/features/audit/lib/audit-csv";
 import { useBrandRecommendationStats } from "../hooks/use-brand-recommendation-stats";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -17,11 +19,25 @@ const SOURCE_LABEL: Record<string, string> = {
   organization: "Organização",
 };
 
+const PERIODS = [7, 30, 90] as const;
+
 export function BrandRecommendationPanel() {
   const { currentOrgId } = useOrganizations();
   const [clientId, setClientId] = useState<string>("__all__");
+  const [days, setDays] = useState<number>(30);
   const { clients = [] } = useClients(currentOrgId);
-  const { data, isLoading } = useBrandRecommendationStats(30, clientId === "__all__" ? null : clientId);
+  const { data, isLoading } = useBrandRecommendationStats(days, clientId === "__all__" ? null : clientId);
+
+  function handleExportCsv() {
+    const rows = data?.daily ?? [];
+    const header = "Dia,Aplicacoes,ConfiancaMedia";
+    const csv = [
+      header,
+      ...rows.map((d) => `${d.day},${d.n},${((d.avg_confidence ?? 0) * 100).toFixed(1)}%`),
+    ].join("\n");
+    downloadCsv(`recomendacoes-marca-${days}d.csv`, csv);
+  }
+
 
   if (isLoading) {
     return (
@@ -67,9 +83,37 @@ export function BrandRecommendationPanel() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-0.5 rounded-md border border-border/60 p-0.5">
+              {PERIODS.map((p) => (
+                <Button
+                  key={p}
+                  type="button"
+                  size="sm"
+                  variant={days === p ? "secondary" : "ghost"}
+                  className="h-6 px-2 font-mono text-[10px]"
+                  onClick={() => setDays(p)}
+                  aria-pressed={days === p}
+                >
+                  {p}d
+                </Button>
+              ))}
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs"
+              onClick={handleExportCsv}
+              disabled={daily.length === 0}
+              aria-label="Exportar CSV das aplicações por dia"
+            >
+              <Download className="mr-1 h-3.5 w-3.5" />
+              CSV
+            </Button>
             <Badge variant="outline" className="text-[10px] font-mono">
-              {data?.window_days ?? 30}d
+              {data?.window_days ?? days}d
             </Badge>
+
           </div>
         </CardTitle>
       </CardHeader>
