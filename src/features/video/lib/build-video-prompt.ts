@@ -46,6 +46,12 @@ export interface BuildVideoPromptInput {
   cinema?: CinemaPreferences | null;
   /** Descrição do personagem/embaixador vindo do Character Studio. */
   characterDescription?: string | null;
+  /** Âncora do primeiro frame (URL de imagem de referência). */
+  startFrameUrl?: string | null;
+  /** Âncora do último frame (URL de imagem de referência). */
+  endFrameUrl?: string | null;
+  /** Soul ID: rótulo do personagem persistente para consistência entre gerações. */
+  characterSoulLabel?: string | null;
   /** Texto livre adicional escrito pelo usuário. */
   extraInstructions?: string | null;
 }
