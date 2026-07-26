@@ -1703,12 +1703,10 @@ export type Database = {
         Args: { _org_id: string; _query?: string }
         Returns: Json
       }
-      get_brand_recommendation_stats:
-        | { Args: { _days?: number; _org_id: string }; Returns: Json }
-        | {
-            Args: { _client_id?: string; _days?: number; _org_id: string }
-            Returns: Json
-          }
+      get_brand_recommendation_stats: {
+        Args: { _client_id?: string; _days?: number; _org_id: string }
+        Returns: Json
+      }
       get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
       get_endpoint_telemetry: {
