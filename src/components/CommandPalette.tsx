@@ -12,7 +12,7 @@ import {
 import {
   Image, Film, Palette, Camera, User,
   Settings, History, FolderOpen, ClipboardList, BarChart3,
-  BookOpen, Eye, Wand2, Home, ScanText
+  BookOpen, Eye, Wand2, Home, ScanText, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -32,6 +32,7 @@ const pages = [
   { label: "Histórico Magic Up", path: "/magicup/history", icon: History, group: "Magic Up" },
   { label: "Novo Vídeo", path: "/video/new", icon: Film, group: "Video Studio" },
   { label: "Cinema Mode", path: "/video/cinema", icon: Eye, group: "Video Studio" },
+  { label: "Feed de Inspiração", path: "/video/inspiration", icon: Sparkles, group: "Video Studio" },
   { label: "Moodboard", path: "/video/moodboard", icon: Palette, group: "Video Studio" },
   { label: "Photodump", path: "/video/photodump", icon: Camera, group: "Video Studio" },
   { label: "Character Studio", path: "/video/characters", icon: User, group: "Video Studio" },
