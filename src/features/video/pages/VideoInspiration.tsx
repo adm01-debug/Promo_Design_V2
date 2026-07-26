@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Search, Wand2, Clock, Film, Flame } from "lucide-react";
+import { Sparkles, Search, Wand2, Clock, Film, Flame, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   INSPIRATION_RECIPES,
   INSPIRATION_CATEGORY_LABELS,
   buildRemixState,
+  buildRecipeDeepLink,
   filterInspirationRecipes,
   sanitizeRecipePresetIds,
   type InspirationCategory,
@@ -14,6 +15,7 @@ import {
 import { getMotionPreset } from "@/features/video/lib/motion-presets";
 import { VIDEO_STYLES } from "@/features/video/components/VideoNewConstants";
 import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
+import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useRemixPopularity, type RemixPopularityItem } from "@/features/video/hooks/use-remix-popularity";
 
@@ -33,10 +35,13 @@ const RecipeCard = ({
   recipe,
   popularity,
   onRemix,
+  onCopyLink,
 }: {
   recipe: InspirationRecipe;
   popularity?: RemixPopularityItem;
+  onCopyLink: (recipe: InspirationRecipe) => void;
   onRemix: (recipe: InspirationRecipe) => void;
+  onCopyLink: (recipe: InspirationRecipe) => void;
 }) => {
   const presets = sanitizeRecipePresetIds(recipe).map(getMotionPreset);
   return (
@@ -85,7 +90,7 @@ const RecipeCard = ({
           <span>{INSPIRATION_CATEGORY_LABELS[recipe.category]}</span>
         </div>
       </div>
-      <div className="p-3 border-t border-border bg-surface-1">
+      <div className="p-3 border-t border-border bg-surface-1 flex gap-2">
         <Button
           size="sm"
           className="w-full text-xs gap-1.5 bg-gradient-primary text-primary-foreground"
@@ -93,6 +98,16 @@ const RecipeCard = ({
           aria-label={`Remixar receita ${recipe.title}`}
         >
           <Wand2 className="w-3.5 h-3.5" aria-hidden="true" /> Remixar no Studio
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs shrink-0"
+          onClick={() => onCopyLink(recipe)}
+          aria-label={`Copiar link da receita ${recipe.title}`}
+          title="Copiar link compartilhável"
+        >
+          <Link2 className="w-3.5 h-3.5" aria-hidden="true" />
         </Button>
       </div>
     </article>
@@ -124,7 +139,19 @@ const VideoInspiration = () => {
   const handleRemix = (recipe: InspirationRecipe) => {
     // Telemetria fire-and-forget: nunca atrasa a navegação.
     void logRemixApplied(recipe, currentOrgId);
-    navigate("/video/new", { state: buildRemixState(recipe) });
+    // Query string + state: o state evita reprocessar e a query mantém o
+    // deep link válido após reload, nova aba ou compartilhamento.
+    navigate(buildRecipeDeepLink(recipe), { state: buildRemixState(recipe) });
+  };
+
+  const handleCopyLink = async (recipe: InspirationRecipe) => {
+    const url = `${window.location.origin}${buildRecipeDeepLink(recipe)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado", { description: recipe.title });
+    } catch {
+      toast.error("Não foi possível copiar o link", { description: url });
+    }
   };
 
   return (
@@ -200,6 +227,7 @@ const VideoInspiration = () => {
                 recipe={recipe}
                 popularity={popularity?.byRecipeId[recipe.id]}
                 onRemix={handleRemix}
+                onCopyLink={handleCopyLink}
               />
             ))}
           </div>
