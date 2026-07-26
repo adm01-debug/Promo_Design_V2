@@ -13,6 +13,7 @@ import {
   Image, Film, Palette, Camera, User,
   Settings, History, FolderOpen, ClipboardList, BarChart3,
   BookOpen, Eye, Wand2, Home, ScanText
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganizations } from "@/hooks/use-organization";
