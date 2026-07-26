@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Search, Wand2, Clock, Film, Flame, Link2 } from "lucide-react";
+import { Sparkles, Search, Wand2, Clock, Film, Flame, Link2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   INSPIRATION_RECIPES,
@@ -18,6 +18,14 @@ import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
 import { useRemixPopularity, type RemixPopularityItem } from "@/features/video/hooks/use-remix-popularity";
+import { useClients } from "@/features/clients/hooks/use-clients";
+import { useClientDesignRecommendation } from "@/features/mockup/hooks/use-client-design-recommendation";
+import {
+  rankRecipesForClient,
+  indexAffinityById,
+  type RecipeAffinity,
+} from "@/features/video/lib/recipe-affinity";
+
 
 const CATEGORIES: (InspirationCategory | "all")[] = [
   "all",
