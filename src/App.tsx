@@ -36,6 +36,7 @@ const VideoMoodboard = lazyWithRetry(() => import("./features/video/pages/VideoM
 const VideoPhotodump = lazyWithRetry(() => import("./features/video/pages/VideoPhotodump"));
 const VideoGallery = lazyWithRetry(() => import("./features/video/pages/VideoGallery"));
 const VideoCinema = lazyWithRetry(() => import("./features/video/pages/VideoCinema"));
+const VideoInspiration = lazyWithRetry(() => import("./features/video/pages/VideoInspiration"));
 const CharacterStudio = lazyWithRetry(() => import("./features/video/pages/CharacterStudio"));
 const ServiceOrder = lazyWithRetry(() => import("./features/service-orders/pages/ServiceOrder"));
 const ServiceOrderList = lazyWithRetry(() => import("./features/service-orders/pages/ServiceOrderList"));
@@ -101,6 +102,7 @@ const App = () => (
                       <Route path="/video/photodump" element={guard("Video Photodump", <VideoPhotodump />)} />
                       <Route path="/video/gallery" element={guard("Galeria de Vídeo", <VideoGallery />)} />
                       <Route path="/video/cinema" element={guard("Video Cinema", <VideoCinema />)} />
+                      <Route path="/video/inspiration" element={guard("Feed de Inspiração", <VideoInspiration />)} />
                       <Route path="/video/characters" element={guard("Character Studio", <CharacterStudio />)} />
                       <Route path="/video/history" element={guard("Histórico de Vídeo", <VideoHistory />)} />
                       <Route path="/settings" element={guard("Configurações", <Settings />)} />

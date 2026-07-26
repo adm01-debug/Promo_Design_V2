@@ -86,6 +86,7 @@ const modules = [
     children: [
       { label: "Novo Vídeo", path: "/video/new", icon: Film },
       { label: "Cinema Mode", path: "/video/cinema", icon: Eye },
+      { label: "Inspiração", path: "/video/inspiration", icon: Sparkles },
       { label: "Moodboard", path: "/video/moodboard", icon: Palette },
       { label: "Photodump", path: "/video/photodump", icon: Camera },
       { label: "Character Studio", path: "/video/characters", icon: User },
