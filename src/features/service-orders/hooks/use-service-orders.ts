@@ -3,6 +3,38 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
+import {
+  checkOrderEdit,
+  OrderEditError,
+  type OrderEditViolation,
+} from "../lib/order-edit-guard";
+
+/**
+ * Telemetria de conformidade: registra tentativas bloqueadas pela guarda de edição.
+ * Nunca bloqueia a UX — falhas de log são silenciadas de propósito.
+ */
+function logOrderEditBlocked(orderId: string, violation: OrderEditViolation): void {
+  void (async () => {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      await supabase.from("audit_log").insert({
+        user_id: auth.user.id,
+        table_name: "service_orders",
+        record_id: orderId,
+        action: "order.edit_blocked",
+        new_values: {
+          code: violation.code,
+          status: violation.status,
+          fields: violation.fields,
+        },
+      });
+    } catch {
+      /* telemetria best-effort */
+    }
+  })();
+}
+
 
 export type OsStatus = "aberta" | "em_producao" | "concluida" | "cancelada";
 
