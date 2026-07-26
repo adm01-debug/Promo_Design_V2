@@ -26,6 +26,14 @@ const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👤": "a neutral silhouette presenting the product",
 };
 
+const JOB_STATUS_LABELS: Record<string, string> = {
+  queued: "Na fila",
+  generating: "Gerando...",
+  ready: "Pronto",
+  failed: "Falhou",
+  cancelled: "Cancelado",
+};
+
 const VideoNew = () => {
   const { currentOrgId } = useOrganizations();
   const { job, isEnqueuing, isPolling, enqueue, cancel } = useVideoGeneration();
