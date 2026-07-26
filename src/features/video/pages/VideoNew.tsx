@@ -11,6 +11,7 @@ import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import { ASPECT_RATIOS, VIDEO_STYLES, TEMPLATES, ASPECT_PREVIEW, type AspectRatio, type VideoStyle, type CreationMode } from "@/features/video/components/VideoNewConstants";
 import MotionPresetPicker from "@/features/video/components/MotionPresetPicker";
 import GeneratedPromptPanel from "@/features/video/components/GeneratedPromptPanel";
+import FrameAnchorsPicker, { isValidFrameUrl } from "@/features/video/components/FrameAnchorsPicker";
 import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
 import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -24,6 +25,18 @@ const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "🧑‍💻": "a tech professional presenting the product",
   "👩‍🔬": "a female scientist presenting the product",
   "👤": "a neutral silhouette presenting the product",
+};
+
+/** Soul ID: rótulo estável por avatar, garante consistência entre gerações. */
+const CHARACTER_SOUL_LABELS: Record<string, string> = {
+  "👩‍💼": "Executive Ambassador",
+  "🧑": "Young Ambassador",
+  "🧔": "Bearded Ambassador",
+  "👩‍🎨": "Creative Artist",
+  "👮": "Uniformed Officer",
+  "🧑‍💻": "Tech Professional",
+  "👩‍🔬": "Lab Scientist",
+  "👤": "Neutral Silhouette",
 };
 
 const JOB_STATUS_LABELS: Record<string, string> = {
