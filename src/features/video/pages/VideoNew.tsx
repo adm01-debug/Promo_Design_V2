@@ -15,7 +15,7 @@ import FrameAnchorsPicker, { isValidFrameUrl } from "@/features/video/components
 import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
 import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
 import { useOrganizations } from "@/hooks/use-organization";
-import { parseRemixState, getInspirationRecipe } from "@/features/video/lib/inspiration-recipes";
+import { parseRemixState, parseRemixFromSearch, getInspirationRecipe } from "@/features/video/lib/inspiration-recipes";
 
 const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👩‍💼": "a professional female brand ambassador presenting the product",
