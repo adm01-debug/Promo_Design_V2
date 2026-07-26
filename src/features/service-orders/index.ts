@@ -22,3 +22,13 @@ export {
   serviceOrderSchema,
 } from "./types";
 export type { ServiceOrderData, ValidationErrors } from "./types";
+export {
+  ERR_ORDER_EDIT,
+  LOCKED_EDIT_STATUSES,
+  OrderEditError,
+  assertOrderEditable,
+  checkOrderEdit,
+  isOrderEditError,
+  isOrderEditable,
+} from "./lib/order-edit-guard";
+export type { OrderEditViolation } from "./lib/order-edit-guard";
