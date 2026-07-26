@@ -9,6 +9,20 @@ import VideoPreviewAnimation from "@/features/video/components/VideoPreviewAnima
 import { useMoodboardStore, TONE_LABELS, PALETTE_LABELS, TONE_TO_STYLE } from "@/hooks/use-moodboard-preferences";
 import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import { ASPECT_RATIOS, VIDEO_STYLES, TEMPLATES, ASPECT_PREVIEW, type AspectRatio, type VideoStyle, type CreationMode } from "@/features/video/components/VideoNewConstants";
+import MotionPresetPicker from "@/features/video/components/MotionPresetPicker";
+import GeneratedPromptPanel from "@/features/video/components/GeneratedPromptPanel";
+import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
+
+const CHARACTER_DESCRIPTIONS: Record<string, string> = {
+  "👩‍💼": "a professional female brand ambassador presenting the product",
+  "🧑": "a young adult brand ambassador presenting the product",
+  "🧔": "a bearded male brand ambassador presenting the product",
+  "👩‍🎨": "a creative female artist presenting the product",
+  "👮": "a uniformed officer presenting the product",
+  "🧑‍💻": "a tech professional presenting the product",
+  "👩‍🔬": "a female scientist presenting the product",
+  "👤": "a neutral silhouette presenting the product",
+};
 
 const VideoNew = () => {
   const moodboard = useMoodboardStore((s) => s.preferences);
@@ -28,6 +42,8 @@ const VideoNew = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<string>(() => {
     return localStorage.getItem("selected_character_avatar") || "👩‍💼";
   });
+  const [motionPresetIds, setMotionPresetIds] = useState<string[]>([]);
+  const [promptOverride, setPromptOverride] = useState<string | null>(null);
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
 
   useEffect(() => {
@@ -43,6 +59,31 @@ const VideoNew = () => {
   const totalPages = Math.ceil((productsData?.total || 0) / 20);
   const filteredTemplates = useMemo(() => TEMPLATES.filter(() => true), []);
   const selectedTemplateMeta = TEMPLATES.find(t => t.id === selectedTemplate);
+
+  const generatedPrompt = useMemo(
+    () =>
+      selectedProduct
+        ? buildVideoPrompt({
+            productName: selectedProduct.name,
+            productSku: selectedProduct.sku,
+            motionPresetIds,
+            aspectRatio,
+            durationSeconds: duration,
+            videoStyle,
+            moodboard,
+            cinema,
+            characterDescription:
+              selectedTemplate === "ambassador" && creationMode === "template"
+                ? CHARACTER_DESCRIPTIONS[selectedCharacter]
+                : null,
+            extraInstructions: creationMode === "ai" ? aiPrompt : null,
+          })
+        : "",
+    [selectedProduct, motionPresetIds, aspectRatio, duration, videoStyle, moodboard, cinema, selectedTemplate, creationMode, selectedCharacter, aiPrompt],
+  );
+  const finalPrompt = promptOverride ?? generatedPrompt;
+
+
 
   return (
     <div className="h-screen flex flex-col">
@@ -165,6 +206,8 @@ const VideoNew = () => {
                       </div>
                     </div>
                   )}
+                  <MotionPresetPicker value={motionPresetIds} onChange={setMotionPresetIds} />
+                  <GeneratedPromptPanel generated={generatedPrompt} override={promptOverride} onOverrideChange={setPromptOverride} />
                   <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground h-11" onClick={() => setStep("preview")}><Play className="w-4 h-4" />Pré-visualizar</Button>
                 </div>
                 <div className="flex-1 flex items-center justify-center bg-surface-1 p-8">
@@ -186,6 +229,10 @@ const VideoNew = () => {
                 <div className="text-center space-y-3 max-w-md">
                   <h2 className="text-lg font-display font-bold text-foreground">Pronto para gerar</h2>
                   <p className="text-sm text-muted-foreground">{creationMode === "template" ? `O template "${selectedTemplateMeta?.name}" será aplicado com estilo ${videoStyle}.` : `A IA irá gerar um vídeo com estilo ${videoStyle}.`}</p>
+                  <div className="rounded-lg border border-border bg-surface-2 p-3 text-left">
+                    <p className="mb-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Prompt final</p>
+                    <p className="max-h-28 overflow-y-auto font-mono text-[11px] leading-relaxed text-foreground">{finalPrompt}</p>
+                  </div>
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep("config")} className="gap-1.5"><ChevronLeft className="w-3.5 h-3.5" /> Ajustar</Button>
                     <Button className="gap-2 bg-gradient-accent text-accent-foreground px-6" disabled><Sparkles className="w-4 h-4" /> Gerar Vídeo<span className="text-[10px] opacity-70 ml-1">(requer Cloud)</span></Button>
