@@ -229,6 +229,10 @@ const VideoNew = () => {
                 <div className="text-center space-y-3 max-w-md">
                   <h2 className="text-lg font-display font-bold text-foreground">Pronto para gerar</h2>
                   <p className="text-sm text-muted-foreground">{creationMode === "template" ? `O template "${selectedTemplateMeta?.name}" será aplicado com estilo ${videoStyle}.` : `A IA irá gerar um vídeo com estilo ${videoStyle}.`}</p>
+                  <div className="rounded-lg border border-border bg-surface-2 p-3 text-left">
+                    <p className="mb-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Prompt final</p>
+                    <p className="max-h-28 overflow-y-auto font-mono text-[11px] leading-relaxed text-foreground">{finalPrompt}</p>
+                  </div>
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep("config")} className="gap-1.5"><ChevronLeft className="w-3.5 h-3.5" /> Ajustar</Button>
                     <Button className="gap-2 bg-gradient-accent text-accent-foreground px-6" disabled><Sparkles className="w-4 h-4" /> Gerar Vídeo<span className="text-[10px] opacity-70 ml-1">(requer Cloud)</span></Button>
