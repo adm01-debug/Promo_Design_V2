@@ -239,8 +239,21 @@ const VideoInspiration = () => {
             </button>
           ))}
         </div>
+        <select
+          value={clientId ?? ""}
+          onChange={(e) => setClientId(e.target.value || null)}
+          aria-label="Cliente para sugestões personalizadas"
+          className="text-[11px] px-2.5 py-1.5 rounded-md border border-border bg-surface-2 text-muted-foreground focus:outline-none focus-visible:border-primary max-w-[200px]"
+        >
+          <option value="">Todos os clientes</option>
+          {clients.map((client) => (
+            <option key={client.id} value={client.id}>
+              {client.name}
+            </option>
+          ))}
+        </select>
         <div className="flex gap-1.5" role="group" aria-label="Ordenação do feed">
-          {(["curated", "popular"] as const).map((value) => (
+          {(["curated", "popular", "client"] as const).map((value) => (
             <button
               key={value}
               onClick={() => setSort(value)}
@@ -251,11 +264,23 @@ const VideoInspiration = () => {
                   : "bg-surface-2 border-border text-muted-foreground hover:text-foreground"
               }`}
             >
-              {value === "curated" ? "Curadoria" : "Mais usadas"}
+              {value === "curated"
+                ? "Curadoria"
+                : value === "popular"
+                  ? "Mais usadas"
+                  : "Para o cliente"}
             </button>
           ))}
         </div>
       </div>
+      {sort === "client" && (
+        <p className="px-4 pb-3 text-[11px] text-muted-foreground shrink-0">
+          {recommendation && recommendation.confidence > 0
+            ? `Sugestões baseadas em ${recommendation.sampleSize} peça(s) (${recommendation.source === "client" ? "padrão do cliente" : "padrão da organização"}).`
+            : "Ainda não há padrão histórico suficiente — exibindo a ordem curada."}
+        </p>
+      )}
+
 
       <div className="flex-1 overflow-auto p-4">
         {recipes.length === 0 ? (
