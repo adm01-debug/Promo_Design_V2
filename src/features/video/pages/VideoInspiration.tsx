@@ -39,7 +39,6 @@ const RecipeCard = ({
 }: {
   recipe: InspirationRecipe;
   popularity?: RemixPopularityItem;
-  onCopyLink: (recipe: InspirationRecipe) => void;
   onRemix: (recipe: InspirationRecipe) => void;
   onCopyLink: (recipe: InspirationRecipe) => void;
 }) => {
