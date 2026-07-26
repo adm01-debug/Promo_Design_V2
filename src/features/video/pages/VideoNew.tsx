@@ -42,6 +42,8 @@ const VideoNew = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<string>(() => {
     return localStorage.getItem("selected_character_avatar") || "👩‍💼";
   });
+  const [motionPresetIds, setMotionPresetIds] = useState<string[]>([]);
+  const [promptOverride, setPromptOverride] = useState<string | null>(null);
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
 
   useEffect(() => {
