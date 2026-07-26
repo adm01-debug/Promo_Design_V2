@@ -20,6 +20,8 @@ import { useOrganizations } from "@/hooks/use-organization";
 import { useRemixPopularity, type RemixPopularityItem } from "@/features/video/hooks/use-remix-popularity";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useClientDesignRecommendation } from "@/features/mockup/hooks/use-client-design-recommendation";
+import { usePersistedPreference } from "@/hooks/use-persisted-preference";
+
 import {
   rankRecipesForClient,
   indexAffinityById,
