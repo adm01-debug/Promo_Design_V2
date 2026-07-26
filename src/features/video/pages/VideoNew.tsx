@@ -27,6 +27,8 @@ const CHARACTER_DESCRIPTIONS: Record<string, string> = {
 };
 
 const VideoNew = () => {
+  const { currentOrgId } = useOrganizations();
+  const { job, isEnqueuing, isPolling, enqueue, cancel } = useVideoGeneration();
   const moodboard = useMoodboardStore((s) => s.preferences);
   const clearMoodboard = useMoodboardStore((s) => s.clearPreferences);
   const cinema = useCinemaStore((s) => s.preferences);
