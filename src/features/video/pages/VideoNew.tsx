@@ -60,6 +60,31 @@ const VideoNew = () => {
   const filteredTemplates = useMemo(() => TEMPLATES.filter(() => true), []);
   const selectedTemplateMeta = TEMPLATES.find(t => t.id === selectedTemplate);
 
+  const generatedPrompt = useMemo(
+    () =>
+      selectedProduct
+        ? buildVideoPrompt({
+            productName: selectedProduct.name,
+            productSku: selectedProduct.sku,
+            motionPresetIds,
+            aspectRatio,
+            durationSeconds: duration,
+            videoStyle,
+            moodboard,
+            cinema,
+            characterDescription:
+              selectedTemplate === "ambassador" && creationMode === "template"
+                ? CHARACTER_DESCRIPTIONS[selectedCharacter]
+                : null,
+            extraInstructions: creationMode === "ai" ? aiPrompt : null,
+          })
+        : "",
+    [selectedProduct, motionPresetIds, aspectRatio, duration, videoStyle, moodboard, cinema, selectedTemplate, creationMode, selectedCharacter, aiPrompt],
+  );
+  const finalPrompt = promptOverride ?? generatedPrompt;
+
+
+
   return (
     <div className="h-screen flex flex-col">
       {/* Top Bar */}
