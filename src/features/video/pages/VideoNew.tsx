@@ -90,10 +90,16 @@ const VideoNew = () => {
               selectedTemplate === "ambassador" && creationMode === "template"
                 ? CHARACTER_DESCRIPTIONS[selectedCharacter]
                 : null,
+            characterSoulLabel:
+              selectedTemplate === "ambassador" && creationMode === "template"
+                ? soulLabel
+                : null,
+            startFrameUrl: validStartFrame,
+            endFrameUrl: validEndFrame,
             extraInstructions: creationMode === "ai" ? aiPrompt : null,
           })
         : "",
-    [selectedProduct, motionPresetIds, aspectRatio, duration, videoStyle, moodboard, cinema, selectedTemplate, creationMode, selectedCharacter, aiPrompt],
+    [selectedProduct, motionPresetIds, aspectRatio, duration, videoStyle, moodboard, cinema, selectedTemplate, creationMode, selectedCharacter, aiPrompt, soulLabel, validStartFrame, validEndFrame],
   );
   const finalPrompt = promptOverride ?? generatedPrompt;
 
