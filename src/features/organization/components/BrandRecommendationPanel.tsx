@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, TrendingUp, Users, Target } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Target, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { downloadCsv } from "@/features/audit/lib/audit-csv";
 import { useBrandRecommendationStats } from "../hooks/use-brand-recommendation-stats";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -17,11 +19,25 @@ const SOURCE_LABEL: Record<string, string> = {
   organization: "Organização",
 };
 
+const PERIODS = [7, 30, 90] as const;
+
 export function BrandRecommendationPanel() {
   const { currentOrgId } = useOrganizations();
   const [clientId, setClientId] = useState<string>("__all__");
+  const [days, setDays] = useState<number>(30);
   const { clients = [] } = useClients(currentOrgId);
-  const { data, isLoading } = useBrandRecommendationStats(30, clientId === "__all__" ? null : clientId);
+  const { data, isLoading } = useBrandRecommendationStats(days, clientId === "__all__" ? null : clientId);
+
+  function handleExportCsv() {
+    const rows = data?.daily ?? [];
+    const header = "Dia,Aplicacoes,ConfiancaMedia";
+    const csv = [
+      header,
+      ...rows.map((d) => `${d.day},${d.n},${((d.avg_confidence ?? 0) * 100).toFixed(1)}%`),
+    ].join("\n");
+    downloadCsv(`recomendacoes-marca-${days}d.csv`, csv);
+  }
+
 
   if (isLoading) {
     return (
