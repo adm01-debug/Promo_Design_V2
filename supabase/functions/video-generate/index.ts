@@ -13,6 +13,20 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
 
+const HttpUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(2048)
+  .refine((v) => /^https?:\/\//i.test(v), "URL deve começar com http(s)://");
+
+const CharacterRefSchema = z.object({
+  id: z.string().trim().max(120).nullable().optional(),
+  label: z.string().trim().max(120).nullable().optional(),
+  avatar: z.string().trim().max(16).nullable().optional(),
+  description: z.string().trim().max(600).nullable().optional(),
+});
+
 const EnqueueSchema = z.object({
   action: z.literal("enqueue"),
   organizationId: z.string().uuid(),
@@ -25,6 +39,9 @@ const EnqueueSchema = z.object({
   duration: z.union([z.literal(5), z.literal(10)]),
   style: z.string().trim().max(60).nullable().optional(),
   motionPresets: z.array(z.string().trim().min(1).max(60)).max(8).default([]),
+  startFrameUrl: HttpUrl.nullable().optional(),
+  endFrameUrl: HttpUrl.nullable().optional(),
+  characterRef: CharacterRefSchema.nullable().optional(),
 });
 
 const JobRefSchema = z.object({
@@ -136,6 +153,9 @@ Deno.serve(async (req) => {
       aspect_ratio: body.aspectRatio,
       duration: body.duration,
       style: body.style ?? null,
+      start_frame_url: body.startFrameUrl ?? null,
+      end_frame_url: body.endFrameUrl ?? null,
+      character_ref: body.characterRef ?? {},
       status: "queued",
       video_url: null,
     })

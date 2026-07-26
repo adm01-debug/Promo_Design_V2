@@ -1567,12 +1567,14 @@ export type Database = {
       videos: {
         Row: {
           aspect_ratio: string
+          character_ref: Json
           client_id: string | null
           completed_at: string | null
           created_at: string
           created_by: string
           deleted_at: string | null
           duration: number
+          end_frame_url: string | null
           error_message: string | null
           id: string
           metadata: Json | null
@@ -1584,6 +1586,7 @@ export type Database = {
           prompt: string | null
           provider: string | null
           provider_job_id: string | null
+          start_frame_url: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["video_job_status"]
           style: string | null
@@ -1593,12 +1596,14 @@ export type Database = {
         }
         Insert: {
           aspect_ratio: string
+          character_ref?: Json
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by: string
           deleted_at?: string | null
           duration: number
+          end_frame_url?: string | null
           error_message?: string | null
           id?: string
           metadata?: Json | null
@@ -1610,6 +1615,7 @@ export type Database = {
           prompt?: string | null
           provider?: string | null
           provider_job_id?: string | null
+          start_frame_url?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["video_job_status"]
           style?: string | null
@@ -1619,12 +1625,14 @@ export type Database = {
         }
         Update: {
           aspect_ratio?: string
+          character_ref?: Json
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
           created_by?: string
           deleted_at?: string | null
           duration?: number
+          end_frame_url?: string | null
           error_message?: string | null
           id?: string
           metadata?: Json | null
@@ -1636,6 +1644,7 @@ export type Database = {
           prompt?: string | null
           provider?: string | null
           provider_job_id?: string | null
+          start_frame_url?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["video_job_status"]
           style?: string | null

@@ -15,6 +15,15 @@ export interface VideoJob {
   completed_at: string | null;
 }
 
+export interface CharacterSoulRef {
+  /** Identificador estável do personagem no Character Studio (quando houver). */
+  id?: string | null;
+  /** Rótulo legível — usado no prompt para manter consistência entre gerações. */
+  label?: string | null;
+  avatar?: string | null;
+  description?: string | null;
+}
+
 export interface EnqueueVideoInput {
   organizationId: string;
   clientId?: string | null;
@@ -26,6 +35,9 @@ export interface EnqueueVideoInput {
   duration: 5 | 10;
   style?: string | null;
   motionPresets: string[];
+  startFrameUrl?: string | null;
+  endFrameUrl?: string | null;
+  characterRef?: CharacterSoulRef | null;
 }
 
 const TERMINAL: readonly VideoJobStatus[] = ["ready", "failed", "cancelled"];

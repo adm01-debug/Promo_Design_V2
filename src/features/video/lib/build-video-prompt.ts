@@ -46,6 +46,12 @@ export interface BuildVideoPromptInput {
   cinema?: CinemaPreferences | null;
   /** Descrição do personagem/embaixador vindo do Character Studio. */
   characterDescription?: string | null;
+  /** Âncora do primeiro frame (URL de imagem de referência). */
+  startFrameUrl?: string | null;
+  /** Âncora do último frame (URL de imagem de referência). */
+  endFrameUrl?: string | null;
+  /** Soul ID: rótulo do personagem persistente para consistência entre gerações. */
+  characterSoulLabel?: string | null;
   /** Texto livre adicional escrito pelo usuário. */
   extraInstructions?: string | null;
 }
@@ -84,6 +90,9 @@ export function buildVideoPrompt(input: BuildVideoPromptInput): string {
     moodboard,
     cinema,
     characterDescription,
+    startFrameUrl,
+    endFrameUrl,
+    characterSoulLabel,
     extraInstructions,
   } = input;
 
@@ -97,6 +106,14 @@ export function buildVideoPrompt(input: BuildVideoPromptInput): string {
     `${durationSeconds}s product film of ${subject}`,
     videoStyle ? STYLE_FRAGMENT[videoStyle] : null,
     characterDescription ? `featuring ${characterDescription}` : null,
+    characterSoulLabel
+      ? `keep the recurring character "${characterSoulLabel.trim()}" visually identical across shots`
+      : null,
+    startFrameUrl ? "opening frame must match the provided start reference image" : null,
+    endFrameUrl ? "closing frame must match the provided end reference image" : null,
+    startFrameUrl && endFrameUrl
+      ? "interpolate smoothly and continuously between the start and end reference frames"
+      : null,
     ...presets.map((p) => p.promptFragment),
     moodboard?.tone ? TONE_FRAGMENT[moodboard.tone] : null,
     moodboard?.palette ? PALETTE_FRAGMENT[moodboard.palette] : null,

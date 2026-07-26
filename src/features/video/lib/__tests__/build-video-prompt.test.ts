@@ -119,3 +119,32 @@ describe("buildVideoPrompt", () => {
     expect(prompt).not.toContain("  ");
   });
 });
+
+describe("buildVideoPrompt — âncoras de frame e Soul ID", () => {
+  const base = { productName: "Caneca", aspectRatio: "9:16", durationSeconds: 5 } as const;
+
+  it("inclui instrução de primeiro frame quando há âncora inicial", () => {
+    const out = buildVideoPrompt({ ...base, startFrameUrl: "https://x/a.png" });
+    expect(out).toContain("opening frame must match the provided start reference image");
+    expect(out).not.toContain("closing frame");
+  });
+
+  it("inclui interpolação apenas quando ambas as âncoras existem", () => {
+    const out = buildVideoPrompt({
+      ...base,
+      startFrameUrl: "https://x/a.png",
+      endFrameUrl: "https://x/b.png",
+    });
+    expect(out).toContain("interpolate smoothly and continuously");
+  });
+
+  it("propaga o Soul ID do personagem", () => {
+    const out = buildVideoPrompt({ ...base, characterSoulLabel: " Executive Ambassador " });
+    expect(out).toContain('keep the recurring character "Executive Ambassador" visually identical');
+  });
+
+  it("permanece determinístico com as novas entradas", () => {
+    const input = { ...base, startFrameUrl: "https://x/a.png", characterSoulLabel: "Hero" };
+    expect(buildVideoPrompt(input)).toBe(buildVideoPrompt(input));
+  });
+});

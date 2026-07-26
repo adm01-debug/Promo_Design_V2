@@ -11,6 +11,7 @@ import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import { ASPECT_RATIOS, VIDEO_STYLES, TEMPLATES, ASPECT_PREVIEW, type AspectRatio, type VideoStyle, type CreationMode } from "@/features/video/components/VideoNewConstants";
 import MotionPresetPicker from "@/features/video/components/MotionPresetPicker";
 import GeneratedPromptPanel from "@/features/video/components/GeneratedPromptPanel";
+import FrameAnchorsPicker, { isValidFrameUrl } from "@/features/video/components/FrameAnchorsPicker";
 import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
 import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -24,6 +25,18 @@ const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "🧑‍💻": "a tech professional presenting the product",
   "👩‍🔬": "a female scientist presenting the product",
   "👤": "a neutral silhouette presenting the product",
+};
+
+/** Soul ID: rótulo estável por avatar, garante consistência entre gerações. */
+const CHARACTER_SOUL_LABELS: Record<string, string> = {
+  "👩‍💼": "Executive Ambassador",
+  "🧑": "Young Ambassador",
+  "🧔": "Bearded Ambassador",
+  "👩‍🎨": "Creative Artist",
+  "👮": "Uniformed Officer",
+  "🧑‍💻": "Tech Professional",
+  "👩‍🔬": "Lab Scientist",
+  "👤": "Neutral Silhouette",
 };
 
 const JOB_STATUS_LABELS: Record<string, string> = {
@@ -56,6 +69,8 @@ const VideoNew = () => {
   });
   const [motionPresetIds, setMotionPresetIds] = useState<string[]>([]);
   const [promptOverride, setPromptOverride] = useState<string | null>(null);
+  const [startFrameUrl, setStartFrameUrl] = useState("");
+  const [endFrameUrl, setEndFrameUrl] = useState("");
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
 
   useEffect(() => {
@@ -71,6 +86,13 @@ const VideoNew = () => {
   const totalPages = Math.ceil((productsData?.total || 0) / 20);
   const filteredTemplates = useMemo(() => TEMPLATES.filter(() => true), []);
   const selectedTemplateMeta = TEMPLATES.find(t => t.id === selectedTemplate);
+
+  // Estado derivado — nunca useEffect. Só âncoras válidas entram no prompt/payload.
+  const validStartFrame = isValidFrameUrl(startFrameUrl) ? startFrameUrl.trim() : null;
+  const validEndFrame = isValidFrameUrl(endFrameUrl) ? endFrameUrl.trim() : null;
+  const soulLabel = CHARACTER_SOUL_LABELS[selectedCharacter] ?? null;
+
+
 
   const generatedPrompt = useMemo(
     () =>
@@ -88,10 +110,16 @@ const VideoNew = () => {
               selectedTemplate === "ambassador" && creationMode === "template"
                 ? CHARACTER_DESCRIPTIONS[selectedCharacter]
                 : null,
+            characterSoulLabel:
+              selectedTemplate === "ambassador" && creationMode === "template"
+                ? soulLabel
+                : null,
+            startFrameUrl: validStartFrame,
+            endFrameUrl: validEndFrame,
             extraInstructions: creationMode === "ai" ? aiPrompt : null,
           })
         : "",
-    [selectedProduct, motionPresetIds, aspectRatio, duration, videoStyle, moodboard, cinema, selectedTemplate, creationMode, selectedCharacter, aiPrompt],
+    [selectedProduct, motionPresetIds, aspectRatio, duration, videoStyle, moodboard, cinema, selectedTemplate, creationMode, selectedCharacter, aiPrompt, soulLabel, validStartFrame, validEndFrame],
   );
   const finalPrompt = promptOverride ?? generatedPrompt;
 
@@ -219,6 +247,13 @@ const VideoNew = () => {
                     </div>
                   )}
                   <MotionPresetPicker value={motionPresetIds} onChange={setMotionPresetIds} />
+                  <FrameAnchorsPicker
+                    startFrameUrl={startFrameUrl}
+                    endFrameUrl={endFrameUrl}
+                    onStartChange={setStartFrameUrl}
+                    onEndChange={setEndFrameUrl}
+                    suggestedUrl={getProductImageUrl(selectedProduct)}
+                  />
                   <GeneratedPromptPanel generated={generatedPrompt} override={promptOverride} onOverrideChange={setPromptOverride} />
                   <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground h-11" onClick={() => setStep("preview")}><Play className="w-4 h-4" />Pré-visualizar</Button>
                 </div>
@@ -276,6 +311,16 @@ const VideoNew = () => {
                             duration,
                             style: videoStyle,
                             motionPresets: motionPresetIds,
+                            startFrameUrl: validStartFrame,
+                            endFrameUrl: validEndFrame,
+                            characterRef:
+                              selectedTemplate === "ambassador" && creationMode === "template"
+                                ? {
+                                    label: soulLabel,
+                                    avatar: selectedCharacter,
+                                    description: CHARACTER_DESCRIPTIONS[selectedCharacter] ?? null,
+                                  }
+                                : null,
                           })
                         }
                       >
