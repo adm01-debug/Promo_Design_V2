@@ -311,6 +311,16 @@ const VideoNew = () => {
                             duration,
                             style: videoStyle,
                             motionPresets: motionPresetIds,
+                            startFrameUrl: validStartFrame,
+                            endFrameUrl: validEndFrame,
+                            characterRef:
+                              selectedTemplate === "ambassador" && creationMode === "template"
+                                ? {
+                                    label: soulLabel,
+                                    avatar: selectedCharacter,
+                                    description: CHARACTER_DESCRIPTIONS[selectedCharacter] ?? null,
+                                  }
+                                : null,
                           })
                         }
                       >
