@@ -247,6 +247,13 @@ const VideoNew = () => {
                     </div>
                   )}
                   <MotionPresetPicker value={motionPresetIds} onChange={setMotionPresetIds} />
+                  <FrameAnchorsPicker
+                    startFrameUrl={startFrameUrl}
+                    endFrameUrl={endFrameUrl}
+                    onStartChange={setStartFrameUrl}
+                    onEndChange={setEndFrameUrl}
+                    suggestedUrl={getProductImageUrl(selectedProduct)}
+                  />
                   <GeneratedPromptPanel generated={generatedPrompt} override={promptOverride} onOverrideChange={setPromptOverride} />
                   <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground h-11" onClick={() => setStep("preview")}><Play className="w-4 h-4" />Pré-visualizar</Button>
                 </div>
