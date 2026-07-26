@@ -74,6 +74,13 @@ const VideoNew = () => {
   const filteredTemplates = useMemo(() => TEMPLATES.filter(() => true), []);
   const selectedTemplateMeta = TEMPLATES.find(t => t.id === selectedTemplate);
 
+  // Estado derivado — nunca useEffect. Só âncoras válidas entram no prompt/payload.
+  const validStartFrame = isValidFrameUrl(startFrameUrl) ? startFrameUrl.trim() : null;
+  const validEndFrame = isValidFrameUrl(endFrameUrl) ? endFrameUrl.trim() : null;
+  const soulLabel = CHARACTER_SOUL_LABELS[selectedCharacter] ?? null;
+
+
+
   const generatedPrompt = useMemo(
     () =>
       selectedProduct
