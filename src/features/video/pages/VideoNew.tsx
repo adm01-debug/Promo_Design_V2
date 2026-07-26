@@ -12,6 +12,8 @@ import { ASPECT_RATIOS, VIDEO_STYLES, TEMPLATES, ASPECT_PREVIEW, type AspectRati
 import MotionPresetPicker from "@/features/video/components/MotionPresetPicker";
 import GeneratedPromptPanel from "@/features/video/components/GeneratedPromptPanel";
 import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
+import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
+import { useOrganizations } from "@/hooks/use-organization";
 
 const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👩‍💼": "a professional female brand ambassador presenting the product",
