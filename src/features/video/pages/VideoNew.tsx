@@ -160,6 +160,17 @@ const VideoNew = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Banners */}
+        {remixRecipe && (
+          <div className="shrink-0 mx-4 mt-3 mb-1 flex items-center gap-3 p-3 rounded-xl border border-accent/30 bg-accent/5">
+            <Sparkles className="w-4 h-4 text-accent shrink-0" aria-hidden="true" />
+            <div className="flex-1 flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-mono text-muted-foreground uppercase">Remix:</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent-foreground font-medium">{remixRecipe.title}</span>
+              <span className="text-[10px] text-muted-foreground">{remixRecipe.description}</span>
+            </div>
+            <Link to="/video/inspiration" className="text-[10px] text-accent hover:underline shrink-0">Ver feed</Link>
+          </div>
+        )}
         {moodboard && (
           <div className="shrink-0 mx-4 mt-3 mb-1 flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary/5">
             <Palette className="w-4 h-4 text-primary shrink-0" />
