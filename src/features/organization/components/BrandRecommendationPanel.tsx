@@ -83,9 +83,37 @@ export function BrandRecommendationPanel() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-0.5 rounded-md border border-border/60 p-0.5">
+              {PERIODS.map((p) => (
+                <Button
+                  key={p}
+                  type="button"
+                  size="sm"
+                  variant={days === p ? "secondary" : "ghost"}
+                  className="h-6 px-2 font-mono text-[10px]"
+                  onClick={() => setDays(p)}
+                  aria-pressed={days === p}
+                >
+                  {p}d
+                </Button>
+              ))}
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs"
+              onClick={handleExportCsv}
+              disabled={daily.length === 0}
+              aria-label="Exportar CSV das aplicações por dia"
+            >
+              <Download className="mr-1 h-3.5 w-3.5" />
+              CSV
+            </Button>
             <Badge variant="outline" className="text-[10px] font-mono">
-              {data?.window_days ?? 30}d
+              {data?.window_days ?? days}d
             </Badge>
+
           </div>
         </CardTitle>
       </CardHeader>
