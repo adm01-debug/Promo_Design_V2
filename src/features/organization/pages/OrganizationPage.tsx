@@ -123,6 +123,8 @@ const OrganizationPage = () => {
       {currentOrgId && canManage && <AiUsagePanel organizationId={currentOrgId} />}
       {currentOrgId && canManage && <LastHourOverviewPanel />}
       {currentOrgId && canManage && <BrandRecommendationPanel />}
+      {currentOrgId && canManage && <EndpointTelemetryPanel />}
+
       {currentOrgId && canManage && <MaintenancePanel />}
 
 
