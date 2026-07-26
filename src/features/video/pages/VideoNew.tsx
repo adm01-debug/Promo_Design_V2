@@ -12,6 +12,8 @@ import { ASPECT_RATIOS, VIDEO_STYLES, TEMPLATES, ASPECT_PREVIEW, type AspectRati
 import MotionPresetPicker from "@/features/video/components/MotionPresetPicker";
 import GeneratedPromptPanel from "@/features/video/components/GeneratedPromptPanel";
 import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
+import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
+import { useOrganizations } from "@/hooks/use-organization";
 
 const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👩‍💼": "a professional female brand ambassador presenting the product",
@@ -24,7 +26,17 @@ const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👤": "a neutral silhouette presenting the product",
 };
 
+const JOB_STATUS_LABELS: Record<string, string> = {
+  queued: "Na fila",
+  generating: "Gerando...",
+  ready: "Pronto",
+  failed: "Falhou",
+  cancelled: "Cancelado",
+};
+
 const VideoNew = () => {
+  const { currentOrgId } = useOrganizations();
+  const { job, isEnqueuing, isPolling, enqueue, cancel } = useVideoGeneration();
   const moodboard = useMoodboardStore((s) => s.preferences);
   const clearMoodboard = useMoodboardStore((s) => s.clearPreferences);
   const cinema = useCinemaStore((s) => s.preferences);
@@ -233,9 +245,44 @@ const VideoNew = () => {
                     <p className="mb-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Prompt final</p>
                     <p className="max-h-28 overflow-y-auto font-mono text-[11px] leading-relaxed text-foreground">{finalPrompt}</p>
                   </div>
+                  {job && (
+                    <div className="rounded-lg border border-border bg-surface-2 p-3 text-left" role="status" aria-live="polite">
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Status do job</p>
+                      <p className="text-xs font-semibold text-foreground">{JOB_STATUS_LABELS[job.status]}</p>
+                      {job.error_message && (
+                        <p className="mt-1 text-[11px] text-destructive">{job.error_message}</p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center justify-center gap-3 pt-2">
                     <Button variant="outline" onClick={() => setStep("config")} className="gap-1.5"><ChevronLeft className="w-3.5 h-3.5" /> Ajustar</Button>
-                    <Button className="gap-2 bg-gradient-accent text-accent-foreground px-6" disabled><Sparkles className="w-4 h-4" /> Gerar Vídeo<span className="text-[10px] opacity-70 ml-1">(requer Cloud)</span></Button>
+                    {isPolling && job ? (
+                      <Button variant="outline" className="gap-2 px-6" onClick={() => cancel(job.id)}>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Cancelar geração
+                      </Button>
+                    ) : (
+                      <Button
+                        className="gap-2 bg-gradient-accent text-accent-foreground px-6"
+                        disabled={isEnqueuing || !currentOrgId || finalPrompt.length < 10}
+                        onClick={() =>
+                          currentOrgId &&
+                          enqueue({
+                            organizationId: currentOrgId,
+                            name: selectedProduct.name,
+                            productName: selectedProduct.name,
+                            productSku: selectedProduct.sku ?? null,
+                            prompt: finalPrompt,
+                            aspectRatio,
+                            duration,
+                            style: videoStyle,
+                            motionPresets: motionPresetIds,
+                          })
+                        }
+                      >
+                        {isEnqueuing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        Gerar Vídeo
+                      </Button>
+                    )}
                   </div>
                 </div>
               </motion.div>

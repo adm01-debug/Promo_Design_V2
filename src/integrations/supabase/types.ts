@@ -1568,56 +1568,80 @@ export type Database = {
         Row: {
           aspect_ratio: string
           client_id: string | null
+          completed_at: string | null
           created_at: string
           created_by: string
           deleted_at: string | null
           duration: number
+          error_message: string | null
           id: string
           metadata: Json | null
+          motion_presets: string[]
           name: string
           organization_id: string
           product_name: string | null
           product_sku: string | null
+          prompt: string | null
+          provider: string | null
+          provider_job_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["video_job_status"]
           style: string | null
           thumbnail_url: string | null
           updated_at: string
-          video_url: string
+          video_url: string | null
         }
         Insert: {
           aspect_ratio: string
           client_id?: string | null
+          completed_at?: string | null
           created_at?: string
           created_by: string
           deleted_at?: string | null
           duration: number
+          error_message?: string | null
           id?: string
           metadata?: Json | null
+          motion_presets?: string[]
           name: string
           organization_id: string
           product_name?: string | null
           product_sku?: string | null
+          prompt?: string | null
+          provider?: string | null
+          provider_job_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["video_job_status"]
           style?: string | null
           thumbnail_url?: string | null
           updated_at?: string
-          video_url: string
+          video_url?: string | null
         }
         Update: {
           aspect_ratio?: string
           client_id?: string | null
+          completed_at?: string | null
           created_at?: string
           created_by?: string
           deleted_at?: string | null
           duration?: number
+          error_message?: string | null
           id?: string
           metadata?: Json | null
+          motion_presets?: string[]
           name?: string
           organization_id?: string
           product_name?: string | null
           product_sku?: string | null
+          prompt?: string | null
+          provider?: string | null
+          provider_job_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["video_job_status"]
           style?: string | null
           thumbnail_url?: string | null
           updated_at?: string
-          video_url?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -1909,6 +1933,12 @@ export type Database = {
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
       asset_type: "logo" | "art" | "photo" | "mockup" | "document" | "other"
+      video_job_status:
+        | "queued"
+        | "generating"
+        | "ready"
+        | "failed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2038,6 +2068,13 @@ export const Constants = {
     Enums: {
       app_role: ["owner", "admin", "designer", "approver", "viewer"],
       asset_type: ["logo", "art", "photo", "mockup", "document", "other"],
+      video_job_status: [
+        "queued",
+        "generating",
+        "ready",
+        "failed",
+        "cancelled",
+      ],
     },
   },
 } as const
