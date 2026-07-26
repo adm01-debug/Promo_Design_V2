@@ -295,6 +295,8 @@ const VideoInspiration = () => {
                 key={recipe.id}
                 recipe={recipe}
                 popularity={popularity?.byRecipeId[recipe.id]}
+                affinity={affinityById[recipe.id]}
+
                 onRemix={handleRemix}
                 onCopyLink={handleCopyLink}
               />
