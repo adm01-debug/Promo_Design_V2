@@ -13,6 +13,8 @@ import {
 } from "@/features/video/lib/inspiration-recipes";
 import { getMotionPreset } from "@/features/video/lib/motion-presets";
 import { VIDEO_STYLES } from "@/features/video/components/VideoNewConstants";
+import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
+import { useOrganizations } from "@/hooks/use-organization";
 
 const CATEGORIES: (InspirationCategory | "all")[] = [
   "all",
@@ -85,6 +87,7 @@ const RecipeCard = ({
 
 const VideoInspiration = () => {
   const navigate = useNavigate();
+  const { currentOrgId } = useOrganizations();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<InspirationCategory | "all">("all");
 
@@ -94,6 +97,8 @@ const VideoInspiration = () => {
   );
 
   const handleRemix = (recipe: InspirationRecipe) => {
+    // Telemetria fire-and-forget: nunca atrasa a navegação.
+    void logRemixApplied(recipe, currentOrgId);
     navigate("/video/new", { state: buildRemixState(recipe) });
   };
 
