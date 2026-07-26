@@ -133,13 +133,29 @@ const RecipeCard = ({
   );
 };
 
+type SortMode = "curated" | "popular" | "client";
+
+const isSortMode = (value: unknown): value is SortMode =>
+  value === "curated" || value === "popular" || value === "client";
+
+const isClientPref = (value: unknown): value is string | null =>
+  value === null || typeof value === "string";
+
 const VideoInspiration = () => {
   const navigate = useNavigate();
   const { currentOrgId } = useOrganizations();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<InspirationCategory | "all">("all");
-  const [sort, setSort] = useState<"curated" | "popular" | "client">("curated");
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [sort, setSort] = usePersistedPreference<SortMode>(
+    "video.inspiration.sort",
+    "curated",
+    isSortMode,
+  );
+  const [clientId, setClientId] = usePersistedPreference<string | null>(
+    "video.inspiration.clientId",
+    null,
+    isClientPref,
+  );
   const { data: popularity } = useRemixPopularity(currentOrgId ?? null, 30);
   const { clients } = useClients(currentOrgId ?? null);
   const { data: recommendation } = useClientDesignRecommendation(
@@ -182,11 +198,18 @@ const VideoInspiration = () => {
 
   const handleRemix = (recipe: InspirationRecipe) => {
     // Telemetria fire-and-forget: nunca atrasa a navegação.
-    void logRemixApplied(recipe, currentOrgId);
+    const affinity = affinityById[recipe.id];
+    const usedSuggestion = sort === "client" && !!clientId;
+    void logRemixApplied(recipe, currentOrgId, {
+      origin: usedSuggestion ? "client_suggestion" : "feed",
+      affinityScore: usedSuggestion ? (affinity?.score ?? 0) : null,
+      clientId: usedSuggestion ? clientId : null,
+    });
     // Query string + state: o state evita reprocessar e a query mantém o
     // deep link válido após reload, nova aba ou compartilhamento.
     navigate(buildRecipeDeepLink(recipe), { state: buildRemixState(recipe) });
   };
+
 
   const handleCopyLink = async (recipe: InspirationRecipe) => {
     const url = `${window.location.origin}${buildRecipeDeepLink(recipe)}`;
