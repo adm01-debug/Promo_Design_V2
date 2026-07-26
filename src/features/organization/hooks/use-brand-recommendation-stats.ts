@@ -34,7 +34,7 @@ export function useBrandRecommendationStats(days = 30, clientId: string | null =
       const { data, error } = await supabase.rpc("get_brand_recommendation_stats", {
         _org_id: currentOrgId,
         _days: days,
-        _client_id: clientId,
+        _client_id: clientId ?? undefined,
       });
       if (error) throw error;
       return data as unknown as BrandRecommendationStats;
