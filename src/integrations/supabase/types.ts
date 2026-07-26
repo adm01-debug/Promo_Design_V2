@@ -1711,6 +1711,10 @@ export type Database = {
           }
       get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
+      get_endpoint_telemetry: {
+        Args: { _days?: number; _org_id: string }
+        Returns: Json
+      }
       get_index_bloat_estimate: {
         Args: { _limit?: number; _min_bytes?: number }
         Returns: {
