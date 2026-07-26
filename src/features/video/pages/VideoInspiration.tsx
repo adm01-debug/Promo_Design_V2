@@ -138,22 +138,47 @@ const VideoInspiration = () => {
   const { currentOrgId } = useOrganizations();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<InspirationCategory | "all">("all");
-  const [sort, setSort] = useState<"curated" | "popular">("curated");
+  const [sort, setSort] = useState<"curated" | "popular" | "client">("curated");
+  const [clientId, setClientId] = useState<string | null>(null);
   const { data: popularity } = useRemixPopularity(currentOrgId ?? null, 30);
+  const { clients } = useClients(currentOrgId ?? null);
+  const { data: recommendation } = useClientDesignRecommendation(
+    currentOrgId ?? null,
+    clientId,
+  );
+
+  // Índice de afinidade: puro e memoizado — recalcula só quando o padrão muda.
+  const affinityById = useMemo(
+    () => indexAffinityById(rankRecipesForClient(recommendation)),
+    [recommendation],
+  );
 
   const recipes = useMemo(() => {
     const filtered = filterInspirationRecipes(INSPIRATION_RECIPES, { search, category });
-    if (sort !== "popular" || !popularity) return filtered;
-    // Ordenação estável: popularidade desc, empate mantém a ordem curada.
-    return filtered
-      .map((recipe, index) => ({
-        recipe,
-        index,
-        remixes: popularity.byRecipeId[recipe.id]?.remixes ?? 0,
-      }))
-      .sort((a, b) => b.remixes - a.remixes || a.index - b.index)
-      .map((entry) => entry.recipe);
-  }, [search, category, sort, popularity]);
+    // Ordenação estável em todos os modos: empate mantém a ordem curada.
+    if (sort === "popular" && popularity) {
+      return filtered
+        .map((recipe, index) => ({
+          recipe,
+          index,
+          score: popularity.byRecipeId[recipe.id]?.remixes ?? 0,
+        }))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map((entry) => entry.recipe);
+    }
+    if (sort === "client") {
+      return filtered
+        .map((recipe, index) => ({
+          recipe,
+          index,
+          score: affinityById[recipe.id]?.score ?? 0,
+        }))
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map((entry) => entry.recipe);
+    }
+    return filtered;
+  }, [search, category, sort, popularity, affinityById]);
+
 
   const handleRemix = (recipe: InspirationRecipe) => {
     // Telemetria fire-and-forget: nunca atrasa a navegação.
