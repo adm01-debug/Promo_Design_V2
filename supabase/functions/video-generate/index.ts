@@ -153,6 +153,9 @@ Deno.serve(async (req) => {
       aspect_ratio: body.aspectRatio,
       duration: body.duration,
       style: body.style ?? null,
+      start_frame_url: body.startFrameUrl ?? null,
+      end_frame_url: body.endFrameUrl ?? null,
+      character_ref: body.characterRef ?? {},
       status: "queued",
       video_url: null,
     })
