@@ -226,9 +226,19 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<StoredServiceOrder> }) => {
       const dbUpdates: Record<string, string | number | boolean | null> = {};
-      
+
       // Concurrency check
       const currentOrder = orders.find(o => o.id === id);
+
+      // Guarda de edição (ERR_ORDER_EDIT): OS concluída é imutável; cancelada só reabre.
+      if (currentOrder) {
+        const violation = checkOrderEdit(currentOrder.status, updates);
+        if (violation) {
+          logOrderEditBlocked(id, violation);
+          throw new OrderEditError(violation);
+        }
+      }
+
       if (currentOrder?.lockVersion !== undefined) {
         dbUpdates.lock_version = currentOrder.lockVersion;
       }
