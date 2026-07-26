@@ -108,3 +108,25 @@ describe("remix state", () => {
     expect(getInspirationRecipe("nope")).toBeUndefined();
   });
 });
+
+describe("deep links de receita", () => {
+  it("gera link relativo com o id codificado", () => {
+    const recipe = INSPIRATION_RECIPES[0];
+    expect(buildRecipeDeepLink(recipe)).toBe(`/video/new?recipe=${encodeURIComponent(recipe.id)}`);
+  });
+
+  it("recupera o remix canônico a partir da query string", () => {
+    const recipe = INSPIRATION_RECIPES[1];
+    const state = parseRemixFromSearch(`?recipe=${recipe.id}`);
+    expect(state).toEqual(buildRemixState(recipe));
+  });
+
+  it("aceita URLSearchParams e ignora ids inexistentes ou ausentes", () => {
+    const recipe = INSPIRATION_RECIPES[2];
+    expect(parseRemixFromSearch(new URLSearchParams({ recipe: recipe.id }))).toEqual(
+      buildRemixState(recipe),
+    );
+    expect(parseRemixFromSearch("?recipe=__nao_existe__")).toBeNull();
+    expect(parseRemixFromSearch("")).toBeNull();
+  });
+});
