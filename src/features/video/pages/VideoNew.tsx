@@ -206,6 +206,8 @@ const VideoNew = () => {
                       </div>
                     </div>
                   )}
+                  <MotionPresetPicker value={motionPresetIds} onChange={setMotionPresetIds} />
+                  <GeneratedPromptPanel generated={generatedPrompt} override={promptOverride} onOverrideChange={setPromptOverride} />
                   <Button className="w-full gap-2 bg-gradient-primary text-primary-foreground h-11" onClick={() => setStep("preview")}><Play className="w-4 h-4" />Pré-visualizar</Button>
                 </div>
                 <div className="flex-1 flex items-center justify-center bg-surface-1 p-8">
