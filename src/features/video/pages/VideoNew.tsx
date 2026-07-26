@@ -9,6 +9,20 @@ import VideoPreviewAnimation from "@/features/video/components/VideoPreviewAnima
 import { useMoodboardStore, TONE_LABELS, PALETTE_LABELS, TONE_TO_STYLE } from "@/hooks/use-moodboard-preferences";
 import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import { ASPECT_RATIOS, VIDEO_STYLES, TEMPLATES, ASPECT_PREVIEW, type AspectRatio, type VideoStyle, type CreationMode } from "@/features/video/components/VideoNewConstants";
+import MotionPresetPicker from "@/features/video/components/MotionPresetPicker";
+import GeneratedPromptPanel from "@/features/video/components/GeneratedPromptPanel";
+import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
+
+const CHARACTER_DESCRIPTIONS: Record<string, string> = {
+  "👩‍💼": "a professional female brand ambassador presenting the product",
+  "🧑": "a young adult brand ambassador presenting the product",
+  "🧔": "a bearded male brand ambassador presenting the product",
+  "👩‍🎨": "a creative female artist presenting the product",
+  "👮": "a uniformed officer presenting the product",
+  "🧑‍💻": "a tech professional presenting the product",
+  "👩‍🔬": "a female scientist presenting the product",
+  "👤": "a neutral silhouette presenting the product",
+};
 
 const VideoNew = () => {
   const moodboard = useMoodboardStore((s) => s.preferences);
