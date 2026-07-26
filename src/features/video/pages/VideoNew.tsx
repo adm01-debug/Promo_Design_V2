@@ -15,7 +15,7 @@ import FrameAnchorsPicker, { isValidFrameUrl } from "@/features/video/components
 import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
 import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
 import { useOrganizations } from "@/hooks/use-organization";
-import { parseRemixState, getInspirationRecipe } from "@/features/video/lib/inspiration-recipes";
+import { parseRemixState, parseRemixFromSearch, getInspirationRecipe } from "@/features/video/lib/inspiration-recipes";
 
 const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👩‍💼": "a professional female brand ambassador presenting the product",
@@ -55,8 +55,13 @@ const VideoNew = () => {
    * Remix vindo do Feed de Inspiração. `location.state` é controlado pelo
    * usuário (history API), por isso passa por validação estrita: só o id da
    * receita é aceito e todos os valores vêm do catálogo canônico.
+   * Fallback para a query string (`?recipe=`) mantém o deep link funcional
+   * após reload, em nova aba ou quando o link é compartilhado.
    */
-  const remix = useMemo(() => parseRemixState(location.state), [location.state]);
+  const remix = useMemo(
+    () => parseRemixState(location.state) ?? parseRemixFromSearch(location.search),
+    [location.state, location.search],
+  );
   const remixRecipe = remix ? getInspirationRecipe(remix.remixRecipeId) : undefined;
   const { job, isEnqueuing, isPolling, enqueue, cancel } = useVideoGeneration();
   const moodboard = useMoodboardStore((s) => s.preferences);

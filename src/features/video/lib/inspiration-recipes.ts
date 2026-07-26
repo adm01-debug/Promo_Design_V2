@@ -292,4 +292,27 @@ export function parseRemixState(value: unknown): RemixState | null {
   return buildRemixState(recipe);
 }
 
+/** Nome do parâmetro de query usado nos deep links de receita. */
+export const REMIX_QUERY_PARAM = "recipe";
+
+/**
+ * Caminho relativo compartilhável que abre o Studio já remixado.
+ * Relativo de propósito: evita depender de `window` (SSR/testes).
+ */
+export function buildRecipeDeepLink(recipe: InspirationRecipe): string {
+  return `/video/new?${REMIX_QUERY_PARAM}=${encodeURIComponent(recipe.id)}`;
+}
+
+/**
+ * Recupera o remix a partir da query string. Usado como fallback quando
+ * `location.state` não existe (link compartilhado, reload, nova aba).
+ */
+export function parseRemixFromSearch(search: string | URLSearchParams): RemixState | null {
+  const params = typeof search === "string" ? new URLSearchParams(search) : search;
+  const id = params.get(REMIX_QUERY_PARAM);
+  if (!id) return null;
+  const recipe = getInspirationRecipe(id);
+  return recipe ? buildRemixState(recipe) : null;
+}
+
 export { ASPECT_VALUES as INSPIRATION_ASPECT_VALUES, STYLE_VALUES as INSPIRATION_STYLE_VALUES };
