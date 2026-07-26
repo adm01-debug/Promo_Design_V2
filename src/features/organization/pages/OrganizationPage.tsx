@@ -15,6 +15,8 @@ import { AiUsagePanel } from "../components/AiUsagePanel";
 import { MaintenancePanel } from "../components/MaintenancePanel";
 import { LastHourOverviewPanel } from "../components/LastHourOverviewPanel";
 import { BrandRecommendationPanel } from "../components/BrandRecommendationPanel";
+import { EndpointTelemetryPanel } from "../components/EndpointTelemetryPanel";
+
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -121,6 +123,8 @@ const OrganizationPage = () => {
       {currentOrgId && canManage && <AiUsagePanel organizationId={currentOrgId} />}
       {currentOrgId && canManage && <LastHourOverviewPanel />}
       {currentOrgId && canManage && <BrandRecommendationPanel />}
+      {currentOrgId && canManage && <EndpointTelemetryPanel />}
+
       {currentOrgId && canManage && <MaintenancePanel />}
 
 

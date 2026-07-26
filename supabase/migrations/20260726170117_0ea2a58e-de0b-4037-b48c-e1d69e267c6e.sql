@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.get_brand_recommendation_stats(uuid, integer, uuid) FROM PUBLIC, anon;
