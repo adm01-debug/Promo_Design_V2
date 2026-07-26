@@ -56,6 +56,8 @@ const VideoNew = () => {
   });
   const [motionPresetIds, setMotionPresetIds] = useState<string[]>([]);
   const [promptOverride, setPromptOverride] = useState<string | null>(null);
+  const [startFrameUrl, setStartFrameUrl] = useState("");
+  const [endFrameUrl, setEndFrameUrl] = useState("");
   const [step, setStep] = useState<"product" | "config" | "preview">("product");
 
   useEffect(() => {
