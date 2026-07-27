@@ -73,12 +73,13 @@ const RecipeCard = ({
             {popularity && popularity.remixes > 0 && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-foreground font-medium"
-                title={`${popularity.remixes} remix(es) por ${popularity.uniqueUsers} usuário(s)`}
+                title={`${popularity.remixes} remix(es) por ${popularity.uniqueUsers} usuário(s) — feed: ${popularity.feedRemixes}, sugestão: ${popularity.clientSuggestionRemixes}, link: ${popularity.deepLinkRemixes}`}
               >
                 <Flame className="w-3 h-3" aria-hidden="true" />
                 {popularity.remixes}
               </span>
             )}
+
 
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground">
               {recipe.aspectRatio}
