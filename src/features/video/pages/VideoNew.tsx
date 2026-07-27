@@ -97,6 +97,17 @@ const VideoNew = () => {
     };
   }, []);
 
+  // Telemetria de origem `deep_link` — uma vez por receita/organização.
+  const loggedDeepLinkRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isDeepLink || !remixRecipe || !currentOrgId) return;
+    const key = `${currentOrgId}:${remixRecipe.id}`;
+    if (loggedDeepLinkRef.current === key) return;
+    loggedDeepLinkRef.current = key;
+    void logRemixApplied(remixRecipe, currentOrgId, { origin: "deep_link" });
+  }, [isDeepLink, remixRecipe, currentOrgId]);
+
+
   const { data: productsData, isLoading: productsLoading } = useProducts({ search, page, pageSize: 20, onlyWithImages: true });
   const products = productsData?.products || [];
   const totalPages = Math.ceil((productsData?.total || 0) / 20);
