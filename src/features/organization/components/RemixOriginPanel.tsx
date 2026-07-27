@@ -30,7 +30,7 @@ const PERIODS = [7, 30, 90] as const;
 /** Escapa campos para CSV (RFC 4180) — nomes de receita podem conter vírgula. */
 const csvCell = (value: string | number): string => {
   const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  return /[",\n]/.test(text) ? `"${text.split('"').join('""')}"` : text;
 };
 
 export function RemixOriginPanel() {
