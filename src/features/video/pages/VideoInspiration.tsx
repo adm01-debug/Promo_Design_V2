@@ -232,7 +232,17 @@ const VideoInspiration = () => {
         <span className="text-xs text-muted-foreground">
           {recipes.length} receita{recipes.length === 1 ? "" : "s"}
         </span>
+        {popularity && (
+          <span
+            className="ml-auto text-[10px] font-mono uppercase text-muted-foreground"
+            title={`Remixes nos últimos ${popularity.windowDays} dias, por origem`}
+          >
+            feed {popularity.byOrigin.feed} · sugestão {popularity.byOrigin.clientSuggestion} · link{" "}
+            {popularity.byOrigin.deepLink}
+          </span>
+        )}
       </div>
+
 
       <div className="p-4 border-b border-border shrink-0 flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
