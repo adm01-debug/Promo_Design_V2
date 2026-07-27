@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Video, Search, Loader2, Package, Sparkles, Play, Clock, ChevronLeft, ChevronRight, Film, Image as X, Palette } from "lucide-react";
@@ -16,6 +16,7 @@ import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
 import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
 import { useOrganizations } from "@/hooks/use-organization";
 import { parseRemixState, parseRemixFromSearch, getInspirationRecipe } from "@/features/video/lib/inspiration-recipes";
+import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
 
 const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👩‍💼": "a professional female brand ambassador presenting the product",
@@ -58,11 +59,13 @@ const VideoNew = () => {
    * Fallback para a query string (`?recipe=`) mantém o deep link funcional
    * após reload, em nova aba ou quando o link é compartilhado.
    */
-  const remix = useMemo(
-    () => parseRemixState(location.state) ?? parseRemixFromSearch(location.search),
-    [location.state, location.search],
-  );
+  const remixFromState = useMemo(() => parseRemixState(location.state), [location.state]);
+  const remixFromSearch = useMemo(() => parseRemixFromSearch(location.search), [location.search]);
+  const remix = remixFromState ?? remixFromSearch;
   const remixRecipe = remix ? getInspirationRecipe(remix.remixRecipeId) : undefined;
+  /** Origem `deep_link`: chegada via URL compartilhada, sem state do feed. */
+  const isDeepLink = !remixFromState && !!remixFromSearch;
+
   const { job, isEnqueuing, isPolling, enqueue, cancel } = useVideoGeneration();
   const moodboard = useMoodboardStore((s) => s.preferences);
   const clearMoodboard = useMoodboardStore((s) => s.clearPreferences);
@@ -94,6 +97,17 @@ const VideoNew = () => {
       localStorage.removeItem("selected_character_id");
     };
   }, []);
+
+  // Telemetria de origem `deep_link` — uma vez por receita/organização.
+  const loggedDeepLinkRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isDeepLink || !remixRecipe || !currentOrgId) return;
+    const key = `${currentOrgId}:${remixRecipe.id}`;
+    if (loggedDeepLinkRef.current === key) return;
+    loggedDeepLinkRef.current = key;
+    void logRemixApplied(remixRecipe, currentOrgId, { origin: "deep_link" });
+  }, [isDeepLink, remixRecipe, currentOrgId]);
+
 
   const { data: productsData, isLoading: productsLoading } = useProducts({ search, page, pageSize: 20, onlyWithImages: true });
   const products = productsData?.products || [];

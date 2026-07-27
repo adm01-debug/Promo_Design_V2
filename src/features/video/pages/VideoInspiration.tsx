@@ -73,12 +73,13 @@ const RecipeCard = ({
             {popularity && popularity.remixes > 0 && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-accent/15 text-accent-foreground font-medium"
-                title={`${popularity.remixes} remix(es) por ${popularity.uniqueUsers} usuário(s)`}
+                title={`${popularity.remixes} remix(es) por ${popularity.uniqueUsers} usuário(s) — feed: ${popularity.feedRemixes}, sugestão: ${popularity.clientSuggestionRemixes}, link: ${popularity.deepLinkRemixes}`}
               >
                 <Flame className="w-3 h-3" aria-hidden="true" />
                 {popularity.remixes}
               </span>
             )}
+
 
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground">
               {recipe.aspectRatio}
@@ -231,7 +232,17 @@ const VideoInspiration = () => {
         <span className="text-xs text-muted-foreground">
           {recipes.length} receita{recipes.length === 1 ? "" : "s"}
         </span>
+        {popularity && (
+          <span
+            className="ml-auto text-[10px] font-mono uppercase text-muted-foreground"
+            title={`Remixes nos últimos ${popularity.windowDays} dias, por origem`}
+          >
+            feed {popularity.byOrigin.feed} · sugestão {popularity.byOrigin.clientSuggestion} · link{" "}
+            {popularity.byOrigin.deepLink}
+          </span>
+        )}
       </div>
+
 
       <div className="p-4 border-b border-border shrink-0 flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">

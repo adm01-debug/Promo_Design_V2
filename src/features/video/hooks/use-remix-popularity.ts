@@ -6,6 +6,16 @@ export interface RemixPopularityItem {
   readonly remixes: number;
   readonly uniqueUsers: number;
   readonly lastUsedAt: string | null;
+  readonly feedRemixes: number;
+  readonly clientSuggestionRemixes: number;
+  readonly deepLinkRemixes: number;
+}
+
+/** Totais do período por origem do remix. */
+export interface RemixOriginTotals {
+  readonly feed: number;
+  readonly clientSuggestion: number;
+  readonly deepLink: number;
 }
 
 export interface RemixPopularity {
@@ -13,9 +23,23 @@ export interface RemixPopularity {
   readonly items: RemixPopularityItem[];
   /** Acesso O(1) por receita — usado para ordenar o feed. */
   readonly byRecipeId: Record<string, RemixPopularityItem>;
+  readonly byOrigin: RemixOriginTotals;
 }
 
-const EMPTY: RemixPopularity = { windowDays: 30, items: [], byRecipeId: {} };
+const EMPTY_ORIGIN: RemixOriginTotals = { feed: 0, clientSuggestion: 0, deepLink: 0 };
+
+const EMPTY: RemixPopularity = {
+  windowDays: 30,
+  items: [],
+  byRecipeId: {},
+  byOrigin: EMPTY_ORIGIN,
+};
+
+/** Coerção segura: a RPC devolve jsonb livre e valores podem faltar. */
+const toCount = (value: unknown): number => {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+};
 
 /** Parser defensivo: a RPC devolve jsonb livre, então nada é presumido. */
 function parse(payload: unknown): RemixPopularity {
@@ -34,13 +58,26 @@ function parse(payload: unknown): RemixPopularity {
       remixes: Number(row.remixes ?? 0),
       uniqueUsers: Number(row.unique_users ?? 0),
       lastUsedAt: typeof row.last_used_at === "string" ? row.last_used_at : null,
+      feedRemixes: toCount(row.feed_remixes),
+      clientSuggestionRemixes: toCount(row.client_suggestion_remixes),
+      deepLinkRemixes: toCount(row.deep_link_remixes),
     });
   }
 
   const byRecipeId: Record<string, RemixPopularityItem> = {};
   for (const item of items) byRecipeId[item.recipeId] = item;
 
-  return { windowDays, items, byRecipeId };
+  const rawOrigin =
+    raw.by_origin && typeof raw.by_origin === "object"
+      ? (raw.by_origin as Record<string, unknown>)
+      : {};
+  const byOrigin: RemixOriginTotals = {
+    feed: toCount(rawOrigin.feed),
+    clientSuggestion: toCount(rawOrigin.client_suggestion),
+    deepLink: toCount(rawOrigin.deep_link),
+  };
+
+  return { windowDays, items, byRecipeId, byOrigin };
 }
 
 /**
