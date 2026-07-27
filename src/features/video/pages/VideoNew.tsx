@@ -58,11 +58,13 @@ const VideoNew = () => {
    * Fallback para a query string (`?recipe=`) mantém o deep link funcional
    * após reload, em nova aba ou quando o link é compartilhado.
    */
-  const remix = useMemo(
-    () => parseRemixState(location.state) ?? parseRemixFromSearch(location.search),
-    [location.state, location.search],
-  );
+  const remixFromState = useMemo(() => parseRemixState(location.state), [location.state]);
+  const remixFromSearch = useMemo(() => parseRemixFromSearch(location.search), [location.search]);
+  const remix = remixFromState ?? remixFromSearch;
   const remixRecipe = remix ? getInspirationRecipe(remix.remixRecipeId) : undefined;
+  /** Origem `deep_link`: chegada via URL compartilhada, sem state do feed. */
+  const isDeepLink = !remixFromState && !!remixFromSearch;
+
   const { job, isEnqueuing, isPolling, enqueue, cancel } = useVideoGeneration();
   const moodboard = useMoodboardStore((s) => s.preferences);
   const clearMoodboard = useMoodboardStore((s) => s.clearPreferences);
