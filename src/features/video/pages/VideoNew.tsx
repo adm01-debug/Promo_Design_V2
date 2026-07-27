@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Video, Search, Loader2, Package, Sparkles, Play, Clock, ChevronLeft, ChevronRight, Film, Image as X, Palette } from "lucide-react";
