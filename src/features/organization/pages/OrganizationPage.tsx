@@ -16,6 +16,7 @@ import { MaintenancePanel } from "../components/MaintenancePanel";
 import { LastHourOverviewPanel } from "../components/LastHourOverviewPanel";
 import { BrandRecommendationPanel } from "../components/BrandRecommendationPanel";
 import { EndpointTelemetryPanel } from "../components/EndpointTelemetryPanel";
+import { RemixOriginPanel } from "../components/RemixOriginPanel";
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
