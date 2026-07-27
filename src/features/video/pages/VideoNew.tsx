@@ -16,6 +16,7 @@ import { buildVideoPrompt } from "@/features/video/lib/build-video-prompt";
 import { useVideoGeneration } from "@/features/video/hooks/use-video-generation";
 import { useOrganizations } from "@/hooks/use-organization";
 import { parseRemixState, parseRemixFromSearch, getInspirationRecipe } from "@/features/video/lib/inspiration-recipes";
+import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
 
 const CHARACTER_DESCRIPTIONS: Record<string, string> = {
   "👩‍💼": "a professional female brand ambassador presenting the product",
