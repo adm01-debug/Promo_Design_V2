@@ -1,35 +1,64 @@
-// Edge function temporária para migração de banco.
-// Cole em: Cloud > Edge Functions > migrate-helper > View code
-// Após a migração, remova esta função.
+// Edge function utilitária para checagem de saúde durante migrações.
+// Requer um usuário autenticado (JWT válido). Não expõe credenciais.
 
-const ACCESS_KEY = "fc69db1f7330dc01e10fc66693f3a856e3204d352abc8337";
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-access-key",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { getCorsHeaders, corsPreflight } from "../_shared/cors.ts";
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const key = req.headers.get("x-access-key");
-  if (key !== ACCESS_KEY) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+interface PingResponse {
+  ok: true;
+  action: "ping";
+  userId: string;
+  /** Timestamp ISO do servidor — útil para validar clock skew em migrações. */
+  serverTime: string;
+}
 
-  const url = new URL(req.url);
-  const action = url.searchParams.get("action") || "ping";
+interface ErrorResponse {
+  ok: false;
+  error: string;
+}
+
+Deno.serve(async (req: Request): Promise<Response> => {
+  const cors = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return corsPreflight(req);
+
+  const json = (body: PingResponse | ErrorResponse, status = 200): Response =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
 
   try {
-    if (action === "ping") {
-      return new Response(JSON.stringify({ ok: true, project_ref: Deno.env.get("SUPABASE_URL") }), { headers: { ...cors, "Content-Type": "application/json" } });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ ok: false, error: "Unauthorized" }, 401);
     }
-    if (action === "credentials") {
-      return new Response(JSON.stringify({
-        url: Deno.env.get("SUPABASE_URL"),
-        service_role: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-        db_url: Deno.env.get("SUPABASE_DB_URL"),
-      }), { headers: { ...cors, "Content-Type": "application/json" } });
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data, error } = await supabase.auth.getClaims(token);
+    if (error || !data?.claims?.sub) {
+      return json({ ok: false, error: "Unauthorized" }, 401);
     }
-    return new Response(JSON.stringify({ error: "unknown_action" }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });
+
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action") ?? "ping";
+    if (action !== "ping") {
+      return json({ ok: false, error: "unknown_action" }, 400);
+    }
+
+    return json({
+      ok: true,
+      action: "ping",
+      userId: String(data.claims.sub),
+      serverTime: new Date().toISOString(),
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    console.error("migrate-helper failure", e);
+    return json({ ok: false, error: "internal_error" }, 500);
   }
 });
