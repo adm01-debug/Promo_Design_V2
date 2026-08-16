@@ -1736,6 +1736,7 @@ export type Database = {
         Args: { _org_id: string; _query?: string }
         Returns: Json
       }
+      export_public_schema: { Args: never; Returns: Json }
       get_brand_recommendation_stats: {
         Args: { _client_id?: string; _days?: number; _org_id: string }
         Returns: Json
