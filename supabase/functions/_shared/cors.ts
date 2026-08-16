@@ -19,7 +19,7 @@ export function getCorsHeaders(req: Request): Record<string, string> {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
     "Vary": "Origin",
     "Access-Control-Allow-Headers": ALLOW_HEADERS,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };
 }
 
