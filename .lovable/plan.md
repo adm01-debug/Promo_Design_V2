@@ -1,78 +1,43 @@
+# migrate-helper: exportador seguro para migração entre projetos
 
+O código colado hoje entrega a chave de administração do banco (service role) e a URL de conexão para qualquer um que descubra a chave escrita no próprio arquivo. Isso não será implementado. No lugar disso, a função vira um **exportador de dados autenticado por segredo do servidor**, que é o suficiente para migrar schema/dados para outro projeto sem entregar as credenciais.
 
-## Adicionar validações e testes para consistência do filtro de favoritos com back/forward do navegador
+## O que muda
 
-Garantir que ao usar os botões "voltar" e "avançar" do navegador na página `MagicUpHistory`, o estado do filtro `fav=1` (e demais filtros sincronizados na URL) permaneça consistente com o que é exibido no grid.
+1. **Segredo fora do código**
+   - A chave deixa de ficar escrita no arquivo e passa a ser um segredo do backend (`MIGRATE_HELPER_KEY`), gerado aleatoriamente.
+   - Comparação em tempo constante, para não vazar a chave por medição de tempo.
+   - Se o segredo não estiver configurado, a função responde 503 (nunca "aberta por acidente").
 
-### Problema atual
+2. **CORS restrito**
+   - Passa a usar o helper compartilhado do projeto (mesma lista de origens já usada nas outras funções), em vez de `*`.
+   - Métodos: `GET, POST, OPTIONS`; header extra `x-access-key`.
 
-Em `src/features/magic-up/pages/MagicUpHistory.tsx`, o estado dos filtros (`filterFavorites`, `search`, `filterProduct`, `dateFrom`, `dateTo`, `showFilters`) é inicializado **uma única vez** via `useState(() => ...)` lendo `searchParams` no mount. O `useEffect` de sincronização só escreve `state → URL`, nunca o contrário. Isso significa que ao navegar com back/forward:
+3. **Ações disponíveis**
+   - `ping` — status, hora do servidor (ISO) e versão da função. Sem dados sensíveis, sem URL do projeto.
+   - `schema` — lista tabelas do schema público com colunas, tipos, nulidade e defaults, mais chaves primárias/estrangeiras e enums. Serve para recriar a estrutura no projeto destino.
+   - `export` — exporta linhas de **uma** tabela por chamada, com paginação (`table`, `limit` máx. 1000, `offset`), ordenada de forma estável. Só tabelas da lista permitida (as tabelas de negócio do schema público); qualquer outro nome retorna 400.
+   - `count` — total de linhas de uma tabela permitida, para acompanhar o progresso da migração.
 
-- A URL muda (ex.: `?fav=1` → sem params)
-- O React Router atualiza `searchParams`
-- Mas o estado local não é atualizado → o grid continua mostrando o estado antigo (inconsistência)
+4. **Proteções operacionais**
+   - Validação de entrada com Zod (ação, nome de tabela, limit/offset) e 400 com mensagem clara.
+   - Nada de SQL vindo do cliente: a leitura usa o cliente tipado, com nome de tabela validado contra a lista permitida.
+   - Toda chamada bem-sucedida registra um evento de auditoria (ação, tabela, quantidade de linhas) para rastreabilidade.
+   - Respostas de erro sempre com CORS e sem detalhes internos.
 
-### Mudanças propostas
+5. **Descarte**
+   - Cabeçalho do arquivo documenta que é temporária e como desativar: apagar o segredo `MIGRATE_HELPER_KEY` derruba o acesso na hora (503), sem precisar de deploy.
 
-#### 1. Hidratar o estado a partir da URL em mudanças de `location` (`MagicUpHistory.tsx`)
+## Detalhes técnicos
 
-Adicionar um `useEffect` que escuta mudanças em `searchParams` e re-hidrata o estado **apenas quando a URL diverge do estado atual** (evitando o loop). Isso cobre back/forward sem reintroduzir o feedback loop que motivou a refatoração anterior.
+- Arquivo: `supabase/functions/migrate-helper/index.ts` (reescrita completa).
+- Imports: `getCorsHeaders`/`corsPreflight` de `../_shared/cors.ts`; `createClient` via `npm:@supabase/supabase-js@2`; `zod` via `npm:`.
+- Cliente com service role apenas **dentro** da função (nunca retornado no corpo da resposta).
+- Ação `schema` lê `information_schema` por meio de uma função de banco `SECURITY DEFINER` dedicada (`export_public_schema()`), com `EXECUTE` concedido somente a `service_role` — sem SQL arbitrário.
+- Lista permitida de tabelas fixada em constante no arquivo, derivada do schema atual (clientes, contatos, pedidos de serviço, ativos, catálogo, vídeos, organizações e membros, etc.), excluindo partições de auditoria e tabelas de telemetria.
+- Segredo criado via ferramenta de secrets; nenhum valor de segredo aparece no código nem em logs.
 
-Estratégia:
-- Computar o "estado derivado da URL" a cada mudança de `searchParams`.
-- Comparar campo a campo com o estado atual; só chamar setters quando houver diferença real.
-- Manter o effect existente (state → URL) intacto, com a mesma comparação string-based para evitar ciclo.
+## Fora do escopo
 
-#### 2. Testes unitários (`MagicUpHistory.test.tsx`)
-
-Criar `src/features/magic-up/pages/__tests__/MagicUpHistory.test.tsx` cobrindo:
-
-- **Hidratação inicial**: montar com `?fav=1` e verificar que o botão "Favoritos" aparece pressionado (`aria-pressed="true"`) e que o grid filtra corretamente.
-- **Back/forward simulado**: usar `MemoryRouter` + manipular o histórico (`window.history.back/forward` ou re-render com nova `initialEntries`) para validar:
-  - URL `?fav=1` → estado sincroniza, botão pressionado, grid filtrado.
-  - Voltar para URL sem params → estado limpo, botão não pressionado, grid mostra todos os itens.
-  - Avançar de novo para `?fav=1` → estado volta a aplicar o filtro.
-- **Limpar filtros**: clicar em "Limpar filtros" remove `fav=1` da URL e o grid mostra todos.
-- **Sem loop**: garantir que hidratar a partir da URL não dispara escrita redundante (verificar via spy em `setSearchParams` ou contagem de re-renders).
-
-Mockar `useMagicUpHistory` para retornar uma lista controlada com itens `favorite: true` e `false`.
-
-#### 3. Teste E2E Playwright (`e2e/magic-up-history-back-forward.spec.ts`)
-
-Criar um spec que:
-- Faz login (reutilizando helpers de `e2e/auth.spec.ts` se existirem).
-- Navega para `/magic-up/history?fav=1` → valida URL e contagem do grid (`X de Y`).
-- Navega para `/magic-up/history` (sem params) via `page.goto` ou click em "Limpar filtros" → valida estado limpo.
-- Usa `page.goBack()` → valida que `?fav=1` retorna E que o grid reflete o filtro.
-- Usa `page.goForward()` → valida que volta ao estado limpo.
-- Repete o ciclo back/forward 2-3 vezes para garantir estabilidade.
-
-### Arquivos afetados
-
-- **Modificar**: `src/features/magic-up/pages/MagicUpHistory.tsx` (adicionar effect de URL → state).
-- **Criar**: `src/features/magic-up/pages/__tests__/MagicUpHistory.test.tsx`.
-- **Criar**: `e2e/magic-up-history-back-forward.spec.ts`.
-
-### Detalhes técnicos do effect URL → state
-
-```typescript
-// Hidrata o estado a partir da URL quando ela muda externamente (back/forward, links).
-// Compara campo a campo para só atualizar o que mudou — evita re-renders e loop com o
-// effect inverso (state → URL), que já tem guarda baseada em string.
-useEffect(() => {
-  const urlFav = searchParams.get("fav") === "1";
-  const urlSearch = searchParams.get("q") ?? "";
-  const urlProduct = searchParams.get("product");
-  const urlFrom = searchParams.get("from");
-  const urlTo = searchParams.get("to");
-  const urlFilters = searchParams.get("filters") === "1";
-
-  if (urlFav !== filterFavorites) setFilterFavorites(urlFav);
-  if (urlSearch !== search) setSearch(urlSearch);
-  if ((urlProduct ?? null) !== filterProduct) setFilterProduct(urlProduct);
-  // ...mesmo padrão para datas e showFilters
-}, [searchParams]);
-```
-
-A guarda "só seta se diferente" + a guarda string-based no effect inverso garantem que não haja loop: a primeira hidratação dispara setters, que disparam o effect inverso, que vê `desired === current` e retorna sem chamar `setSearchParams`.
-
+- Retornar service role key, senha ou URL do banco por HTTP — não será feito em nenhuma variação.
+- Escrita/importação de dados no projeto destino por esta função (ela é somente leitura).
