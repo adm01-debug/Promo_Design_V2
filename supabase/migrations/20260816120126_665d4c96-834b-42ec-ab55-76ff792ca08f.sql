@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.get_remix_origin_timeseries(uuid, integer) FROM anon;

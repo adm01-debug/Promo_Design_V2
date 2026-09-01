@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_recompute_design_patterns_on_change() FROM anon, authenticated;

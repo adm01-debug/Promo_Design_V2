@@ -1,0 +1,469 @@
+import JSZip from "jszip";
+import { format } from "date-fns";
+import jsPDF from "jspdf";
+import type { Asset } from "../hooks/use-assets";
+import type { Client } from "@/features/clients/hooks/use-clients";
+import { getAssetSignedUrl } from "./asset-urls";
+import { buildFilterRows, type AssetsPdfFiltersSummary } from "./asset-pdf";
+
+function escape(value: string): string {
+  if (/[",\n;]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+/** All available CSV columns. Order here defines default column order. */
+export const CSV_COLUMNS = [
+  { id: "id",            label: "ID",             get: (a: Asset) => a.id },
+  { id: "name",          label: "Nome",           get: (a: Asset) => a.name },
+  { id: "type",          label: "Tipo",           get: (a: Asset) => a.asset_type },
+  { id: "client",        label: "Cliente",        get: (a: Asset, c: string) => c },
+  { id: "version",       label: "Versão",         get: (a: Asset) => String(a.version ?? "") },
+  { id: "file_size",     label: "Tamanho (bytes)", get: (a: Asset) => a.file_size != null ? String(a.file_size) : "" },
+  { id: "mime_type",     label: "MIME",           get: (a: Asset) => a.mime_type ?? "" },
+  { id: "tags",          label: "Tags",           get: (a: Asset) => (a.tags ?? []).join("|") },
+  { id: "colors",        label: "Cores dominantes", get: (a: Asset) => (a.dominant_colors ?? []).join("|") },
+  { id: "width",         label: "Largura (px)",   get: (a: Asset) => a.width != null ? String(a.width) : "" },
+  { id: "height",        label: "Altura (px)",    get: (a: Asset) => a.height != null ? String(a.height) : "" },
+  { id: "description",   label: "Descrição",      get: (a: Asset) => a.description ?? "" },
+  { id: "ocr_status",    label: "OCR status",     get: (a: Asset) => a.ocr_status ?? "" },
+  { id: "is_archived",   label: "Arquivado",      get: (a: Asset) => a.is_archived ? "true" : "false" },
+  { id: "created_at",    label: "Criado em",      get: (a: Asset) => a.created_at },
+  { id: "updated_at",    label: "Atualizado em",  get: (a: Asset) => a.updated_at },
+  { id: "storage_path",  label: "Caminho",        get: (a: Asset) => a.file_path },
+] as const;
+
+export type CsvColumnId = (typeof CSV_COLUMNS)[number]["id"];
+
+/** Default column selection — matches the original BASE_HEADERS order. */
+export const DEFAULT_CSV_COLUMNS: CsvColumnId[] = [
+  "id", "name", "type", "client", "version", "file_size", "mime_type",
+  "tags", "colors", "is_archived", "created_at", "updated_at", "storage_path",
+];
+
+/** Headers used by the ZIP manifest (always full, independent of UI column choice). */
+const BASE_HEADERS = DEFAULT_CSV_COLUMNS;
+
+function pickColumns(ids: CsvColumnId[]): typeof CSV_COLUMNS[number][] {
+  const map = new Map(CSV_COLUMNS.map((c) => [c.id, c] as const));
+  const picked: typeof CSV_COLUMNS[number][] = [];
+  for (const id of ids) {
+    const col = map.get(id);
+    if (col) picked.push(col);
+  }
+  return picked.length > 0 ? picked : [...CSV_COLUMNS];
+}
+
+function rowFor(asset: Asset, clientName: string, cols?: CsvColumnId[]): string[] {
+  const columns = pickColumns(cols ?? DEFAULT_CSV_COLUMNS);
+  return columns.map((c) => c.get(asset, clientName));
+}
+
+function headersFor(cols?: CsvColumnId[]): string[] {
+  const columns = pickColumns(cols ?? DEFAULT_CSV_COLUMNS);
+  return columns.map((c) => c.id);
+}
+
+function clientName(asset: Asset, clientMap: Map<string, string>): string {
+  if (!asset.client_id) return "";
+  return clientMap.get(asset.client_id) ?? "";
+}
+
+export function buildAssetsCsv(assets: Asset[], clients: Client[], columns?: CsvColumnId[]): string {
+  const map = new Map(clients.map((c) => [c.id, c.name]));
+  const header = headersFor(columns).join(",");
+  const lines = assets.map((a) => rowFor(a, clientName(a, map), columns).map(escape).join(","));
+  return [header, ...lines].join("\n");
+}
+
+/**
+ * Builds the same CSV but with a block of metadata lines on top, each prefixed
+ * with `# ` so spreadsheet apps that don't understand the comment convention
+ * still surface them as a leading text row instead of mis-parsing the schema.
+ *
+ * Layout:
+ *   # Biblioteca de Assets — Exportação
+ *   # Gerado em 22/04/2026 19:46
+ *   # Busca: "logo demo"
+ *   # Tipos: Logo, Arte
+ *   # ...
+ *   # ---
+ *   id,name,type,...
+ *   ...
+ */
+export function buildAssetsCsvWithMetadata(
+  assets: Asset[],
+  clients: Client[],
+  filters: AssetsPdfFiltersSummary,
+  columns?: CsvColumnId[],
+): string {
+  const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
+  const meta: string[] = [
+    "# Biblioteca de Assets — Exportação",
+    `# Gerado em ${generatedAt}`,
+  ];
+  for (const [label, value] of buildFilterRows(filters)) {
+    // Escape line breaks inside values so each metadata line is exactly one row.
+    const safeValue = String(value).replace(/[\r\n]+/g, " ");
+    meta.push(`# ${label}: ${safeValue}`);
+  }
+  meta.push("# ---");
+  return [...meta, buildAssetsCsv(assets, clients, columns)].join("\n");
+}
+
+export function downloadCsv(filename: string, csv: string): void {
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function safeName(name: string): string {
+  return name.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_").slice(0, 120) || "asset";
+}
+
+function formatBytes(bytes?: number | null): string {
+  if (!bytes || bytes <= 0) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let n = bytes;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(n >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+interface ManifestPdfOptions {
+  title: string;
+  scopeLabel?: string;
+  rows: Array<{ asset: Asset; status: string; zipPath: string }>;
+  clientMap: Map<string, string>;
+  groupByType?: boolean;
+}
+
+/** Builds a printable PDF manifest listing all assets included in the package. */
+export function buildManifestPdf(opts: ManifestPdfOptions): Blob {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 36;
+  let y = margin;
+
+  const totalOk = opts.rows.filter((r) => r.status === "ok").length;
+  const totalFailed = opts.rows.length - totalOk;
+  const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text(opts.title, margin, y);
+  y += 18;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(110);
+  const meta = [
+    `Gerado em ${generatedAt}`,
+    opts.scopeLabel ?? "",
+    `${opts.rows.length} assets · ${totalOk} ok${totalFailed > 0 ? ` · ${totalFailed} falha(s)` : ""}`,
+  ].filter(Boolean).join("  ·  ");
+  doc.text(meta, margin, y);
+  y += 16;
+  doc.setTextColor(0);
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const drawSectionHeader = (label: string) => {
+    ensureSpace(28);
+    doc.setFillColor(240, 240, 245);
+    doc.rect(margin, y, pageWidth - margin * 2, 18, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(40);
+    doc.text(label, margin + 6, y + 12);
+    doc.setTextColor(0);
+    y += 22;
+  };
+
+  const drawRow = (entry: ManifestPdfOptions["rows"][number], index: number) => {
+    const { asset, status, zipPath } = entry;
+    const lineH = 11;
+    const blockH = lineH * 4 + 6;
+    ensureSpace(blockH);
+    if (index % 2 === 0) {
+      doc.setFillColor(250, 250, 252);
+      doc.rect(margin, y - 2, pageWidth - margin * 2, blockH, "F");
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    const name = doc.splitTextToSize(asset.name, pageWidth - margin * 2 - 80)[0] ?? asset.name;
+    doc.text(name, margin + 4, y + 8);
+    const statusOk = status === "ok";
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(statusOk ? 16 : 180, statusOk ? 130 : 40, statusOk ? 90 : 40);
+    doc.text(statusOk ? "OK" : "FALHA", pageWidth - margin - 4, y + 8, { align: "right" });
+    doc.setTextColor(0);
+    y += lineH + 2;
+
+    doc.setFontSize(8);
+    doc.setTextColor(110);
+    const clientLabel = clientName(asset, opts.clientMap) || "—";
+    const tags = (asset.tags ?? []).slice(0, 6).join(", ") || "—";
+    const meta1 = `Tipo: ${asset.asset_type}   ·   Cliente: ${clientLabel}   ·   Versão: v${asset.version ?? 1}   ·   ${formatBytes(asset.file_size)}   ·   ${asset.mime_type ?? "—"}`;
+    doc.text(meta1, margin + 4, y + 6);
+    y += lineH;
+    doc.text(`Tags: ${tags}`, margin + 4, y + 6);
+    y += lineH;
+    const path = zipPath || asset.file_path;
+    const pathClipped = doc.splitTextToSize(`Arquivo: ${path}`, pageWidth - margin * 2 - 8)[0] ?? path;
+    doc.text(pathClipped, margin + 4, y + 6);
+    doc.setTextColor(0);
+    y += lineH + 6;
+  };
+
+  if (opts.groupByType) {
+    const groups = new Map<string, ManifestPdfOptions["rows"]>();
+    for (const r of opts.rows) {
+      const t = r.asset.asset_type || "other";
+      if (!groups.has(t)) groups.set(t, []);
+      groups.get(t)!.push(r);
+    }
+    for (const [type, rows] of groups) {
+      drawSectionHeader(`${type.toUpperCase()} — ${rows.length} item(s)`);
+      rows.forEach((r, i) => drawRow(r, i));
+      y += 6;
+    }
+  } else {
+    opts.rows.forEach((r, i) => drawRow(r, i));
+  }
+
+  // Footer with page numbers
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    doc.setFontSize(8);
+    doc.setTextColor(140);
+    doc.text(`Página ${p} / ${pageCount}`, pageWidth - margin, pageHeight - 18, { align: "right" });
+    doc.text("Manifesto DAM", margin, pageHeight - 18);
+  }
+
+  return doc.output("blob");
+}
+
+function extFromMime(mime?: string | null, fallbackPath?: string): string {
+  if (fallbackPath) {
+    const m = fallbackPath.match(/\.([a-zA-Z0-9]{1,8})$/);
+    if (m) return m[1].toLowerCase();
+  }
+  if (!mime) return "bin";
+  const map: Record<string, string> = {
+    "image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg",
+    "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif",
+    "application/pdf": "pdf", "application/zip": "zip",
+  };
+  return map[mime] ?? mime.split("/")[1] ?? "bin";
+}
+
+export class ExportCanceledError extends Error {
+  constructor() { super("Exportação cancelada"); this.name = "ExportCanceledError"; }
+}
+
+function checkAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new ExportCanceledError();
+}
+
+export async function downloadAssetsZip(
+  assets: Asset[],
+  clients: Client[],
+  onProgress?: (done: number, total: number) => void,
+  signal?: AbortSignal,
+): Promise<{ ok: number; failed: number }> {
+  const zip = new JSZip();
+  const map = new Map(clients.map((c) => [c.id, c.name]));
+  const used = new Map<string, number>();
+  const manifestRows: string[][] = [];
+  const pdfRows: ManifestPdfOptions["rows"] = [];
+  let ok = 0;
+  let failed = 0;
+
+  for (let i = 0; i < assets.length; i++) {
+    checkAborted(signal);
+    const asset = assets[i];
+    const ext = extFromMime(asset.mime_type, asset.file_path);
+    const base = safeName(asset.name).replace(/\.[a-zA-Z0-9]{1,8}$/, "");
+    const folder = asset.asset_type;
+    let candidate = `${folder}/${base}.${ext}`;
+    const seen = used.get(candidate) ?? 0;
+    if (seen > 0) candidate = `${folder}/${base}_${seen + 1}.${ext}`;
+    used.set(candidate, 1);
+    used.set(`${folder}/${base}.${ext}`, seen + 1);
+
+    let status = "ok";
+    try {
+      const url = await getAssetSignedUrl(asset.file_path);
+      const res = await fetch(url, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      zip.file(candidate, blob);
+      ok++;
+    } catch (e) {
+      if (signal?.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+        throw new ExportCanceledError();
+      }
+      status = `error: ${e instanceof Error ? e.message : "unknown"}`;
+      failed++;
+    }
+
+    manifestRows.push([...rowFor(asset, clientName(asset, map)), status, status === "ok" ? candidate : ""]);
+    pdfRows.push({ asset, status, zipPath: status === "ok" ? candidate : "" });
+    onProgress?.(i + 1, assets.length);
+  }
+
+  checkAborted(signal);
+  const header = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
+  const manifest = [header, ...manifestRows.map((r) => r.map(escape).join(","))].join("\n");
+  zip.file("manifest.csv", `\ufeff${manifest}`);
+  zip.file("manifest.pdf", buildManifestPdf({
+    title: "Manifesto de Assets",
+    scopeLabel: `${assets.length} assets`,
+    rows: pdfRows,
+    clientMap: map,
+  }));
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dam-assets-${format(new Date(), "yyyyMMdd-HHmmss")}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  return { ok, failed };
+}
+
+/**
+ * Downloads assets as a master ZIP that contains one nested ZIP per asset_type
+ * (e.g. `mockup.zip`, `art.zip`). Each nested ZIP carries its own manifest, and
+ * the master also includes a global `manifest.csv` covering every asset.
+ *
+ * Returns per-type counts plus aggregate totals so the UI can craft a precise toast.
+ */
+export async function downloadAssetsZipsByType(
+  assets: Asset[],
+  clients: Client[],
+  onProgress?: (done: number, total: number) => void,
+  signal?: AbortSignal,
+): Promise<{
+  ok: number;
+  failed: number;
+  byType: Record<string, { ok: number; failed: number }>;
+}> {
+  const map = new Map(clients.map((c) => [c.id, c.name]));
+  const master = new JSZip();
+  const perType = new Map<string, { zip: JSZip; used: Map<string, number>; rows: string[][]; ok: number; failed: number }>();
+  const globalRows: string[][] = [];
+  const perTypePdfRows = new Map<string, ManifestPdfOptions["rows"]>();
+  const globalPdfRows: ManifestPdfOptions["rows"] = [];
+  let ok = 0;
+  let failed = 0;
+
+  const getBucket = (type: string) => {
+    let b = perType.get(type);
+    if (!b) {
+      b = { zip: new JSZip(), used: new Map(), rows: [], ok: 0, failed: 0 };
+      perType.set(type, b);
+    }
+    return b;
+  };
+
+  for (let i = 0; i < assets.length; i++) {
+    checkAborted(signal);
+    const asset = assets[i];
+    const type = asset.asset_type || "other";
+    const bucket = getBucket(type);
+    const ext = extFromMime(asset.mime_type, asset.file_path);
+    const base = safeName(asset.name).replace(/\.[a-zA-Z0-9]{1,8}$/, "");
+    let candidate = `${base}.${ext}`;
+    const seen = bucket.used.get(candidate) ?? 0;
+    if (seen > 0) candidate = `${base}_${seen + 1}.${ext}`;
+    bucket.used.set(`${base}.${ext}`, seen + 1);
+
+    let status = "ok";
+    let zipPath = "";
+    try {
+      const url = await getAssetSignedUrl(asset.file_path);
+      const res = await fetch(url, { signal });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      bucket.zip.file(candidate, blob);
+      bucket.ok++;
+      ok++;
+      zipPath = `${type}.zip/${candidate}`;
+    } catch (e) {
+      if (signal?.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+        throw new ExportCanceledError();
+      }
+      status = `error: ${e instanceof Error ? e.message : "unknown"}`;
+      bucket.failed++;
+      failed++;
+    }
+
+    const row = [...rowFor(asset, clientName(asset, map)), status, status === "ok" ? candidate : ""];
+    bucket.rows.push(row);
+    globalRows.push([...rowFor(asset, clientName(asset, map)), status, zipPath]);
+    if (!perTypePdfRows.has(type)) perTypePdfRows.set(type, []);
+    perTypePdfRows.get(type)!.push({ asset, status, zipPath: status === "ok" ? candidate : "" });
+    globalPdfRows.push({ asset, status, zipPath });
+    onProgress?.(i + 1, assets.length);
+  }
+
+  checkAborted(signal);
+  // Build per-type ZIPs (each with its own manifest).
+  const perTypeHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
+  const byType: Record<string, { ok: number; failed: number }> = {};
+  for (const [type, bucket] of perType) {
+    const manifest = [perTypeHeader, ...bucket.rows.map((r) => r.map(escape).join(","))].join("\n");
+    bucket.zip.file("manifest.csv", `\ufeff${manifest}`);
+    bucket.zip.file("manifest.pdf", buildManifestPdf({
+      title: `Manifesto — ${type}`,
+      scopeLabel: `${bucket.rows.length} assets`,
+      rows: perTypePdfRows.get(type) ?? [],
+      clientMap: map,
+    }));
+    const nestedBlob = await bucket.zip.generateAsync({ type: "blob" });
+    master.file(`${safeName(type)}.zip`, nestedBlob);
+    byType[type] = { ok: bucket.ok, failed: bucket.failed };
+  }
+
+  // Global manifest at the top of the master ZIP.
+  const globalHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
+  const globalManifest = [globalHeader, ...globalRows.map((r) => r.map(escape).join(","))].join("\n");
+  master.file("manifest.csv", `\ufeff${globalManifest}`);
+  master.file("manifest.pdf", buildManifestPdf({
+    title: "Manifesto de Assets — por tipo",
+    scopeLabel: `${assets.length} assets · ${perType.size} tipo(s)`,
+    rows: globalPdfRows,
+    clientMap: map,
+    groupByType: true,
+  }));
+
+  const blob = await master.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dam-assets-by-type-${format(new Date(), "yyyyMMdd-HHmmss")}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  return { ok, failed, byType };
+}

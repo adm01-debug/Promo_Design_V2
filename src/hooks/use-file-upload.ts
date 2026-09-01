@@ -1,0 +1,38 @@
+import { useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+
+export function useFileUpload() {
+  const { user } = useAuth();
+
+  const uploadFile = useCallback(
+    async (file: File, folder?: string): Promise<string | null> => {
+      if (!user) return null;
+
+      const ext = file.name.split(".").pop() ?? "bin";
+      const path = `${user.id}/${folder ? folder + "/" : ""}${Date.now()}.${ext}`;
+
+      const { error } = await supabase.storage
+        .from("art-uploads")
+        .upload(path, file, { upsert: true });
+
+      if (error) {
+        return null;
+      }
+
+      // Bucket is private — use signed URL (valid for 1 hour)
+      const { data: signedData, error: signError } = await supabase.storage
+        .from("art-uploads")
+        .createSignedUrl(path, 3600);
+
+      if (signError || !signedData?.signedUrl) {
+        return null;
+      }
+
+      return signedData.signedUrl;
+    },
+    [user]
+  );
+
+  return { uploadFile };
+}

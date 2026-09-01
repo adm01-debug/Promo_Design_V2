@@ -1,0 +1,16 @@
+CREATE INDEX IF NOT EXISTS idx_assets_last_modified_by ON public.assets(last_modified_by) WHERE last_modified_by IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_saved_views_organization_id ON public.audit_saved_views(organization_id);
+CREATE INDEX IF NOT EXISTS idx_brand_guidelines_logo_asset_id ON public.brand_guidelines(logo_asset_id) WHERE logo_asset_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_catalog_products_organization_id ON public.catalog_products(organization_id);
+CREATE INDEX IF NOT EXISTS idx_client_contacts_organization_id ON public.client_contacts(organization_id);
+CREATE INDEX IF NOT EXISTS idx_magicup_history_organization_id ON public.magicup_history(organization_id);
+CREATE INDEX IF NOT EXISTS idx_mockup_drafts_last_modified_by ON public.mockup_drafts(last_modified_by) WHERE last_modified_by IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_mockup_drafts_organization_id ON public.mockup_drafts(organization_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_os_id ON public.notifications(os_id) WHERE os_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_product_categories_organization_id ON public.product_categories(organization_id);
+CREATE INDEX IF NOT EXISTS idx_service_orders_last_modified_by ON public.service_orders(last_modified_by) WHERE last_modified_by IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_service_orders_organization_id ON public.service_orders(organization_id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_log_user_id ON public.ai_usage_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_organization_invites_invited_by ON public.organization_invites(invited_by);
+CREATE INDEX IF NOT EXISTS idx_videos_client_id ON public.videos(client_id) WHERE client_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_videos_created_by ON public.videos(created_by);

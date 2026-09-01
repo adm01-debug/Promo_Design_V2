@@ -1,0 +1,87 @@
+CREATE OR REPLACE FUNCTION public.run_manual_vacuum(_table_name text, _mode text DEFAULT 'standard')
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_started timestamptz := clock_timestamp();
+  v_duration_ms integer;
+  v_lock_key bigint;
+  v_acquired boolean;
+  v_exists boolean;
+  v_sql text;
+BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' AND NOT public.is_any_org_admin(auth.uid()) THEN
+    RAISE EXCEPTION 'forbidden: requires owner or admin role';
+  END IF;
+
+  IF _table_name IS NULL OR length(_table_name) = 0 OR length(_table_name) > 128 THEN
+    RAISE EXCEPTION 'invalid table_name';
+  END IF;
+
+  IF _mode NOT IN ('standard', 'analyze', 'full') THEN
+    RAISE EXCEPTION 'invalid mode: must be standard, analyze or full';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM pg_stat_user_tables
+    WHERE schemaname = 'public' AND relname = _table_name
+  ) INTO v_exists;
+  IF NOT v_exists THEN
+    RAISE EXCEPTION 'table not found in public schema: %', _table_name;
+  END IF;
+
+  v_lock_key := hashtext('vacuum:' || _table_name)::bigint;
+  v_acquired := pg_try_advisory_lock(v_lock_key);
+  IF NOT v_acquired THEN
+    RETURN jsonb_build_object('skipped', true, 'reason', 'lock_busy', 'table', _table_name);
+  END IF;
+
+  BEGIN
+    v_sql := CASE _mode
+      WHEN 'full'     THEN format('VACUUM (FULL, ANALYZE, VERBOSE) public.%I', _table_name)
+      WHEN 'analyze'  THEN format('VACUUM (ANALYZE, VERBOSE) public.%I', _table_name)
+      ELSE                 format('VACUUM (VERBOSE) public.%I', _table_name)
+    END;
+    EXECUTE v_sql;
+    v_duration_ms := EXTRACT(MILLISECOND FROM (clock_timestamp() - v_started))::int;
+
+    INSERT INTO public.maintenance_runs(
+      triggered_by, source, status,
+      audit_deleted, notifications_deleted, status_audit_deleted,
+      duration_ms, started_at, finished_at
+    ) VALUES (
+      auth.uid(), 'manual_vacuum_' || _mode, 'success',
+      0, 0, 0,
+      v_duration_ms, v_started, clock_timestamp()
+    );
+
+    PERFORM pg_advisory_unlock(v_lock_key);
+    RETURN jsonb_build_object(
+      'ok', true,
+      'table', _table_name,
+      'mode', _mode,
+      'duration_ms', v_duration_ms,
+      'executed_at', now()
+    );
+  EXCEPTION WHEN OTHERS THEN
+    v_duration_ms := EXTRACT(MILLISECOND FROM (clock_timestamp() - v_started))::int;
+    INSERT INTO public.maintenance_runs(
+      triggered_by, source, status,
+      audit_deleted, notifications_deleted, status_audit_deleted,
+      duration_ms, started_at, finished_at, error_message
+    ) VALUES (
+      auth.uid(), 'manual_vacuum_' || _mode, 'error',
+      0, 0, 0,
+      v_duration_ms, v_started, clock_timestamp(),
+      left('vacuum_failure(' || _table_name || '): ' || SQLERRM, 1000)
+    );
+    PERFORM pg_advisory_unlock(v_lock_key);
+    RAISE;
+  END;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.run_manual_vacuum(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.run_manual_vacuum(text, text) TO authenticated, service_role;
