@@ -73,8 +73,14 @@
 
     --status-aberta: 217 91% 60%;
     --status-aberta-bg: 217 91% 60%;
+    --status-aprovada: 280 70% 60%;
+    --status-aprovada-bg: 280 70% 60%;
     --status-producao: 38 92% 50%;
     --status-producao-bg: 38 92% 50%;
+    --status-pronta: 195 85% 55%;
+    --status-pronta-bg: 195 85% 55%;
+    --status-entregue: 152 60% 45%;
+    --status-entregue-bg: 152 60% 45%;
     --status-concluida: 152 60% 45%;
     --status-concluida-bg: 152 60% 45%;
     --status-cancelada: 0 72% 55%;
@@ -143,8 +149,14 @@
 
     --status-aberta: 217 91% 50%;
     --status-aberta-bg: 217 91% 50%;
+    --status-aprovada: 280 70% 50%;
+    --status-aprovada-bg: 280 70% 50%;
     --status-producao: 38 92% 45%;
     --status-producao-bg: 38 92% 45%;
+    --status-pronta: 195 85% 45%;
+    --status-pronta-bg: 195 85% 45%;
+    --status-entregue: 152 55% 38%;
+    --status-entregue-bg: 152 55% 38%;
     --status-concluida: 152 55% 38%;
     --status-concluida-bg: 152 55% 38%;
     --status-cancelada: 0 72% 50%;

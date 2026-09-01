@@ -36,7 +36,7 @@ function logOrderEditBlocked(orderId: string, violation: OrderEditViolation): vo
 }
 
 
-export type OsStatus = "aberta" | "em_producao" | "concluida" | "cancelada";
+export type OsStatus = "aberta" | "aprovada" | "em_producao" | "pronta" | "entregue" | "concluida" | "cancelada";
 
 // ─── State Machine: transições válidas de status ───────────
 export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
@@ -377,7 +377,10 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 // ─── Status State Machine ──────────────────────────────────
 export const STATUS_CONFIG: Record<OsStatus, { label: string; color: string; bg: string }> = {
   aberta: { label: "Aberta", color: "text-[hsl(var(--status-aberta))]", bg: "bg-[hsl(var(--status-aberta-bg)/0.15)]" },
+  aprovada: { label: "Aprovada", color: "text-[hsl(var(--status-aprovada))]", bg: "bg-[hsl(var(--status-aprovada-bg)/0.15)]" },
   em_producao: { label: "Em Produção", color: "text-[hsl(var(--status-producao))]", bg: "bg-[hsl(var(--status-producao-bg)/0.15)]" },
+  pronta: { label: "Pronta", color: "text-[hsl(var(--status-pronta))]", bg: "bg-[hsl(var(--status-pronta-bg)/0.15)]" },
+  entregue: { label: "Entregue", color: "text-[hsl(var(--status-entregue))]", bg: "bg-[hsl(var(--status-entregue-bg)/0.15)]" },
   concluida: { label: "Concluída", color: "text-[hsl(var(--status-concluida))]", bg: "bg-[hsl(var(--status-concluida-bg)/0.15)]" },
   cancelada: { label: "Cancelada", color: "text-[hsl(var(--status-cancelada))]", bg: "bg-[hsl(var(--status-cancelada-bg)/0.15)]" },
 };

@@ -74,7 +74,7 @@ const ServiceOrderDashboard = () => {
         {/* Status Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {statusCards.map(({ key, icon }, i) => {
-            const cfg = STATUS_CONFIG[key];
+            const cfg = STATUS_CONFIG[key] ?? STATUS_CONFIG.aberta;
             return (
               <motion.div
                 key={key}
@@ -209,7 +209,7 @@ const ServiceOrderDashboard = () => {
               ) : (
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {metrics.deliveriesThisMonth.map((o) => {
-                    const cfg = STATUS_CONFIG[o.status];
+                    const cfg = STATUS_CONFIG[o.status] ?? STATUS_CONFIG.aberta;
                     return (
                       <div
                         key={o.id}

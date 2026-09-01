@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Loader2, Sparkles, Camera, Download,
-  ChevronLeft, ChevronRight, Grid3X3
+  ChevronLeft, ChevronRight, Grid3X3, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/features/mockup";
@@ -110,6 +110,12 @@ const VideoPhotodump = () => {
                 {isLoading ? (
                   <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <Package className="w-10 h-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Adicione produtos no catálogo para começar</p>
                   </div>
                 ) : (
                   <>

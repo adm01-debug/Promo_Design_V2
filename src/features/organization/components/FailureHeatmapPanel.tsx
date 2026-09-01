@@ -12,7 +12,7 @@ const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 async function fetchRuns(): Promise<Run[]> {
   const { data, error } = await supabase.functions.invoke("admin-maintenance", {
-    body: { action: "history", history_limit: 1000 },
+    body: { action: "history", history_limit: 100 },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error);

@@ -78,7 +78,10 @@ const AuditLogPage = () => {
     return m;
   }, [memberOpts]);
 
-  const userLabel = (uid: string) => userLabelMap.get(uid) ?? `${uid.slice(0, 8)}…`;
+  const userLabel = (uid: string | null | undefined) => {
+    if (!uid) return "— (sistema)";
+    return userLabelMap.get(uid) ?? `${uid.slice(0, 8)}…`;
+  };
 
   const queryFilters = {
     organizationId: currentOrgId,

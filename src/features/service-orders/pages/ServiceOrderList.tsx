@@ -359,7 +359,7 @@ const ServiceOrderList = () => {
             <div className="space-y-3">
               <AnimatePresence>
                 {paginated.map((order) => {
-                  const cfg = STATUS_CONFIG[order.status];
+                  const cfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.aberta;
                   const nextStatuses = getNextStatuses(order.status);
                   return (
                     <motion.div

@@ -5,7 +5,7 @@ export type AuditAction = "INSERT" | "UPDATE" | "DELETE";
 
 export interface AuditEntry {
   id: string;
-  user_id: string;
+  user_id: string | null;
   table_name: string;
   record_id: string | null;
   action: AuditAction;
