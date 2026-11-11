@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { externalSupabase } from "@/lib/external-supabase";
 import { supabase } from "@/integrations/supabase/client";
-import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "../lib/db-types";
+import type {
+  DbProduct,
+  DbProductImage,
+  DbPrintAreaTechnique,
+  DbCategory,
+  DbProductVariant,
+} from "../lib/db-types";
 
 /**
  * Adapter que busca produtos no Supabase externo.
@@ -28,7 +34,10 @@ async function fetchProductsWithFallback(opts: {
   try {
     let query = externalSupabase
       .from("products")
-      .select("id,name,short_description,sku,primary_image_url,category_id,allows_personalization,engraving_type,colors,dimensions,shape_type,width_cm,height_cm,length_cm,diameter_cm,is_kit,brand,slug,supply_mode,min_quantity,stock_quantity", { count: "exact" })
+      .select(
+        "id,name,short_description,sku,primary_image_url,category_id,allows_personalization,engraving_type,colors,dimensions,shape_type,width_cm,height_cm,length_cm,diameter_cm,is_kit,brand,slug,supply_mode,min_quantity,stock_quantity",
+        { count: "exact" },
+      )
       .eq("is_active", true)
       .eq("is_deleted", false)
       .order("name")
@@ -56,7 +65,10 @@ async function fetchProductsWithFallback(opts: {
     }
     return fallbackToMain(opts);
   } catch (err: unknown) {
-    console.warn("[useProducts] External Supabase exception:", err instanceof Error ? err.message : err);
+    console.warn(
+      "[useProducts] External Supabase exception:",
+      err instanceof Error ? err.message : err,
+    );
     if (typeof window !== "undefined") sessionStorage.setItem(cacheKey, "1");
     return fallbackToMain(opts);
   }
@@ -76,7 +88,10 @@ async function fallbackToMain(opts: {
   try {
     let q = supabase
       .from("catalog_products")
-      .select("id,name,sku,material,colors,image_url,user_id,organization_id,active,created_at,updated_at", { count: "exact" })
+      .select(
+        "id,name,sku,material,colors,image_url,user_id,organization_id,active,created_at,updated_at",
+        { count: "exact" },
+      )
       .eq("active", true)
       .order("name")
       .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -147,11 +162,18 @@ export function useProducts(options?: {
   pageSize?: number;
   onlyWithImages?: boolean;
 }) {
-  const { search = "", categoryId, page = 0, pageSize = 20, onlyWithImages = false } = options || {};
+  const {
+    search = "",
+    categoryId,
+    page = 0,
+    pageSize = 20,
+    onlyWithImages = false,
+  } = options || {};
 
   return useQuery({
     queryKey: ["products", search, categoryId, page, pageSize, onlyWithImages],
-    queryFn: () => fetchProductsWithFallback({ search, categoryId, page, pageSize, onlyWithImages }),
+    queryFn: () =>
+      fetchProductsWithFallback({ search, categoryId, page, pageSize, onlyWithImages }),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -264,7 +286,9 @@ export function useCategories() {
       try {
         const { data, error } = await externalSupabase
           .from("categories")
-          .select("id,name,slug,parent_id,image_url,is_active,level,full_path_readable,products_count")
+          .select(
+            "id,name,slug,parent_id,image_url,is_active,level,full_path_readable,products_count",
+          )
           .eq("is_active", true)
           .gt("products_count", 0)
           .order("name");
@@ -298,6 +322,8 @@ export function useCategories() {
 }
 
 /** Get best image URL for a product */
-export function getProductImageUrl(product: Pick<DbProduct, "primary_image_url" | "image_url">): string {
+export function getProductImageUrl(
+  product: Pick<DbProduct, "primary_image_url" | "image_url">,
+): string {
   return product.primary_image_url || product.image_url || "/placeholder.svg";
 }
