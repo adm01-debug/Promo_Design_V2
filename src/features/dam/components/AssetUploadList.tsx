@@ -121,6 +121,7 @@ export function AssetUploadList({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                aria-label="Remover arquivo"
                 onClick={() => onRemove(e.id)}
                 disabled={isUploading}
               >
