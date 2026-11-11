@@ -89,8 +89,8 @@ describe("parseServiceOrderListParams", () => {
       sortDesc: false,
       page: 5,
       productQuery: "CAN-350",
-      dateFrom: new Date("2025-06-01"),
-      dateTo: new Date("2025-06-30"),
+      dateFrom: new Date("2025-06-01T12:00:00Z"),
+      dateTo: new Date("2025-06-30T12:00:00Z"),
     };
     const params = buildServiceOrderListParams(original);
     const round = parseServiceOrderListParams(params);
