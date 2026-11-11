@@ -31,22 +31,26 @@ export function getFunctionsUrl(path: string = ""): string {
 /**
  * Faz uma requisição para uma Edge Function com suporte a proxy em dev.
  */
-export async function invokeFunction<T = any>(
+type FunctionsHttpError = { status?: number; message: string; name?: string } | { message: string };
+
+export async function invokeFunction<T = unknown>(
   functionName: string,
-  body: any,
-  options?: { headers?: Record<string, string>; method?: "GET" | "POST" }
-): Promise<{ data: T | null; error: any }> {
+  body: unknown,
+  options?: { headers?: Record<string, string>; method?: "GET" | "POST" },
+): Promise<{ data: T | null; error: FunctionsHttpError | null }> {
   try {
     const url = getFunctionsUrl(`/${functionName}`);
     const method = options?.method || "POST";
 
     // Pega o token de autenticação do Supabase se disponível
-    const authHeader = options?.headers?.Authorization ||
-      (typeof window !== "undefined" && window.localStorage?.getItem("sb-fygxlswpkjtjpcefjfty-auth-token"));
+    const authHeader =
+      options?.headers?.Authorization ||
+      (typeof window !== "undefined" &&
+        window.localStorage?.getItem("sb-fygxlswpkjtjpcefjfty-auth-token"));
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "",
       ...options?.headers,
     };
 
@@ -57,7 +61,7 @@ export async function invokeFunction<T = any>(
     const response = await fetch(url, {
       method,
       headers,
-      body: method === "GET" ? undefined : JSON.stringify(body),
+      body: method === "GET" ? undefined : JSON.stringify(body), // body é o payload do usuário; stringify aceita unknown
     });
 
     if (!response.ok) {
@@ -65,9 +69,10 @@ export async function invokeFunction<T = any>(
       return { data: null, error: { status: response.status, message: errorText } };
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as T;
     return { data, error: null };
-  } catch (error: any) {
-    return { data: null, error: { message: error?.message || String(error) } };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { data: null, error: { message } };
   }
 }

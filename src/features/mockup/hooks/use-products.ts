@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { externalSupabase } from "@/lib/external-supabase";
 import { supabase } from "@/integrations/supabase/client";
-import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "../lib/db-types";
+import type {
+  DbProduct,
+  DbProductImage,
+  DbPrintAreaTechnique,
+  DbCategory,
+  DbProductVariant,
+} from "../lib/db-types";
 
 /**
  * Adapter que busca produtos no Supabase externo.
@@ -28,7 +34,10 @@ async function fetchProductsWithFallback(opts: {
   try {
     let query = externalSupabase
       .from("products")
-      .select("id,name,short_description,sku,primary_image_url,category_id,allows_personalization,engraving_type,colors,dimensions,shape_type,width_cm,height_cm,length_cm,diameter_cm,is_kit,brand,slug,supply_mode,min_quantity,stock_quantity", { count: "exact" })
+      .select(
+        "id,name,short_description,sku,primary_image_url,category_id,allows_personalization,engraving_type,colors,dimensions,shape_type,width_cm,height_cm,length_cm,diameter_cm,is_kit,brand,slug,supply_mode,min_quantity,stock_quantity",
+        { count: "exact" },
+      )
       .eq("is_active", true)
       .eq("is_deleted", false)
       .order("name")
@@ -55,8 +64,11 @@ async function fetchProductsWithFallback(opts: {
       return { products: data as DbProduct[], total: count || 0 };
     }
     return fallbackToMain(opts);
-  } catch (err: any) {
-    console.warn("[useProducts] External Supabase exception:", err?.message || err);
+  } catch (err: unknown) {
+    console.warn(
+      "[useProducts] External Supabase exception:",
+      err instanceof Error ? err.message : err,
+    );
     if (typeof window !== "undefined") sessionStorage.setItem(cacheKey, "1");
     return fallbackToMain(opts);
   }
@@ -76,7 +88,10 @@ async function fallbackToMain(opts: {
   try {
     let q = supabase
       .from("catalog_products")
-      .select("id,name,sku,material,colors,image_url,user_id,organization_id,active,created_at,updated_at", { count: "exact" })
+      .select(
+        "id,name,sku,material,colors,image_url,user_id,organization_id,active,created_at,updated_at",
+        { count: "exact" },
+      )
       .eq("active", true)
       .order("name")
       .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -95,43 +110,46 @@ async function fallbackToMain(opts: {
     }
 
     // Adaptar para DbProduct
-    const products: DbProduct[] = (data || []).map((p: any) => ({
-      id: p.id,
-      name: p.name,
-          description: p.material || null,
-          short_description: p.material || "",
-      sku: p.sku,
-          category_id: null,
-          supplier_id: null,
-      primary_image_url: p.image_url,
-          images: [],
-          image_url: p.image_url,
-      allows_personalization: true,
-          personalization_areas: [],
-      engraving_type: null,
-          colors: p.colors,
-          materials: [],
-      dimensions: null,
-          weight_g: null,
-          length_cm: null,
-      width_cm: null,
-      height_cm: null,
-      diameter_cm: null,
-          shape_type: null,
-          is_active: p.active,
-          stock_quantity: 0,
-      brand: null,
-      slug: p.sku?.toLowerCase().replace(/\s+/g, "-") || "",
-          is_kit: false,
-          is_textil: false,
-          has_colors: false,
-      min_quantity: 50,
-          supply_mode: null,
-    }));
+    const products: DbProduct[] = (data || []).map((row: unknown) => {
+      const p = row as Record<string, unknown>;
+      return {
+        id: p.id as string,
+        name: p.name as string,
+        description: (p.material as string | null) ?? null,
+        short_description: (p.material as string) || "",
+        sku: p.sku as string,
+        category_id: null,
+        supplier_id: null,
+        primary_image_url: p.image_url as string | null,
+        images: [],
+        image_url: p.image_url as string | null,
+        allows_personalization: true,
+        personalization_areas: [],
+        engraving_type: null,
+        colors: (p.colors as string[] | null) ?? [],
+        materials: [],
+        dimensions: null,
+        weight_g: null,
+        length_cm: null,
+        width_cm: null,
+        height_cm: null,
+        diameter_cm: null,
+        shape_type: null,
+        is_active: p.active as boolean,
+        stock_quantity: 0,
+        brand: null,
+        slug: (p.sku as string | undefined)?.toLowerCase().replace(/\s+/g, "-") || "",
+        is_kit: false,
+        is_textil: false,
+        has_colors: false,
+        min_quantity: 50,
+        supply_mode: null,
+      };
+    });
 
     return { products, total: count || 0 };
-  } catch (err: any) {
-    console.error("[useProducts] Fallback exception:", err?.message || err);
+  } catch (err: unknown) {
+    console.error("[useProducts] Fallback exception:", err instanceof Error ? err.message : err);
     return { products: [], total: 0 };
   }
 }
@@ -144,11 +162,18 @@ export function useProducts(options?: {
   pageSize?: number;
   onlyWithImages?: boolean;
 }) {
-  const { search = "", categoryId, page = 0, pageSize = 20, onlyWithImages = false } = options || {};
+  const {
+    search = "",
+    categoryId,
+    page = 0,
+    pageSize = 20,
+    onlyWithImages = false,
+  } = options || {};
 
   return useQuery({
     queryKey: ["products", search, categoryId, page, pageSize, onlyWithImages],
-    queryFn: () => fetchProductsWithFallback({ search, categoryId, page, pageSize, onlyWithImages }),
+    queryFn: () =>
+      fetchProductsWithFallback({ search, categoryId, page, pageSize, onlyWithImages }),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -261,7 +286,9 @@ export function useCategories() {
       try {
         const { data, error } = await externalSupabase
           .from("categories")
-          .select("id,name,slug,parent_id,image_url,is_active,level,full_path_readable,products_count")
+          .select(
+            "id,name,slug,parent_id,image_url,is_active,level,full_path_readable,products_count",
+          )
           .eq("is_active", true)
           .gt("products_count", 0)
           .order("name");
@@ -275,23 +302,28 @@ export function useCategories() {
         .select("id,name,description,user_id,organization_id,created_at")
         .order("name");
       if (error) return [];
-      return (data || []).map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.name.toLowerCase().replace(/\s+/g, "-"),
-        parent_id: null,
-        image_url: null,
-        is_active: true,
-        level: 0,
-        full_path_readable: c.name,
-        products_count: 0,
-      })) as DbCategory[];
+      return (data || []).map((row: unknown) => {
+        const c = row as Record<string, unknown>;
+        return {
+          id: c.id as string,
+          name: c.name as string,
+          slug: (c.name as string).toLowerCase().replace(/\s+/g, "-"),
+          parent_id: null,
+          image_url: null,
+          is_active: true,
+          level: 0,
+          full_path_readable: c.name,
+          products_count: 0,
+        };
+      }) as DbCategory[];
     },
     staleTime: 10 * 60 * 1000,
   });
 }
 
 /** Get best image URL for a product */
-export function getProductImageUrl(product: Pick<DbProduct, "primary_image_url" | "image_url">): string {
+export function getProductImageUrl(
+  product: Pick<DbProduct, "primary_image_url" | "image_url">,
+): string {
   return product.primary_image_url || product.image_url || "/placeholder.svg";
 }

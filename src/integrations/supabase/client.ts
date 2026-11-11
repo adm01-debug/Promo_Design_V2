@@ -26,18 +26,28 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Patch profundo: intercepta o fetch interno do Supabase Functions
 // Isso é necessário porque o SDK mantém referências internas ao método original
+
+// Tipo estrutural do alvo do patch (assinatura real do FunctionsClient).
+interface FunctionsPatchTarget {
+  invoke?: (
+    functionName: string,
+    options?: { body?: unknown; headers?: Record<string, string>; method?: "GET" | "POST" | "PUT" | "DELETE" }
+  ) => Promise<{ data: unknown | null; error: unknown }>;
+  fetch?: (url: string, options?: RequestInit) => Promise<Response>;
+}
+
 function setupProxy() {
   // Só aplica em dev ou quando FORCE_PROXY está ativo
   if (!isDev && !FORCE_PROXY) return;
 
   try {
     // Patch the functions object's invoke method
-    const functions = (supabase as any).functions;
+    const functions = (supabase as unknown as { functions?: FunctionsPatchTarget }).functions;
     if (functions && functions.invoke) {
-      (functions as any).invoke = async function<T = any>(
+      functions.invoke = async function<T = unknown>(
         functionName: string,
-        options?: { body?: any; headers?: Record<string, string>; method?: "GET" | "POST" | "PUT" | "DELETE" }
-      ): Promise<{ data: T | null; error: any }> {
+        options?: { body?: unknown; headers?: Record<string, string>; method?: "GET" | "POST" | "PUT" | "DELETE" }
+      ): Promise<{ data: T | null; error: unknown }> {
         const url = `/functions/v1/${functionName}`;
         const method = options?.method || "POST";
 
@@ -59,7 +69,7 @@ function setupProxy() {
               if (parsed?.access_token) {
                 headers.Authorization = `Bearer ${parsed.access_token}`;
               }
-            } catch {}
+            } catch { /* token inválido/ausente: segue sem Authorization */ }
           }
 
           const response = await fetch(url, {
@@ -78,17 +88,17 @@ function setupProxy() {
 
           const data = await response.json();
           return { data, error: null };
-        } catch (err: any) {
+        } catch (err: unknown) {
           return { data: null, error: err };
         }
       };
     }
 
     // Also patch the internal fetch if it exists
-    if (functions && (functions as any).fetch) {
-      const originalFetch = (functions as any).fetch.bind(functions);
+    if (functions && functions.fetch) {
+      const originalFetch = functions.fetch.bind(functions);
 
-      (functions as any).fetch = async function(url: string, options?: any) {
+      functions.fetch = async function (url: string, options?: RequestInit) {
         // Check if this is a functions URL that needs proxying
         if (typeof url === 'string' && url.includes('/functions/v1/')) {
           const functionName = url.split('/functions/v1/')[1];
@@ -102,7 +112,7 @@ function setupProxy() {
           const headers: Record<string, string> = {
             "Content-Type": "application/json",
             "apikey": SUPABASE_PUBLISHABLE_KEY,
-            ...(options?.headers || {}),
+            ...(options?.headers as Record<string, string> | undefined),
           };
 
           if (sessionData) {
@@ -111,7 +121,7 @@ function setupProxy() {
               if (parsed?.access_token) {
                 headers.Authorization = `Bearer ${parsed.access_token}`;
               }
-            } catch {}
+            } catch { /* token inválido/ausente: segue sem Authorization */ }
           }
 
           return fetch(proxiedUrl, {
@@ -122,10 +132,8 @@ function setupProxy() {
 
         return originalFetch(url, options);
       };
-    }
-
-    console.log('[CORS Proxy] Supabase functions proxy configured successfully');
-  } catch (err) {
+    }    console.log('[CORS Proxy] Supabase functions proxy configured successfully');
+  } catch (err: unknown) {
     console.error('[CORS Proxy] Failed to setup proxy:', err);
   }
 }
@@ -159,7 +167,7 @@ if ((isDev || FORCE_PROXY) && typeof window !== "undefined") {
           if (parsed?.access_token) {
             headers.Authorization = `Bearer ${parsed.access_token}`;
           }
-        } catch {}
+        } catch { /* token inválido/ausente: segue sem Authorization */ }
       }
 
       return originalFetch(proxiedUrl, {
