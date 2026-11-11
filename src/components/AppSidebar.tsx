@@ -108,8 +108,8 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
     return "mockup";
   });
 
-  // Badge counts
-  const { orders } = useServiceOrders();
+  // Badge counts (sobre o conjunto completo de ordens, não só a 1ª página)
+  const { orders } = useServiceOrders({ fetchAll: true });
   const badgeCounts = useMemo(() => {
     const abertas = orders.filter((o) => o.status === "aberta" || o.status === "em_producao").length;
     return { mockup: abertas };

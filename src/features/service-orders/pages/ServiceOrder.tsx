@@ -31,7 +31,7 @@ const ServiceOrder = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { addOrder, getOrder, updateOrder } = useServiceOrders();
+  const { addOrder, getOrder, updateOrder } = useServiceOrders({ fetchAll: true });
   const { uploadFile } = useFileUpload();
   const [uploading, setUploading] = useState(false);
   const editId = searchParams.get("edit");
