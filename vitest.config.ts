@@ -8,6 +8,9 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    // Barrels are imported with `await import()`; under CI contention the
+    // 5s default can time out and flake the whole test gate.
+    testTimeout: 15000,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     coverage: {
       provider: "v8",
