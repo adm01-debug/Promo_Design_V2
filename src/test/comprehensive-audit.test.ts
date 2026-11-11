@@ -77,7 +77,10 @@ describe("formatRelativeDate — exhaustive", () => {
 describe("STATUS_CONFIG structure", () => {
   const statuses = [
     { key: "aberta", label: "Aberta" },
+    { key: "aprovada", label: "Aprovada" },
     { key: "em_producao", label: "Em Produção" },
+    { key: "pronta", label: "Pronta" },
+    { key: "entregue", label: "Entregue" },
     { key: "concluida", label: "Concluída" },
     { key: "cancelada", label: "Cancelada" },
   ];
@@ -87,8 +90,8 @@ describe("STATUS_CONFIG structure", () => {
     expect(label).toBeTruthy();
   });
 
-  it("has exactly 4 statuses", () => {
-    expect(statuses).toHaveLength(4);
+  it("has exactly 7 statuses", () => {
+    expect(statuses).toHaveLength(7);
   });
 });
 

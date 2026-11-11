@@ -20,7 +20,10 @@ export interface ServiceOrderListState {
 const VALID_STATUSES: readonly (OsStatus | "all")[] = [
   "all",
   "aberta",
+  "aprovada",
   "em_producao",
+  "pronta",
+  "entregue",
   "concluida",
   "cancelada",
 ] as const;

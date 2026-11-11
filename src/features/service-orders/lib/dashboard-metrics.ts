@@ -51,7 +51,10 @@ export function computeDashboardMetrics(
 
   const byStatus: Record<OsStatus, number> = {
     aberta: 0,
+    aprovada: 0,
     em_producao: 0,
+    pronta: 0,
+    entregue: 0,
     concluida: 0,
     cancelada: 0,
   };

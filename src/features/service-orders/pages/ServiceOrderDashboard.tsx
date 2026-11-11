@@ -20,7 +20,10 @@ const CHART_COLORS = [
 
 const STATUS_CHART_COLORS: Record<OsStatus, string> = {
   aberta: "hsl(210, 70%, 55%)",
+  aprovada: "hsl(155, 60%, 45%)",
   em_producao: "hsl(40, 80%, 55%)",
+  pronta: "hsl(25, 75%, 55%)",
+  entregue: "hsl(190, 70%, 50%)",
   concluida: "hsl(155, 60%, 45%)",
   cancelada: "hsl(0, 65%, 55%)",
 };
