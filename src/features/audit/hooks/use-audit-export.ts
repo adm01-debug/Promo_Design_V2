@@ -24,8 +24,8 @@ export function useAuditExport({
       const csv = buildAuditCsv(
         all.map((r) => ({
           created_at: r.created_at,
-          user_id: r.user_id,
-          user_label: userLabel(r.user_id),
+                  user_id: r.user_id ?? "",
+                  user_label: userLabel(r.user_id ?? ""),
           action: r.action,
           table_name: r.table_name,
           record_id: r.record_id,

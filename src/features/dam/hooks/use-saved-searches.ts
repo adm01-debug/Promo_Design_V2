@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 /**
  * Saved filters schema versioning
@@ -130,7 +131,7 @@ export function useSavedSearches(orgId: string | null, userId: string | null) {
 
   const update = useMutation({
     mutationFn: async (input: { id: string; patch: Partial<Pick<SavedSearch, "name" | "is_pinned" | "filters">> }) => {
-      const payload: Record<string, unknown> = {};
+      const payload: Partial<{ name: string; is_pinned: boolean; filters: Json }> = {};
       if (input.patch.name !== undefined) payload.name = input.patch.name.trim();
       if (input.patch.is_pinned !== undefined) payload.is_pinned = input.patch.is_pinned;
       if (input.patch.filters !== undefined) {

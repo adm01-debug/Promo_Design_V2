@@ -148,7 +148,7 @@ const AuditEventDetailPage = () => {
   const userLabel = useMemo(() => {
     if (!event) return "";
     const m = members.find((mb) => mb.user_id === event.user_id);
-    return m ? `${m.user_id.slice(0, 8)}… (${m.role})` : event.user_id.slice(0, 8) + "…";
+    return m ? `${m.user_id.slice(0, 8)}… (${m.role})` : (event.user_id ?? "").slice(0, 8) + "…";
   }, [members, event]);
 
   const goBack = () => {
@@ -339,7 +339,7 @@ const AuditEventDetailPage = () => {
                           {format(new Date(h.created_at), "dd/MM/yy HH:mm:ss")}
                         </span>
                         <span className="text-xs text-muted-foreground font-mono truncate">
-                          {h.user_id.slice(0, 8)}…
+                          {(h.user_id ?? "").slice(0, 8)}…
                         </span>
                         {isCurrent && (
                           <span className="text-xs ml-auto text-primary font-medium">atual</span>
