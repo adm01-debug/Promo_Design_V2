@@ -148,52 +148,78 @@ export interface UseServiceOrdersOptions {
   dateFrom?: string;
   /** Upper bound (inclusive) for `created_at`, ISO string. */
   dateTo?: string;
+  /**
+   * Busca TODAS as ordens correspondentes (pagina além do limite por
+   * requisição do Supabase) em vez de uma única página. Use para métricas
+   * e badges, e para o editor (que precisa da ordem e do `lockVersion`
+   * corretos mesmo fora da primeira página). Quando setado, `page`/`pageSize`
+   * são ignorados.
+   */
+  fetchAll?: boolean;
 }
+
+/** Tamanho máximo por requisição na paginação de `fetchAll`. */
+const ALL_CHUNK_SIZE = 1000;
 
 export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const {
     page = 1, pageSize = 20, search = "", status = "all", sortAsc = false,
-    productQuery = "", dateFrom, dateTo,
+    productQuery = "", dateFrom, dateTo, fetchAll = false,
   } = options;
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["service-orders", user?.id, page, pageSize, search, status, sortAsc, productQuery, dateFrom, dateTo],
+    queryKey: ["service-orders", user?.id, fetchAll, page, pageSize, search, status, sortAsc, productQuery, dateFrom, dateTo],
     queryFn: async () => {
       if (!user) return { orders: [] as StoredServiceOrder[], total: 0 };
 
-      let query = supabase
-        .from("service_orders")
-        .select("*", { count: "exact" });
+      const buildQuery = () => {
+        let query = supabase
+          .from("service_orders")
+          .select("*", { count: "exact" });
 
-      if (status !== "all") {
-        query = query.eq("status", status);
+        if (status !== "all") {
+          query = query.eq("status", status);
+        }
+
+        if (search) {
+          query = query.or(
+            `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
+          );
+        }
+
+        if (productQuery && productQuery.trim()) {
+          const term = productQuery.trim().replace(/[%(),]/g, "");
+          query = query.or(
+            `product_name.ilike.%${term}%,product_sku.ilike.%${term}%`,
+          );
+        }
+
+        if (dateFrom) query = query.gte("created_at", dateFrom);
+        if (dateTo) query = query.lte("created_at", dateTo);
+
+        return query.order("created_at", { ascending: sortAsc });
+      };
+
+      if (fetchAll) {
+        const all: StoredServiceOrder[] = [];
+        let total = 0;
+        for (let offset = 0; ; offset += ALL_CHUNK_SIZE) {
+          const { data: rows, error, count } = await buildQuery()
+            .range(offset, offset + ALL_CHUNK_SIZE - 1);
+          if (error) throw error;
+          if (count != null) total = count;
+          const mapped = (rows ?? []).map(rowToOrder);
+          all.push(...mapped);
+          if (mapped.length < ALL_CHUNK_SIZE) break;
+        }
+        return { orders: all, total: total || all.length };
       }
-
-      if (search) {
-        query = query.or(
-          `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
-        );
-      }
-
-      if (productQuery && productQuery.trim()) {
-        const term = productQuery.trim().replace(/[%(),]/g, "");
-        query = query.or(
-          `product_name.ilike.%${term}%,product_sku.ilike.%${term}%`,
-        );
-      }
-
-      if (dateFrom) query = query.gte("created_at", dateFrom);
-      if (dateTo) query = query.lte("created_at", dateTo);
-
-      query = query.order("created_at", { ascending: sortAsc });
 
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      query = query.range(from, to);
-
-      const { data: rows, error, count } = await query;
+      const { data: rows, error, count } = await buildQuery().range(from, to);
       if (error) throw error;
       return {
         orders: (rows ?? []).map(rowToOrder),
