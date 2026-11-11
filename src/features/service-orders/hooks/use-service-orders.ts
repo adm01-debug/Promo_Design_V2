@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 import {
   checkOrderEdit,
   OrderEditError,
@@ -283,7 +283,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<StoredServiceOrder> }) => {
-      const dbUpdates: Record<string, string | number | boolean | null> = {};
+      const dbUpdates: TablesUpdate<"service_orders"> = {};
 
       // Concurrency check
       const currentOrder = orders.find(o => o.id === id);
