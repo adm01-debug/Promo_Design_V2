@@ -14,7 +14,10 @@ interface UseMockupEditorAIOptions {
   areaH: number;
   virtualCanvasSize: number;
   pushLogoToHistory: (dataUrl: string) => void;
-  pushAISuggestion: (suggestion: { type: "placement" | "remove-bg"; data: Record<string, unknown> }) => void;
+  pushAISuggestion: (suggestion: {
+    type: "placement" | "remove-bg";
+    data: Record<string, unknown>;
+  }) => void;
   setBlendMode: (m: BlendMode) => void;
   setSurfaceType: (s: SurfaceType) => void;
   setLogoOpacity: (o: number) => void;
@@ -26,13 +29,25 @@ interface UseMockupEditorAIOptions {
  */
 export function useMockupEditorAI(opts: UseMockupEditorAIOptions) {
   const {
-    logoPreview, productName, productSku, areaW, areaH, virtualCanvasSize,
-    pushLogoToHistory, pushAISuggestion, setBlendMode, setSurfaceType, setLogoOpacity,
+    logoPreview,
+    productName,
+    productSku,
+    areaW,
+    areaH,
+    virtualCanvasSize,
+    pushLogoToHistory,
+    pushAISuggestion,
+    setBlendMode,
+    setSurfaceType,
+    setLogoOpacity,
   } = opts;
 
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
-  const [suggestedPlacement, setSuggestedPlacement] = useState<{ placement: Placement; reasoning: string } | null>(null);
+  const [suggestedPlacement, setSuggestedPlacement] = useState<{
+    placement: Placement;
+    reasoning: string;
+  } | null>(null);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -88,7 +103,18 @@ export function useMockupEditorAI(opts: UseMockupEditorAIOptions) {
       setIsSuggestingPlacement(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
-  }, [logoPreview, productName, productSku, areaW, areaH, virtualCanvasSize, pushAISuggestion, setBlendMode, setSurfaceType, setLogoOpacity]);
+  }, [
+    logoPreview,
+    productName,
+    productSku,
+    areaW,
+    areaH,
+    virtualCanvasSize,
+    pushAISuggestion,
+    setBlendMode,
+    setSurfaceType,
+    setLogoOpacity,
+  ]);
 
   const handleRemoveBg = useCallback(async () => {
     if (!logoPreview) return;
@@ -109,7 +135,10 @@ export function useMockupEditorAI(opts: UseMockupEditorAIOptions) {
       pushLogoToHistory(data.imageBase64);
       pushAISuggestion({
         type: "remove-bg",
-        data: { logoPreview: data.imageBase64, reasoning: "Fundo removido automaticamente via IA." },
+        data: {
+          logoPreview: data.imageBase64,
+          reasoning: "Fundo removido automaticamente via IA.",
+        },
       });
       toast.success("IA: Fundo removido!");
     } catch (err) {

@@ -13,7 +13,9 @@ export function VersionThumb({ asset }: { asset: Asset }) {
     const path = asset.thumbnail_path ?? asset.file_path;
     if (!(asset.mime_type ?? "").startsWith("image/")) return;
     getAssetSignedUrl(path, 3600).then((u) => !cancelled && setUrl(u));
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [asset]);
   if (!url) return <div className="w-12 h-12 rounded bg-muted" />;
   return <img src={url} alt={asset.name} className="w-12 h-12 rounded object-cover bg-muted" />;
@@ -56,11 +58,7 @@ export function CopyVersionLinkButton({ asset }: { asset: Asset }) {
             onClick={handleCopy}
             aria-label={`Copiar link da versão ${asset.version}`}
           >
-            {copied ? (
-              <Check className="w-4 h-4 text-success" />
-            ) : (
-              <Link2 className="w-4 h-4" />
-            )}
+            {copied ? <Check className="w-4 h-4 text-success" /> : <Link2 className="w-4 h-4" />}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top" align="end">

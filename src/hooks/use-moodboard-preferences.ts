@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-export type MoodboardTone = "energetico" | "sofisticado" | "minimalista" | "divertido" | "luxuoso" | "natural";
+export type MoodboardTone =
+  "energetico" | "sofisticado" | "minimalista" | "divertido" | "luxuoso" | "natural";
 export type MoodboardPalette = "quente" | "frio" | "neutro" | "vibrante" | "pastel" | "escuro";
 
 export interface MoodboardPreferences {

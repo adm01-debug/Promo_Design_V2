@@ -3,11 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
-import {
-  checkOrderEdit,
-  OrderEditError,
-  type OrderEditViolation,
-} from "../lib/order-edit-guard";
+import { checkOrderEdit, OrderEditError, type OrderEditViolation } from "../lib/order-edit-guard";
 
 /**
  * Telemetria de conformidade: registra tentativas bloqueadas pela guarda de edição.
@@ -35,8 +31,8 @@ function logOrderEditBlocked(orderId: string, violation: OrderEditViolation): vo
   })();
 }
 
-
-export type OsStatus = "aberta" | "aprovada" | "em_producao" | "pronta" | "entregue" | "concluida" | "cancelada";
+export type OsStatus =
+  "aberta" | "aprovada" | "em_producao" | "pronta" | "entregue" | "concluida" | "cancelada";
 
 // ─── State Machine: transições válidas de status ───────────
 export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
@@ -166,21 +162,38 @@ const ALL_CHUNK_SIZE = 1000;
 
 export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const {
-    page = 1, pageSize = 20, search = "", status = "all", sortAsc = false,
-    productQuery = "", dateFrom, dateTo, fetchAll = false,
+    page = 1,
+    pageSize = 20,
+    search = "",
+    status = "all",
+    sortAsc = false,
+    productQuery = "",
+    dateFrom,
+    dateTo,
+    fetchAll = false,
   } = options;
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["service-orders", user?.id, fetchAll, page, pageSize, search, status, sortAsc, productQuery, dateFrom, dateTo],
+    queryKey: [
+      "service-orders",
+      user?.id,
+      fetchAll,
+      page,
+      pageSize,
+      search,
+      status,
+      sortAsc,
+      productQuery,
+      dateFrom,
+      dateTo,
+    ],
     queryFn: async () => {
       if (!user) return { orders: [] as StoredServiceOrder[], total: 0 };
 
       const buildQuery = () => {
-        let query = supabase
-          .from("service_orders")
-          .select("*", { count: "exact" });
+        let query = supabase.from("service_orders").select("*", { count: "exact" });
 
         if (status !== "all") {
           query = query.eq("status", status);
@@ -188,15 +201,13 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 
         if (search) {
           query = query.or(
-            `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`
+            `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`,
           );
         }
 
         if (productQuery && productQuery.trim()) {
           const term = productQuery.trim().replace(/[%(),]/g, "");
-          query = query.or(
-            `product_name.ilike.%${term}%,product_sku.ilike.%${term}%`,
-          );
+          query = query.or(`product_name.ilike.%${term}%,product_sku.ilike.%${term}%`);
         }
 
         if (dateFrom) query = query.gte("created_at", dateFrom);
@@ -209,8 +220,11 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
         const all: StoredServiceOrder[] = [];
         let total = 0;
         for (let offset = 0; ; offset += ALL_CHUNK_SIZE) {
-          const { data: rows, error, count } = await buildQuery()
-            .range(offset, offset + ALL_CHUNK_SIZE - 1);
+          const {
+            data: rows,
+            error,
+            count,
+          } = await buildQuery().range(offset, offset + ALL_CHUNK_SIZE - 1);
           if (error) throw error;
           if (count != null) total = count;
           const mapped = (rows ?? []).map(rowToOrder);
@@ -239,7 +253,12 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["service-orders"] });
 
   const addMutation = useMutation({
-    mutationFn: async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt">) => {
+    mutationFn: async (
+      order: Omit<
+        StoredServiceOrder,
+        "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt"
+      >,
+    ) => {
       const { data, error } = await supabase
         .from("service_orders")
         .insert({
@@ -289,7 +308,7 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       const dbUpdates: TablesUpdate<"service_orders"> = {};
 
       // Concurrency check
-      const currentOrder = orders.find(o => o.id === id);
+      const currentOrder = orders.find((o) => o.id === id);
 
       // Guarda de edição (ERR_ORDER_EDIT): OS concluída é imutável; cancelada só reabre.
       if (currentOrder) {
@@ -306,13 +325,16 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.clientName !== undefined) dbUpdates.client_name = updates.clientName;
-      if (updates.clientCompany !== undefined) dbUpdates.client_company = updates.clientCompany || null;
+      if (updates.clientCompany !== undefined)
+        dbUpdates.client_company = updates.clientCompany || null;
       if (updates.clientPhone !== undefined) dbUpdates.client_phone = updates.clientPhone || null;
       if (updates.clientEmail !== undefined) dbUpdates.client_email = updates.clientEmail || null;
       if (updates.productName !== undefined) dbUpdates.product_name = updates.productName;
       if (updates.productSku !== undefined) dbUpdates.product_sku = updates.productSku || null;
-      if (updates.productMaterial !== undefined) dbUpdates.product_material = updates.productMaterial || null;
-      if (updates.productColors !== undefined) dbUpdates.product_colors = updates.productColors || null;
+      if (updates.productMaterial !== undefined)
+        dbUpdates.product_material = updates.productMaterial || null;
+      if (updates.productColors !== undefined)
+        dbUpdates.product_colors = updates.productColors || null;
       if (updates.technique !== undefined) dbUpdates.technique = updates.technique;
       if (updates.areaName !== undefined) dbUpdates.area_name = updates.areaName || null;
       if (updates.areaWidth !== undefined) dbUpdates.area_width = updates.areaWidth || null;
@@ -321,22 +343,28 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       if (updates.artColors !== undefined) dbUpdates.art_colors = updates.artColors || null;
       if (updates.artDpi !== undefined) dbUpdates.art_dpi = updates.artDpi || null;
       if (updates.artFile !== undefined) dbUpdates.art_file = updates.artFile || null;
-      if (updates.artFileDataUrl !== undefined) dbUpdates.art_file_data_url = updates.artFileDataUrl || null;
+      if (updates.artFileDataUrl !== undefined)
+        dbUpdates.art_file_data_url = updates.artFileDataUrl || null;
       if (updates.observations !== undefined) dbUpdates.observations = updates.observations || null;
-      if (updates.deliveryDate !== undefined) dbUpdates.delivery_date = updates.deliveryDate || null;
+      if (updates.deliveryDate !== undefined)
+        dbUpdates.delivery_date = updates.deliveryDate || null;
       if (updates.quantity !== undefined) dbUpdates.quantity = parseInt(updates.quantity) || 1;
-      if (updates.mockupImageUrl !== undefined) dbUpdates.mockup_image_url = updates.mockupImageUrl || null;
-      if (updates.identificacaoCaixa !== undefined) dbUpdates.identificacao_caixa = updates.identificacaoCaixa || null;
+      if (updates.mockupImageUrl !== undefined)
+        dbUpdates.mockup_image_url = updates.mockupImageUrl || null;
+      if (updates.identificacaoCaixa !== undefined)
+        dbUpdates.identificacao_caixa = updates.identificacaoCaixa || null;
       if (updates.materialEvento !== undefined) dbUpdates.material_evento = updates.materialEvento;
-      if (updates.aprovarPrimeiraPeca !== undefined) dbUpdates.aprovar_primeira_peca = updates.aprovarPrimeiraPeca;
+      if (updates.aprovarPrimeiraPeca !== undefined)
+        dbUpdates.aprovar_primeira_peca = updates.aprovarPrimeiraPeca;
       if (updates.qtdCompra !== undefined) dbUpdates.qtd_compra = updates.qtdCompra || null;
       if (updates.qtdLiberada !== undefined) dbUpdates.qtd_liberada = updates.qtdLiberada || null;
       if (updates.fazParteKit !== undefined) dbUpdates.faz_parte_kit = updates.fazParteKit;
-      if (updates.gravacaoDetalhe !== undefined) dbUpdates.gravacao_detalhe = updates.gravacaoDetalhe || null;
+      if (updates.gravacaoDetalhe !== undefined)
+        dbUpdates.gravacao_detalhe = updates.gravacaoDetalhe || null;
       if (updates.artAssetId !== undefined) dbUpdates.art_asset_id = updates.artAssetId ?? null;
 
       if (Object.keys(dbUpdates).length === 0) return;
-      
+
       const { error, data } = await supabase
         .from("service_orders")
         .update(dbUpdates)
@@ -346,7 +374,9 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 
       if (error) throw error;
       if (!data || data.length === 0) {
-        throw new Error("Conflito de concorrência: A ordem de serviço foi alterada por outro usuário. Por favor, recarregue a página.");
+        throw new Error(
+          "Conflito de concorrência: A ordem de serviço foi alterada por outro usuário. Por favor, recarregue a página.",
+        );
       }
     },
     onSuccess: invalidate,
@@ -354,25 +384,33 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("service_orders").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase
+        .from("service_orders")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: invalidate,
   });
 
   const addOrder = useCallback(
-    async (order: Omit<StoredServiceOrder, "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt">) => {
+    async (
+      order: Omit<
+        StoredServiceOrder,
+        "id" | "status" | "createdAt" | "updatedAt" | "lockVersion" | "deletedAt"
+      >,
+    ) => {
       const result = await addMutation.mutateAsync(order);
       return result;
     },
-    [addMutation]
+    [addMutation],
   );
 
   const updateOrder = useCallback(
     async (id: string, updates: Partial<StoredServiceOrder>) => {
       await updateMutation.mutateAsync({ id, updates });
     },
-    [updateMutation]
+    [updateMutation],
   );
 
   const updateStatus = useCallback(
@@ -380,37 +418,71 @@ export function useServiceOrders(options: UseServiceOrdersOptions = {}) {
       const order = orders.find((o) => o.id === id);
       if (order && !canTransition(order.status, newStatus)) {
         throw new Error(
-          `Transição inválida: ${STATUS_CONFIG[order.status].label} → ${STATUS_CONFIG[newStatus].label}`
+          `Transição inválida: ${STATUS_CONFIG[order.status].label} → ${STATUS_CONFIG[newStatus].label}`,
         );
       }
       updateOrder(id, { status: newStatus });
     },
-    [updateOrder, orders]
+    [updateOrder, orders],
   );
 
   const deleteOrder = useCallback(
     (id: string) => {
       deleteMutation.mutate(id);
     },
-    [deleteMutation]
+    [deleteMutation],
   );
 
-  const getOrder = useCallback(
-    (id: string) => orders.find((o) => o.id === id) || null,
-    [orders]
-  );
+  const getOrder = useCallback((id: string) => orders.find((o) => o.id === id) || null, [orders]);
 
-  return { orders, total, totalPages, isLoading, addOrder, updateOrder, updateStatus, deleteOrder, getOrder };
+  return {
+    orders,
+    total,
+    totalPages,
+    isLoading,
+    addOrder,
+    updateOrder,
+    updateStatus,
+    deleteOrder,
+    getOrder,
+  };
 }
 
 // ─── Status State Machine ──────────────────────────────────
 export const STATUS_CONFIG: Record<OsStatus, { label: string; color: string; bg: string }> = {
-  aberta: { label: "Aberta", color: "text-[hsl(var(--status-aberta))]", bg: "bg-[hsl(var(--status-aberta-bg)/0.15)]" },
-  aprovada: { label: "Aprovada", color: "text-[hsl(var(--status-aprovada))]", bg: "bg-[hsl(var(--status-aprovada-bg)/0.15)]" },
-  em_producao: { label: "Em Produção", color: "text-[hsl(var(--status-producao))]", bg: "bg-[hsl(var(--status-producao-bg)/0.15)]" },
-  pronta: { label: "Pronta", color: "text-[hsl(var(--status-pronta))]", bg: "bg-[hsl(var(--status-pronta-bg)/0.15)]" },
-  entregue: { label: "Entregue", color: "text-[hsl(var(--status-entregue))]", bg: "bg-[hsl(var(--status-entregue-bg)/0.15)]" },
-  concluida: { label: "Concluída", color: "text-[hsl(var(--status-concluida))]", bg: "bg-[hsl(var(--status-concluida-bg)/0.15)]" },
-  cancelada: { label: "Cancelada", color: "text-[hsl(var(--status-cancelada))]", bg: "bg-[hsl(var(--status-cancelada-bg)/0.15)]" },
+  aberta: {
+    label: "Aberta",
+    color: "text-[hsl(var(--status-aberta))]",
+    bg: "bg-[hsl(var(--status-aberta-bg)/0.15)]",
+  },
+  aprovada: {
+    label: "Aprovada",
+    color: "text-[hsl(var(--status-aprovada))]",
+    bg: "bg-[hsl(var(--status-aprovada-bg)/0.15)]",
+  },
+  em_producao: {
+    label: "Em Produção",
+    color: "text-[hsl(var(--status-producao))]",
+    bg: "bg-[hsl(var(--status-producao-bg)/0.15)]",
+  },
+  pronta: {
+    label: "Pronta",
+    color: "text-[hsl(var(--status-pronta))]",
+    bg: "bg-[hsl(var(--status-pronta-bg)/0.15)]",
+  },
+  entregue: {
+    label: "Entregue",
+    color: "text-[hsl(var(--status-entregue))]",
+    bg: "bg-[hsl(var(--status-entregue-bg)/0.15)]",
+  },
+  concluida: {
+    label: "Concluída",
+    color: "text-[hsl(var(--status-concluida))]",
+    bg: "bg-[hsl(var(--status-concluida-bg)/0.15)]",
+  },
+  cancelada: {
+    label: "Cancelada",
+    color: "text-[hsl(var(--status-cancelada))]",
+    bg: "bg-[hsl(var(--status-cancelada-bg)/0.15)]",
+  },
 };
-

@@ -10,9 +10,22 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import {
-  Image, Film, Palette, Camera, User,
-  Settings, History, FolderOpen, ClipboardList, BarChart3,
-  BookOpen, Eye, Wand2, Home, ScanText, Sparkles,
+  Image,
+  Film,
+  Palette,
+  Camera,
+  User,
+  Settings,
+  History,
+  FolderOpen,
+  ClipboardList,
+  BarChart3,
+  BookOpen,
+  Eye,
+  Wand2,
+  Home,
+  ScanText,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -23,8 +36,18 @@ const pages = [
   { label: "Configurações", path: "/settings", icon: Settings, group: "Navegação" },
   { label: "Novo Mockup", path: "/mockup/new", icon: Image, group: "Mockup Studio" },
   { label: "Rascunhos", path: "/mockup/drafts", icon: FolderOpen, group: "Mockup Studio" },
-  { label: "Ordens de Serviço", path: "/mockup/service-orders", icon: ClipboardList, group: "Mockup Studio" },
-  { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3, group: "Mockup Studio" },
+  {
+    label: "Ordens de Serviço",
+    path: "/mockup/service-orders",
+    icon: ClipboardList,
+    group: "Mockup Studio",
+  },
+  {
+    label: "Dashboard OS",
+    path: "/mockup/service-dashboard",
+    icon: BarChart3,
+    group: "Mockup Studio",
+  },
   { label: "Histórico Mockup", path: "/mockup/history", icon: History, group: "Mockup Studio" },
   { label: "Catálogo de Produtos", path: "/catalog", icon: Image, group: "Mockup Studio" },
   { label: "Gerar Imagem IA", path: "/magicup/generate", icon: Wand2, group: "Magic Up" },
@@ -32,7 +55,12 @@ const pages = [
   { label: "Histórico Magic Up", path: "/magicup/history", icon: History, group: "Magic Up" },
   { label: "Novo Vídeo", path: "/video/new", icon: Film, group: "Video Studio" },
   { label: "Cinema Mode", path: "/video/cinema", icon: Eye, group: "Video Studio" },
-  { label: "Feed de Inspiração", path: "/video/inspiration", icon: Sparkles, group: "Video Studio" },
+  {
+    label: "Feed de Inspiração",
+    path: "/video/inspiration",
+    icon: Sparkles,
+    group: "Video Studio",
+  },
   { label: "Moodboard", path: "/video/moodboard", icon: Palette, group: "Video Studio" },
   { label: "Photodump", path: "/video/photodump", icon: Camera, group: "Video Studio" },
   { label: "Character Studio", path: "/video/characters", icon: User, group: "Video Studio" },
@@ -69,7 +97,7 @@ const CommandPalette = ({ open: controlledOpen, onOpenChange }: CommandPalettePr
       setOpen(false);
       navigate(path);
     },
-    [navigate, setOpen]
+    [navigate, setOpen],
   );
 
   const handleIndexOcr = useCallback(async () => {

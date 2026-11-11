@@ -5,11 +5,7 @@ import { History, ChevronDown, Check, Sparkles, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
@@ -86,9 +82,7 @@ export function BrandGuidelinesInferHistoryPanel({ clientId, onReview }: Props) 
         </div>
       )}
 
-      {isError && (
-        <p className="text-xs text-destructive">Falha ao carregar histórico.</p>
-      )}
+      {isError && <p className="text-xs text-destructive">Falha ao carregar histórico.</p>}
 
       {!isLoading && rows.length === 0 && (
         <div className="text-xs text-muted-foreground text-center py-8 border border-dashed rounded-md">
@@ -143,9 +137,7 @@ export function BrandGuidelinesInferHistoryPanel({ clientId, onReview }: Props) 
                         </span>
                         <span className="text-[10px] text-emerald-500">+{totals.added}</span>
                         <span className="text-[10px] text-destructive">−{totals.removed}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          ={totals.kept}
-                        </span>
+                        <span className="text-[10px] text-muted-foreground">={totals.kept}</span>
                       </div>
                     </div>
                     {confPct !== null && (
@@ -169,10 +161,7 @@ export function BrandGuidelinesInferHistoryPanel({ clientId, onReview }: Props) 
                     <MetaItem label="Modelo" value={row.model ?? "—"} />
                     <MetaItem label="Assets usados" value={String(row.assets_used)} />
                     <MetaItem label="Sample size" value={String(row.sample_size)} />
-                    <MetaItem
-                      label="Confiança"
-                      value={confPct !== null ? `${confPct}%` : "—"}
-                    />
+                    <MetaItem label="Confiança" value={confPct !== null ? `${confPct}%` : "—"} />
                   </div>
 
                   {/* Confidence bar */}
@@ -190,47 +179,43 @@ export function BrandGuidelinesInferHistoryPanel({ clientId, onReview }: Props) 
 
                   {/* Diff por seção */}
                   <div className="space-y-1.5">
-                    {(Object.keys(row.diff) as Array<keyof InferHistoryRow["diff"]>).map(
-                      (key) => {
-                        const s = row.diff[key];
-                        const total =
-                          (s.added?.length ?? 0) +
-                          (s.removed?.length ?? 0) +
-                          (s.kept?.length ?? 0);
-                        if (total === 0) return null;
-                        return (
-                          <div key={key} className="text-[11px]">
-                            <div className="font-medium mb-0.5">{sectionLabel(key)}</div>
-                            <div className="flex flex-wrap gap-1">
-                              {s.added.map((v) => (
-                                <span
-                                  key={`a-${v}`}
-                                  className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                                >
-                                  + {v}
-                                </span>
-                              ))}
-                              {s.removed.map((v) => (
-                                <span
-                                  key={`r-${v}`}
-                                  className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20 line-through"
-                                >
-                                  − {v}
-                                </span>
-                              ))}
-                              {s.kept.map((v) => (
-                                <span
-                                  key={`k-${v}`}
-                                  className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
-                                >
-                                  = {v}
-                                </span>
-                              ))}
-                            </div>
+                    {(Object.keys(row.diff) as Array<keyof InferHistoryRow["diff"]>).map((key) => {
+                      const s = row.diff[key];
+                      const total =
+                        (s.added?.length ?? 0) + (s.removed?.length ?? 0) + (s.kept?.length ?? 0);
+                      if (total === 0) return null;
+                      return (
+                        <div key={key} className="text-[11px]">
+                          <div className="font-medium mb-0.5">{sectionLabel(key)}</div>
+                          <div className="flex flex-wrap gap-1">
+                            {s.added.map((v) => (
+                              <span
+                                key={`a-${v}`}
+                                className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                              >
+                                + {v}
+                              </span>
+                            ))}
+                            {s.removed.map((v) => (
+                              <span
+                                key={`r-${v}`}
+                                className="px-1.5 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20 line-through"
+                              >
+                                − {v}
+                              </span>
+                            ))}
+                            {s.kept.map((v) => (
+                              <span
+                                key={`k-${v}`}
+                                className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
+                              >
+                                = {v}
+                              </span>
+                            ))}
                           </div>
-                        );
-                      },
-                    )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {onReview && (
@@ -259,9 +244,7 @@ export function BrandGuidelinesInferHistoryPanel({ clientId, onReview }: Props) 
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded border border-border/60 px-2 py-1 bg-muted/30">
-      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
+      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="text-[11px] font-mono truncate" title={value}>
         {value}
       </div>

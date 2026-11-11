@@ -6,9 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Save, Settings2, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,9 +38,27 @@ const FIELDS: Array<{
   min: number;
   max: number;
 }> = [
-  { key: "audit_retention_days", label: "Auditoria", hint: "Logs de auditoria (30–3650 dias)", min: 30, max: 3650 },
-  { key: "notifications_retention_days", label: "Notificações lidas", hint: "Notificações marcadas como lidas (7–3650 dias)", min: 7, max: 3650 },
-  { key: "status_audit_retention_days", label: "Histórico de status", hint: "Alterações de status de OS (30–3650 dias)", min: 30, max: 3650 },
+  {
+    key: "audit_retention_days",
+    label: "Auditoria",
+    hint: "Logs de auditoria (30–3650 dias)",
+    min: 30,
+    max: 3650,
+  },
+  {
+    key: "notifications_retention_days",
+    label: "Notificações lidas",
+    hint: "Notificações marcadas como lidas (7–3650 dias)",
+    min: 7,
+    max: 3650,
+  },
+  {
+    key: "status_audit_retention_days",
+    label: "Histórico de status",
+    hint: "Alterações de status de OS (30–3650 dias)",
+    min: 30,
+    max: 3650,
+  },
 ];
 
 export function RetentionSettingsPanel() {
@@ -54,8 +78,10 @@ export function RetentionSettingsPanel() {
       if (error) throw error;
       return {
         audit_retention_days: data?.audit_retention_days ?? DEFAULTS.audit_retention_days,
-        notifications_retention_days: data?.notifications_retention_days ?? DEFAULTS.notifications_retention_days,
-        status_audit_retention_days: data?.status_audit_retention_days ?? DEFAULTS.status_audit_retention_days,
+        notifications_retention_days:
+          data?.notifications_retention_days ?? DEFAULTS.notifications_retention_days,
+        status_audit_retention_days:
+          data?.status_audit_retention_days ?? DEFAULTS.status_audit_retention_days,
       };
     },
   });
@@ -69,10 +95,7 @@ export function RetentionSettingsPanel() {
   const mutation = useMutation({
     mutationFn: async (payload: RetentionRow) => {
       if (!currentOrgId) throw new Error("Organização não selecionada");
-      const { error } = await supabase
-        .from("organizations")
-        .update(payload)
-        .eq("id", currentOrgId);
+      const { error } = await supabase.from("organizations").update(payload).eq("id", currentOrgId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -102,7 +125,7 @@ export function RetentionSettingsPanel() {
       toast.success(
         total > 0
           ? `Limpeza da organização concluída: ${total} registros em ${r.duration_ms}ms`
-          : "Limpeza executada — nada elegível nesta organização"
+          : "Limpeza executada — nada elegível nesta organização",
       );
       qc.invalidateQueries({ queryKey: ["maintenance-stats"] });
       qc.invalidateQueries({ queryKey: ["maintenance-history"] });
@@ -145,7 +168,11 @@ export function RetentionSettingsPanel() {
               disabled={!dirty || invalid || mutation.isPending}
               onClick={() => mutation.mutate(form)}
             >
-              {mutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+              {mutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Save className="h-3 w-3" />
+              )}
               Salvar
             </Button>
             <AlertDialog>
@@ -169,9 +196,9 @@ export function RetentionSettingsPanel() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Limpar dados desta organização</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Isso removerá permanentemente logs de auditoria, notificações lidas e histórico de
-                    status desta organização que estejam fora dos períodos de retenção configurados
-                    acima. Esta ação não pode ser desfeita.
+                    Isso removerá permanentemente logs de auditoria, notificações lidas e histórico
+                    de status desta organização que estejam fora dos períodos de retenção
+                    configurados acima. Esta ação não pode ser desfeita.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -191,7 +218,9 @@ export function RetentionSettingsPanel() {
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando configurações…
         </div>
       ) : query.isError ? (
-        <p className="text-sm text-destructive">Não foi possível carregar as configurações de retenção.</p>
+        <p className="text-sm text-destructive">
+          Não foi possível carregar as configurações de retenção.
+        </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {FIELDS.map((f) => {
@@ -222,7 +251,9 @@ export function RetentionSettingsPanel() {
         </div>
       )}
       {!canEdit && (
-        <p className="text-[10px] text-muted-foreground">Apenas owners e admins podem editar a retenção.</p>
+        <p className="text-[10px] text-muted-foreground">
+          Apenas owners e admins podem editar a retenção.
+        </p>
       )}
     </div>
   );

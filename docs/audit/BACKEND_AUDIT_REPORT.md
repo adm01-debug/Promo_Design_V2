@@ -15,14 +15,14 @@ Entretanto, o **linter Supabase reporta 34 findings `WARN`** (todos sobre `SECUR
 
 ### Nota consolidada por dimensão
 
-| Dimensão | Nota | Justificativa |
-|---|---|---|
-| Segurança | **8.5 / 10** | RLS 100%, MFA, roles isoladas; findings de `SECURITY DEFINER` são documentados em ADR mas ainda expostos ao `anon` em duas funções. |
-| Performance | **8 / 10** | Índices bem definidos, pg_stat_statements ativo; falta cache de aplicação e paginação em algumas listagens. |
+| Dimensão         | Nota         | Justificativa                                                                                                                         |
+| ---------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Segurança        | **8.5 / 10** | RLS 100%, MFA, roles isoladas; findings de `SECURITY DEFINER` são documentados em ADR mas ainda expostos ao `anon` em duas funções.   |
+| Performance      | **8 / 10**   | Índices bem definidos, pg_stat_statements ativo; falta cache de aplicação e paginação em algumas listagens.                           |
 | Manutenibilidade | **7.5 / 10** | TS strict, feature folders, mas arquivos > 500 linhas (MaintenancePanel.tsx) e RPC calls com cast unsafe (`supabase.rpc as unknown`). |
-| Observabilidade | **8 / 10** | Auditoria + snapshots + notifications; falta correlação de trace-id em edge functions. |
-| Confiabilidade | **8 / 10** | Advisory locks nas rotinas críticas; falta retry/backoff formal em integrações. |
-| Custo | **9 / 10** | Retenção agressiva, cleanup particionado por org, snapshots limitados a 90 dias. |
+| Observabilidade  | **8 / 10**   | Auditoria + snapshots + notifications; falta correlação de trace-id em edge functions.                                                |
+| Confiabilidade   | **8 / 10**   | Advisory locks nas rotinas críticas; falta retry/backoff formal em integrações.                                                       |
+| Custo            | **9 / 10**   | Retenção agressiva, cleanup particionado por org, snapshots limitados a 90 dias.                                                      |
 
 **Nota global: 8.2 / 10** — próximo passo para 10/10 detalhado em §7.
 
@@ -162,11 +162,18 @@ Existe `external-db-bridge-contract_test.ts` mas não cobre todas as ações. Ad
 
 ```typescript
 class CircuitBreaker {
-  private failures = 0; private openUntil = 0;
+  private failures = 0;
+  private openUntil = 0;
   async call<T>(fn: () => Promise<T>): Promise<T> {
     if (Date.now() < this.openUntil) throw new Error("circuit_open");
-    try { const r = await fn(); this.failures = 0; return r; }
-    catch (e) { if (++this.failures >= 3) this.openUntil = Date.now() + 30_000; throw e; }
+    try {
+      const r = await fn();
+      this.failures = 0;
+      return r;
+    } catch (e) {
+      if (++this.failures >= 3) this.openUntil = Date.now() + 30_000;
+      throw e;
+    }
   }
 }
 ```
@@ -190,6 +197,7 @@ Presente em `IndexBloatPanel.tsx` e `SequenceSaturationPanel.tsx`. Sinal de tipo
 ### 6.2 🟡 IMPORTANTE — `MaintenancePanel.tsx` com > 550 linhas
 
 Violação da regra dos 400 linhas em memória. Extrair para:
+
 - `useMaintenanceData()` hook
 - `MaintenanceHeader`, `MaintenanceRetention`, `MaintenanceGrowth`, `MaintenanceDisk`
 
@@ -201,22 +209,22 @@ OK para MVP, mas para escala considerar Supabase Realtime ou Server-Sent Events.
 
 ## 7. Roadmap para 10/10
 
-| Prioridade | Item | Esforço | Categoria |
-|---|---|---|---|
-| P0 🔴 | Rate limit em edge functions AI | M | Segurança / Custo |
-| P0 🔴 | Circuit breaker Bitrix + DLQ | M | Confiabilidade |
-| P0 🔴 | Revogar EXECUTE de `anon` nas 2 funções expostas | S | Segurança |
-| P1 🟡 | Particionamento de `audit_log` por mês | L | Performance |
-| P1 🟡 | Consolidar `write_audit_log` + `audit_trigger_func` | M | Manutenibilidade |
-| P1 🟡 | HMAC em webhooks n8n | S | Segurança |
-| P1 🟡 | Correlation-id em edge functions | S | Observabilidade |
-| P1 🟡 | Índice composto `notifications(event_type, created_at)` | S | Performance |
-| P1 🟡 | Refatorar `MaintenancePanel.tsx` | M | Manutenibilidade |
-| P2 🟢 | Ativar HIBP no Auth | XS | Segurança |
-| P2 🟢 | CSP/HSTS headers | S | Segurança |
-| P2 🟢 | Instalar `pgstattuple` para bloat real | S | Observabilidade |
-| P2 🟢 | Índices GIN trigram em `assets` | S | Performance |
-| P2 🟢 | Migrar polling → Realtime | M | UX |
+| Prioridade | Item                                                    | Esforço | Categoria         |
+| ---------- | ------------------------------------------------------- | ------- | ----------------- |
+| P0 🔴      | Rate limit em edge functions AI                         | M       | Segurança / Custo |
+| P0 🔴      | Circuit breaker Bitrix + DLQ                            | M       | Confiabilidade    |
+| P0 🔴      | Revogar EXECUTE de `anon` nas 2 funções expostas        | S       | Segurança         |
+| P1 🟡      | Particionamento de `audit_log` por mês                  | L       | Performance       |
+| P1 🟡      | Consolidar `write_audit_log` + `audit_trigger_func`     | M       | Manutenibilidade  |
+| P1 🟡      | HMAC em webhooks n8n                                    | S       | Segurança         |
+| P1 🟡      | Correlation-id em edge functions                        | S       | Observabilidade   |
+| P1 🟡      | Índice composto `notifications(event_type, created_at)` | S       | Performance       |
+| P1 🟡      | Refatorar `MaintenancePanel.tsx`                        | M       | Manutenibilidade  |
+| P2 🟢      | Ativar HIBP no Auth                                     | XS      | Segurança         |
+| P2 🟢      | CSP/HSTS headers                                        | S       | Segurança         |
+| P2 🟢      | Instalar `pgstattuple` para bloat real                  | S       | Observabilidade   |
+| P2 🟢      | Índices GIN trigram em `assets`                         | S       | Performance       |
+| P2 🟢      | Migrar polling → Realtime                               | M       | UX                |
 
 **Legenda de esforço:** XS < 30min · S < 2h · M < 1 dia · L > 1 dia
 
@@ -224,18 +232,18 @@ OK para MVP, mas para escala considerar Supabase Realtime ou Server-Sent Events.
 
 ## 8. Benchmarking
 
-| Área | Este sistema | Mercado (SaaS B2B mid-market) |
-|---|---|---|
-| RLS coverage | ✅ 100% | 80% |
-| Auditoria imutável | ✅ Sim | 60% |
-| MFA disponível | ✅ Sim | 70% |
-| Cron de manutenção | ✅ Sim | 40% |
-| Snapshots de tamanho | ✅ Sim | 20% |
-| Painel de bloat | ✅ Sim | 10% |
-| Circuit breaker | ❌ Não | 50% |
-| Rate limit AI | ❌ Não | 60% |
-| Particionamento | ❌ Não | 30% |
-| Trace correlation | ❌ Não | 40% |
+| Área                 | Este sistema | Mercado (SaaS B2B mid-market) |
+| -------------------- | ------------ | ----------------------------- |
+| RLS coverage         | ✅ 100%      | 80%                           |
+| Auditoria imutável   | ✅ Sim       | 60%                           |
+| MFA disponível       | ✅ Sim       | 70%                           |
+| Cron de manutenção   | ✅ Sim       | 40%                           |
+| Snapshots de tamanho | ✅ Sim       | 20%                           |
+| Painel de bloat      | ✅ Sim       | 10%                           |
+| Circuit breaker      | ❌ Não       | 50%                           |
+| Rate limit AI        | ❌ Não       | 60%                           |
+| Particionamento      | ❌ Não       | 30%                           |
+| Trace correlation    | ❌ Não       | 40%                           |
 
 **Conclusão:** o projeto está **acima da média** em observabilidade de banco e segurança de dados, mas **abaixo da média** em resiliência de integrações e proteção contra abuso de custo AI. Essas duas frentes são o caminho crítico para a nota 10.
 
@@ -251,4 +259,4 @@ OK para MVP, mas para escala considerar Supabase Realtime ou Server-Sent Events.
 
 ---
 
-*Fim do relatório — auditoria conduzida sobre 373 arquivos TS/TSX, 114 migrations, 6 edge functions e 22 tabelas públicas.*
+_Fim do relatório — auditoria conduzida sobre 373 arquivos TS/TSX, 114 migrations, 6 edge functions e 22 tabelas públicas._

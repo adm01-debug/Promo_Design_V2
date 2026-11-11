@@ -64,7 +64,15 @@ describe("Status State Machine", () => {
   });
 
   it("all statuses are covered in transitions map", () => {
-    const statuses: OsStatus[] = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
+    const statuses: OsStatus[] = [
+      "aberta",
+      "aprovada",
+      "em_producao",
+      "pronta",
+      "entregue",
+      "concluida",
+      "cancelada",
+    ];
     statuses.forEach((s) => {
       expect(STATUS_TRANSITIONS).toHaveProperty(s);
     });

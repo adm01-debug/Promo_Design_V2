@@ -64,7 +64,7 @@ serve(async (req) => {
     console.error(`[${requestId}] fatal:`, e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error", requestId }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

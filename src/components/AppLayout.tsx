@@ -27,7 +27,7 @@ const AppLayout = () => {
     const handleTouchStart = (e: TouchEvent) => {
       touchStartRef.current = e.targetTouches[0].clientX;
     };
-    
+
     const handleTouchEnd = (e: TouchEvent) => {
       if (touchStartRef.current === null) return;
       const touchEnd = e.changedTouches[0].clientX;
@@ -52,11 +52,12 @@ const AppLayout = () => {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInput = target?.tagName === "INPUT" || 
-                      target?.tagName === "TEXTAREA" || 
-                      target?.isContentEditable ||
-                      target?.closest('[role="combobox"]') ||
-                      target?.closest('.cmdk-input');
+      const isInput =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable ||
+        target?.closest('[role="combobox"]') ||
+        target?.closest(".cmdk-input");
 
       if (isInput) return;
       if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
@@ -146,7 +147,10 @@ const AppLayout = () => {
       ) : (
         <>
           <AppSidebar onCollapseChange={setCollapsed} />
-          <main id="main-content" className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}>
+          <main
+            id="main-content"
+            className={`flex-1 transition-all ${collapsed ? "ml-16" : "ml-[240px]"}`}
+          >
             <div className="p-4 pb-0 flex items-center gap-4">
               <Breadcrumbs />
             </div>

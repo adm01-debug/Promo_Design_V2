@@ -96,14 +96,36 @@ describe("ServiceOrder validation – edge cases", () => {
   it("rejects quantity of 0", async () => {
     const { validateForm } = await import("@/features/service-orders/types");
     const base = {
-      osNumber: "OS-2401-0001", date: "2024-01-01", deliveryDate: "",
-      clientName: "Test", clientCompany: "", clientPhone: "", clientEmail: "",
-      productName: "Product", productSku: "", productMaterial: "", productColors: "",
-      technique: "Laser UV", areaName: "", areaWidth: "", areaHeight: "", areaShape: "",
-      artColors: "", artDpi: "300", artFile: "", artFileDataUrl: "",
-      quantity: "0", observations: "", mockupImageUrl: "",
-      identificacaoCaixa: "", materialEvento: false, aprovarPrimeiraPeca: false,
-      qtdCompra: "", qtdLiberada: "", fazParteKit: false, gravacaoDetalhe: "",
+      osNumber: "OS-2401-0001",
+      date: "2024-01-01",
+      deliveryDate: "",
+      clientName: "Test",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: "Product",
+      productSku: "",
+      productMaterial: "",
+      productColors: "",
+      technique: "Laser UV",
+      areaName: "",
+      areaWidth: "",
+      areaHeight: "",
+      areaShape: "",
+      artColors: "",
+      artDpi: "300",
+      artFile: "",
+      artFileDataUrl: "",
+      quantity: "0",
+      observations: "",
+      mockupImageUrl: "",
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
     };
     const errors = validateForm(base);
     expect(errors.quantity).toBeTruthy();
@@ -112,14 +134,36 @@ describe("ServiceOrder validation – edge cases", () => {
   it("rejects negative quantity", async () => {
     const { validateForm } = await import("@/features/service-orders/types");
     const base = {
-      osNumber: "OS-2401-0001", date: "2024-01-01", deliveryDate: "",
-      clientName: "Test", clientCompany: "", clientPhone: "", clientEmail: "",
-      productName: "Product", productSku: "", productMaterial: "", productColors: "",
-      technique: "Laser UV", areaName: "", areaWidth: "", areaHeight: "", areaShape: "",
-      artColors: "", artDpi: "300", artFile: "", artFileDataUrl: "",
-      quantity: "-5", observations: "", mockupImageUrl: "",
-      identificacaoCaixa: "", materialEvento: false, aprovarPrimeiraPeca: false,
-      qtdCompra: "", qtdLiberada: "", fazParteKit: false, gravacaoDetalhe: "",
+      osNumber: "OS-2401-0001",
+      date: "2024-01-01",
+      deliveryDate: "",
+      clientName: "Test",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: "Product",
+      productSku: "",
+      productMaterial: "",
+      productColors: "",
+      technique: "Laser UV",
+      areaName: "",
+      areaWidth: "",
+      areaHeight: "",
+      areaShape: "",
+      artColors: "",
+      artDpi: "300",
+      artFile: "",
+      artFileDataUrl: "",
+      quantity: "-5",
+      observations: "",
+      mockupImageUrl: "",
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
     };
     const errors = validateForm(base);
     expect(errors.quantity).toBeTruthy();
@@ -128,14 +172,36 @@ describe("ServiceOrder validation – edge cases", () => {
   it("rejects empty clientName (whitespace only)", async () => {
     const { validateForm } = await import("@/features/service-orders/types");
     const base = {
-      osNumber: "OS-2401-0001", date: "2024-01-01", deliveryDate: "",
-      clientName: "   ", clientCompany: "", clientPhone: "", clientEmail: "",
-      productName: "Product", productSku: "", productMaterial: "", productColors: "",
-      technique: "Laser UV", areaName: "", areaWidth: "", areaHeight: "", areaShape: "",
-      artColors: "", artDpi: "300", artFile: "", artFileDataUrl: "",
-      quantity: "10", observations: "", mockupImageUrl: "",
-      identificacaoCaixa: "", materialEvento: false, aprovarPrimeiraPeca: false,
-      qtdCompra: "", qtdLiberada: "", fazParteKit: false, gravacaoDetalhe: "",
+      osNumber: "OS-2401-0001",
+      date: "2024-01-01",
+      deliveryDate: "",
+      clientName: "   ",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: "Product",
+      productSku: "",
+      productMaterial: "",
+      productColors: "",
+      technique: "Laser UV",
+      areaName: "",
+      areaWidth: "",
+      areaHeight: "",
+      areaShape: "",
+      artColors: "",
+      artDpi: "300",
+      artFile: "",
+      artFileDataUrl: "",
+      quantity: "10",
+      observations: "",
+      mockupImageUrl: "",
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
     };
     const errors = validateForm(base);
     expect(errors.clientName).toBeTruthy();
@@ -144,14 +210,36 @@ describe("ServiceOrder validation – edge cases", () => {
   it("accepts valid form with no errors", async () => {
     const { validateForm } = await import("@/features/service-orders/types");
     const valid = {
-      osNumber: "OS-2401-0001", date: "2024-01-01", deliveryDate: "",
-      clientName: "João", clientCompany: "", clientPhone: "", clientEmail: "",
-      productName: "Caneta", productSku: "", productMaterial: "", productColors: "",
-      technique: "Laser UV", areaName: "", areaWidth: "", areaHeight: "", areaShape: "",
-      artColors: "", artDpi: "300", artFile: "", artFileDataUrl: "",
-      quantity: "100", observations: "", mockupImageUrl: "",
-      identificacaoCaixa: "", materialEvento: false, aprovarPrimeiraPeca: false,
-      qtdCompra: "", qtdLiberada: "", fazParteKit: false, gravacaoDetalhe: "",
+      osNumber: "OS-2401-0001",
+      date: "2024-01-01",
+      deliveryDate: "",
+      clientName: "João",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: "Caneta",
+      productSku: "",
+      productMaterial: "",
+      productColors: "",
+      technique: "Laser UV",
+      areaName: "",
+      areaWidth: "",
+      areaHeight: "",
+      areaShape: "",
+      artColors: "",
+      artDpi: "300",
+      artFile: "",
+      artFileDataUrl: "",
+      quantity: "100",
+      observations: "",
+      mockupImageUrl: "",
+      identificacaoCaixa: "",
+      materialEvento: false,
+      aprovarPrimeiraPeca: false,
+      qtdCompra: "",
+      qtdLiberada: "",
+      fazParteKit: false,
+      gravacaoDetalhe: "",
     };
     const errors = validateForm(valid);
     expect(Object.keys(errors).length).toBe(0);
@@ -166,7 +254,8 @@ describe("Status machine – comprehensive", () => {
   });
 
   it("cancelada can reopen to aberta only", async () => {
-    const { getNextStatuses, canTransition } = await import("@/features/service-orders/hooks/use-service-orders");
+    const { getNextStatuses, canTransition } =
+      await import("@/features/service-orders/hooks/use-service-orders");
     expect(getNextStatuses("cancelada")).toEqual(["aberta"]);
     expect(canTransition("cancelada", "em_producao")).toBe(false);
     expect(canTransition("cancelada", "concluida")).toBe(false);
@@ -179,7 +268,15 @@ describe("Status machine – comprehensive", () => {
 
   it("all statuses have a config entry", async () => {
     const { STATUS_CONFIG } = await import("@/features/service-orders/hooks/use-service-orders");
-    const expected = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
+    const expected = [
+      "aberta",
+      "aprovada",
+      "em_producao",
+      "pronta",
+      "entregue",
+      "concluida",
+      "cancelada",
+    ];
     for (const s of expected) {
       expect(STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]).toBeDefined();
       expect(STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label).toBeTruthy();

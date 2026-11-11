@@ -63,10 +63,22 @@ const PromptGenerator = ({ onGenerate, productName }: Props) => {
   }, [objective, tone, audience, season, productName]);
 
   const axes = [
-    { icon: Target, label: "Objetivo", options: OBJECTIVES, value: objective, onChange: setObjective },
+    {
+      icon: Target,
+      label: "Objetivo",
+      options: OBJECTIVES,
+      value: objective,
+      onChange: setObjective,
+    },
     { icon: MessageSquare, label: "Tom", options: TONES, value: tone, onChange: setTone },
     { icon: Users, label: "Público", options: AUDIENCES, value: audience, onChange: setAudience },
-    { icon: CalendarDays, label: "Temporada", options: SEASONS, value: season, onChange: setSeason },
+    {
+      icon: CalendarDays,
+      label: "Temporada",
+      options: SEASONS,
+      value: season,
+      onChange: setSeason,
+    },
   ];
 
   return (
@@ -75,7 +87,9 @@ const PromptGenerator = ({ onGenerate, productName }: Props) => {
         <div key={axis.label}>
           <div className="flex items-center gap-1.5 mb-2">
             <axis.icon className="w-3.5 h-3.5 text-primary" />
-            <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{axis.label}</h4>
+            <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+              {axis.label}
+            </h4>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {axis.options.map((opt) => (
@@ -97,7 +111,9 @@ const PromptGenerator = ({ onGenerate, productName }: Props) => {
 
       {/* Preview */}
       <div className="mt-3">
-        <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1.5">Prompt Gerado</h4>
+        <h4 className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1.5">
+          Prompt Gerado
+        </h4>
         <p className="text-[10px] text-muted-foreground leading-relaxed font-mono bg-surface-2 rounded-lg p-2.5 border border-border">
           {generatedPrompt}
         </p>

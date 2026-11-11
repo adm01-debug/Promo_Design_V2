@@ -180,8 +180,7 @@ export async function retryWithBackoff<T>(
 ): Promise<T> {
   const opts: RetryOptions = { ...DEFAULT_RETRY_OPTIONS, ...options };
   if (opts.maxAttempts < 1) throw new Error("maxAttempts must be >= 1");
-  const sleep =
-    opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const rng = opts.rng ?? Math.random;
 
   let lastError: unknown;
@@ -226,7 +225,12 @@ export interface BitrixCallOptions {
  */
 export async function bitrixCall<T = unknown>(opts: BitrixCallOptions): Promise<T> {
   const {
-    webhookBase, method, payload, timeoutMs = 15_000, retry, breaker,
+    webhookBase,
+    method,
+    payload,
+    timeoutMs = 15_000,
+    retry,
+    breaker,
     fetchImpl = fetch,
   } = opts;
 
@@ -247,7 +251,11 @@ export async function bitrixCall<T = unknown>(opts: BitrixCallOptions): Promise<
 
       if (!res.ok) {
         let body: unknown = null;
-        try { body = await res.json(); } catch { /* body may be empty */ }
+        try {
+          body = await res.json();
+        } catch {
+          /* body may be empty */
+        }
         const err = new BitrixRequestError(res.status, body);
         if (isRetryableError(err)) breaker.recordFailure();
         // Non-retryable errors don't count against the breaker: they're

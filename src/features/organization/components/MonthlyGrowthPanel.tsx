@@ -81,7 +81,11 @@ export function MonthlyGrowthPanel() {
                 className="flex items-center justify-between p-2 rounded-md border text-xs gap-2"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  {idx < 3 && <Trophy className={`h-3.5 w-3.5 shrink-0 ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-muted-foreground" : "text-orange-700"}`} />}
+                  {idx < 3 && (
+                    <Trophy
+                      className={`h-3.5 w-3.5 shrink-0 ${idx === 0 ? "text-amber-500" : idx === 1 ? "text-muted-foreground" : "text-orange-700"}`}
+                    />
+                  )}
                   <span className="font-mono text-muted-foreground truncate">{g.table}</span>
                   <Badge variant="outline" className={`${meta.color} text-[9px] h-4 px-1 shrink-0`}>
                     {meta.label}
@@ -92,7 +96,8 @@ export function MonthlyGrowthPanel() {
                     {formatBytes(g.current_bytes)}
                   </span>
                   <span className={`${meta.color} min-w-[60px] text-right`}>
-                    {pct > 0 ? "+" : ""}{pct.toFixed(1)}%
+                    {pct > 0 ? "+" : ""}
+                    {pct.toFixed(1)}%
                   </span>
                 </div>
               </div>

@@ -5,9 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Activity, Lock, AlertTriangle, Ban, Skull } from "lucide-react";
 import { toast } from "sonner";
@@ -80,13 +86,17 @@ export function LiveActivityPanel() {
       if (error) throw error;
       const ok = (data as { result?: { ok?: boolean } })?.result?.ok;
       if (ok) {
-        toast.success(mode === "cancel" ? `Cancelamento enviado ao PID ${pid}` : `PID ${pid} terminado`);
+        toast.success(
+          mode === "cancel" ? `Cancelamento enviado ao PID ${pid}` : `PID ${pid} terminado`,
+        );
       } else {
         toast.warning(`Comando enviado ao PID ${pid}, mas o backend não confirmou`);
       }
       await qc.invalidateQueries({ queryKey: ["admin-maintenance", "live_activity"] });
     } catch (err) {
-      toast.error(`Falha ao encerrar PID ${pid}: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(
+        `Falha ao encerrar PID ${pid}: ${err instanceof Error ? err.message : String(err)}`,
+      );
     } finally {
       setKilling(null);
     }
@@ -114,14 +124,19 @@ export function LiveActivityPanel() {
                   body: { action: "check_lock_alerts", lock_threshold_ms: 30_000 },
                 });
                 if (error) throw error;
-                const r = (data as { result?: { locks_found?: number; alerts_created?: number } })?.result;
+                const r = (data as { result?: { locks_found?: number; alerts_created?: number } })
+                  ?.result;
                 if ((r?.locks_found ?? 0) === 0) {
                   toast.success("Nenhum lock acima de 30s no momento");
                 } else {
-                  toast.warning(`${r?.locks_found} lock(s) detectado(s); ${r?.alerts_created ?? 0} alerta(s) criado(s)`);
+                  toast.warning(
+                    `${r?.locks_found} lock(s) detectado(s); ${r?.alerts_created ?? 0} alerta(s) criado(s)`,
+                  );
                 }
               } catch (err) {
-                toast.error(`Falha na verificação: ${err instanceof Error ? err.message : String(err)}`);
+                toast.error(
+                  `Falha na verificação: ${err instanceof Error ? err.message : String(err)}`,
+                );
               }
             }}
           >
@@ -156,11 +171,16 @@ export function LiveActivityPanel() {
                 </p>
                 <div className="space-y-2">
                   {locks.map((l) => (
-                    <div key={`${l.blocked_pid}-${l.blocking_pid}`} className="text-[11px] font-mono">
+                    <div
+                      key={`${l.blocked_pid}-${l.blocking_pid}`}
+                      className="text-[11px] font-mono"
+                    >
                       <div>
                         <span className="text-destructive">PID {l.blocked_pid}</span> aguarda{" "}
                         <span className="font-semibold">PID {l.blocking_pid}</span>{" "}
-                        <span className="text-muted-foreground">({formatDuration(l.blocked_ms)})</span>
+                        <span className="text-muted-foreground">
+                          ({formatDuration(l.blocked_ms)})
+                        </span>
                       </div>
                       <div className="text-muted-foreground truncate">↳ {l.blocked_query}</div>
                     </div>
@@ -198,7 +218,9 @@ export function LiveActivityPanel() {
                             </Badge>
                           </td>
                           <td className="py-2 pr-3 font-mono">
-                            {long && <AlertTriangle className="inline h-3 w-3 text-amber-500 mr-1" />}
+                            {long && (
+                              <AlertTriangle className="inline h-3 w-3 text-amber-500 mr-1" />
+                            )}
                             {formatDuration(a.duration_ms)}
                           </td>
                           <td className="py-2 pr-3 text-muted-foreground">
@@ -216,7 +238,11 @@ export function LiveActivityPanel() {
                                 onClick={() => killBackend(a.pid, "cancel")}
                                 title="Cancelar query (pg_cancel_backend)"
                               >
-                                {isKilling ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3" />}
+                                {isKilling ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Ban className="h-3 w-3" />
+                                )}
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -231,7 +257,9 @@ export function LiveActivityPanel() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Terminar sessão PID {a.pid}?</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      Terminar sessão PID {a.pid}?
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
                                       Isso encerra a conexão à força (rollback da transação atual).
                                       Prefira <strong>Cancelar</strong> antes de terminar.
@@ -239,7 +267,9 @@ export function LiveActivityPanel() {
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => killBackend(a.pid, "terminate")}>
+                                    <AlertDialogAction
+                                      onClick={() => killBackend(a.pid, "terminate")}
+                                    >
                                       Terminar sessão
                                     </AlertDialogAction>
                                   </AlertDialogFooter>

@@ -2,7 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 const MOCK_HEADERS = {
   "Content-Type": "application/json",
-  "Authorization": "Bearer mock-token",
+  Authorization: "Bearer mock-token",
 };
 
 Deno.test("asset-ocr: validate schema - missing params", async () => {
@@ -11,10 +11,10 @@ Deno.test("asset-ocr: validate schema - missing params", async () => {
     headers: MOCK_HEADERS,
     body: JSON.stringify({}),
   });
-  
+
   // This is a unit test for the logic, but since the function is wrapped in serve()
   // we would ideally test the inner handler. For now, we validate the expectation.
-  assertEquals(true, true); 
+  assertEquals(true, true);
 });
 
 Deno.test("asset-ocr: validate schema - invalid UUID", async () => {
@@ -24,7 +24,7 @@ Deno.test("asset-ocr: validate schema - invalid UUID", async () => {
     body: JSON.stringify({
       assetId: "not-a-uuid",
       filePath: "test.png",
-      mimeType: "image/png"
+      mimeType: "image/png",
     }),
   });
   assertEquals(true, true);

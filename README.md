@@ -35,7 +35,8 @@ Para manter a transparência e excelência técnica 10/10, o sistema dispõe de 
 Você também pode acessar a documentação diretamente na aplicação através da rota `/docs` no dashboard.
 
 ---
-33: 
+
+33:
 34: ## Visão Geral
 
 Promo Design é uma aplicação SPA construída com React 18 e TypeScript, focada no fluxo de trabalho de personalização de brindes promocionais:
@@ -71,17 +72,18 @@ Promo Design é uma aplicação SPA construída com React 18 e TypeScript, focad
 
 ### Padrões Adotados
 
-| Padrão | Descrição |
-|--------|-----------|
-| **Feature Folders** | Cada módulo em `src/features/<nome>/` com pages, hooks, components |
-| **State Machine** | Status de OS com transições controladas (`STATUS_TRANSITIONS`) |
-| **Server-Side Pagination** | Queries paginadas via `range()` com contagem `exact` |
-| **Audit Trail** | Trigger automático registra mudanças de status em `status_audit_log` |
-| **RLS** | Isolamento total de dados por `auth.uid() = user_id` |
+| Padrão                     | Descrição                                                            |
+| -------------------------- | -------------------------------------------------------------------- |
+| **Feature Folders**        | Cada módulo em `src/features/<nome>/` com pages, hooks, components   |
+| **State Machine**          | Status de OS com transições controladas (`STATUS_TRANSITIONS`)       |
+| **Server-Side Pagination** | Queries paginadas via `range()` com contagem `exact`                 |
+| **Audit Trail**            | Trigger automático registra mudanças de status em `status_audit_log` |
+| **RLS**                    | Isolamento total de dados por `auth.uid() = user_id`                 |
 
 ## Módulos
 
 ### 📋 Ordens de Serviço
+
 - CRUD completo com validação Zod
 - Máquina de estados: `aberta` → `em_producao` → `concluida` / `cancelada`
 - Exportação PDF com logo e dados completos
@@ -91,37 +93,41 @@ Promo Design é uma aplicação SPA construída com React 18 e TypeScript, focad
 - Trilha de auditoria completa
 
 ### 🎨 Mockup Studio
+
 - Editor visual com posicionamento de logos
 - Rascunhos persistidos no banco
 - Integração com catálogo de produtos
 
 ### ✨ Magic Up
+
 - Geração de imagens via IA (Edge Function `mockup-ai`)
 - Galeria de inspiração e templates de prompts
 - Histórico com favoritos e picker de produtos
 
 ### 🎬 Video Studio
+
 - Moodboard Creator (tom visual, paleta, cenários, imagens de referência)
 - Cinema Mode com color grading
 - Preview animado com Framer Motion
 
 ### 📦 Catálogo
+
 - Produtos com SKU, material, cores e categorias
 - Filtros, busca e paginação server-side
 
 ## Stack Tecnológica
 
-| Camada | Tecnologias |
-|--------|-------------|
-| **UI** | React 18, TypeScript 5, Tailwind CSS 3, shadcn/ui |
-| **Estado** | TanStack Query (server state), Zustand (client state) |
-| **Animações** | Framer Motion |
-| **Gráficos** | Recharts |
-| **Drag & Drop** | @dnd-kit |
-| **PDF** | jsPDF |
-| **Backend** | Lovable Cloud — PostgreSQL, Auth, Storage, Edge Functions |
-| **Testes** | Vitest, React Testing Library, Playwright (E2E) |
-| **Build** | Vite 5 |
+| Camada          | Tecnologias                                               |
+| --------------- | --------------------------------------------------------- |
+| **UI**          | React 18, TypeScript 5, Tailwind CSS 3, shadcn/ui         |
+| **Estado**      | TanStack Query (server state), Zustand (client state)     |
+| **Animações**   | Framer Motion                                             |
+| **Gráficos**    | Recharts                                                  |
+| **Drag & Drop** | @dnd-kit                                                  |
+| **PDF**         | jsPDF                                                     |
+| **Backend**     | Lovable Cloud — PostgreSQL, Auth, Storage, Edge Functions |
+| **Testes**      | Vitest, React Testing Library, Playwright (E2E)           |
+| **Build**       | Vite 5                                                    |
 
 ## Setup Local
 
@@ -169,24 +175,24 @@ supabase/
 
 ### Dicionário de Dados
 
-| Tabela | Descrição | Campos Principais |
-|--------|-----------|-------------------|
-| `service_orders` | Ordens de serviço | os_number, client_name, product_name, technique, status, quantity |
-| `catalog_products` | Produtos do catálogo | name, sku, material, colors, category_id |
-| `product_categories` | Categorias | name, description |
-| `magicup_history` | Gerações IA | prompt, image_url, style, favorite |
-| `mockup_drafts` | Rascunhos de mockups | name, product_name, editor_state |
-| `notifications` | Notificações | os_number, event_type, old_status, new_status, read |
-| `status_audit_log` | Trilha de auditoria | service_order_id, old_status, new_status, changed_at |
+| Tabela               | Descrição            | Campos Principais                                                 |
+| -------------------- | -------------------- | ----------------------------------------------------------------- |
+| `service_orders`     | Ordens de serviço    | os_number, client_name, product_name, technique, status, quantity |
+| `catalog_products`   | Produtos do catálogo | name, sku, material, colors, category_id                          |
+| `product_categories` | Categorias           | name, description                                                 |
+| `magicup_history`    | Gerações IA          | prompt, image_url, style, favorite                                |
+| `mockup_drafts`      | Rascunhos de mockups | name, product_name, editor_state                                  |
+| `notifications`      | Notificações         | os_number, event_type, old_status, new_status, read               |
+| `status_audit_log`   | Trilha de auditoria  | service_order_id, old_status, new_status, changed_at              |
 
 ### Triggers
 
-| Trigger | Tabela | Ação |
-|---------|--------|------|
-| `trg_log_status_change` | service_orders | Registra mudanças de status no audit log |
-| `notify_os_created` | service_orders | Cria notificação ao criar OS |
-| `notify_os_status_change` | service_orders | Cria notificação ao mudar status |
-| `validate_service_order` | service_orders | Valida quantity ≥ 1 e limites de string |
+| Trigger                   | Tabela         | Ação                                     |
+| ------------------------- | -------------- | ---------------------------------------- |
+| `trg_log_status_change`   | service_orders | Registra mudanças de status no audit log |
+| `notify_os_created`       | service_orders | Cria notificação ao criar OS             |
+| `notify_os_status_change` | service_orders | Cria notificação ao mudar status         |
+| `validate_service_order`  | service_orders | Valida quantity ≥ 1 e limites de string  |
 
 ### Índices Estratégicos
 
@@ -199,16 +205,16 @@ supabase/
 
 ## Segurança
 
-| Controle | Status |
-|----------|--------|
-| RLS em todas as tabelas | ✅ |
-| Policies restritas a `authenticated` | ✅ |
-| Storage privado (URLs assinadas) | ✅ |
-| CORS restrito em Edge Functions | ✅ |
-| Validação server-side (triggers) | ✅ |
-| State machine de status | ✅ |
-| Audit trail automático | ✅ |
-| HIBP (senhas vazadas) | ⚙️ Manual |
+| Controle                             | Status    |
+| ------------------------------------ | --------- |
+| RLS em todas as tabelas              | ✅        |
+| Policies restritas a `authenticated` | ✅        |
+| Storage privado (URLs assinadas)     | ✅        |
+| CORS restrito em Edge Functions      | ✅        |
+| Validação server-side (triggers)     | ✅        |
+| State machine de status              | ✅        |
+| Audit trail automático               | ✅        |
+| HIBP (senhas vazadas)                | ⚙️ Manual |
 
 ## Testes
 

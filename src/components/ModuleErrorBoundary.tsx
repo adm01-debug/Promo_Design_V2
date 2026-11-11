@@ -61,7 +61,11 @@ class ModuleErrorBoundary extends Component<Props, State> {
                 "Um erro inesperado interrompeu esta área. Os outros módulos continuam funcionando."}
             </p>
           </div>
-          <Button onClick={this.handleRetry} className="gap-2" aria-label="Tentar carregar módulo novamente">
+          <Button
+            onClick={this.handleRetry}
+            className="gap-2"
+            aria-label="Tentar carregar módulo novamente"
+          >
             <RefreshCw className="w-4 h-4" aria-hidden="true" /> Tentar novamente
           </Button>
           <p className="text-[10px] text-muted-foreground font-mono">

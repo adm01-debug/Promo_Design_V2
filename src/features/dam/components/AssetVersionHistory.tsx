@@ -16,9 +16,19 @@ import { AssetAuditTrail } from "./AssetAuditTrail";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useVersionFilters, type SortKey, type ViewMode, type TimelineGrouping } from "../hooks/use-version-filters";
+import {
+  useVersionFilters,
+  type SortKey,
+  type ViewMode,
+  type TimelineGrouping,
+} from "../hooks/use-version-filters";
 import { VersionTimeline } from "./version-history/VersionTimeline";
-import { VersionThumb, VersionDescription, CopyVersionLinkButton, formatDateTime } from "./version-history/VersionHistoryItems";
+import {
+  VersionThumb,
+  VersionDescription,
+  CopyVersionLinkButton,
+  formatDateTime,
+} from "./version-history/VersionHistoryItems";
 
 interface Props {
   asset: Asset;
@@ -48,7 +58,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
     authors,
     filteredVersions,
     hasActiveFilters,
-    resetFilters
+    resetFilters,
   } = useVersionFilters(versions);
 
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -64,7 +74,9 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full" />
+        ))}
       </div>
     );
   }
@@ -124,16 +136,12 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {filteredVersions.length} de {versions.length} {versions.length === 1 ? "versão" : "versões"}
+            {filteredVersions.length} de {versions.length}{" "}
+            {versions.length === 1 ? "versão" : "versões"}
           </span>
           <div className="flex items-center gap-1">
             {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={resetFilters}
-              >
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={resetFilters}>
                 <X className="w-3 h-3 mr-1" />
                 Limpar filtros
               </Button>
@@ -165,7 +173,8 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
                 className="scale-75 origin-left"
               />
               <Label htmlFor="timeline-follow-sort" className="cursor-pointer text-xs font-normal">
-                Seguir ordenação selecionada {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
+                Seguir ordenação selecionada{" "}
+                {timelineFollowSort ? "" : "(padrão: mais recente → mais antiga)"}
               </Label>
             </div>
             <div className="flex items-center gap-1.5">
@@ -178,10 +187,18 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
                 className="h-7"
                 aria-label="Granularidade do agrupamento da timeline"
               >
-                <ToggleGroupItem value="auto" className="h-7 px-2 text-[11px]">Auto</ToggleGroupItem>
-                <ToggleGroupItem value="month" className="h-7 px-2 text-[11px]">Mês</ToggleGroupItem>
-                <ToggleGroupItem value="week" className="h-7 px-2 text-[11px]">Semana</ToggleGroupItem>
-                <ToggleGroupItem value="day" className="h-7 px-2 text-[11px]">Dia</ToggleGroupItem>
+                <ToggleGroupItem value="auto" className="h-7 px-2 text-[11px]">
+                  Auto
+                </ToggleGroupItem>
+                <ToggleGroupItem value="month" className="h-7 px-2 text-[11px]">
+                  Mês
+                </ToggleGroupItem>
+                <ToggleGroupItem value="week" className="h-7 px-2 text-[11px]">
+                  Semana
+                </ToggleGroupItem>
+                <ToggleGroupItem value="day" className="h-7 px-2 text-[11px]">
+                  Dia
+                </ToggleGroupItem>
               </ToggleGroup>
             </div>
           </div>
@@ -192,11 +209,7 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
         <div className="text-sm text-muted-foreground flex flex-col items-center gap-2 py-6 border border-dashed rounded-md">
           <History className="w-5 h-5" />
           Nenhuma versão corresponde aos filtros
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetFilters}
-          >
+          <Button variant="outline" size="sm" onClick={resetFilters}>
             Limpar filtros
           </Button>
         </div>
@@ -233,9 +246,15 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm truncate">{v.name}</span>
-                        {isCurrent && <Badge variant="default" className="text-[10px]">atual</Badge>}
+                        {isCurrent && (
+                          <Badge variant="default" className="text-[10px]">
+                            atual
+                          </Badge>
+                        )}
                         {isSelected && !isCurrent && (
-                          <Badge variant="outline" className="text-[10px]">aberta</Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            aberta
+                          </Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -260,7 +279,8 @@ export function AssetVersionHistory({ asset, onSelect }: Props) {
             className="w-full"
             onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
           >
-            Carregar mais ({Math.min(PAGE_SIZE, remaining)} de {remaining} restante{remaining > 1 ? "s" : ""})
+            Carregar mais ({Math.min(PAGE_SIZE, remaining)} de {remaining} restante
+            {remaining > 1 ? "s" : ""})
           </Button>
           {filteredVersions.length > PAGE_SIZE * 2 && (
             <Button

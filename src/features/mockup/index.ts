@@ -26,5 +26,16 @@ export {
   PERSPECTIVE_PRESETS,
 } from "./lib/canvas-utils";
 export type { SurfaceType } from "./lib/canvas-utils";
-export { getWarpedPreview, getWarpedPreviewWorker, clearWarpCache, applyMeshWarp } from "./lib/mesh-warp";
-export type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "./lib/db-types";
+export {
+  getWarpedPreview,
+  getWarpedPreviewWorker,
+  clearWarpCache,
+  applyMeshWarp,
+} from "./lib/mesh-warp";
+export type {
+  DbProduct,
+  DbProductImage,
+  DbPrintAreaTechnique,
+  DbCategory,
+  DbProductVariant,
+} from "./lib/db-types";

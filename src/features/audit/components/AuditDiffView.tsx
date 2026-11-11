@@ -22,11 +22,7 @@ export function changedKeys(oldV: unknown, newV: unknown): Set<string> {
   return s;
 }
 
-function renderJson(
-  value: unknown,
-  highlight: Set<string>,
-  onlyChanged: boolean,
-): React.ReactNode {
+function renderJson(value: unknown, highlight: Set<string>, onlyChanged: boolean): React.ReactNode {
   if (!isObj(value)) {
     return (
       <pre className="text-xs whitespace-pre-wrap break-all">{JSON.stringify(value, null, 2)}</pre>

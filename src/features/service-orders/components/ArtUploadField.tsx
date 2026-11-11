@@ -15,7 +15,14 @@ interface ArtUploadFieldProps {
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading, onPickFromDam }: ArtUploadFieldProps) => {
+const ArtUploadField = ({
+  artFile,
+  artFileDataUrl,
+  onUpload,
+  onRemove,
+  uploading,
+  onPickFromDam,
+}: ArtUploadFieldProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +54,12 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
       <div className="flex items-center justify-between mb-2">
         <Label className="text-xs text-muted-foreground">Arquivo da Arte</Label>
         {onPickFromDam && !artFileDataUrl && !artFile && (
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={onPickFromDam}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1.5"
+            onClick={onPickFromDam}
+          >
             <Library className="w-3 h-3" /> Escolher do DAM
           </Button>
         )}
@@ -69,10 +81,20 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
               <p className="text-sm font-medium text-foreground truncate">{artFile}</p>
               <p className="text-[10px] text-muted-foreground mt-1">Preview da arte carregada</p>
               <div className="flex gap-2 mt-3">
-                <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => inputRef.current?.click()}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => inputRef.current?.click()}
+                >
                   <Upload className="w-3 h-3" /> Trocar
                 </Button>
-                <Button variant="ghost" size="sm" className="text-xs gap-1 text-destructive" onClick={onRemove}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs gap-1 text-destructive"
+                  onClick={onRemove}
+                >
                   <X className="w-3 h-3" /> Remover
                 </Button>
               </div>
@@ -84,9 +106,16 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
           <FileImage className="w-8 h-8 text-muted-foreground shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{artFile}</p>
-            <p className="text-[10px] text-muted-foreground">Arquivo sem preview (formato não-imagem)</p>
+            <p className="text-[10px] text-muted-foreground">
+              Arquivo sem preview (formato não-imagem)
+            </p>
           </div>
-          <Button variant="ghost" size="sm" className="text-xs gap-1 text-destructive" onClick={onRemove}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 text-destructive"
+            onClick={onRemove}
+          >
             <X className="w-3 h-3" /> Remover
           </Button>
         </div>
@@ -104,7 +133,9 @@ const ArtUploadField = ({ artFile, artFileDataUrl, onUpload, onRemove, uploading
         >
           <Upload className="w-8 h-8 text-muted-foreground/40 group-hover:text-primary/60 transition-colors mb-2" />
           <p className="text-sm text-muted-foreground">Arraste a arte ou clique para selecionar</p>
-          <p className="text-[10px] text-muted-foreground/60 mt-1">PNG, JPG, SVG, AI, PDF, EPS — upload na nuvem ☁️</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-1">
+            PNG, JPG, SVG, AI, PDF, EPS — upload na nuvem ☁️
+          </p>
         </div>
       )}
     </div>

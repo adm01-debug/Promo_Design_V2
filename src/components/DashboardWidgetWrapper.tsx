@@ -10,14 +10,10 @@ interface DashboardWidgetWrapperProps {
 }
 
 const DashboardWidgetWrapper = ({ id, children, isEditing }: DashboardWidgetWrapperProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id, disabled: !isEditing });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !isEditing,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -40,9 +36,7 @@ const DashboardWidgetWrapper = ({ id, children, isEditing }: DashboardWidgetWrap
       )}
       <div
         className={`transition-all ${
-          isEditing
-            ? "ring-1 ring-dashed ring-border rounded-xl pl-6 hover:ring-primary/30"
-            : ""
+          isEditing ? "ring-1 ring-dashed ring-border rounded-xl pl-6 hover:ring-primary/30" : ""
         } ${isDragging ? "opacity-50 scale-[0.98]" : ""}`}
       >
         {children}

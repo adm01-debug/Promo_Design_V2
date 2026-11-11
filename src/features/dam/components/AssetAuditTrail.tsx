@@ -2,19 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { History, ChevronDown, GitCompare, Plus, Pencil, Trash2, ArrowDownWideNarrow, ArrowUpWideNarrow, X, Link2 } from "lucide-react";
+import {
+  History,
+  ChevronDown,
+  GitCompare,
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowDownWideNarrow,
+  ArrowUpWideNarrow,
+  X,
+  Link2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -22,12 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -130,16 +129,13 @@ export function AssetAuditTrail({ asset }: Props) {
   }, [entries, actionFilter, userFilter, fieldFilter]);
 
   const toggleField = (f: TrackedField) =>
-    setFieldFilter((prev) =>
-      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f],
-    );
+    setFieldFilter((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
   const clearExtra = () => {
     setUserFilter("ALL");
     setFieldFilter([]);
     setSortDir("desc");
   };
-  const hasExtraFilters =
-    userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
+  const hasExtraFilters = userFilter !== "ALL" || fieldFilter.length > 0 || sortDir !== "desc";
 
   // Open the diff dialog automatically when ?audit=<id> is present
   useEffect(() => {
@@ -250,9 +246,7 @@ export function AssetAuditTrail({ asset }: Props) {
               </Badge>
             )}
           </span>
-          <ChevronDown
-            className={cn("w-4 h-4 transition-transform", open && "rotate-180")}
-          />
+          <ChevronDown className={cn("w-4 h-4 transition-transform", open && "rotate-180")} />
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-3 space-y-2">
@@ -268,252 +262,262 @@ export function AssetAuditTrail({ asset }: Props) {
           </div>
         ) : (
           <>
-          <ToggleGroup
-            type="single"
-            value={actionFilter}
-            onValueChange={(v) =>
-              setActionFilter((v as AssetAuditEntry["action"] | "ALL") || "ALL")
-            }
-            className="justify-start flex-wrap gap-1"
-            size="sm"
-          >
-            <ToggleGroupItem value="ALL" className="h-7 px-2 text-xs gap-1">
-              Todos
-              <Badge variant="secondary" className="text-[10px] ml-0.5">{entries.length}</Badge>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="INSERT" className="h-7 px-2 text-xs gap-1">
-              <Plus className="w-3 h-3" />
-              Criados
-              <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.INSERT}</Badge>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="UPDATE" className="h-7 px-2 text-xs gap-1">
-              <Pencil className="w-3 h-3" />
-              Atualizados
-              <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.UPDATE}</Badge>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="DELETE" className="h-7 px-2 text-xs gap-1">
-              <Trash2 className="w-3 h-3" />
-              Removidos
-              <Badge variant="secondary" className="text-[10px] ml-0.5">{counts.DELETE}</Badge>
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Select value={userFilter} onValueChange={setUserFilter}>
-              <SelectTrigger className="h-7 px-2 text-xs w-auto min-w-[140px]">
-                <SelectValue placeholder="Usuário" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL" className="text-xs">Todos os usuários</SelectItem>
-                {userOptions.map((u) => (
-                  <SelectItem key={u} value={u} className="text-xs font-mono">
-                    {shortId(u)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
-                  Campo
-                  {fieldFilter.length > 0 && (
-                    <Badge variant="secondary" className="text-[10px] ml-0.5">
-                      {fieldFilter.length}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel className="text-xs">Campos alterados</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {TRACKED_FIELDS.map((f) => (
-                  <DropdownMenuCheckboxItem
-                    key={f}
-                    checked={fieldFilter.includes(f)}
-                    onCheckedChange={() => toggleField(f)}
-                    className="text-xs capitalize"
-                  >
-                    {FIELD_LABELS[f]}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              variant="outline"
+            <ToggleGroup
+              type="single"
+              value={actionFilter}
+              onValueChange={(v) =>
+                setActionFilter((v as AssetAuditEntry["action"] | "ALL") || "ALL")
+              }
+              className="justify-start flex-wrap gap-1"
               size="sm"
-              className="h-7 px-2 text-xs gap-1"
-              onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-              title={sortDir === "desc" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
             >
-              {sortDir === "desc" ? (
-                <ArrowDownWideNarrow className="w-3 h-3" />
-              ) : (
-                <ArrowUpWideNarrow className="w-3 h-3" />
-              )}
-              Data
-            </Button>
+              <ToggleGroupItem value="ALL" className="h-7 px-2 text-xs gap-1">
+                Todos
+                <Badge variant="secondary" className="text-[10px] ml-0.5">
+                  {entries.length}
+                </Badge>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="INSERT" className="h-7 px-2 text-xs gap-1">
+                <Plus className="w-3 h-3" />
+                Criados
+                <Badge variant="secondary" className="text-[10px] ml-0.5">
+                  {counts.INSERT}
+                </Badge>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="UPDATE" className="h-7 px-2 text-xs gap-1">
+                <Pencil className="w-3 h-3" />
+                Atualizados
+                <Badge variant="secondary" className="text-[10px] ml-0.5">
+                  {counts.UPDATE}
+                </Badge>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="DELETE" className="h-7 px-2 text-xs gap-1">
+                <Trash2 className="w-3 h-3" />
+                Removidos
+                <Badge variant="secondary" className="text-[10px] ml-0.5">
+                  {counts.DELETE}
+                </Badge>
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Select value={userFilter} onValueChange={setUserFilter}>
+                <SelectTrigger className="h-7 px-2 text-xs w-auto min-w-[140px]">
+                  <SelectValue placeholder="Usuário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL" className="text-xs">
+                    Todos os usuários
+                  </SelectItem>
+                  {userOptions.map((u) => (
+                    <SelectItem key={u} value={u} className="text-xs font-mono">
+                      {shortId(u)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            {hasExtraFilters && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                    Campo
+                    {fieldFilter.length > 0 && (
+                      <Badge variant="secondary" className="text-[10px] ml-0.5">
+                        {fieldFilter.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel className="text-xs">Campos alterados</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {TRACKED_FIELDS.map((f) => (
+                    <DropdownMenuCheckboxItem
+                      key={f}
+                      checked={fieldFilter.includes(f)}
+                      onCheckedChange={() => toggleField(f)}
+                      className="text-xs capitalize"
+                    >
+                      {FIELD_LABELS[f]}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 className="h-7 px-2 text-xs gap-1"
-                onClick={clearExtra}
+                onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+                title={sortDir === "desc" ? "Mais recentes primeiro" : "Mais antigos primeiro"}
               >
-                <X className="w-3 h-3" />
-                Limpar
+                {sortDir === "desc" ? (
+                  <ArrowDownWideNarrow className="w-3 h-3" />
+                ) : (
+                  <ArrowUpWideNarrow className="w-3 h-3" />
+                )}
+                Data
               </Button>
-            )}
-          </div>
-          {filteredEntries.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-3 text-center border border-dashed rounded-md">
-              Nenhum registro corresponde ao filtro
-            </div>
-          ) : (
-          <ul className="space-y-2">
-            {visibleEntries.map((e) => {
-              const meta = ACTION_META[e.action];
-              const Icon = meta.icon;
-              const prev = prevSnapshots.get(e.id) ?? null;
-              const canCompare = e.action === "UPDATE" && !!prev && !!e.new_values;
-              return (
-                <li
-                  key={e.id}
-                  className="rounded-md border border-border p-2.5 space-y-2 bg-card/50"
+
+              {hasExtraFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs gap-1"
+                  onClick={clearExtra}
                 >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <Badge variant={meta.variant} className="text-[10px] gap-1">
-                        <Icon className="w-3 h-3" />
-                        {meta.label}
-                      </Badge>
-                      {e.version !== null && (
-                        <Badge variant="outline" className="text-[10px]">
-                          v{e.version}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(e.created_at), "dd/MM/yyyy HH:mm")}
-                      </span>
-                      <span className="text-xs font-mono text-muted-foreground">
-                        {shortId(e.user_id)}
-                      </span>
-                    </div>
-                    {e.action === "UPDATE" && (
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs"
-                          onClick={() => openDiff(e)}
-                          disabled={!canCompare}
-                          title={
-                            canCompare
-                              ? "Comparar metadados com a versão anterior"
-                              : "Sem versão anterior para comparar"
-                          }
-                        >
-                          <GitCompare className="w-3 h-3 mr-1" />
-                          Comparar com anterior
-                        </Button>
-                        {canCompare && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => copyDeepLink(e)}
-                            title="Copiar link direto deste diff"
-                            aria-label="Copiar link direto deste diff"
-                          >
-                            <Link2 className="w-3 h-3" />
-                          </Button>
+                  <X className="w-3 h-3" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+            {filteredEntries.length === 0 ? (
+              <div className="text-sm text-muted-foreground py-3 text-center border border-dashed rounded-md">
+                Nenhum registro corresponde ao filtro
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {visibleEntries.map((e) => {
+                  const meta = ACTION_META[e.action];
+                  const Icon = meta.icon;
+                  const prev = prevSnapshots.get(e.id) ?? null;
+                  const canCompare = e.action === "UPDATE" && !!prev && !!e.new_values;
+                  return (
+                    <li
+                      key={e.id}
+                      className="rounded-md border border-border p-2.5 space-y-2 bg-card/50"
+                    >
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <Badge variant={meta.variant} className="text-[10px] gap-1">
+                            <Icon className="w-3 h-3" />
+                            {meta.label}
+                          </Badge>
+                          {e.version !== null && (
+                            <Badge variant="outline" className="text-[10px]">
+                              v{e.version}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(e.created_at), "dd/MM/yyyy HH:mm")}
+                          </span>
+                          <span className="text-xs font-mono text-muted-foreground">
+                            {shortId(e.user_id)}
+                          </span>
+                        </div>
+                        {e.action === "UPDATE" && (
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => openDiff(e)}
+                              disabled={!canCompare}
+                              title={
+                                canCompare
+                                  ? "Comparar metadados com a versão anterior"
+                                  : "Sem versão anterior para comparar"
+                              }
+                            >
+                              <GitCompare className="w-3 h-3 mr-1" />
+                              Comparar com anterior
+                            </Button>
+                            {canCompare && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => copyDeepLink(e)}
+                                title="Copiar link direto deste diff"
+                                aria-label="Copiar link direto deste diff"
+                              >
+                                <Link2 className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                  {e.action === "UPDATE" && e.changed_fields.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      <TooltipProvider delayDuration={150}>
-                        {e.changed_fields.map((f: TrackedField) => {
-                          const oldRaw = e.old_values?.[f as string];
-                          const newRaw = e.new_values?.[f as string];
-                          const oldStr = truncate(formatValue(oldRaw));
-                          const newStr = truncate(formatValue(newRaw));
-                          return (
-                            <Tooltip key={f}>
-                              <TooltipTrigger asChild>
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 cursor-help"
-                                  tabIndex={0}
-                                >
-                                  {FIELD_LABELS[f]}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent
-                                side="top"
-                                align="start"
-                                className="max-w-md p-0 overflow-hidden"
-                              >
-                                <div className="px-3 py-2 border-b bg-muted/40 text-[11px] font-medium capitalize">
-                                  {FIELD_LABELS[f]}
-                                </div>
-                                <div className="grid grid-cols-1 gap-2 p-3 text-xs">
-                                  <div>
-                                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                                      Antes
+                      {e.action === "UPDATE" && e.changed_fields.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          <TooltipProvider delayDuration={150}>
+                            {e.changed_fields.map((f: TrackedField) => {
+                              const oldRaw = e.old_values?.[f as string];
+                              const newRaw = e.new_values?.[f as string];
+                              const oldStr = truncate(formatValue(oldRaw));
+                              const newStr = truncate(formatValue(newRaw));
+                              return (
+                                <Tooltip key={f}>
+                                  <TooltipTrigger asChild>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 cursor-help"
+                                      tabIndex={0}
+                                    >
+                                      {FIELD_LABELS[f]}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="top"
+                                    align="start"
+                                    className="max-w-md p-0 overflow-hidden"
+                                  >
+                                    <div className="px-3 py-2 border-b bg-muted/40 text-[11px] font-medium capitalize">
+                                      {FIELD_LABELS[f]}
                                     </div>
-                                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug max-h-32 overflow-auto rounded bg-destructive/10 text-destructive p-2">
-                                      {oldStr}
-                                    </pre>
-                                  </div>
-                                  <div>
-                                    <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                                      Depois
+                                    <div className="grid grid-cols-1 gap-2 p-3 text-xs">
+                                      <div>
+                                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                                          Antes
+                                        </div>
+                                        <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug max-h-32 overflow-auto rounded bg-destructive/10 text-destructive p-2">
+                                          {oldStr}
+                                        </pre>
+                                      </div>
+                                      <div>
+                                        <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                                          Depois
+                                        </div>
+                                        <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug max-h-32 overflow-auto rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-2">
+                                          {newStr}
+                                        </pre>
+                                      </div>
                                     </div>
-                                    <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-snug max-h-32 overflow-auto rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-2">
-                                      {newStr}
-                                    </pre>
-                                  </div>
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
-                      </TooltipProvider>
-                    </div>
-                  )}
-                  {e.action === "UPDATE" && e.changed_fields.length === 0 && (
-                    <div className="text-[11px] text-muted-foreground italic">
-                      Sem mudanças nos campos rastreados
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          )}
-          {hasMore && (
-            <div
-              ref={sentinelRef}
-              className="pt-2 flex flex-col items-center gap-1 text-[11px] text-muted-foreground"
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                          </TooltipProvider>
+                        </div>
+                      )}
+                      {e.action === "UPDATE" && e.changed_fields.length === 0 && (
+                        <div className="text-[11px] text-muted-foreground italic">
+                          Sem mudanças nos campos rastreados
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {hasMore && (
+              <div
+                ref={sentinelRef}
+                className="pt-2 flex flex-col items-center gap-1 text-[11px] text-muted-foreground"
               >
-                Carregar mais ({filteredEntries.length - visibleEntries.length} restantes)
-              </Button>
-            </div>
-          )}
-          {!hasMore && filteredEntries.length > PAGE_SIZE && (
-            <div className="pt-1 text-center text-[11px] text-muted-foreground">
-              Mostrando todos os {filteredEntries.length} registros
-            </div>
-          )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                >
+                  Carregar mais ({filteredEntries.length - visibleEntries.length} restantes)
+                </Button>
+              </div>
+            )}
+            {!hasMore && filteredEntries.length > PAGE_SIZE && (
+              <div className="pt-1 text-center text-[11px] text-muted-foreground">
+                Mostrando todos os {filteredEntries.length} registros
+              </div>
+            )}
           </>
         )}
       </CollapsibleContent>
@@ -521,7 +525,7 @@ export function AssetAuditTrail({ asset }: Props) {
       <AssetMetadataDiffDialog
         open={!!diff}
         onClose={closeDiff}
-        previousValues={diff ? prevSnapshots.get(diff.id) ?? null : null}
+        previousValues={diff ? (prevSnapshots.get(diff.id) ?? null) : null}
         currentValues={diff?.new_values ?? null}
         changedFields={diff?.changed_fields ?? []}
         version={diff?.version ?? null}

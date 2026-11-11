@@ -2,18 +2,37 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, LineChart, TrendingUp, TrendingDown, Minus, RefreshCcw, X } from "lucide-react";
@@ -146,7 +165,8 @@ export function SnapshotHistoryDialog() {
             <LineChart className="h-4 w-4" /> Histórico de snapshots de crescimento
           </DialogTitle>
           <DialogDescription>
-            Inspecione tamanhos, linhas e deltas por período. Deltas são calculados contra o snapshot imediatamente anterior da mesma tabela.
+            Inspecione tamanhos, linhas e deltas por período. Deltas são calculados contra o
+            snapshot imediatamente anterior da mesma tabela.
           </DialogDescription>
         </DialogHeader>
 
@@ -202,7 +222,12 @@ export function SnapshotHistoryDialog() {
           </div>
 
           {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 gap-1.5 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="h-8 gap-1.5 text-xs"
+            >
               <X className="h-3 w-3" /> Limpar
             </Button>
           )}
@@ -256,7 +281,13 @@ export function SnapshotHistoryDialog() {
                   const hasDelta = r.delta !== null;
                   const positive = (r.delta ?? 0) > 0;
                   const negative = (r.delta ?? 0) < 0;
-                  const Icon = !hasDelta ? Minus : positive ? TrendingUp : negative ? TrendingDown : Minus;
+                  const Icon = !hasDelta
+                    ? Minus
+                    : positive
+                      ? TrendingUp
+                      : negative
+                        ? TrendingDown
+                        : Minus;
                   const color = !hasDelta
                     ? "text-muted-foreground"
                     : positive
@@ -270,7 +301,9 @@ export function SnapshotHistoryDialog() {
                         {format(parseISO(r.captured_at), "dd/MM/yy HH:mm", { locale: ptBR })}
                       </TableCell>
                       <TableCell className="font-mono text-xs">{r.table_name}</TableCell>
-                      <TableCell className="text-right font-mono text-xs">{formatBytes(r.total_bytes)}</TableCell>
+                      <TableCell className="text-right font-mono text-xs">
+                        {formatBytes(r.total_bytes)}
+                      </TableCell>
                       <TableCell className="text-right font-mono text-xs text-muted-foreground">
                         {formatBytes(r.table_bytes)}
                       </TableCell>
@@ -281,12 +314,16 @@ export function SnapshotHistoryDialog() {
                         {r.row_estimate.toLocaleString("pt-BR")}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className={`inline-flex items-center gap-1 font-mono text-xs ${color}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 font-mono text-xs ${color}`}
+                        >
                           <Icon className="h-3 w-3" />
                           {!hasDelta
                             ? "—"
                             : `${positive ? "+" : ""}${formatBytes(Math.abs(r.delta ?? 0))}${
-                                r.deltaPct !== null ? ` (${r.deltaPct > 0 ? "+" : ""}${r.deltaPct.toFixed(1)}%)` : ""
+                                r.deltaPct !== null
+                                  ? ` (${r.deltaPct > 0 ? "+" : ""}${r.deltaPct.toFixed(1)}%)`
+                                  : ""
                               }`}
                         </span>
                       </TableCell>
@@ -321,7 +358,11 @@ export function SnapshotHistoryDialog() {
                 )}
                 {paginationWindow.map((p) => (
                   <PaginationItem key={p}>
-                    <PaginationLink isActive={p === page} onClick={() => goToPage(p)} className="cursor-pointer">
+                    <PaginationLink
+                      isActive={p === page}
+                      onClick={() => goToPage(p)}
+                      className="cursor-pointer"
+                    >
                       {p}
                     </PaginationLink>
                   </PaginationItem>
@@ -339,7 +380,9 @@ export function SnapshotHistoryDialog() {
                       e.preventDefault();
                       goToPage(page + 1);
                     }}
-                    className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    className={
+                      page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>

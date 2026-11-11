@@ -31,18 +31,13 @@ export function ClientPatternBadge({
 
   return (
     <div
-      className={cn(
-        "rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2",
-        className,
-      )}
+      className={cn("rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2", className)}
       role="region"
       aria-label="Recomendação de padrão de design"
     >
       <div className="flex items-center gap-2">
         <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-        <span className="text-[11px] font-medium text-foreground">
-          Padrão do {sourceLabel}
-        </span>
+        <span className="text-[11px] font-medium text-foreground">Padrão do {sourceLabel}</span>
         <Badge variant="secondary" className="ml-auto gap-1 text-[10px]">
           <TrendingUp className="h-3 w-3" aria-hidden="true" />
           {pct}%
@@ -81,12 +76,7 @@ export function ClientPatternBadge({
           Usar padrão
         </Button>
         {onDismiss && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 text-[11px]"
-            onClick={onDismiss}
-          >
+          <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={onDismiss}>
             Ignorar
           </Button>
         )}

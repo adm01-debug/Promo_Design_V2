@@ -19,7 +19,9 @@ interface Handles {
   centerLogo: ReturnType<typeof vi.fn>;
 }
 
-function setup(overrides: Partial<{ logoPreview: string | null; showLogo: boolean; placement: Placement }> = {}) {
+function setup(
+  overrides: Partial<{ logoPreview: string | null; showLogo: boolean; placement: Placement }> = {},
+) {
   const handles: Handles = {
     undo: vi.fn(),
     redo: vi.fn(),
@@ -30,7 +32,10 @@ function setup(overrides: Partial<{ logoPreview: string | null; showLogo: boolea
     useMockupEditorShortcuts({
       undo: handles.undo,
       redo: handles.redo,
-      logoPreview: "logoPreview" in overrides ? (overrides.logoPreview as string | null) : "data:image/png;base64,xxx",
+      logoPreview:
+        "logoPreview" in overrides
+          ? (overrides.logoPreview as string | null)
+          : "data:image/png;base64,xxx",
       showLogo: overrides.showLogo ?? true,
       currentPlacement: overrides.placement ?? basePlacement,
       updatePlacement: handles.updatePlacement,

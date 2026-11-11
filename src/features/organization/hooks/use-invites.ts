@@ -30,7 +30,7 @@ export function useOrganizationInvites(organizationId: string | null) {
     enabled: !!user,
     queryFn: async (): Promise<OrganizationInvite[]> => {
       let q = supabase.from("organization_invites").select("*, organizations(name)");
-      
+
       if (organizationId) {
         q = q.eq("organization_id", organizationId);
       } else if (user?.email) {
@@ -40,7 +40,7 @@ export function useOrganizationInvites(organizationId: string | null) {
       }
 
       const { data, error } = await q.order("created_at", { ascending: false });
-      
+
       if (error) {
         ErrorLogger.error("Failed to fetch organization invites", error, { organizationId });
         throw error;
@@ -52,24 +52,29 @@ export function useOrganizationInvites(organizationId: string | null) {
   const createInvite = useMutation({
     mutationFn: async ({ email, role }: { email: string; role: AppRole }) => {
       if (!user || !organizationId) throw new Error("Contexto inválido");
-      
+
       const requestId = crypto.randomUUID();
       ErrorLogger.info("Creating organization invite", { email, role, organizationId, requestId });
 
       const { data, error } = await supabase
-          .from("organization_invites")
-          .insert({
-            organization_id: organizationId,
-            email,
-            role,
-            invited_by: user.id
-          })
-          .select()
-          .single();
-      
+        .from("organization_invites")
+        .insert({
+          organization_id: organizationId,
+          email,
+          role,
+          invited_by: user.id,
+        })
+        .select()
+        .single();
+
       if (error) {
-        if (error.code === '23505') throw new Error("Já existe um convite pendente para este e-mail.");
-        ErrorLogger.error("Failed to create organization invite", error, { email, organizationId, requestId });
+        if (error.code === "23505")
+          throw new Error("Já existe um convite pendente para este e-mail.");
+        ErrorLogger.error("Failed to create organization invite", error, {
+          email,
+          organizationId,
+          requestId,
+        });
         throw error;
       }
       return data;
@@ -80,17 +85,14 @@ export function useOrganizationInvites(organizationId: string | null) {
     },
     onError: (error: Error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const deleteInvite = useMutation({
     mutationFn: async (inviteId: string) => {
       const requestId = crypto.randomUUID();
-      const { error } = await supabase
-          .from("organization_invites")
-          .delete()
-          .eq("id", inviteId);
-      
+      const { error } = await supabase.from("organization_invites").delete().eq("id", inviteId);
+
       if (error) {
         ErrorLogger.error("Failed to delete invite", error, { inviteId, requestId });
         throw error;
@@ -99,7 +101,7 @@ export function useOrganizationInvites(organizationId: string | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey });
       toast.success("Convite cancelado.");
-    }
+    },
   });
 
   const acceptInvite = useMutation({
@@ -115,7 +117,7 @@ export function useOrganizationInvites(organizationId: string | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["org-memberships"] });
       toast.success("Convite aceito! Bem-vindo à organização.");
-    }
+    },
   });
 
   return {
@@ -123,6 +125,6 @@ export function useOrganizationInvites(organizationId: string | null) {
     isLoading: query.isLoading,
     createInvite,
     deleteInvite,
-    acceptInvite
+    acceptInvite,
   };
 }

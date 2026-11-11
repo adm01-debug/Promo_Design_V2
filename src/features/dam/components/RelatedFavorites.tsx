@@ -87,7 +87,9 @@ export function RelatedFavorites({ asset, organizationId, onSelect }: Props) {
       <div className="flex items-center gap-2 text-sm font-medium">
         <Star className="w-4 h-4 fill-primary text-primary" />
         Favoritos relacionados
-        <Badge variant="secondary" className="text-[10px]">{related.length}</Badge>
+        <Badge variant="secondary" className="text-[10px]">
+          {related.length}
+        </Badge>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {related.map(({ asset: a, sharedTags, sameType }) => (

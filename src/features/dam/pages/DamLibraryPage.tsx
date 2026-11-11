@@ -42,20 +42,48 @@ export default function DamLibraryPage() {
   const { currentOrgId, can } = useOrganizations();
   const { clients } = useClients(currentOrgId);
   const filters = useDamFilters();
-  const { 
-    state, setSearch, setAssetTypes, setClientId, setTags, setTagsMode, 
-    setIncludeArchived, setPage, setViewMode, reset: resetFilters 
+  const {
+    state,
+    setSearch,
+    setAssetTypes,
+    setClientId,
+    setTags,
+    setTagsMode,
+    setIncludeArchived,
+    setPage,
+    setViewMode,
+    reset: resetFilters,
   } = filters;
-  const { 
-    search, assetTypes, clientId, tags, tagsMode, includeArchived, 
-    sort, page, pageSize, paginationMode, viewMode, showSizeColumn 
+  const {
+    search,
+    assetTypes,
+    clientId,
+    tags,
+    tagsMode,
+    includeArchived,
+    sort,
+    page,
+    pageSize,
+    paginationMode,
+    viewMode,
+    showSizeColumn,
   } = state;
 
   const [activityOpen, setActivityOpen] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
   const results = useDamLibraryResults(currentOrgId || "", state, debouncedSearch);
-  const { assets, total, totalPages, isLoading, isFetching, isPaginating, restore, displayedAssets, hasMore } = results;
+  const {
+    assets,
+    total,
+    totalPages,
+    isLoading,
+    isFetching,
+    isPaginating,
+    restore,
+    displayedAssets,
+    hasMore,
+  } = results;
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
@@ -78,7 +106,12 @@ export default function DamLibraryPage() {
     }
   };
 
-  if (!currentOrgId) return <div className="p-6 text-center"><Card className="p-8">Selecione uma organização</Card></div>;
+  if (!currentOrgId)
+    return (
+      <div className="p-6 text-center">
+        <Card className="p-8">Selecione uma organização</Card>
+      </div>
+    );
 
   const sortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label;
 
@@ -102,44 +135,90 @@ export default function DamLibraryPage() {
 
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex-1 min-w-[240px]">
-          <Input placeholder="Buscar por nome ou conteúdo..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            placeholder="Buscar por nome ou conteúdo..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <div className="flex items-center gap-2">
-          <Toggle pressed={includeArchived} onPressedChange={setIncludeArchived} size="sm" variant="outline">
-            {includeArchived ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
+          <Toggle
+            pressed={includeArchived}
+            onPressedChange={setIncludeArchived}
+            size="sm"
+            variant="outline"
+          >
+            {includeArchived ? (
+              <ArchiveRestore className="w-4 h-4 mr-2" />
+            ) : (
+              <Archive className="w-4 h-4 mr-2" />
+            )}
             Arquivados
           </Toggle>
-          <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as "grid" | "list")} size="sm">
-            <ToggleGroupItem value="grid"><LayoutGrid className="w-4 h-4" /></ToggleGroupItem>
-            <ToggleGroupItem value="list"><List className="w-4 h-4" /></ToggleGroupItem>
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(v) => v && setViewMode(v as "grid" | "list")}
+            size="sm"
+          >
+            <ToggleGroupItem value="grid">
+              <LayoutGrid className="w-4 h-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list">
+              <List className="w-4 h-4" />
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {TYPES.map((t) => {
-          const active = t.value === "all" ? assetTypes.length === 0 : assetTypes.includes(t.value as AssetType);
+          const active =
+            t.value === "all" ? assetTypes.length === 0 : assetTypes.includes(t.value as AssetType);
           return (
-            <Badge key={t.value} variant={active ? "default" : "outline"} className="cursor-pointer" onClick={() => setAssetTypes(t.value === "all" ? [] : (assetTypes.includes(t.value as AssetType) ? assetTypes.filter(x => x !== t.value) : [...assetTypes, t.value as AssetType]))}>
+            <Badge
+              key={t.value}
+              variant={active ? "default" : "outline"}
+              className="cursor-pointer"
+              onClick={() =>
+                setAssetTypes(
+                  t.value === "all"
+                    ? []
+                    : assetTypes.includes(t.value as AssetType)
+                      ? assetTypes.filter((x) => x !== t.value)
+                      : [...assetTypes, t.value as AssetType],
+                )
+              }
+            >
               {t.label}
             </Badge>
           );
         })}
       </div>
 
-      {availableTags.length > 0 && <TagFilter availableTags={availableTags} selected={tags} onChange={setTags} mode={tagsMode} onModeChange={setTagsMode} />}
+      {availableTags.length > 0 && (
+        <TagFilter
+          availableTags={availableTags}
+          selected={tags}
+          onChange={setTags}
+          mode={tagsMode}
+          onModeChange={setTagsMode}
+        />
+      )}
 
       <ActiveFiltersBar
-        search={debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? debouncedSearch.trim() : undefined}
+        search={
+          debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? debouncedSearch.trim() : undefined
+        }
         onClearSearch={() => setSearch("")}
         assetTypes={assetTypes}
-        onRemoveType={(t) => setAssetTypes(assetTypes.filter(x => x !== t))}
+        onRemoveType={(t) => setAssetTypes(assetTypes.filter((x) => x !== t))}
         clientId={clientId}
-        clientLabel={clients.find(c => c.id === clientId)?.name}
+        clientLabel={clients.find((c) => c.id === clientId)?.name}
         onClearClient={() => setClientId("all")}
         tags={tags}
         tagsMode={tagsMode}
-        onRemoveTag={(t) => setTags(tags.filter(x => x !== t))}
+        onRemoveTag={(t) => setTags(tags.filter((x) => x !== t))}
         includeArchived={includeArchived}
         onClearArchived={() => setIncludeArchived(false)}
         onClearAll={resetFilters}
@@ -158,19 +237,33 @@ export default function DamLibraryPage() {
               </div>
             )}
             {viewMode === "list" ? (
-              <AssetListView assets={displayedAssets} clients={clients} onSelect={setSelected} onRestore={can(["owner", "admin", "designer"]) ? handleRestore : undefined} showSize={showSizeColumn} />
+              <AssetListView
+                assets={displayedAssets}
+                clients={clients}
+                onSelect={setSelected}
+                onRestore={can(["owner", "admin", "designer"]) ? handleRestore : undefined}
+                showSize={showSizeColumn}
+              />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {displayedAssets.map((a) => <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />)}
+                {displayedAssets.map((a) => (
+                  <AssetCard key={a.id} asset={a} onClick={() => setSelected(a)} />
+                ))}
               </div>
             )}
           </div>
           {quickPreview.enabled && (
-            <QuickPreviewPanel 
-              asset={quickPreview.activeAsset} 
-              pinned={Boolean(quickPreview.activeAsset && quickPreview.pinnedId === quickPreview.activeAsset.id)}
-              onTogglePin={() => quickPreview.activeAsset && quickPreview.togglePin(quickPreview.activeAsset)}
-              onOpenDetails={() => quickPreview.activeAsset && setSelected(quickPreview.activeAsset)}
+            <QuickPreviewPanel
+              asset={quickPreview.activeAsset}
+              pinned={Boolean(
+                quickPreview.activeAsset && quickPreview.pinnedId === quickPreview.activeAsset.id,
+              )}
+              onTogglePin={() =>
+                quickPreview.activeAsset && quickPreview.togglePin(quickPreview.activeAsset)
+              }
+              onOpenDetails={() =>
+                quickPreview.activeAsset && setSelected(quickPreview.activeAsset)
+              }
               clients={clients}
               sortLabel={sortLabel}
             />
@@ -180,43 +273,69 @@ export default function DamLibraryPage() {
 
       {paginationMode === "pages" && totalPages > 1 && (
         <div className="flex justify-center pt-6">
-          <ResultsPagination 
-            page={page} 
+          <ResultsPagination
+            page={page}
             pageSize={pageSize}
             total={total}
-            totalPages={totalPages} 
-            onPageChange={setPage} 
+            totalPages={totalPages}
+            onPageChange={setPage}
           />
         </div>
       )}
 
       {hasMore && (
         <div className="flex justify-center pt-6">
-          <Button variant="outline" onClick={() => setPage(p => p + 1)} disabled={isFetching}>
-            {isFetching ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+          <Button variant="outline" onClick={() => setPage((p) => p + 1)} disabled={isFetching}>
+            {isFetching ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <ChevronDown className="w-4 h-4 mr-2" />
+            )}
             Carregar mais
           </Button>
         </div>
       )}
 
-      <AssetUploadDialog open={uploadOpen} onOpenChange={setUploadOpen} organizationId={currentOrgId} />
-      {selected && <AssetDetailDrawer asset={selected} onClose={() => setSelected(null)} searchQuery={debouncedSearch} />}
-      <LibraryActivityDialog open={activityOpen} onOpenChange={setActivityOpen} organizationId={currentOrgId} />
+      <AssetUploadDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        organizationId={currentOrgId}
+      />
+      {selected && (
+        <AssetDetailDrawer
+          asset={selected}
+          onClose={() => setSelected(null)}
+          searchQuery={debouncedSearch}
+        />
+      )}
+      <LibraryActivityDialog
+        open={activityOpen}
+        onOpenChange={setActivityOpen}
+        organizationId={currentOrgId}
+      />
       <BatchOcrDialog open={batchOcrOpen} onOpenChange={setBatchOcrOpen} assets={assets} />
 
       <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Redefinir preferências?</AlertDialogTitle>
-            <AlertDialogDescription>Isso limpará todos os filtros e voltará a biblioteca ao estado inicial.</AlertDialogDescription>
+            <AlertDialogDescription>
+              Isso limpará todos os filtros e voltará a biblioteca ao estado inicial.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { resetFilters(); setResetOpen(false); }}>Redefinir</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => {
+                resetFilters();
+                setResetOpen(false);
+              }}
+            >
+              Redefinir
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   );
 }
-

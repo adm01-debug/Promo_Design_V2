@@ -111,7 +111,9 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
   // Badge counts (sobre o conjunto completo de ordens, não só a 1ª página)
   const { orders } = useServiceOrders({ fetchAll: true });
   const badgeCounts = useMemo(() => {
-    const abertas = orders.filter((o) => o.status === "aberta" || o.status === "em_producao").length;
+    const abertas = orders.filter(
+      (o) => o.status === "aberta" || o.status === "em_producao",
+    ).length;
     return { mockup: abertas };
   }, [orders]);
 
@@ -141,7 +143,10 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
             : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
         }`}
       >
-        <mod.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} aria-hidden="true" />
+        <mod.icon
+          className={`w-5 h-5 shrink-0 ${isActive ? "text-sidebar-primary" : ""}`}
+          aria-hidden="true"
+        />
         {!collapsed && (
           <>
             <div className="flex-1 text-left">
@@ -189,7 +194,11 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
       aria-label="Barra lateral principal"
     >
       <div className="h-14 flex items-center px-4 border-b border-sidebar-border shrink-0">
-        <Link to="/" className="flex items-center gap-2.5 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg" aria-label="Ir para o Dashboard — Promo Design">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+          aria-label="Ir para o Dashboard — Promo Design"
+        >
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
             <Layers className="w-4 h-4 text-primary-foreground" aria-hidden="true" />
           </div>
@@ -208,7 +217,11 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Módulos" data-tour="sidebar-nav">
+      <nav
+        className="flex-1 overflow-y-auto py-3 px-2 space-y-1"
+        aria-label="Módulos"
+        data-tour="sidebar-nav"
+      >
         {modules.map((mod) => {
           const isExpanded = expandedModule === mod.id && !collapsed;
 
@@ -228,7 +241,10 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
                     role="region"
                     aria-label={`Submenu de ${mod.label}`}
                   >
-                    <ul className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3" role="list">
+                    <ul
+                      className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3"
+                      role="list"
+                    >
                       {mod.children.map((child) => {
                         const childActive = location.pathname === child.path;
                         return (
@@ -267,25 +283,38 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
       <div className="border-t border-sidebar-border p-2 space-y-1">
         <div className="flex items-center gap-3 px-3 py-2" aria-label="Informações do usuário">
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center" aria-hidden="true">
-              <span className="text-xs font-bold text-primary-foreground">
-                {userInitials}
-              </span>
+            <div
+              className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center"
+              aria-hidden="true"
+            >
+              <span className="text-xs font-bold text-primary-foreground">{userInitials}</span>
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-sidebar" aria-label="Online" />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full border-2 border-sidebar"
+              aria-label="Online"
+            />
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-sidebar-accent-foreground truncate">
                 {user?.email ?? "Usuário"}
               </p>
-              <p className="text-[11px] text-sidebar-foreground/60" aria-live="polite">Online</p>
+              <p className="text-[11px] text-sidebar-foreground/60" aria-live="polite">
+                Online
+              </p>
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between px-3 py-1">
-          {!collapsed && <span className="text-[11px] font-mono text-sidebar-foreground/50 uppercase" id="theme-label">Tema</span>}
+          {!collapsed && (
+            <span
+              className="text-[11px] font-mono text-sidebar-foreground/50 uppercase"
+              id="theme-label"
+            >
+              Tema
+            </span>
+          )}
           <ThemeToggle />
         </div>
 
@@ -359,7 +388,6 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
           {!collapsed && <span className="text-sm">Documentação</span>}
         </Link>
 
-
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
@@ -379,7 +407,10 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={signOut} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <AlertDialogAction
+                onClick={signOut}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 Sair
               </AlertDialogAction>
             </AlertDialogFooter>

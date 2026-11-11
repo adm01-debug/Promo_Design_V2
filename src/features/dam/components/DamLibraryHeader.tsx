@@ -40,7 +40,7 @@ export function DamLibraryHeader({
   clients,
   total,
   debouncedSearch,
-  organizationId
+  organizationId,
 }: Props) {
   const { state, setSort, setOcrOnly } = filters;
   const [copiedLink, setCopiedLink] = useState(false);
@@ -91,15 +91,18 @@ export function DamLibraryHeader({
             </span>
           </Badge>
         )}
-        <SavedSearchesMenu currentFilters={currentSavedFilters} onApply={(snap) => {
-          filters.setSearch(snap.search ?? "");
-          filters.setAssetTypes(snap.assetTypes ?? []);
-          filters.setClientId((snap.clientId as string) ?? "all");
-          filters.setTags(snap.tags ?? []);
-          filters.setTagsMode(snap.tagsMode ?? "all");
-          filters.setIncludeArchived(Boolean(snap.includeArchived));
-          filters.setSort((snap.sort as SortValue) ?? "created_desc");
-        }} />
+        <SavedSearchesMenu
+          currentFilters={currentSavedFilters}
+          onApply={(snap) => {
+            filters.setSearch(snap.search ?? "");
+            filters.setAssetTypes(snap.assetTypes ?? []);
+            filters.setClientId((snap.clientId as string) ?? "all");
+            filters.setTags(snap.tags ?? []);
+            filters.setTagsMode(snap.tagsMode ?? "all");
+            filters.setIncludeArchived(Boolean(snap.includeArchived));
+            filters.setSort((snap.sort as SortValue) ?? "created_desc");
+          }}
+        />
         <Button variant="outline" size="sm" onClick={handleCopyLink} data-testid="dam-copy-link">
           <Link2 className="w-4 h-4 mr-2" />
           {copiedLink ? "Copiado!" : "Compartilhar"}
@@ -147,7 +150,12 @@ export function DamLibraryHeader({
             <Plus className="w-4 h-4 mr-2" /> Novo asset
           </Button>
         )}
-        <Button variant="outline" size="icon" onClick={onOpenReset} data-testid="dam-reset-preferences">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onOpenReset}
+          data-testid="dam-reset-preferences"
+        >
           <RotateCcw className="w-4 h-4" />
         </Button>
       </div>

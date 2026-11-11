@@ -21,8 +21,4 @@ export {
   SidebarMenuBadge,
   SidebarMenuSkeleton,
 } from "./sidebar-menu";
-export {
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
-} from "./sidebar-menu-sub";
+export { SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from "./sidebar-menu-sub";

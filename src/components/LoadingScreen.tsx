@@ -2,7 +2,11 @@ import { motion } from "framer-motion";
 import { Layers } from "lucide-react";
 
 const LoadingScreen = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-5" role="status" aria-label="Carregando conteúdo">
+  <div
+    className="flex flex-col items-center justify-center min-h-[60vh] gap-5"
+    role="status"
+    aria-label="Carregando conteúdo"
+  >
     {/* Animated logo */}
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
@@ -15,7 +19,8 @@ const LoadingScreen = () => (
         transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
         className="absolute -inset-3 rounded-2xl border-2 border-transparent"
         style={{
-          borderImage: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent))) 1",
+          borderImage:
+            "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent))) 1",
           borderRadius: "1rem",
         }}
       />

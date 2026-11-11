@@ -57,7 +57,11 @@ const NotFound = () => {
           transition={{ delay: 0.4 }}
           className="text-muted-foreground mb-8"
         >
-          A rota <code className="font-mono text-primary text-sm bg-muted px-2 py-0.5 rounded">{location.pathname}</code> não existe.
+          A rota{" "}
+          <code className="font-mono text-primary text-sm bg-muted px-2 py-0.5 rounded">
+            {location.pathname}
+          </code>{" "}
+          não existe.
         </motion.p>
 
         {/* Suggestions */}
@@ -69,7 +73,10 @@ const NotFound = () => {
         >
           {suggestions.map((s) => (
             <Link key={s.path} to={s.path}>
-              <Button variant="outline" className="gap-2 border-border hover:border-primary/40 hover:bg-muted transition-all">
+              <Button
+                variant="outline"
+                className="gap-2 border-border hover:border-primary/40 hover:bg-muted transition-all"
+              >
                 <s.icon className="w-4 h-4 text-primary" />
                 {s.label}
               </Button>
@@ -77,12 +84,11 @@ const NotFound = () => {
           ))}
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
             <ArrowLeft className="w-3.5 h-3.5" />
             Voltar ao início
           </Link>

@@ -35,7 +35,10 @@ const AssetVersionUpdateBanner = ({ currentAssetId, onUpdate }: Props) => {
     }
   };
 
-  const relative = formatDistanceToNow(new Date(latest.created_at), { addSuffix: true, locale: ptBR });
+  const relative = formatDistanceToNow(new Date(latest.created_at), {
+    addSuffix: true,
+    locale: ptBR,
+  });
 
   return (
     <div className="col-span-2 flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
@@ -50,8 +53,18 @@ const AssetVersionUpdateBanner = ({ currentAssetId, onUpdate }: Props) => {
           Subida {relative} por {shortId(latest.created_by)}
         </p>
       </div>
-      <Button size="sm" variant="default" className="gap-1.5" onClick={handleClick} disabled={loading}>
-        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+      <Button
+        size="sm"
+        variant="default"
+        className="gap-1.5"
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <RefreshCw className="h-3.5 w-3.5" />
+        )}
         Atualizar arte
       </Button>
     </div>

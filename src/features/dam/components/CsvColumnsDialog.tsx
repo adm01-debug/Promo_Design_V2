@@ -69,10 +69,22 @@ export function CsvColumnsDialog({ open, onOpenChange, value, assetCount, onConf
         </DialogHeader>
 
         <div className="flex items-center gap-2 -mt-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAll} disabled={allChecked}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={selectAll}
+            disabled={allChecked}
+          >
             Selecionar todas
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectNone} disabled={noneChecked}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={selectNone}
+            disabled={noneChecked}
+          >
             Limpar
           </Button>
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectDefault}>
@@ -90,7 +102,10 @@ export function CsvColumnsDialog({ open, onOpenChange, value, assetCount, onConf
             {CSV_COLUMNS.map((col) => {
               const checked = selected.has(col.id);
               return (
-                <div key={col.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50">
+                <div
+                  key={col.id}
+                  className="flex items-center gap-2 px-1 py-1 rounded hover:bg-muted/50"
+                >
                   <Checkbox
                     id={`csv-col-${col.id}`}
                     checked={checked}

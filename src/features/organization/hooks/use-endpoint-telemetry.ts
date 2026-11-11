@@ -82,9 +82,10 @@ function delta(current: number, previous: number): TelemetryDelta {
  * por isso `endpoints` (contagem distinta) é comparado por cardinalidade das
  * listas, nunca por subtração.
  */
-export function useEndpointTelemetryComparison(
-  days = 30,
-): { comparison: EndpointTelemetryComparison | null; isLoading: boolean } {
+export function useEndpointTelemetryComparison(days = 30): {
+  comparison: EndpointTelemetryComparison | null;
+  isLoading: boolean;
+} {
   const current = useEndpointTelemetry(days);
   const doubled = useEndpointTelemetry(days * 2);
 

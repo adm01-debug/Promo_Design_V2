@@ -103,7 +103,9 @@ describe("artAssetId — Zod validation", () => {
     expect(serviceOrderSchema.safeParse(form).success).toBe(true);
   });
   it("accepts a valid UUID", () => {
-    expect(serviceOrderSchema.safeParse(makeValidForm({ artAssetId: VALID_UUID })).success).toBe(true);
+    expect(serviceOrderSchema.safeParse(makeValidForm({ artAssetId: VALID_UUID })).success).toBe(
+      true,
+    );
   });
   it("rejects an empty string", () => {
     const r = serviceOrderSchema.safeParse(makeValidForm({ artAssetId: "" }));

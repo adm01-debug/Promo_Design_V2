@@ -51,7 +51,10 @@ export async function waitForAuditAlertNotification(
   const start = Date.now();
   while (Date.now() - start < timeout) {
     // Open the bell panel
-    await page.getByLabel(/Notificações/).click().catch(() => {});
+    await page
+      .getByLabel(/Notificações/)
+      .click()
+      .catch(() => {});
     const items = page.locator('[data-event-type="audit_alert"]');
     const count = await items.count();
     for (let i = 0; i < count; i++) {

@@ -58,43 +58,34 @@ export function useNotifications() {
    * the first page). This avoids OFFSET scans on large inboxes and keeps each
    * request O(PAGE_SIZE) regardless of total count.
    */
-  const {
-    data,
-    isLoading,
-    isFetching,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery({
-    queryKey: listKey,
-    enabled: !!user,
-    initialPageParam: null as string | null,
-    queryFn: async ({ pageParam }) => {
-      if (!user) return [] as Notification[];
-      let q = supabase
-        .from("notifications")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .limit(PAGE_SIZE);
-      if (pageParam) {
-        q = q.lt("created_at", pageParam);
-      }
-      const { data: rows, error } = await q;
-      if (error) throw error;
-      return ((rows as unknown as NotificationRow[]) ?? []).map(rowToNotification);
-    },
-    getNextPageParam: (lastPage) => {
-      if (lastPage.length < PAGE_SIZE) return undefined;
-      return lastPage[lastPage.length - 1].createdAt;
-    },
-    refetchInterval: false,
-  });
+  const { data, isLoading, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteQuery({
+      queryKey: listKey,
+      enabled: !!user,
+      initialPageParam: null as string | null,
+      queryFn: async ({ pageParam }) => {
+        if (!user) return [] as Notification[];
+        let q = supabase
+          .from("notifications")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .limit(PAGE_SIZE);
+        if (pageParam) {
+          q = q.lt("created_at", pageParam);
+        }
+        const { data: rows, error } = await q;
+        if (error) throw error;
+        return ((rows as unknown as NotificationRow[]) ?? []).map(rowToNotification);
+      },
+      getNextPageParam: (lastPage) => {
+        if (lastPage.length < PAGE_SIZE) return undefined;
+        return lastPage[lastPage.length - 1].createdAt;
+      },
+      refetchInterval: false,
+    });
 
-  const notifications = useMemo<Notification[]>(
-    () => data?.pages.flat() ?? [],
-    [data],
-  );
+  const notifications = useMemo<Notification[]>(() => data?.pages.flat() ?? [], [data]);
 
   /**
    * The unread badge must reflect the **global** unread count, not just what's
@@ -159,10 +150,7 @@ export function useNotifications() {
   const clearAllMutation = useMutation({
     mutationFn: async () => {
       if (!user) return;
-      const { error } = await supabase
-        .from("notifications")
-        .delete()
-        .eq("user_id", user.id);
+      const { error } = await supabase.from("notifications").delete().eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: invalidate,

@@ -15,11 +15,15 @@ const RequestSchema = z.object({
 
 const ProposalSchema = z.object({
   primary_colors: z
-    .array(z.object({ name: z.string().min(1).max(60), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }))
+    .array(
+      z.object({ name: z.string().min(1).max(60), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }),
+    )
     .max(6)
     .default([]),
   secondary_colors: z
-    .array(z.object({ name: z.string().min(1).max(60), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }))
+    .array(
+      z.object({ name: z.string().min(1).max(60), hex: z.string().regex(/^#[0-9a-fA-F]{6}$/) }),
+    )
     .max(6)
     .default([]),
   fonts: z
@@ -41,7 +45,8 @@ Deno.serve(async (req) => {
   const requestId = crypto.randomUUID();
 
   if (req.method === "OPTIONS") return corsPreflight(req);
-  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed", requestId }, 405, req);
+  if (req.method !== "POST")
+    return jsonResponse({ error: "Method not allowed", requestId }, 405, req);
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -66,11 +71,9 @@ Deno.serve(async (req) => {
     const { client_id, asset_urls } = parsed.data;
 
     // Autenticação via getClaims (assinaturas rotacionadas)
-    const authed = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
+    const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
     const token = authHeader.replace("Bearer ", "");
     const { data: claims, error: claimsErr } = await authed.auth.getClaims(token);
     if (claimsErr || !claims?.claims?.sub) {
@@ -144,7 +147,8 @@ Deno.serve(async (req) => {
     if (imageUrls.length === 0) {
       return jsonResponse(
         {
-          error: "Nenhum asset disponível para inferência. Envie um logo ou peça alguns assets primeiro.",
+          error:
+            "Nenhum asset disponível para inferência. Envie um logo ou peça alguns assets primeiro.",
           requestId,
         },
         400,
@@ -167,7 +171,10 @@ Deno.serve(async (req) => {
       "Máx 4 cores primárias, 4 secundárias, 3 fontes, 5 do_rules, 5 dont_rules.";
 
     const userContent: Array<Record<string, unknown>> = [
-      { type: "text", text: `Cliente: ${clientRow.name}. Analise as imagens e proponha guidelines coerentes.` },
+      {
+        type: "text",
+        text: `Cliente: ${clientRow.name}. Analise as imagens e proponha guidelines coerentes.`,
+      },
       ...imageUrls.slice(0, 8).map((url) => ({ type: "image_url", image_url: { url } })),
     ];
 
@@ -255,10 +262,7 @@ Deno.serve(async (req) => {
 
     const norm = (s: string) => s.trim().toLowerCase();
     const normHex = (h: string) => h.trim().toLowerCase();
-    const diffColors = (
-      before: Array<{ hex: string }>,
-      after: Array<{ hex: string }>,
-    ) => {
+    const diffColors = (before: Array<{ hex: string }>, after: Array<{ hex: string }>) => {
       const b = new Set((before ?? []).map((c) => normHex(c.hex)));
       const a = new Set((after ?? []).map((c) => normHex(c.hex)));
       return {
@@ -267,10 +271,7 @@ Deno.serve(async (req) => {
         kept: [...a].filter((x) => b.has(x)),
       };
     };
-    const diffFonts = (
-      before: Array<{ name: string }>,
-      after: Array<{ name: string }>,
-    ) => {
+    const diffFonts = (before: Array<{ name: string }>, after: Array<{ name: string }>) => {
       const b = new Set((before ?? []).map((f) => norm(f.name)));
       const a = new Set((after ?? []).map((f) => norm(f.name)));
       return {
@@ -299,18 +300,9 @@ Deno.serve(async (req) => {
         (snapshotBefore.secondary_colors as Array<{ hex: string }>) ?? [],
         p.secondary_colors,
       ),
-      fonts: diffFonts(
-        (snapshotBefore.fonts as Array<{ name: string }>) ?? [],
-        p.fonts,
-      ),
-      do_rules: diffRules(
-        (snapshotBefore.do_rules as string[]) ?? [],
-        p.do_rules,
-      ),
-      dont_rules: diffRules(
-        (snapshotBefore.dont_rules as string[]) ?? [],
-        p.dont_rules,
-      ),
+      fonts: diffFonts((snapshotBefore.fonts as Array<{ name: string }>) ?? [], p.fonts),
+      do_rules: diffRules((snapshotBefore.do_rules as string[]) ?? [], p.do_rules),
+      dont_rules: diffRules((snapshotBefore.dont_rules as string[]) ?? [], p.dont_rules),
     };
 
     // Confiança heurística: coerência do payload + tamanho da amostra

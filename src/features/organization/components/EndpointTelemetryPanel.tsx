@@ -2,7 +2,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Activity, Download, ShieldCheck, ShieldAlert, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  Activity,
+  Download,
+  ShieldCheck,
+  ShieldAlert,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -181,9 +189,7 @@ export function EndpointTelemetryPanel() {
           <div className="rounded-md border bg-muted/30 p-3">
             <p className="text-xs text-muted-foreground">Custo estimado</p>
             <div className="flex items-center gap-2">
-              <p className="text-xl font-semibold">
-                ${Number(totals?.total_cost ?? 0).toFixed(4)}
-              </p>
+              <p className="text-xl font-semibold">${Number(totals?.total_cost ?? 0).toFixed(4)}</p>
               <DeltaBadge delta={comparison?.totals.total_cost} invert />
             </div>
           </div>

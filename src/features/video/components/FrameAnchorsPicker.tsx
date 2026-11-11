@@ -32,7 +32,14 @@ interface FrameFieldProps {
   icon: typeof Flag;
 }
 
-const FrameField = ({ label, hint, value, onChange, suggestedUrl, icon: Icon }: FrameFieldProps) => {
+const FrameField = ({
+  label,
+  hint,
+  value,
+  onChange,
+  suggestedUrl,
+  icon: Icon,
+}: FrameFieldProps) => {
   const inputId = useId();
   const trimmed = value.trim();
   const invalid = trimmed.length > 0 && !isValidFrameUrl(trimmed);
@@ -40,7 +47,10 @@ const FrameField = ({ label, hint, value, onChange, suggestedUrl, icon: Icon }: 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label htmlFor={inputId} className="flex items-center gap-1.5 text-[11px] font-medium text-foreground">
+        <label
+          htmlFor={inputId}
+          className="flex items-center gap-1.5 text-[11px] font-medium text-foreground"
+        >
           <Icon className="h-3 w-3 text-primary" aria-hidden="true" />
           {label}
         </label>

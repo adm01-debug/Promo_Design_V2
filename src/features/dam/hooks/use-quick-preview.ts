@@ -44,7 +44,7 @@ export function useQuickPreview() {
   const [hoverAsset, setHoverAssetState] = useState<Asset | null>(null);
   const [pinnedAsset, setPinnedAsset] = useState<Asset | null>(null);
   const [pendingPinnedId, setPendingPinnedId] = useState<string | null>(() =>
-    readEnabled() ? readPinnedId() : null
+    readEnabled() ? readPinnedId() : null,
   );
   const hoverTimer = useRef<number | null>(null);
 
@@ -128,7 +128,7 @@ export function useQuickPreview() {
         setPendingPinnedId(null);
       }
     },
-    [enabled, pendingPinnedId, pinnedAsset]
+    [enabled, pendingPinnedId, pinnedAsset],
   );
 
   const toggleEnabled = useCallback(() => {

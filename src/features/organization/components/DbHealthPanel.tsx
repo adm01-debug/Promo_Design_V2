@@ -72,7 +72,11 @@ export function DbHealthPanel() {
 
   const saturation = h?.connections.saturation_pct ?? 0;
   const saturationColor =
-    saturation >= 80 ? "text-destructive" : saturation >= 60 ? "text-amber-500" : "text-emerald-500";
+    saturation >= 80
+      ? "text-destructive"
+      : saturation >= 60
+        ? "text-amber-500"
+        : "text-emerald-500";
 
   const longestTxnMs = h?.longest_txn_ms ?? 0;
   const longestTxnColor =
@@ -118,8 +122,8 @@ export function DbHealthPanel() {
                 )}
                 {idleInTxn >= 5 && (
                   <p>
-                    <strong>{idleInTxn}</strong> conexões idle-in-transaction — possível vazamento de
-                    transações no app.
+                    <strong>{idleInTxn}</strong> conexões idle-in-transaction — possível vazamento
+                    de transações no app.
                   </p>
                 )}
                 {longestTxnMs >= 60_000 && (
@@ -205,16 +209,22 @@ export function DbHealthPanel() {
             </div>
 
             <div className="p-2.5 rounded-md border">
-              <div className="text-[9px] uppercase text-muted-foreground font-mono">Txn mais longa</div>
+              <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                Txn mais longa
+              </div>
               <div className={`text-sm font-mono font-semibold mt-0.5 ${longestTxnColor}`}>
                 {longestTxnMs > 0 ? formatDuration(longestTxnMs) : "—"}
               </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">idade da transação aberta</div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                idade da transação aberta
+              </div>
             </div>
 
             <div className="p-2.5 rounded-md border">
               <div className="text-[9px] uppercase text-muted-foreground font-mono">Temp files</div>
-              <div className="text-sm font-mono font-semibold mt-0.5">{formatBytes(h.temp_bytes)}</div>
+              <div className="text-sm font-mono font-semibold mt-0.5">
+                {formatBytes(h.temp_bytes)}
+              </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 Uso de disco temporário (queries que estouraram work_mem)
               </div>

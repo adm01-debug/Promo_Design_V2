@@ -1,16 +1,27 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useAssets, type Asset } from "./use-assets";
-import { 
-  SORT_OPTIONS, 
-  SIZE_RANGE_OPTIONS, 
-  UPDATED_RANGE_OPTIONS 
-} from "../lib/dam-constants";
+import { SORT_OPTIONS, SIZE_RANGE_OPTIONS, UPDATED_RANGE_OPTIONS } from "../lib/dam-constants";
 import type { DamFiltersState } from "./use-dam-filters";
 
-export function useDamLibraryResults(organizationId: string, filtersState: DamFiltersState, debouncedSearch: string) {
+export function useDamLibraryResults(
+  organizationId: string,
+  filtersState: DamFiltersState,
+  debouncedSearch: string,
+) {
   const {
-    sort, sizeRange, updatedRange, customSize, assetTypes, clientId, 
-    tags: selectedTags, tagsMode, includeArchived, archivedOnly, page, pageSize, paginationMode
+    sort,
+    sizeRange,
+    updatedRange,
+    customSize,
+    assetTypes,
+    clientId,
+    tags: selectedTags,
+    tagsMode,
+    includeArchived,
+    archivedOnly,
+    page,
+    pageSize,
+    paginationMode,
   } = filtersState;
 
   const filters = useMemo(() => {
@@ -20,9 +31,9 @@ export function useDamLibraryResults(organizationId: string, filtersState: DamFi
     const updatedAfter = updRange?.hours
       ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
       : undefined;
-    
-    const minSize = customSize ? customSize.minBytes ?? undefined : range?.min;
-    const maxSize = customSize ? customSize.maxBytes ?? undefined : range?.max;
+
+    const minSize = customSize ? (customSize.minBytes ?? undefined) : range?.min;
+    const maxSize = customSize ? (customSize.maxBytes ?? undefined) : range?.max;
 
     return {
       assetTypes: assetTypes.length > 0 ? assetTypes : undefined,
@@ -41,12 +52,25 @@ export function useDamLibraryResults(organizationId: string, filtersState: DamFi
       updatedAfter,
     };
   }, [
-    assetTypes, clientId, selectedTags, tagsMode, includeArchived, 
-    archivedOnly, debouncedSearch, sort, page, pageSize, sizeRange, 
-    updatedRange, customSize
+    assetTypes,
+    clientId,
+    selectedTags,
+    tagsMode,
+    includeArchived,
+    archivedOnly,
+    debouncedSearch,
+    sort,
+    page,
+    pageSize,
+    sizeRange,
+    updatedRange,
+    customSize,
   ]);
 
-  const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(organizationId, filters);
+  const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(
+    organizationId,
+    filters,
+  );
 
   const [loadedPage, setLoadedPage] = useState<number>(page);
   useEffect(() => {
@@ -55,7 +79,13 @@ export function useDamLibraryResults(organizationId: string, filtersState: DamFi
 
   const isPaginating = isFetching && !isLoading && loadedPage !== page;
 
-  const lastTotalsRef = useRef<{ total: number; totalPages: number; page: number; pageSize: number; displayedLen: number } | null>(null);
+  const lastTotalsRef = useRef<{
+    total: number;
+    totalPages: number;
+    page: number;
+    pageSize: number;
+    displayedLen: number;
+  } | null>(null);
   if (!isLoading) {
     lastTotalsRef.current = {
       total,
@@ -96,6 +126,6 @@ export function useDamLibraryResults(organizationId: string, filtersState: DamFi
     hasMore,
     stable: lastTotalsRef.current,
     filters,
-    setAccumulated
+    setAccumulated,
   };
 }

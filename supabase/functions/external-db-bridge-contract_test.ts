@@ -35,8 +35,8 @@ Deno.test("external-db-bridge contract validation", async (t) => {
       action: "sync_order",
       table: "service_orders",
       params: {
-        data: { test: true }
-      }
+        data: { test: true },
+      },
     };
     const result = RequestSchema.safeParse(validPayload);
     assertEquals(result.success, true);
@@ -46,7 +46,7 @@ Deno.test("external-db-bridge contract validation", async (t) => {
     const invalidPayload = {
       action: "invalid_action",
       table: "service_orders",
-      params: {}
+      params: {},
     };
     const result = RequestSchema.safeParse(invalidPayload);
     assertEquals(result.success, false);
@@ -56,7 +56,7 @@ Deno.test("external-db-bridge contract validation", async (t) => {
     const invalidPayload = {
       action: "sync_order",
       table: "users", // Not in the supported list
-      params: {}
+      params: {},
     };
     const result = RequestSchema.safeParse(invalidPayload);
     assertEquals(result.success, false);
@@ -66,7 +66,7 @@ Deno.test("external-db-bridge contract validation", async (t) => {
     const validResponse = {
       success: true,
       data: [],
-      metadata: { execution_time_ms: 100 }
+      metadata: { execution_time_ms: 100 },
     };
     const result = ResponseSchema.safeParse(validResponse);
     assertEquals(result.success, true);
@@ -77,8 +77,8 @@ Deno.test("external-db-bridge contract validation", async (t) => {
       success: false,
       error: {
         code: "INVALID_PAYLOAD",
-        message: "Error message"
-      }
+        message: "Error message",
+      },
     };
     const result = ResponseSchema.safeParse(errorResponse);
     assertEquals(result.success, true);

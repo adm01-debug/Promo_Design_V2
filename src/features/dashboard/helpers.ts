@@ -38,7 +38,10 @@ export function buildWeeklyActivity(
     weekStart.setHours(0, 0, 0, 0);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
-    const inRange = (d: string) => { const date = new Date(d); return date >= weekStart && date < weekEnd; };
+    const inRange = (d: string) => {
+      const date = new Date(d);
+      return date >= weekStart && date < weekEnd;
+    };
     const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
     weeks.push({
       label,
@@ -60,7 +63,11 @@ export function buildMonthlyHeatmap(
   const month = now.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
-  const allDates = [...orders.map((o) => o.createdAt), ...drafts.map((d) => d.createdAt), ...magicUp.map((m) => m.createdAt)];
+  const allDates = [
+    ...orders.map((o) => o.createdAt),
+    ...drafts.map((d) => d.createdAt),
+    ...magicUp.map((m) => m.createdAt),
+  ];
   const countByDay: Record<number, number> = {};
   for (const d of allDates) {
     const date = new Date(d);

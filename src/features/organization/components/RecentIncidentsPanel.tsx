@@ -5,10 +5,20 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Activity, AlertOctagon, Bell, Loader2, RefreshCcw, ShieldAlert, Clock,
+  Activity,
+  AlertOctagon,
+  Bell,
+  Loader2,
+  RefreshCcw,
+  ShieldAlert,
+  Clock,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -76,13 +86,12 @@ const WINDOW_OPTIONS = [
 ];
 
 async function fetchIncidents(minutes: number): Promise<IncidentsPayload> {
-  const { data, error } = await (supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ data: IncidentsPayload | null; error: Error | null }>)(
-    "get_recent_incidents",
-    { _minutes: minutes },
-  );
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: IncidentsPayload | null; error: Error | null }>
+  )("get_recent_incidents", { _minutes: minutes });
   if (error) throw error;
   return (data ?? {}) as IncidentsPayload;
 }
@@ -107,7 +116,9 @@ export function RecentIncidentsPanel() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${isCritical ? "bg-destructive/15" : "bg-primary/10"}`}>
-            <ShieldAlert className={`h-5 w-5 ${isCritical ? "text-destructive" : "text-primary"}`} />
+            <ShieldAlert
+              className={`h-5 w-5 ${isCritical ? "text-destructive" : "text-primary"}`}
+            />
           </div>
           <div>
             <h3 className="text-base font-semibold">Incidentes recentes</h3>
@@ -124,12 +135,18 @@ export function RecentIncidentsPanel() {
             </SelectTrigger>
             <SelectContent>
               {WINDOW_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            {isFetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -143,10 +160,30 @@ export function RecentIncidentsPanel() {
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatTile icon={Activity} label="Total" value={totalIncidents} tone={isCritical ? "critical" : "ok"} />
-            <StatTile icon={AlertOctagon} label="Falhas manut." value={data?.maintenance_error_count ?? 0} tone={(data?.maintenance_error_count ?? 0) > 0 ? "critical" : "ok"} />
-            <StatTile icon={Bell} label="Alertas" value={data?.alert_count ?? 0} tone={(data?.alert_count ?? 0) > 0 ? "warning" : "ok"} />
-            <StatTile icon={Clock} label="Janela" value={`${data?.window_minutes ?? minutes}min`} tone="neutral" />
+            <StatTile
+              icon={Activity}
+              label="Total"
+              value={totalIncidents}
+              tone={isCritical ? "critical" : "ok"}
+            />
+            <StatTile
+              icon={AlertOctagon}
+              label="Falhas manut."
+              value={data?.maintenance_error_count ?? 0}
+              tone={(data?.maintenance_error_count ?? 0) > 0 ? "critical" : "ok"}
+            />
+            <StatTile
+              icon={Bell}
+              label="Alertas"
+              value={data?.alert_count ?? 0}
+              tone={(data?.alert_count ?? 0) > 0 ? "warning" : "ok"}
+            />
+            <StatTile
+              icon={Clock}
+              label="Janela"
+              value={`${data?.window_minutes ?? minutes}min`}
+              tone="neutral"
+            />
           </div>
 
           {Object.keys(data?.counts_by_type ?? {}).length > 0 && (
@@ -166,12 +203,20 @@ export function RecentIncidentsPanel() {
               </h4>
               <div className="space-y-1.5 max-h-64 overflow-y-auto">
                 {data!.maintenance_errors.map((row) => (
-                  <div key={row.id} className="flex items-start justify-between gap-3 p-2.5 rounded-md border border-destructive/20 bg-destructive/5">
+                  <div
+                    key={row.id}
+                    className="flex items-start justify-between gap-3 p-2.5 rounded-md border border-destructive/20 bg-destructive/5"
+                  >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-[10px]">{row.source}</Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {row.source}
+                        </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(parseISO(row.created_at), { addSuffix: true, locale: ptBR })}
+                          {formatDistanceToNow(parseISO(row.created_at), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
                         </span>
                       </div>
                       {row.error_message && (
@@ -198,22 +243,35 @@ export function RecentIncidentsPanel() {
               </h4>
               <div className="space-y-1.5 max-h-64 overflow-y-auto">
                 {data!.alerts.map((row) => (
-                  <div key={row.id} className="flex items-start justify-between gap-3 p-2.5 rounded-md border bg-card/50">
+                  <div
+                    key={row.id}
+                    className="flex items-start justify-between gap-3 p-2.5 rounded-md border bg-card/50"
+                  >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className={`text-[10px] ${EVENT_TONE[row.event_type] ?? ""}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${EVENT_TONE[row.event_type] ?? ""}`}
+                        >
                           {EVENT_LABELS[row.event_type] ?? row.event_type}
                         </Badge>
                         {!row.read && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
                         <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(parseISO(row.created_at), { addSuffix: true, locale: ptBR })}
+                          {formatDistanceToNow(parseISO(row.created_at), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
                         </span>
                       </div>
                       {row.product_name && (
-                        <p className="text-xs text-foreground/90 mt-1 line-clamp-1">{row.product_name}</p>
+                        <p className="text-xs text-foreground/90 mt-1 line-clamp-1">
+                          {row.product_name}
+                        </p>
                       )}
                       {row.new_status && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{row.new_status}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+                          {row.new_status}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -248,10 +306,10 @@ function StatTile({
     tone === "critical"
       ? "text-destructive bg-destructive/10 border-destructive/30"
       : tone === "warning"
-      ? "text-amber-500 bg-amber-500/10 border-amber-500/30"
-      : tone === "ok"
-      ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30"
-      : "text-muted-foreground bg-muted/40 border-border";
+        ? "text-amber-500 bg-amber-500/10 border-amber-500/30"
+        : tone === "ok"
+          ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30"
+          : "text-muted-foreground bg-muted/40 border-border";
 
   return (
     <div className={`p-3 rounded-lg border ${toneClass}`}>

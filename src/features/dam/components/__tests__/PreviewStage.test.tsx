@@ -12,9 +12,8 @@ if (!(Element.prototype as unknown as { scrollTo?: unknown }).scrollTo) {
 
 // Mock getAssetSignedUrl. Default = pending (loading). Tests can override per-call.
 vi.mock("../../hooks/use-assets", async () => {
-  const actual = await vi.importActual<typeof import("../../hooks/use-assets")>(
-    "../../hooks/use-assets",
-  );
+  const actual =
+    await vi.importActual<typeof import("../../hooks/use-assets")>("../../hooks/use-assets");
   return {
     ...actual,
     getAssetSignedUrl: vi.fn(() => new Promise<string>(() => {})),

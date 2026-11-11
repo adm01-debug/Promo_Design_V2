@@ -8,9 +8,7 @@ const ARCHIVED_KEY = "dam-include-archived";
 
 function wrapper(initialEntries: string[]) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
-    );
+    return <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>;
   };
 }
 

@@ -9,8 +9,11 @@ function readInitial(): string[] {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed.filter((x): x is string => typeof x === "string").slice(0, MAX_SELECTION);
-  } catch { /* ignore */ }
+    if (Array.isArray(parsed))
+      return parsed.filter((x): x is string => typeof x === "string").slice(0, MAX_SELECTION);
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
@@ -20,7 +23,9 @@ export function useCompareSelection() {
   useEffect(() => {
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(selectedIds));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [selectedIds]);
 
   const toggle = useCallback((id: string) => {

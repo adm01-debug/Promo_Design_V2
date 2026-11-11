@@ -1,37 +1,34 @@
 /**
  * Mesh Warp Worker
- * 
+ *
  * Handles heavy image processing (warping, shading, transformations)
  * outside the main thread to prevent UI freezing.
  */
 
 self.onmessage = async (e: MessageEvent) => {
-  const { 
-    type,
-    payload 
-  } = e.data;
+  const { type, payload } = e.data;
 
-  if (type === 'WARP_IMAGE') {
-    const { 
-      bitmap, 
-      width, 
-      height, 
-      surface, 
+  if (type === "WARP_IMAGE") {
+    const {
+      bitmap,
+      width,
+      height,
+      surface,
       config,
       rotation = 0,
       flipH = false,
-      flipV = false
+      flipV = false,
     } = payload;
 
     try {
       // Use OffscreenCanvas for worker-side rendering
       const canvas = new OffscreenCanvas(width, height);
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Could not get OffscreenCanvas context");
 
       // 1. Initial transformations (Rotate/Flip)
       const tempCanvas = new OffscreenCanvas(width, height);
-      const tempCtx = tempCanvas.getContext('2d')!;
+      const tempCtx = tempCanvas.getContext("2d")!;
       tempCtx.save();
       tempCtx.translate(width / 2, height / 2);
       tempCtx.rotate((rotation * Math.PI) / 180);
@@ -50,7 +47,7 @@ self.onmessage = async (e: MessageEvent) => {
         const t = (i / (strips - 1)) * 2 - 1;
         const curve = Math.sin((t * Math.PI) / 2);
         const curveFull = Math.cos((t * Math.PI) / 2);
-        
+
         let yOffset = 0;
         let yScale = 1;
 
@@ -77,8 +74,10 @@ self.onmessage = async (e: MessageEvent) => {
         const destStripW = stripW * xSqueeze;
         const centerX = width / 2;
         const normalDestX = i * stripW;
-        const destX = centerX + (normalDestX - centerX) * config.squeeze + 
-                      (1 - config.squeeze) * curve * width * 0.02;
+        const destX =
+          centerX +
+          (normalDestX - centerX) * config.squeeze +
+          (1 - config.squeeze) * curve * width * 0.02;
 
         const destY = yOffset;
         const destH = height * yScale;
@@ -89,8 +88,14 @@ self.onmessage = async (e: MessageEvent) => {
         ctx.clip();
         ctx.drawImage(
           tempCanvas,
-          i * srcStripW, 0, srcStripW + 1, srcH,
-          destX, destY, destStripW + 1, destH
+          i * srcStripW,
+          0,
+          srcStripW + 1,
+          srcH,
+          destX,
+          destY,
+          destStripW + 1,
+          destH,
         );
         ctx.restore();
       }
@@ -126,11 +131,11 @@ self.onmessage = async (e: MessageEvent) => {
 
       // Convert result to ImageBitmap for fastest transfer
       const resultBitmap = canvas.transferToImageBitmap();
-      (self as unknown as { postMessage: (msg: unknown, transfer: Transferable[]) => void })
-        .postMessage({ type: 'WARP_RESULT', payload: { bitmap: resultBitmap } }, [resultBitmap]);
-
+      (
+        self as unknown as { postMessage: (msg: unknown, transfer: Transferable[]) => void }
+      ).postMessage({ type: "WARP_RESULT", payload: { bitmap: resultBitmap } }, [resultBitmap]);
     } catch (err) {
-      self.postMessage({ type: 'ERROR', payload: { message: (err as Error).message } });
+      self.postMessage({ type: "ERROR", payload: { message: (err as Error).message } });
     }
   }
 };

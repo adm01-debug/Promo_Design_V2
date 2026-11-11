@@ -169,10 +169,7 @@ export function scoreColors(dominant: string[], guidelines: AdherenceGuidelines)
   const sample = validDominant.slice(0, 5);
   const weights = sample.map((_, i) => 1 / (i + 1)); // 1, 0.5, 0.33, 0.25, 0.2
   const totalW = weights.reduce((s, w) => s + w, 0);
-  const weighted = sample.reduce(
-    (acc, c, i) => acc + colorMatchScore(c, palette) * weights[i],
-    0,
-  );
+  const weighted = sample.reduce((acc, c, i) => acc + colorMatchScore(c, palette) * weights[i], 0);
   return Math.round(weighted / totalW);
 }
 
@@ -198,18 +195,14 @@ export function scorePlacement(
   if (!placement) return 50; // neutro quando não há dado
   if (!patterns) return 50;
   const { logo_x_percent_p50, logo_y_percent_p50, logo_scale_p50 } = patterns;
-  if (
-    logo_x_percent_p50 == null ||
-    logo_y_percent_p50 == null ||
-    logo_scale_p50 == null
-  ) {
+  if (logo_x_percent_p50 == null || logo_y_percent_p50 == null || logo_scale_p50 == null) {
     return 50;
   }
   const dx = placement.x - logo_x_percent_p50;
   const dy = placement.y - logo_y_percent_p50;
   const dScale = placement.scale - logo_scale_p50;
   // Distância normalizada em espaço [0,1]. Peso 2x para escala (mais visível).
-  const dist = Math.sqrt(dx * dx + dy * dy + (dScale * 2) * (dScale * 2));
+  const dist = Math.sqrt(dx * dx + dy * dy + dScale * 2 * (dScale * 2));
   // dist=0 → 100; dist>=0.6 → 0. Linear entre esses limites.
   if (dist >= 0.6) return 0;
   return Math.round((1 - dist / 0.6) * 100);
@@ -218,7 +211,10 @@ export function scorePlacement(
 // ---------- Rules ----------
 
 function normalizeRule(rule: string): string {
-  return rule.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return rule
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function ruleMatches(rule: string, haystack: string[]): boolean {
@@ -229,11 +225,7 @@ function ruleMatches(rule: string, haystack: string[]): boolean {
 }
 
 export function scoreRules(art: AdherenceArt, guidelines: AdherenceGuidelines): number {
-  const haystack = [
-    art.surfaceType ?? "",
-    art.blendMode ?? "",
-    ...(art.descriptors ?? []),
-  ]
+  const haystack = [art.surfaceType ?? "", art.blendMode ?? "", ...(art.descriptors ?? [])]
     .map(normalizeRule)
     .filter((s) => s.length > 0);
 
@@ -255,10 +247,7 @@ export function scoreRules(art: AdherenceArt, guidelines: AdherenceGuidelines): 
   const doScore = dos.length > 0 ? (hits / dos.length) * 100 : 50;
   const dontPenalty = donts.length > 0 ? (violations / donts.length) * 100 : 0;
   // Cada categoria contribui metade; violações pesam o dobro (dedução direta).
-  return Math.max(
-    0,
-    Math.min(100, Math.round(doScore * 0.6 + (50 - dontPenalty * 0.5) * 0.8)),
-  );
+  return Math.max(0, Math.min(100, Math.round(doScore * 0.6 + (50 - dontPenalty * 0.5) * 0.8)));
 }
 
 // ---------- Compose ----------

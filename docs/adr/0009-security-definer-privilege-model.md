@@ -1,9 +1,11 @@
 # ADR 0009: Modelo de Privilégios para Funções `SECURITY DEFINER`
 
 ## Status
+
 Aceito — 2026-07-12
 
 ## Contexto
+
 No PostgreSQL, `CREATE FUNCTION` concede `EXECUTE` a `PUBLIC` por padrão. Combinado com `SECURITY DEFINER` (execução com privilégios do owner), qualquer bug lógico numa função (check de role invertido, argumento não sanitizado, `search_path` mutável) permite escalada de privilégio a partir de qualquer sessão — inclusive `anon`.
 
 O linter do Supabase (regras `0028` e `0029`) sinalizou 37 funções expostas indevidamente.
@@ -24,15 +26,18 @@ Adotamos **least privilege explícito** para toda função `SECURITY DEFINER` no
 ## Consequências
 
 **Positivas**
+
 - Superfície de ataque reduzida: `anon` não consegue mais invocar 42 funções SECDEF.
 - Auditoria pelo linter converge: warnings `0028`/`0029` restringem-se apenas às funções que legitimamente precisam de `authenticated`.
 - Modelo replicável: toda nova função SECDEF segue o mesmo padrão (revoke → grant granular).
 
 **Negativas**
+
 - Boilerplate adicional em cada migration de função.
 - Novos endpoints admin exigem grant explícito — esquecer causa erro `permission denied`, mas isso é preferível a exposição.
 
 ## Referências
+
 - [Supabase Linter 0028](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable)
 - [Supabase Linter 0029](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
 - [PostgreSQL — CREATE FUNCTION security](https://www.postgresql.org/docs/current/sql-createfunction.html#SQL-CREATEFUNCTION-SECURITY)

@@ -4,12 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Asset } from "../../hooks/use-assets";
 import type { SortKey, TimelineGrouping } from "../../hooks/use-version-filters";
-import { 
-  VersionThumb, 
-  CopyVersionLinkButton, 
-  VersionDescription, 
+import {
+  VersionThumb,
+  CopyVersionLinkButton,
+  VersionDescription,
   VersionNodePreview,
-  formatDateTime 
+  formatDateTime,
 } from "./VersionHistoryItems";
 
 interface VersionTimelineProps {
@@ -46,7 +46,11 @@ function resolveGranularity(entries: Asset[], grouping: TimelineGrouping): Resol
 function bucketFor(date: Date, gran: ResolvedGranularity): { key: string; label: string } {
   if (gran === "day") {
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-    const label = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+    const label = date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
     return { key, label };
   }
   if (gran === "week") {
@@ -88,7 +92,15 @@ function shortId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
 
-export function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect, followSort, sort, grouping }: VersionTimelineProps) {
+export function VersionTimeline({
+  entries,
+  maxVersion,
+  currentAssetId,
+  onSelect,
+  followSort,
+  sort,
+  grouping,
+}: VersionTimelineProps) {
   const groups = useMemo(
     () => groupEntries(entries, { followSort, sort, grouping }),
     [entries, followSort, sort, grouping],
@@ -153,15 +165,22 @@ export function VersionTimeline({ entries, maxVersion, currentAssetId, onSelect,
                           <VersionThumb asset={v} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <Badge variant={isCurrent ? "default" : "secondary"} className="text-[10px] shrink-0">
+                              <Badge
+                                variant={isCurrent ? "default" : "secondary"}
+                                className="text-[10px] shrink-0"
+                              >
                                 v{v.version}
                               </Badge>
                               <span className="font-medium text-sm truncate">{v.name}</span>
                               {isCurrent && (
-                                <Badge variant="default" className="text-[10px]">atual</Badge>
+                                <Badge variant="default" className="text-[10px]">
+                                  atual
+                                </Badge>
                               )}
                               {isSelected && !isCurrent && (
-                                <Badge variant="outline" className="text-[10px]">aberta</Badge>
+                                <Badge variant="outline" className="text-[10px]">
+                                  aberta
+                                </Badge>
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">

@@ -6,29 +6,39 @@ const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/mockup-ai`;
 
 const withBackend = { ignore: !SUPABASE_URL || !SUPABASE_ANON_KEY };
 
-Deno.test({ name: "mockup-ai: should fail with 401 if no auth header", ...withBackend, fn: async () => {
-  const response = await fetch(FUNCTION_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "remove-bg", imageBase64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==" }),
-  });
+Deno.test({
+  name: "mockup-ai: should fail with 401 if no auth header",
+  ...withBackend,
+  fn: async () => {
+    const response = await fetch(FUNCTION_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "remove-bg",
+        imageBase64:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      }),
+    });
 
-  assertEquals(response.status, 401);
-  await response.text();
-} });
+    assertEquals(response.status, 401);
+    await response.text();
+  },
+});
 
-Deno.test({ name: "mockup-ai: should fail with 400 if invalid action", ...withBackend, fn: async () => {
-  const response = await fetch(FUNCTION_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-    },
-    body: JSON.stringify({ action: "invalid-action" }),
-  });
+Deno.test({
+  name: "mockup-ai: should fail with 400 if invalid action",
+  ...withBackend,
+  fn: async () => {
+    const response = await fetch(FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ action: "invalid-action" }),
+    });
 
-  assertEquals(response.status, 400);
-  await response.text();
-} });
-
-
+    assertEquals(response.status, 400);
+    await response.text();
+  },
+});

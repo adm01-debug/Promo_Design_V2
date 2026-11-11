@@ -20,7 +20,15 @@ interface ProjectCardProps {
   path?: string;
 }
 
-const ProjectCard = ({ title, category, thumbnail, lastEdited, views, index, path }: ProjectCardProps) => {
+const ProjectCard = ({
+  title,
+  category,
+  thumbnail,
+  lastEdited,
+  views,
+  index,
+  path,
+}: ProjectCardProps) => {
   const [fav, setFav] = useState(false);
   const navigate = useNavigate();
 
@@ -48,11 +56,16 @@ const ProjectCard = ({ title, category, thumbnail, lastEdited, views, index, pat
 
         {/* Favorite */}
         <button
-          onClick={(e) => { e.stopPropagation(); setFav(!fav); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setFav(!fav);
+          }}
           aria-label={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           className="absolute top-2 right-2 p-1.5 rounded-md glass opacity-0 group-hover:opacity-100 transition-all"
         >
-          <Star className={`w-3.5 h-3.5 transition-colors ${fav ? "fill-yellow-400 text-yellow-400" : "text-foreground"}`} />
+          <Star
+            className={`w-3.5 h-3.5 transition-colors ${fav ? "fill-yellow-400 text-yellow-400" : "text-foreground"}`}
+          />
         </button>
 
         {/* Hover Actions */}
@@ -71,7 +84,13 @@ const ProjectCard = ({ title, category, thumbnail, lastEdited, views, index, pat
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(title); toast.success("Nome copiado!"); }}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(title);
+                  toast.success("Nome copiado!");
+                }}
+              >
                 <Copy className="w-3.5 h-3.5 mr-2" /> Copiar nome
               </DropdownMenuItem>
             </DropdownMenuContent>

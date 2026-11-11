@@ -60,4 +60,3 @@ export async function logRemixApplied(
     // telemetria não deve impactar a UX
   }
 }
-

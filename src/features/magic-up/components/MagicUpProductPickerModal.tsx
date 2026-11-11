@@ -18,9 +18,16 @@ interface MagicUpProductPickerModalProps {
 }
 
 const MagicUpProductPickerModal = ({
-  open, onClose, products, productsLoading,
-  productSearch, setProductSearch, productPage, setProductPage,
-  totalProducts, onSelect,
+  open,
+  onClose,
+  products,
+  productsLoading,
+  productSearch,
+  setProductSearch,
+  productPage,
+  setProductPage,
+  totalProducts,
+  onSelect,
 }: MagicUpProductPickerModalProps) => (
   <AnimatePresence>
     {open && (
@@ -39,8 +46,13 @@ const MagicUpProductPickerModal = ({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-4 border-b border-border flex items-center justify-between shrink-0">
-            <h2 className="text-sm font-display font-semibold text-foreground">Selecionar Produto</h2>
-            <button onClick={onClose} className="p-1 rounded text-muted-foreground hover:text-foreground">
+            <h2 className="text-sm font-display font-semibold text-foreground">
+              Selecionar Produto
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1 rounded text-muted-foreground hover:text-foreground"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -52,7 +64,10 @@ const MagicUpProductPickerModal = ({
                 type="text"
                 placeholder="Buscar por nome ou SKU..."
                 value={productSearch}
-                onChange={(e) => { setProductSearch(e.target.value); setProductPage(() => 0); }}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setProductPage(() => 0);
+                }}
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-surface-2 border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                 autoFocus
               />
@@ -74,10 +89,20 @@ const MagicUpProductPickerModal = ({
                     className="rounded-lg border border-border hover:border-primary/40 overflow-hidden text-left transition-all hover:shadow-glow"
                   >
                     <div className="aspect-square bg-surface-2 flex items-center justify-center p-2">
-                      <img src={getProductImageUrl(product)} alt={product.name} className="w-full h-full object-contain" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder.svg"; }} />
+                      <img
+                        src={getProductImageUrl(product)}
+                        alt={product.name}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
                     </div>
                     <div className="p-2">
-                      <h3 className="text-[10px] font-semibold text-foreground truncate">{product.name}</h3>
+                      <h3 className="text-[10px] font-semibold text-foreground truncate">
+                        {product.name}
+                      </h3>
                       <p className="text-[9px] text-muted-foreground truncate">{product.sku}</p>
                     </div>
                   </button>
@@ -88,13 +113,25 @@ const MagicUpProductPickerModal = ({
 
           {totalProducts > 12 && (
             <div className="p-3 border-t border-border flex items-center justify-center gap-2 shrink-0">
-              <Button variant="outline" size="sm" disabled={productPage === 0} onClick={() => setProductPage(p => p - 1)} className="text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={productPage === 0}
+                onClick={() => setProductPage((p) => p - 1)}
+                className="text-xs"
+              >
                 <ChevronLeft className="w-3 h-3" />
               </Button>
               <span className="text-xs text-muted-foreground font-mono">
                 {productPage + 1} / {Math.ceil(totalProducts / 12)}
               </span>
-              <Button variant="outline" size="sm" disabled={productPage >= Math.ceil(totalProducts / 12) - 1} onClick={() => setProductPage(p => p + 1)} className="text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={productPage >= Math.ceil(totalProducts / 12) - 1}
+                onClick={() => setProductPage((p) => p + 1)}
+                className="text-xs"
+              >
                 <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
               </Button>
             </div>

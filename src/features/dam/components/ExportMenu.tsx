@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileArchive, Loader2, FolderTree, ChevronDown, Star, ListChecks, Settings2 } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  FileArchive,
+  Loader2,
+  FolderTree,
+  ChevronDown,
+  Star,
+  ListChecks,
+  Settings2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +23,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
-import { buildAssetsCsv, downloadCsv, downloadAssetsZip, downloadAssetsZipsByType, ExportCanceledError, DEFAULT_CSV_COLUMNS, CSV_COLUMNS, type CsvColumnId } from "../lib/asset-export";
+import {
+  buildAssetsCsv,
+  downloadCsv,
+  downloadAssetsZip,
+  downloadAssetsZipsByType,
+  ExportCanceledError,
+  DEFAULT_CSV_COLUMNS,
+  CSV_COLUMNS,
+  type CsvColumnId,
+} from "../lib/asset-export";
 import { format } from "date-fns";
 import { useExportQueue, newJobId } from "../hooks/use-export-queue";
 import { CsvColumnsDialog } from "./CsvColumnsDialog";
@@ -30,7 +49,10 @@ const ZIP_CONFIRM_THRESHOLD = 50;
 /** Persisted last-used export action so the user can repeat with one click. */
 type ExportScope = "filtered" | "selection";
 type ExportFormat = "csv" | "zip" | "zip-by-type";
-interface ExportPref { scope: ExportScope; format: ExportFormat }
+interface ExportPref {
+  scope: ExportScope;
+  format: ExportFormat;
+}
 const PREF_KEY = "dam-export-pref";
 const CSV_COLUMNS_KEY = "dam-export-csv-columns";
 
@@ -41,13 +63,21 @@ function readCsvColumns(): CsvColumnId[] {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [...DEFAULT_CSV_COLUMNS];
     const valid = new Set(CSV_COLUMNS.map((c) => c.id));
-    const filtered = parsed.filter((id): id is CsvColumnId => typeof id === "string" && valid.has(id as CsvColumnId));
+    const filtered = parsed.filter(
+      (id): id is CsvColumnId => typeof id === "string" && valid.has(id as CsvColumnId),
+    );
     return filtered.length > 0 ? filtered : [...DEFAULT_CSV_COLUMNS];
-  } catch { return [...DEFAULT_CSV_COLUMNS]; }
+  } catch {
+    return [...DEFAULT_CSV_COLUMNS];
+  }
 }
 
 function writeCsvColumns(cols: CsvColumnId[]): void {
-  try { localStorage.setItem(CSV_COLUMNS_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(CSV_COLUMNS_KEY, JSON.stringify(cols));
+  } catch {
+    /* ignore */
+  }
 }
 
 function readPref(): ExportPref | null {
@@ -55,39 +85,56 @@ function readPref(): ExportPref | null {
     const raw = localStorage.getItem(PREF_KEY);
     if (!raw) return null;
     const p = JSON.parse(raw) as Partial<ExportPref>;
-    if ((p.scope === "filtered" || p.scope === "selection") &&
-        (p.format === "csv" || p.format === "zip" || p.format === "zip-by-type")) {
+    if (
+      (p.scope === "filtered" || p.scope === "selection") &&
+      (p.format === "csv" || p.format === "zip" || p.format === "zip-by-type")
+    ) {
       return { scope: p.scope, format: p.format };
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return null;
 }
 
 function writePref(pref: ExportPref): void {
-  try { localStorage.setItem(PREF_KEY, JSON.stringify(pref)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(PREF_KEY, JSON.stringify(pref));
+  } catch {
+    /* ignore */
+  }
 }
 
 const FORMAT_LABEL: Record<ExportFormat, string> = {
-  "csv": "CSV",
-  "zip": "ZIP",
+  csv: "CSV",
+  zip: "ZIP",
   "zip-by-type": "ZIP por tipo",
 };
 const SCOPE_LABEL: Record<ExportScope, string> = {
-  "filtered": "Filtrados",
-  "selection": "Seleção",
+  filtered: "Filtrados",
+  selection: "Seleção",
 };
 
 export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Props) {
   const [isExporting, setIsExporting] = useState(false);
   const [pref, setPref] = useState<ExportPref | null>(() => readPref());
-  useEffect(() => { if (pref) writePref(pref); }, [pref]);
+  useEffect(() => {
+    if (pref) writePref(pref);
+  }, [pref]);
   const [csvColumns, setCsvColumns] = useState<CsvColumnId[]>(() => readCsvColumns());
-  const [csvDialog, setCsvDialog] = useState<{ open: boolean; scope: Asset[]; label: string; kind: ExportScope } | null>(null);
+  const [csvDialog, setCsvDialog] = useState<{
+    open: boolean;
+    scope: Asset[];
+    label: string;
+    kind: ExportScope;
+  } | null>(null);
   const enqueue = useExportQueue((s) => s.enqueue);
   const updateJob = useExportQueue((s) => s.update);
   const setPanelOpen = useExportQueue((s) => s.setPanelOpen);
   const queueCount = useExportQueue((s) => s.jobs.length);
-  const runningCount = useExportQueue((s) => s.jobs.filter((j) => j.status === "running" || j.status === "queued").length);
+  const runningCount = useExportQueue(
+    (s) => s.jobs.filter((j) => j.status === "running" || j.status === "queued").length,
+  );
 
   const total = assets.length;
   const selCount = selectedAssets.length;
@@ -109,10 +156,19 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
       const csv = buildAssetsCsv(scope, clients, columns);
       const ts = format(new Date(), "yyyyMMdd-HHmmss");
       downloadCsv(`dam-${label}-${ts}.csv`, csv);
-      updateJob(id, { status: "done", done: 1, finishedAt: Date.now(), summary: `${scope.length} assets · ${columns.length} colunas` });
+      updateJob(id, {
+        status: "done",
+        done: 1,
+        finishedAt: Date.now(),
+        summary: `${scope.length} assets · ${columns.length} colunas`,
+      });
       toast.success(`CSV exportado (${scope.length} assets · ${columns.length} colunas)`);
     } catch (e) {
-      updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
+      updateJob(id, {
+        status: "error",
+        error: e instanceof Error ? e.message : "erro",
+        finishedAt: Date.now(),
+      });
       toast.error(`Falha ao gerar CSV: ${e instanceof Error ? e.message : "erro"}`);
     }
   };
@@ -139,22 +195,43 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
       controller,
     });
     try {
-      const result = await downloadAssetsZip(scope, clients, (done) => {
-        updateJob(id, { done });
-      }, controller.signal);
+      const result = await downloadAssetsZip(
+        scope,
+        clients,
+        (done) => {
+          updateJob(id, { done });
+        },
+        controller.signal,
+      );
       if (result.failed === 0) {
-        updateJob(id, { status: "done", done: scope.length, finishedAt: Date.now(), summary: `${result.ok} assets` });
+        updateJob(id, {
+          status: "done",
+          done: scope.length,
+          finishedAt: Date.now(),
+          summary: `${result.ok} assets`,
+        });
         toast.success(`ZIP exportado (${result.ok} assets)`);
       } else {
-        updateJob(id, { status: "done", done: scope.length, finishedAt: Date.now(), summary: `${result.ok} ok · ${result.failed} falhas (veja manifest.csv)` });
-        toast.warning(`ZIP exportado com ${result.failed} falha(s) — veja manifest.csv (${result.ok} ok)`);
+        updateJob(id, {
+          status: "done",
+          done: scope.length,
+          finishedAt: Date.now(),
+          summary: `${result.ok} ok · ${result.failed} falhas (veja manifest.csv)`,
+        });
+        toast.warning(
+          `ZIP exportado com ${result.failed} falha(s) — veja manifest.csv (${result.ok} ok)`,
+        );
       }
     } catch (e) {
       if (e instanceof ExportCanceledError) {
         updateJob(id, { status: "canceled", finishedAt: Date.now() });
         toast.info("Exportação cancelada");
       } else {
-        updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
+        updateJob(id, {
+          status: "error",
+          error: e instanceof Error ? e.message : "erro",
+          finishedAt: Date.now(),
+        });
         toast.error(`Falha ao gerar ZIP: ${e instanceof Error ? e.message : "erro"}`);
       }
     } finally {
@@ -191,9 +268,14 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
       controller,
     });
     try {
-      const result = await downloadAssetsZipsByType(scope, clients, (done) => {
-        updateJob(id, { done });
-      }, controller.signal);
+      const result = await downloadAssetsZipsByType(
+        scope,
+        clients,
+        (done) => {
+          updateJob(id, { done });
+        },
+        controller.signal,
+      );
       const summary = Object.entries(result.byType)
         .map(([t, c]) => `${t}: ${c.ok}${c.failed > 0 ? ` (${c.failed} falhas)` : ""}`)
         .join(" · ");
@@ -209,7 +291,11 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
         updateJob(id, { status: "canceled", finishedAt: Date.now() });
         toast.info("Exportação cancelada");
       } else {
-        updateJob(id, { status: "error", error: e instanceof Error ? e.message : "erro", finishedAt: Date.now() });
+        updateJob(id, {
+          status: "error",
+          error: e instanceof Error ? e.message : "erro",
+          finishedAt: Date.now(),
+        });
         toast.error(`Falha ao gerar ZIP por tipo: ${e instanceof Error ? e.message : "erro"}`);
       }
     } finally {
@@ -268,13 +354,12 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
     else void runZipByType(scope);
   };
 
-  const quickLabel = pref
-    ? `${FORMAT_LABEL[pref.format]} · ${SCOPE_LABEL[pref.scope]}`
-    : null;
+  const quickLabel = pref ? `${FORMAT_LABEL[pref.format]} · ${SCOPE_LABEL[pref.scope]}` : null;
 
   // The CSV+selection variant has no asset list when compare is off; the quick button
   // handles that via fallback above, but we still disable it when nothing is exportable.
-  const quickDisabled = !pref || isExporting || (pref.scope === "filtered" ? total === 0 : (selDisabled && total === 0));
+  const quickDisabled =
+    !pref || isExporting || (pref.scope === "filtered" ? total === 0 : selDisabled && total === 0);
 
   return (
     <div className="inline-flex items-center">
@@ -289,7 +374,10 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
         >
           <ListChecks className="w-3.5 h-3.5" />
           Fila
-          <Badge variant={runningCount > 0 ? "default" : "secondary"} className="h-4 px-1 text-[10px] tabular-nums">
+          <Badge
+            variant={runningCount > 0 ? "default" : "secondary"}
+            className="h-4 px-1 text-[10px] tabular-nums"
+          >
             {runningCount > 0 ? `${runningCount}/${queueCount}` : queueCount}
           </Badge>
         </Button>
@@ -321,83 +409,105 @@ export function ExportMenu({ assets, selectedAssets, clients, compareMode }: Pro
             disabled={isExporting}
             aria-label="Abrir menu de exportação"
           >
-            {!pref && (isExporting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Download className="w-3.5 h-3.5" />
-            ))}
+            {!pref &&
+              (isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              ))}
             {pref ? <ChevronDown className="w-3.5 h-3.5" /> : "Exportar"}
           </Button>
         </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        {pref && (
-          <>
-            <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
-              <Star className="w-3 h-3 fill-current" /> Padrão salvo
-            </DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => { setPref(null); try { localStorage.removeItem(PREF_KEY); } catch { /* ignore */ } toast.success("Padrão de exportação removido"); }}
-              className="text-xs text-muted-foreground"
-            >
-              Limpar padrão ({quickLabel})
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        <DropdownMenuLabel className="text-xs">CSV de metadados</DropdownMenuLabel>
-        <DropdownMenuItem
-          onClick={() => setCsvDialog({ open: true, scope: assets, label: "filtrados", kind: "filtered" })}
-          disabled={total === 0 && selDisabled}
-          className="text-xs text-muted-foreground"
-        >
-          <Settings2 className="w-4 h-4" />
-          <span className="flex-1">Configurar colunas…</span>
-          <span className="text-[10px]">{csvColumns.length}/{CSV_COLUMNS.length}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportCsv(assets, "filtrados", "filtered")} disabled={total === 0}>
-          <FileSpreadsheet className="w-4 h-4" />
-          <span className="flex-1">CSV — Filtrados</span>
-          <span className="text-xs text-muted-foreground">{total}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => exportCsv(selectedAssets, "selecao", "selection")}
-          disabled={selDisabled}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span className="flex-1">CSV — Seleção</span>
-          <span className="text-xs text-muted-foreground">{selCount}</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs">ZIP com arquivos</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => exportZip(assets, "filtered")} disabled={total === 0 || isExporting}>
-          <FileArchive className="w-4 h-4" />
-          <span className="flex-1">ZIP — Filtrados</span>
-          <span className="text-xs text-muted-foreground">{total}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportZip(selectedAssets, "selection")} disabled={selDisabled || isExporting}>
-          <FileArchive className="w-4 h-4" />
-          <span className="flex-1">ZIP — Seleção</span>
-          <span className="text-xs text-muted-foreground">{selCount}</span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs">ZIP separado por tipo</DropdownMenuLabel>
-        <DropdownMenuItem
-          onClick={() => exportZipByType(assets, "filtered")}
-          disabled={total === 0 || isExporting}
-        >
-          <FolderTree className="w-4 h-4" />
-          <span className="flex-1">Por tipo — Filtrados</span>
-          <span className="text-xs text-muted-foreground">{total}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => exportZipByType(selectedAssets, "selection")}
-          disabled={selDisabled || isExporting}
-        >
-          <FolderTree className="w-4 h-4" />
-          <span className="flex-1">Por tipo — Seleção</span>
-          <span className="text-xs text-muted-foreground">{selCount}</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+        <DropdownMenuContent align="end" className="w-64">
+          {pref && (
+            <>
+              <DropdownMenuLabel className="text-xs flex items-center gap-1.5">
+                <Star className="w-3 h-3 fill-current" /> Padrão salvo
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => {
+                  setPref(null);
+                  try {
+                    localStorage.removeItem(PREF_KEY);
+                  } catch {
+                    /* ignore */
+                  }
+                  toast.success("Padrão de exportação removido");
+                }}
+                className="text-xs text-muted-foreground"
+              >
+                Limpar padrão ({quickLabel})
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          <DropdownMenuLabel className="text-xs">CSV de metadados</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() =>
+              setCsvDialog({ open: true, scope: assets, label: "filtrados", kind: "filtered" })
+            }
+            disabled={total === 0 && selDisabled}
+            className="text-xs text-muted-foreground"
+          >
+            <Settings2 className="w-4 h-4" />
+            <span className="flex-1">Configurar colunas…</span>
+            <span className="text-[10px]">
+              {csvColumns.length}/{CSV_COLUMNS.length}
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => exportCsv(assets, "filtrados", "filtered")}
+            disabled={total === 0}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="flex-1">CSV — Filtrados</span>
+            <span className="text-xs text-muted-foreground">{total}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => exportCsv(selectedAssets, "selecao", "selection")}
+            disabled={selDisabled}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="flex-1">CSV — Seleção</span>
+            <span className="text-xs text-muted-foreground">{selCount}</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs">ZIP com arquivos</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => exportZip(assets, "filtered")}
+            disabled={total === 0 || isExporting}
+          >
+            <FileArchive className="w-4 h-4" />
+            <span className="flex-1">ZIP — Filtrados</span>
+            <span className="text-xs text-muted-foreground">{total}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => exportZip(selectedAssets, "selection")}
+            disabled={selDisabled || isExporting}
+          >
+            <FileArchive className="w-4 h-4" />
+            <span className="flex-1">ZIP — Seleção</span>
+            <span className="text-xs text-muted-foreground">{selCount}</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs">ZIP separado por tipo</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => exportZipByType(assets, "filtered")}
+            disabled={total === 0 || isExporting}
+          >
+            <FolderTree className="w-4 h-4" />
+            <span className="flex-1">Por tipo — Filtrados</span>
+            <span className="text-xs text-muted-foreground">{total}</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => exportZipByType(selectedAssets, "selection")}
+            disabled={selDisabled || isExporting}
+          >
+            <FolderTree className="w-4 h-4" />
+            <span className="flex-1">Por tipo — Seleção</span>
+            <span className="text-xs text-muted-foreground">{selCount}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
       </DropdownMenu>
       <CsvColumnsDialog
         open={csvDialog?.open ?? false}

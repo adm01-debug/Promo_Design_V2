@@ -35,8 +35,7 @@ export function useServiceOrderRealtime() {
       queryClient.invalidateQueries({ queryKey: ["service-orders"] });
 
       for (const row of data) {
-        const statusLabel =
-          STATUS_CONFIG[row.status as OsStatus]?.label ?? row.status;
+        const statusLabel = STATUS_CONFIG[row.status as OsStatus]?.label ?? row.status;
         toast({
           title: `OS ${row.os_number} atualizada`,
           description: `${row.product_name} → ${statusLabel}`,

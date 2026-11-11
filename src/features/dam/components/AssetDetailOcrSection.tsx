@@ -18,7 +18,17 @@ interface Props {
 }
 
 export function AssetDetailOcrSection({
-  ocrText, ocrStatus, ocrLoading, ocrOpen, onOpenChange, ocrClearing, onRun, onClear, canEdit, searchQuery, ocrMatch
+  ocrText,
+  ocrStatus,
+  ocrLoading,
+  ocrOpen,
+  onOpenChange,
+  ocrClearing,
+  onRun,
+  onClear,
+  canEdit,
+  searchQuery,
+  ocrMatch,
 }: Props) {
   const ocrButtonLabel =
     ocrLoading || ocrStatus === "pending"
@@ -92,10 +102,7 @@ export function AssetDetailOcrSection({
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <HighlightedPre
-                text={ocrText}
-                query={(searchQuery ?? "").trim()}
-              />
+              <HighlightedPre text={ocrText} query={(searchQuery ?? "").trim()} />
             </CollapsibleContent>
           </Collapsible>
         </>
@@ -164,9 +171,7 @@ export function OcrSnippet({ text, query }: { text: string; query: string }) {
       <div className="text-[10px] uppercase tracking-wide text-primary/80 mb-1">
         Trecho com correspondência
       </div>
-      <div className="whitespace-pre-wrap break-words">
-        {highlightTokens(snippet, query)}
-      </div>
+      <div className="whitespace-pre-wrap break-words">{highlightTokens(snippet, query)}</div>
     </div>
   );
 }

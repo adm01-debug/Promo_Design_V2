@@ -43,7 +43,9 @@ describe("useMockupEditorAI", () => {
   it("não chama IA quando logoPreview é null", async () => {
     const opts = { ...baseOptions(), logoPreview: null };
     const { result } = renderHook(() => useMockupEditorAI(opts));
-    await act(async () => { await result.current.handleSuggestPlacement(); });
+    await act(async () => {
+      await result.current.handleSuggestPlacement();
+    });
     expect(invokeMock).not.toHaveBeenCalled();
     expect(result.current.isSuggestingPlacement).toBe(false);
   });
@@ -64,7 +66,9 @@ describe("useMockupEditorAI", () => {
     });
     const opts = baseOptions();
     const { result } = renderHook(() => useMockupEditorAI(opts));
-    await act(async () => { await result.current.handleSuggestPlacement(); });
+    await act(async () => {
+      await result.current.handleSuggestPlacement();
+    });
 
     expect(invokeMock).toHaveBeenCalledOnce();
     expect(result.current.suggestedPlacement).toEqual({
@@ -74,14 +78,18 @@ describe("useMockupEditorAI", () => {
     expect(opts.setBlendMode).toHaveBeenCalledWith("multiply");
     expect(opts.setSurfaceType).toHaveBeenCalledWith("cylinder");
     expect(opts.setLogoOpacity).toHaveBeenCalledWith(80);
-    expect(opts.pushAISuggestion).toHaveBeenCalledWith(expect.objectContaining({ type: "placement" }));
+    expect(opts.pushAISuggestion).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "placement" }),
+    );
   });
 
   it("handleSuggestPlacement trata erro sem lançar", async () => {
     invokeMock.mockResolvedValue({ data: null, error: new Error("boom") });
     const opts = baseOptions();
     const { result } = renderHook(() => useMockupEditorAI(opts));
-    await act(async () => { await result.current.handleSuggestPlacement(); });
+    await act(async () => {
+      await result.current.handleSuggestPlacement();
+    });
     expect(result.current.isSuggestingPlacement).toBe(false);
     expect(result.current.suggestedPlacement).toBeNull();
   });
@@ -93,9 +101,13 @@ describe("useMockupEditorAI", () => {
     });
     const opts = baseOptions();
     const { result } = renderHook(() => useMockupEditorAI(opts));
-    await act(async () => { await result.current.handleRemoveBg(); });
+    await act(async () => {
+      await result.current.handleRemoveBg();
+    });
     expect(opts.pushLogoToHistory).toHaveBeenCalledWith("data:image/png;base64,BBBB");
-    expect(opts.pushAISuggestion).toHaveBeenCalledWith(expect.objectContaining({ type: "remove-bg" }));
+    expect(opts.pushAISuggestion).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "remove-bg" }),
+    );
     expect(result.current.isRemovingBg).toBe(false);
   });
 
@@ -103,25 +115,38 @@ describe("useMockupEditorAI", () => {
     invokeMock.mockResolvedValue({ data: null, error: new Error("fail") });
     const opts = baseOptions();
     const { result } = renderHook(() => useMockupEditorAI(opts));
-    await act(async () => { await result.current.handleRemoveBg(); });
+    await act(async () => {
+      await result.current.handleRemoveBg();
+    });
     expect(opts.pushLogoToHistory).not.toHaveBeenCalled();
     expect(result.current.isRemovingBg).toBe(false);
   });
 
   it("cancelAIRequest abre confirmação e confirmCancelAIRequest reseta estados", async () => {
     let resolveFn: (v: unknown) => void = () => {};
-    invokeMock.mockImplementation(() => new Promise((res) => { resolveFn = res; }));
+    invokeMock.mockImplementation(
+      () =>
+        new Promise((res) => {
+          resolveFn = res;
+        }),
+    );
 
     const opts = baseOptions();
     const { result } = renderHook(() => useMockupEditorAI(opts));
 
-    act(() => { void result.current.handleSuggestPlacement(); });
+    act(() => {
+      void result.current.handleSuggestPlacement();
+    });
     await waitFor(() => expect(result.current.isSuggestingPlacement).toBe(true));
 
-    act(() => { result.current.cancelAIRequest(); });
+    act(() => {
+      result.current.cancelAIRequest();
+    });
     expect(result.current.isCancelConfirmOpen).toBe(true);
 
-    act(() => { result.current.confirmCancelAIRequest(); });
+    act(() => {
+      result.current.confirmCancelAIRequest();
+    });
     expect(result.current.isCancelConfirmOpen).toBe(false);
     expect(result.current.isSuggestingPlacement).toBe(false);
 
@@ -135,9 +160,13 @@ describe("useMockupEditorAI", () => {
       error: null,
     });
     const { result } = renderHook(() => useMockupEditorAI(baseOptions()));
-    await act(async () => { await result.current.handleSuggestPlacement(); });
+    await act(async () => {
+      await result.current.handleSuggestPlacement();
+    });
     expect(result.current.suggestedPlacement).not.toBeNull();
-    act(() => { result.current.setSuggestedPlacement(null); });
+    act(() => {
+      result.current.setSuggestedPlacement(null);
+    });
     expect(result.current.suggestedPlacement).toBeNull();
   });
 });

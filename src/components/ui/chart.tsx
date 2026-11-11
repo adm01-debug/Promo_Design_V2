@@ -10,7 +10,10 @@ export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode;
     icon?: React.ComponentType;
-  } & ({ color?: string; theme?: never } | { color?: never; theme: Record<keyof typeof THEMES, string> });
+  } & (
+    | { color?: string; theme?: never }
+    | { color?: never; theme: Record<keyof typeof THEMES, string> }
+  );
 };
 
 type ChartContextProps = {
@@ -123,7 +126,9 @@ const ChartTooltipContent = React.forwardRef<
     const payload = React.useMemo(
       () =>
         Array.isArray(payloadProp)
-          ? payloadProp.filter((p): p is NonNullable<typeof p> => p != null && typeof p === "object")
+          ? payloadProp.filter(
+              (p): p is NonNullable<typeof p> => p != null && typeof p === "object",
+            )
           : [],
       [payloadProp],
     );
@@ -142,7 +147,9 @@ const ChartTooltipContent = React.forwardRef<
           : itemConfig?.label;
 
       if (labelFormatter) {
-        return <div className={cn("font-medium", labelClassName)}>{labelFormatter(value, payload)}</div>;
+        return (
+          <div className={cn("font-medium", labelClassName)}>{labelFormatter(value, payload)}</div>
+        );
       }
 
       if (value == null || value === "") {
@@ -172,9 +179,7 @@ const ChartTooltipContent = React.forwardRef<
             const key = `${nameKey || item?.name || item?.dataKey || "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
             const indicatorColor =
-              color ||
-              (item.payload as { fill?: string } | undefined)?.fill ||
-              item.color;
+              color || (item.payload as { fill?: string } | undefined)?.fill || item.color;
             // Stable, collision-free key — dataKey may be missing or duplicated.
             const rowKey = `${item.dataKey ?? item.name ?? "row"}-${index}`;
             const hasValue = item?.value !== undefined && item?.value !== null;
@@ -193,7 +198,13 @@ const ChartTooltipContent = React.forwardRef<
                 )}
               >
                 {formatter && hasValue && item.name ? (
-                  formatter(item.value as string | number, item.name, item, index, item.payload ?? {})
+                  formatter(
+                    item.value as string | number,
+                    item.name,
+                    item,
+                    index,
+                    item.payload ?? {},
+                  )
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -201,12 +212,16 @@ const ChartTooltipContent = React.forwardRef<
                     ) : (
                       !hideIndicator && (
                         <div
-                          className={cn("shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]", {
-                            "h-2.5 w-2.5": indicator === "dot",
-                            "w-1": indicator === "line",
-                            "w-0 border-[1.5px] border-dashed bg-transparent": indicator === "dashed",
-                            "my-0.5": nestLabel && indicator === "dashed",
-                          })}
+                          className={cn(
+                            "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
+                            {
+                              "h-2.5 w-2.5": indicator === "dot",
+                              "w-1": indicator === "line",
+                              "w-0 border-[1.5px] border-dashed bg-transparent":
+                                indicator === "dashed",
+                              "my-0.5": nestLabel && indicator === "dashed",
+                            },
+                          )}
                           style={
                             {
                               "--color-bg": indicatorColor,
@@ -224,7 +239,9 @@ const ChartTooltipContent = React.forwardRef<
                     >
                       <div className="grid gap-1.5">
                         {nestLabel ? tooltipLabel : null}
-                        <span className="text-muted-foreground">{itemConfig?.label || item.name || key}</span>
+                        <span className="text-muted-foreground">
+                          {itemConfig?.label || item.name || key}
+                        </span>
                       </div>
                       <span className="font-mono font-medium tabular-nums text-foreground">
                         {valueLabel}
@@ -251,55 +268,68 @@ const ChartLegendContent = React.forwardRef<
       hideIcon?: boolean;
       nameKey?: string;
     }
->(({ className, hideIcon = false, payload: payloadProp, verticalAlign = "bottom", nameKey }, ref) => {
-  const { config } = useChart();
-  // Defensive: legend payload may arrive as undefined or null entries.
-  const payload = React.useMemo(
-    () =>
-      Array.isArray(payloadProp)
-        ? payloadProp.filter((p): p is NonNullable<typeof p> => p != null && typeof p === "object")
-        : [],
-    [payloadProp],
-  );
+>(
+  (
+    { className, hideIcon = false, payload: payloadProp, verticalAlign = "bottom", nameKey },
+    ref,
+  ) => {
+    const { config } = useChart();
+    // Defensive: legend payload may arrive as undefined or null entries.
+    const payload = React.useMemo(
+      () =>
+        Array.isArray(payloadProp)
+          ? payloadProp.filter(
+              (p): p is NonNullable<typeof p> => p != null && typeof p === "object",
+            )
+          : [],
+      [payloadProp],
+    );
 
-  if (payload.length === 0) {
-    return null;
-  }
+    if (payload.length === 0) {
+      return null;
+    }
 
-  return (
-    <div
-      ref={ref}
-      className={cn("flex items-center justify-center gap-4", verticalAlign === "top" ? "pb-3" : "pt-3", className)}
-    >
-      {payload.map((item, index) => {
-        const key = `${nameKey || item?.dataKey || item?.value || "value"}`;
-        const itemConfig = getPayloadConfigFromPayload(config, item, key);
-        const labelText = itemConfig?.label ?? (item?.value != null ? String(item.value) : key);
-        // Stable key even when item.value is missing or duplicated.
-        const rowKey = `${item?.dataKey ?? item?.value ?? "legend"}-${index}`;
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center justify-center gap-4",
+          verticalAlign === "top" ? "pb-3" : "pt-3",
+          className,
+        )}
+      >
+        {payload.map((item, index) => {
+          const key = `${nameKey || item?.dataKey || item?.value || "value"}`;
+          const itemConfig = getPayloadConfigFromPayload(config, item, key);
+          const labelText = itemConfig?.label ?? (item?.value != null ? String(item.value) : key);
+          // Stable key even when item.value is missing or duplicated.
+          const rowKey = `${item?.dataKey ?? item?.value ?? "legend"}-${index}`;
 
-        return (
-          <div
-            key={rowKey}
-            className={cn("flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground")}
-          >
-            {itemConfig?.icon && !hideIcon ? (
-              <itemConfig.icon />
-            ) : (
-              <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
-                style={{
-                  backgroundColor: item?.color ?? "hsl(var(--muted-foreground))",
-                }}
-              />
-            )}
-            {labelText}
-          </div>
-        );
-      })}
-    </div>
-  );
-});
+          return (
+            <div
+              key={rowKey}
+              className={cn(
+                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+              )}
+            >
+              {itemConfig?.icon && !hideIcon ? (
+                <itemConfig.icon />
+              ) : (
+                <div
+                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  style={{
+                    backgroundColor: item?.color ?? "hsl(var(--muted-foreground))",
+                  }}
+                />
+              )}
+              {labelText}
+            </div>
+          );
+        })}
+      </div>
+    );
+  },
+);
 ChartLegendContent.displayName = "ChartLegend";
 
 // Helper to extract item config from a payload.
@@ -328,4 +358,11 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
   return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
 }
 
-export { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, ChartStyle };
+export {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  ChartStyle,
+};

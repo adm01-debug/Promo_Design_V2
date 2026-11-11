@@ -5,7 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Gauge, Loader2, RefreshCcw } from "lucide-react";
 
@@ -40,8 +44,14 @@ const SOURCE_LABELS: Record<string, string> = {
 const STATUS_META: Record<SloRow["status"], { label: string; className: string }> = {
   ok: { label: "OK", className: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
   warning: { label: "Atenção", className: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
-  critical: { label: "Crítico", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  insufficient_data: { label: "Sem dados", className: "bg-muted text-muted-foreground border-border" },
+  critical: {
+    label: "Crítico",
+    className: "bg-destructive/15 text-destructive border-destructive/30",
+  },
+  insufficient_data: {
+    label: "Sem dados",
+    className: "bg-muted text-muted-foreground border-border",
+  },
 };
 
 function fmtMs(v: number | null | undefined): string {
@@ -52,7 +62,12 @@ function fmtMs(v: number | null | undefined): string {
 
 async function fetchSlo(baselineDays: number, threshold: number): Promise<SloResponse> {
   const { data, error } = await supabase.functions.invoke("admin-maintenance", {
-    body: { action: "slo_baseline", slo_baseline_days: baselineDays, slo_threshold: threshold, slo_recent_days: 7 },
+    body: {
+      action: "slo_baseline",
+      slo_baseline_days: baselineDays,
+      slo_threshold: threshold,
+      slo_recent_days: 7,
+    },
   });
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
@@ -118,7 +133,8 @@ export function SloBaselinePanel() {
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Compara o p95 dos últimos 7 dias com o baseline histórico. Regressão &ge; {threshold}× dispara alerta crítico.
+        Compara o p95 dos últimos 7 dias com o baseline histórico. Regressão &ge; {threshold}×
+        dispara alerta crítico.
       </p>
 
       {query.isLoading ? (
@@ -145,17 +161,31 @@ export function SloBaselinePanel() {
                 </div>
                 <div className="grid grid-cols-3 gap-1 text-center">
                   <div className="p-1 rounded bg-muted/40">
-                    <div className="text-[9px] uppercase text-muted-foreground font-mono">baseline p95</div>
-                    <div className="text-[11px] font-mono font-medium">{fmtMs(r.baseline_p95_ms)}</div>
-                    <div className="text-[9px] text-muted-foreground font-mono">n={r.baseline_samples}</div>
+                    <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                      baseline p95
+                    </div>
+                    <div className="text-[11px] font-mono font-medium">
+                      {fmtMs(r.baseline_p95_ms)}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground font-mono">
+                      n={r.baseline_samples}
+                    </div>
                   </div>
                   <div className="p-1 rounded bg-muted/40">
-                    <div className="text-[9px] uppercase text-muted-foreground font-mono">recente p95</div>
-                    <div className="text-[11px] font-mono font-medium">{fmtMs(r.recent_p95_ms)}</div>
-                    <div className="text-[9px] text-muted-foreground font-mono">n={r.recent_samples}</div>
+                    <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                      recente p95
+                    </div>
+                    <div className="text-[11px] font-mono font-medium">
+                      {fmtMs(r.recent_p95_ms)}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground font-mono">
+                      n={r.recent_samples}
+                    </div>
                   </div>
                   <div className="p-1 rounded bg-muted/40">
-                    <div className="text-[9px] uppercase text-muted-foreground font-mono">razão</div>
+                    <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                      razão
+                    </div>
                     <div
                       className={`text-[11px] font-mono font-medium ${
                         r.status === "critical"

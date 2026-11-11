@@ -4,13 +4,7 @@ import type { AISuggestion } from "../hooks/use-mockup-editor-state";
 
 // -------- Shared editor domain types --------
 
-export type BlendMode =
-  | "normal"
-  | "multiply"
-  | "screen"
-  | "overlay"
-  | "darken"
-  | "color-burn";
+export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 
 export type ExportFormat = "png" | "jpeg" | "webp";
 
@@ -127,17 +121,13 @@ export function MockupEditorProvider({
   value: MockupEditorContextValue;
   children: ReactNode;
 }) {
-  return (
-    <MockupEditorContext.Provider value={value}>{children}</MockupEditorContext.Provider>
-  );
+  return <MockupEditorContext.Provider value={value}>{children}</MockupEditorContext.Provider>;
 }
 
 export function useMockupEditorContext(): MockupEditorContextValue {
   const ctx = useContext(MockupEditorContext);
   if (!ctx) {
-    throw new Error(
-      "useMockupEditorContext must be used within <MockupEditorProvider>",
-    );
+    throw new Error("useMockupEditorContext must be used within <MockupEditorProvider>");
   }
   return ctx;
 }

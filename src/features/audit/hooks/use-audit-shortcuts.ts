@@ -6,7 +6,7 @@ export function useAuditShortcuts({
   currentOrgId,
   hasAnyFilter,
   setFilters,
-  setAlertsOpen
+  setAlertsOpen,
 }: {
   currentOrgId: string | null;
   hasAnyFilter: boolean;
@@ -24,10 +24,7 @@ export function useAuditShortcuts({
       if (!node) return false;
       const tag = node.tagName;
       return (
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        node.isContentEditable === true
+        tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || node.isContentEditable === true
       );
     };
 

@@ -24,13 +24,23 @@ describe("TECHNIQUES", () => {
   });
 
   const expectedTechniques = [
-    "Laser Fiber", "Laser UV", "Laser Co2",
-    "Serigrafia Têxtil", "Serigrafia Vinílica Plana", "Serigrafia Vinílica Rotativa",
+    "Laser Fiber",
+    "Laser UV",
+    "Laser Co2",
+    "Serigrafia Têxtil",
+    "Serigrafia Vinílica Plana",
+    "Serigrafia Vinílica Rotativa",
     "Tampografia",
-    "(DTF) Transfer Digital Têxtil", "(DTF) Transfer Digital UV",
-    "Sublimação - Caneca", "Sublimação Têxtil",
+    "(DTF) Transfer Digital Têxtil",
+    "(DTF) Transfer Digital UV",
+    "Sublimação - Caneca",
+    "Sublimação Têxtil",
     "Hot Stamping (Baixo Relevo)",
-    "Digital UV", "Adesivo Resinado", "Bordado", "Decalque", "Filme de Recorte",
+    "Digital UV",
+    "Adesivo Resinado",
+    "Bordado",
+    "Decalque",
+    "Filme de Recorte",
   ];
 
   it.each(expectedTechniques)("should include '%s'", (technique) => {
@@ -131,11 +141,28 @@ describe("validateForm", () => {
 describe("ServiceOrderData type completeness", () => {
   it("should have all new fields from the real template", () => {
     const form: ServiceOrderData = {
-      osNumber: "", date: "", deliveryDate: "", clientName: "", clientCompany: "",
-      clientPhone: "", clientEmail: "", productName: "", productSku: "",
-      productMaterial: "", productColors: "", technique: "", areaName: "",
-      areaWidth: "", areaHeight: "", areaShape: "", artColors: "", artDpi: "",
-      artFile: "", artFileDataUrl: "", quantity: "", observations: "",
+      osNumber: "",
+      date: "",
+      deliveryDate: "",
+      clientName: "",
+      clientCompany: "",
+      clientPhone: "",
+      clientEmail: "",
+      productName: "",
+      productSku: "",
+      productMaterial: "",
+      productColors: "",
+      technique: "",
+      areaName: "",
+      areaWidth: "",
+      areaHeight: "",
+      areaShape: "",
+      artColors: "",
+      artDpi: "",
+      artFile: "",
+      artFileDataUrl: "",
+      quantity: "",
+      observations: "",
       mockupImageUrl: "",
       // New fields
       identificacaoCaixa: "",

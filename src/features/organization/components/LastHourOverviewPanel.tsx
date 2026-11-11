@@ -97,8 +97,7 @@ export function LastHourOverviewPanel() {
 
   const payload: LastHourOverviewPayload | undefined = data;
   const totals = payload?.totals;
-  const hasIncidents =
-    !!totals && (totals.maintenance_errors > 0 || totals.alerts > 0);
+  const hasIncidents = !!totals && (totals.maintenance_errors > 0 || totals.alerts > 0);
 
   const topMaintSource = useMemo(
     () => (payload ? summarizeTopEntry(payload.maintenance_errors_by_source) : undefined),
@@ -110,8 +109,7 @@ export function LastHourOverviewPanel() {
   );
   const topFeature = payload?.top_ai_features[0];
 
-  const errorMessage =
-    error instanceof Error ? error.message : error ? String(error) : null;
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
   const isForbidden = errorMessage?.toLowerCase().includes("forbidden");
 
   return (
@@ -207,11 +205,7 @@ export function LastHourOverviewPanel() {
             label="Alertas do sistema"
             value={totals?.alerts ?? 0}
             tone={
-              (totals?.alerts ?? 0) === 0
-                ? "ok"
-                : (totals?.alerts ?? 0) > 10
-                  ? "error"
-                  : "warn"
+              (totals?.alerts ?? 0) === 0 ? "ok" : (totals?.alerts ?? 0) > 10 ? "error" : "warn"
             }
             hint={topAlert ?? "Sem alertas"}
           />

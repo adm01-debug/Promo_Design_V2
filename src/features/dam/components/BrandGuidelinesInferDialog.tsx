@@ -42,18 +42,13 @@ function ColorSwatch({ hex, name }: { hex: string; name?: string }) {
   return (
     <div className="flex items-center gap-2 min-w-0">
       <div
-        className={cn(
-          "w-6 h-6 rounded border border-border shrink-0",
-          !valid && "bg-muted",
-        )}
+        className={cn("w-6 h-6 rounded border border-border shrink-0", !valid && "bg-muted")}
         style={valid ? { backgroundColor: normalizeHex(hex) } : undefined}
         aria-hidden
       />
       <div className="min-w-0 flex-1">
         {name && <div className="text-xs font-medium truncate">{name}</div>}
-        <div className="text-[10px] font-mono uppercase text-muted-foreground">
-          {hex}
-        </div>
+        <div className="text-[10px] font-mono uppercase text-muted-foreground">{hex}</div>
       </div>
     </div>
   );
@@ -131,8 +126,8 @@ export function BrandGuidelinesInferDialog({
             Revisar proposta da IA
           </DialogTitle>
           <DialogDescription>
-            Compare a sua identidade atual com a proposta gerada. Marque apenas os itens
-            que deseja aplicar — os demais serão descartados.
+            Compare a sua identidade atual com a proposta gerada. Marque apenas os itens que deseja
+            aplicar — os demais serão descartados.
             {typeof assetsUsed === "number" && assetsUsed > 0 && (
               <span className="ml-1 text-xs">
                 (analisados <strong>{assetsUsed}</strong> asset{assetsUsed > 1 ? "s" : ""})
@@ -242,15 +237,10 @@ export function BrandGuidelinesInferDialog({
                     {current.fonts.length === 0 && <Empty />}
                     {current.fonts.map((f, i) => (
                       <li key={i} className="flex flex-col">
-                        <span
-                          className="text-sm"
-                          style={{ fontFamily: `"${f.name}", sans-serif` }}
-                        >
+                        <span className="text-sm" style={{ fontFamily: `"${f.name}", sans-serif` }}>
                           {f.name || "—"}
                         </span>
-                        {f.usage && (
-                          <span className="text-muted-foreground">{f.usage}</span>
-                        )}
+                        {f.usage && <span className="text-muted-foreground">{f.usage}</span>}
                       </li>
                     ))}
                   </ul>
@@ -274,13 +264,9 @@ export function BrandGuidelinesInferDialog({
                           >
                             {f.name}
                           </span>
-                          {f.usage && (
-                            <span className="text-muted-foreground">{f.usage}</span>
-                          )}
+                          {f.usage && <span className="text-muted-foreground">{f.usage}</span>}
                           {f.source && (
-                            <span className="text-[10px] text-muted-foreground/80">
-                              {f.source}
-                            </span>
+                            <span className="text-[10px] text-muted-foreground/80">{f.source}</span>
                           )}
                         </div>
                       </label>
@@ -361,8 +347,8 @@ export function BrandGuidelinesInferDialog({
           <div className="text-xs text-muted-foreground">
             {proposal && (
               <>
-                <strong>{totalSelected}</strong> item{totalSelected === 1 ? "" : "s"}{" "}
-                selecionado{totalSelected === 1 ? "" : "s"} para aplicar
+                <strong>{totalSelected}</strong> item{totalSelected === 1 ? "" : "s"} selecionado
+                {totalSelected === 1 ? "" : "s"} para aplicar
               </>
             )}
           </div>
@@ -371,11 +357,7 @@ export function BrandGuidelinesInferDialog({
               Cancelar
             </Button>
             {onRegenerate && (
-              <Button
-                variant="outline"
-                onClick={onRegenerate}
-                disabled={loading}
-              >
+              <Button variant="outline" onClick={onRegenerate} disabled={loading}>
                 {loading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (

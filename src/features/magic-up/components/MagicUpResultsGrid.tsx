@@ -8,7 +8,13 @@ interface GenerationBatch {
   id: string;
   prompt: string;
   productName?: string;
-  variations: { id: string; imageUrl: string; favorite: boolean; selected: boolean; style: string }[];
+  variations: {
+    id: string;
+    imageUrl: string;
+    favorite: boolean;
+    selected: boolean;
+    style: string;
+  }[];
   createdAt: string;
 }
 
@@ -22,8 +28,12 @@ interface MagicUpResultsGridProps {
 }
 
 const MagicUpResultsGrid = ({
-  generationBatches, isGenerating, selectedProduct,
-  onSelectVariation, onToggleFavorite, onOpenProductPicker,
+  generationBatches,
+  isGenerating,
+  selectedProduct,
+  onSelectVariation,
+  onToggleFavorite,
+  onOpenProductPicker,
 }: MagicUpResultsGridProps) => {
   if (generationBatches.length === 0) {
     return (
@@ -31,12 +41,21 @@ const MagicUpResultsGrid = ({
         <div className="w-20 h-20 rounded-2xl bg-surface-2 flex items-center justify-center mb-4">
           <ImageIcon className="w-9 h-9 text-muted-foreground" />
         </div>
-        <p className="text-sm font-display font-semibold text-foreground mb-1">Nenhuma geração ainda</p>
+        <p className="text-sm font-display font-semibold text-foreground mb-1">
+          Nenhuma geração ainda
+        </p>
         <p className="text-xs text-muted-foreground mb-4">
-          {selectedProduct ? `Selecione um estilo e gere para "${selectedProduct.name}"` : "Selecione um produto ou digite um prompt"}
+          {selectedProduct
+            ? `Selecione um estilo e gere para "${selectedProduct.name}"`
+            : "Selecione um produto ou digite um prompt"}
         </p>
         {!selectedProduct && (
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onOpenProductPicker}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs"
+            onClick={onOpenProductPicker}
+          >
             <Package className="w-3.5 h-3.5" /> Começar com um Produto
           </Button>
         )}
@@ -47,16 +66,29 @@ const MagicUpResultsGrid = ({
   return (
     <div className="space-y-6">
       {generationBatches.map((batch, batchIdx) => (
-        <motion.div key={batch.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: batchIdx * 0.1 }}>
+        <motion.div
+          key={batch.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: batchIdx * 0.1 }}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-primary" />
               </div>
               <div>
-                {batch.productName && <span className="text-[10px] text-primary font-mono mr-2">{batch.productName}</span>}
+                {batch.productName && (
+                  <span className="text-[10px] text-primary font-mono mr-2">
+                    {batch.productName}
+                  </span>
+                )}
                 <span className="text-[10px] text-muted-foreground font-mono">
-                  4 variações • {new Date(batch.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  4 variações •{" "}
+                  {new Date(batch.createdAt).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
             </div>
@@ -70,7 +102,9 @@ const MagicUpResultsGrid = ({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.08 }}
                 className={`rounded-xl border-2 overflow-hidden group cursor-pointer transition-all ${
-                  v.selected ? "border-primary shadow-glow" : "border-border hover:border-primary/40"
+                  v.selected
+                    ? "border-primary shadow-glow"
+                    : "border-border hover:border-primary/40"
                 }`}
                 onClick={() => onSelectVariation(batch.id, v.id)}
               >
@@ -94,16 +128,22 @@ const MagicUpResultsGrid = ({
                       <Copy className="w-4 h-4" />
                     </Button>
                     <Button
-                      variant="ghost" size="sm"
+                      variant="ghost"
+                      size="sm"
                       className={`h-8 w-8 p-0 ${v.favorite ? "text-accent" : "text-white"}`}
-                      onClick={(e) => { e.stopPropagation(); onToggleFavorite(batch.id, v.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(batch.id, v.id);
+                      }}
                     >
                       <Heart className={`w-4 h-4 ${v.favorite ? "fill-current" : ""}`} />
                     </Button>
                   </div>
                 </div>
                 <div className="p-2 bg-card">
-                  <p className={`text-[10px] font-mono text-center ${v.selected ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                  <p
+                    className={`text-[10px] font-mono text-center ${v.selected ? "text-primary font-semibold" : "text-muted-foreground"}`}
+                  >
                     {v.style}
                   </p>
                 </div>

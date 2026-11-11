@@ -19,9 +19,20 @@ interface MockupTopBarProps {
 }
 
 const MockupTopBar = ({
-  step, setStep, hasProduct, hasArea,
-  historyIdx, historyLength, undo, redo,
-  isSaving, draftId, onSave, onExportPdf, onExportPng, isExporting,
+  step,
+  setStep,
+  hasProduct,
+  hasArea,
+  historyIdx,
+  historyLength,
+  undo,
+  redo,
+  isSaving,
+  draftId,
+  onSave,
+  onExportPdf,
+  onExportPng,
+  isExporting,
 }: MockupTopBarProps) => (
   <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
     <div className="flex items-center gap-3">
@@ -49,23 +60,56 @@ const MockupTopBar = ({
     <div className="flex items-center gap-2">
       {step === "canvas" && (
         <>
-          <Button variant="ghost" size="sm" className="text-xs gap-1 h-8" onClick={undo} disabled={historyIdx <= 0}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 h-8"
+            onClick={undo}
+            disabled={historyIdx <= 0}
+          >
             <Undo2 className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="text-xs gap-1 h-8" onClick={redo} disabled={historyIdx >= historyLength - 1}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 h-8"
+            onClick={redo}
+            disabled={historyIdx >= historyLength - 1}
+          >
             <Redo2 className="w-3 h-3" />
           </Button>
           <div className="w-px h-5 bg-border" />
         </>
       )}
-      <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8" onClick={onSave} disabled={isSaving}>
-        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} {draftId ? "Atualizar" : "Salvar"}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-xs gap-1.5 h-8"
+        onClick={onSave}
+        disabled={isSaving}
+      >
+        {isSaving ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Save className="w-3.5 h-3.5" />
+        )}{" "}
+        {draftId ? "Atualizar" : "Salvar"}
       </Button>
       <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPdf}>
         <FileText className="w-3.5 h-3.5" /> PDF
       </Button>
-      <Button size="sm" className="text-xs gap-1.5 h-8" onClick={onExportPng} disabled={isExporting}>
-        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} PNG HD
+      <Button
+        size="sm"
+        className="text-xs gap-1.5 h-8"
+        onClick={onExportPng}
+        disabled={isExporting}
+      >
+        {isExporting ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Download className="w-3.5 h-3.5" />
+        )}{" "}
+        PNG HD
       </Button>
     </div>
   </div>

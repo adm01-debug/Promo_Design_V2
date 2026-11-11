@@ -4,7 +4,13 @@ export type WidgetId = "stats" | "quick-actions" | "activity-chart" | "heatmap" 
 
 const STORAGE_KEY = "promo-dashboard-widget-order";
 
-const DEFAULT_ORDER: WidgetId[] = ["stats", "quick-actions", "activity-chart", "heatmap", "recent-projects"];
+const DEFAULT_ORDER: WidgetId[] = [
+  "stats",
+  "quick-actions",
+  "activity-chart",
+  "heatmap",
+  "recent-projects",
+];
 
 function loadOrder(): WidgetId[] {
   try {
@@ -12,7 +18,10 @@ function loadOrder(): WidgetId[] {
     if (!raw) return DEFAULT_ORDER;
     const parsed = JSON.parse(raw) as WidgetId[];
     // Validate: must contain all default widgets
-    if (DEFAULT_ORDER.every((id) => parsed.includes(id)) && parsed.length === DEFAULT_ORDER.length) {
+    if (
+      DEFAULT_ORDER.every((id) => parsed.includes(id)) &&
+      parsed.length === DEFAULT_ORDER.length
+    ) {
       return parsed;
     }
   } catch {

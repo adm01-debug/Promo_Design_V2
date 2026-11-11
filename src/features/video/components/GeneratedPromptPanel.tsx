@@ -56,7 +56,11 @@ export function GeneratedPromptPanel({
             onClick={handleCopy}
             aria-label="Copiar prompt"
           >
-            {copied ? <Check className="h-3 w-3" aria-hidden /> : <Copy className="h-3 w-3" aria-hidden />}
+            {copied ? (
+              <Check className="h-3 w-3" aria-hidden />
+            ) : (
+              <Copy className="h-3 w-3" aria-hidden />
+            )}
             {copied ? "Copiado" : "Copiar"}
           </Button>
         </div>

@@ -84,11 +84,21 @@ vi.mock("@/features/clients/hooks/use-clients", () => ({
 }));
 
 vi.mock("../AssetThumbnail", () => ({
-  AssetThumbnail: ({ asset }: { asset: { name: string } }) => <div data-testid="thumb">{asset.name}</div>,
+  AssetThumbnail: ({ asset }: { asset: { name: string } }) => (
+    <div data-testid="thumb">{asset.name}</div>
+  ),
 }));
 vi.mock("../AssetCard", () => ({
-  AssetCard: ({ asset, onClick }: { asset: { id: string; name: string }; onClick?: () => void }) => (
-    <button data-testid={`card-${asset.id}`} onClick={onClick}>{asset.name}</button>
+  AssetCard: ({
+    asset,
+    onClick,
+  }: {
+    asset: { id: string; name: string };
+    onClick?: () => void;
+  }) => (
+    <button data-testid={`card-${asset.id}`} onClick={onClick}>
+      {asset.name}
+    </button>
   ),
 }));
 vi.mock("../TagFilter", () => ({ TagFilter: () => <div /> }));
@@ -143,14 +153,7 @@ describe("AssetPicker — modo multiSelect", () => {
   it("acumula seleção e Confirmar emite onSelect(assets[])", () => {
     const onSelect = vi.fn();
     const onOpenChange = vi.fn();
-    render(
-      <AssetPicker
-        open
-        onOpenChange={onOpenChange}
-        multiSelect
-        onSelect={onSelect}
-      />,
-    );
+    render(<AssetPicker open onOpenChange={onOpenChange} multiSelect onSelect={onSelect} />);
 
     // Botão Confirmar inicialmente desabilitado
     const confirm = screen.getByRole("button", { name: /confirmar/i });

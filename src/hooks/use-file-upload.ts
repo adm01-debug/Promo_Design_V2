@@ -31,7 +31,7 @@ export function useFileUpload() {
 
       return signedData.signedUrl;
     },
-    [user]
+    [user],
   );
 
   return { uploadFile };

@@ -73,11 +73,7 @@ export function JumpToPage({ currentPage, totalPages, onJump }: JumpToPageProps)
         Ir
       </Button>
       {error && (
-        <span
-          id="dam-jump-to-page-error"
-          role="alert"
-          className="text-destructive ml-1"
-        >
+        <span id="dam-jump-to-page-error" role="alert" className="text-destructive ml-1">
           {error}
         </span>
       )}

@@ -45,9 +45,7 @@ export function useLibraryActivity(organizationId: string | null, limit = 50) {
               ? (oldV.version as number)
               : null;
         const archChanged =
-          l.action === "UPDATE" &&
-          !!oldV && !!newV &&
-          oldV.is_archived !== newV.is_archived;
+          l.action === "UPDATE" && !!oldV && !!newV && oldV.is_archived !== newV.is_archived;
         const isRestore = archChanged && newV?.is_archived === false;
         return {
           id: l.id,

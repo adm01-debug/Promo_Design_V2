@@ -37,14 +37,17 @@ export function pxToCm(px: number, dpi: number = 300): number {
 
 /** Detect product bounds from an image (transparent background) */
 export async function detectProductBounds(
-  img: HTMLImageElement
+  img: HTMLImageElement,
 ): Promise<{ x: number; y: number; width: number; height: number }> {
   const canvas = new OffscreenCanvas(img.width, img.height);
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(img, 0, 0);
   const data = ctx.getImageData(0, 0, img.width, img.height).data;
 
-  let minX = img.width, minY = img.height, maxX = 0, maxY = 0;
+  let minX = img.width,
+    minY = img.height,
+    maxX = 0,
+    maxY = 0;
 
   for (let y = 0; y < img.height; y++) {
     for (let x = 0; x < img.width; x++) {
@@ -64,7 +67,7 @@ export async function detectProductBounds(
 /** Process logo for laser technique (monochrome silhouette) */
 export function processLogoForLaser(
   img: HTMLImageElement,
-  color: string = "#000000"
+  color: string = "#000000",
 ): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = img.width;
@@ -207,10 +210,22 @@ export function detectSurfaceType(category: string, templateId?: string): Surfac
   const lower = (category || "").toLowerCase();
   const tplLower = (templateId || "").toLowerCase();
 
-  if (lower.includes("drinkware") || lower.includes("caneca") || tplLower.includes("caneca") || tplLower.includes("squeeze")) {
+  if (
+    lower.includes("drinkware") ||
+    lower.includes("caneca") ||
+    tplLower.includes("caneca") ||
+    tplLower.includes("squeeze")
+  ) {
     return "cylindrical";
   }
-  if (lower.includes("vestuário") || lower.includes("embalagem") || lower.includes("papelaria") || tplLower.includes("camiseta") || tplLower.includes("caderno") || tplLower.includes("sacola")) {
+  if (
+    lower.includes("vestuário") ||
+    lower.includes("embalagem") ||
+    lower.includes("papelaria") ||
+    tplLower.includes("camiseta") ||
+    tplLower.includes("caderno") ||
+    tplLower.includes("sacola")
+  ) {
     return "flat";
   }
   if (tplLower.includes("bone") || tplLower.includes("boné")) {
@@ -227,7 +242,7 @@ export function calculateAutoFit(
   logoImg: HTMLImageElement,
   areaWidth: number,
   areaHeight: number,
-  padding: number = 0.1 // 10% padding
+  padding: number = 0.1, // 10% padding
 ): { x: number; y: number; scale: number } {
   const logoAspect = logoImg.width / logoImg.height;
   const areaAspect = areaWidth / areaHeight;
@@ -263,7 +278,7 @@ export function composeMockup(
   productImg: HTMLImageElement,
   logoCanvas: HTMLCanvasElement | HTMLImageElement,
   position: { x: number; y: number; width: number; height: number },
-  outputWidth: number = 1200
+  outputWidth: number = 1200,
 ): HTMLCanvasElement {
   const scale = outputWidth / productImg.width;
   const canvas = document.createElement("canvas");
@@ -280,7 +295,7 @@ export function composeMockup(
     position.x * scale,
     position.y * scale,
     position.width * scale,
-    position.height * scale
+    position.height * scale,
   );
 
   return canvas;

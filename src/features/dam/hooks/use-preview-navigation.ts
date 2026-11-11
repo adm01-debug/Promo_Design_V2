@@ -7,7 +7,7 @@ export function usePreviewNavigation({
   activeIndex,
   setActiveIndex,
   searchParams,
-  setSearchParams
+  setSearchParams,
 }: {
   assets: Asset[];
   activeIndex: number;
@@ -36,11 +36,10 @@ export function usePreviewNavigation({
     if (!activeAsset) return;
     if (lastUserSelectedIdRef.current !== activeAsset.id) return;
     try {
-      localStorage.setItem(
-        LAST_ASSET_KEY,
-        JSON.stringify({ id: activeAsset.id, ts: Date.now() }),
-      );
-    } catch { /* ignore */ }
+      localStorage.setItem(LAST_ASSET_KEY, JSON.stringify({ id: activeAsset.id, ts: Date.now() }));
+    } catch {
+      /* ignore */
+    }
   }, [activeAsset]);
 
   const selectAssetAt = (idx: number, opts?: { pushHistory?: boolean }) => {
@@ -60,6 +59,6 @@ export function usePreviewNavigation({
     lastUserSelectedIdRef,
     goPrev,
     goNext,
-    selectAssetAt
+    selectAssetAt,
   };
 }

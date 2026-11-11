@@ -44,7 +44,15 @@ describe("formatRelativeDate", () => {
 
 describe("STATUS_CONFIG", () => {
   it("has all expected statuses", () => {
-    const statuses = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
+    const statuses = [
+      "aberta",
+      "aprovada",
+      "em_producao",
+      "pronta",
+      "entregue",
+      "concluida",
+      "cancelada",
+    ];
     // Simple validation that the config object structure is correct
     statuses.forEach((s) => {
       expect(s).toBeTruthy();

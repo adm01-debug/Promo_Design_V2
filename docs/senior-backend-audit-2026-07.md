@@ -14,13 +14,13 @@ O sistema apresenta uma base sólida (RLS 100%, auditoria via triggers, optimist
 
 ### Top 5 achados
 
-| # | Categoria | Severidade | Achado |
-|---|-----------|-----------|--------|
-| 1 | Segurança | 🔴 Alta | 37 funções `SECURITY DEFINER` executáveis por `PUBLIC`/`authenticated` sem necessidade — flags do linter 0028/0029. |
-| 2 | Segurança | 🟡 Média | Trigger functions (`log_*`, `notify_*`, `handle_*`, `write_audit_log`) têm `EXECUTE` concedido a roles que jamais deveriam invocá-las diretamente. |
-| 3 | Manutenibilidade | 🟡 Média | Duplicidade de `check_ai_quota` (duas assinaturas) e `cleanup_expired_data` (duas assinaturas) — risco de dispatch ambíguo. |
-| 4 | Performance | 🔵 Baixa | Ausência de índices explícitos em `notifications(user_id, read, created_at)` — polling de 15s escaneia. |
-| 5 | Operacional | 🔵 Baixa | Não há SLO documentado para funções admin síncronas (`run_manual_vacuum FULL` pode bloquear leitura). |
+| #   | Categoria        | Severidade | Achado                                                                                                                                             |
+| --- | ---------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Segurança        | 🔴 Alta    | 37 funções `SECURITY DEFINER` executáveis por `PUBLIC`/`authenticated` sem necessidade — flags do linter 0028/0029.                                |
+| 2   | Segurança        | 🟡 Média   | Trigger functions (`log_*`, `notify_*`, `handle_*`, `write_audit_log`) têm `EXECUTE` concedido a roles que jamais deveriam invocá-las diretamente. |
+| 3   | Manutenibilidade | 🟡 Média   | Duplicidade de `check_ai_quota` (duas assinaturas) e `cleanup_expired_data` (duas assinaturas) — risco de dispatch ambíguo.                        |
+| 4   | Performance      | 🔵 Baixa   | Ausência de índices explícitos em `notifications(user_id, read, created_at)` — polling de 15s escaneia.                                            |
+| 5   | Operacional      | 🔵 Baixa   | Não há SLO documentado para funções admin síncronas (`run_manual_vacuum FULL` pode bloquear leitura).                                              |
 
 ---
 
@@ -37,6 +37,7 @@ O sistema apresenta uma base sólida (RLS 100%, auditoria via triggers, optimist
 **Impacto.** Superfície de ataque ampliada. Um simples `SELECT public.<fn>(...)` de qualquer sessão anônima invoca a função — a defesa depende 100% do check interno.
 
 **Correção.** Migration `20260712214500_secdef_hardening.sql`:
+
 - `REVOKE EXECUTE ... FROM PUBLIC, anon` em **todas** as 42 funções SECDEF do schema `public`.
 - `GRANT EXECUTE TO authenticated` apenas nas funções callable pelo cliente (helpers de RLS, painéis admin, `accept_organization_invite`).
 - Trigger functions (`log_*`, `notify_*`, `handle_*`, `write_audit_log`, `audit_trigger_func`, `add_creator_as_owner`) permanecem sem grants — triggers usam o contexto do owner.
@@ -92,28 +93,28 @@ Mesma condição em `cleanup_expired_data(int,int,int)` vs `cleanup_expired_data
 
 ## 3. Roadmap Priorizado
 
-| Ordem | Correção | Severidade | Esforço | Status |
-|-------|----------|-----------|---------|--------|
-| 1 | Hardening SECURITY DEFINER (revoke PUBLIC + grants granulares) | Alta | 1h | ✅ Concluído |
-| 2 | Revogar `is_any_org_admin` e `check_ai_quota` de `authenticated`; migrar edge function `mockup-ai` para `service_role` client | Alta | 30min | ✅ Concluído |
-| 3 | Índice parcial em `notifications(user_id, created_at DESC) WHERE read=false` | Baixa | 15min | ✅ Concluído (`idx_notifications_user_unread`) |
-| 4 | ADR-0009 documentando modelo de privilégios | Baixa | 30min | ✅ Concluído |
-| 5 | Deprecar overloads `check_ai_quota`/`cleanup_expired_data` | Média | 30min | 🟡 Próxima janela |
-| 6 | Dashboard consolidado "últimos 60min" | Baixa | 2h | ✅ Concluído (`LastHourOverviewPanel` + RPC `get_last_hour_overview`) |
+| Ordem | Correção                                                                                                                      | Severidade | Esforço | Status                                                                |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | ---------- | ------- | --------------------------------------------------------------------- |
+| 1     | Hardening SECURITY DEFINER (revoke PUBLIC + grants granulares)                                                                | Alta       | 1h      | ✅ Concluído                                                          |
+| 2     | Revogar `is_any_org_admin` e `check_ai_quota` de `authenticated`; migrar edge function `mockup-ai` para `service_role` client | Alta       | 30min   | ✅ Concluído                                                          |
+| 3     | Índice parcial em `notifications(user_id, created_at DESC) WHERE read=false`                                                  | Baixa      | 15min   | ✅ Concluído (`idx_notifications_user_unread`)                        |
+| 4     | ADR-0009 documentando modelo de privilégios                                                                                   | Baixa      | 30min   | ✅ Concluído                                                          |
+| 5     | Deprecar overloads `check_ai_quota`/`cleanup_expired_data`                                                                    | Média      | 30min   | 🟡 Próxima janela                                                     |
+| 6     | Dashboard consolidado "últimos 60min"                                                                                         | Baixa      | 2h      | ✅ Concluído (`LastHourOverviewPanel` + RPC `get_last_hour_overview`) |
 
 ---
 
 ## 4. Benchmarking
 
-| Prática | Este projeto | Padrão Enterprise |
-|---------|-------------|-------------------|
-| RLS coverage | 100% | 100% |
-| Auditoria imutável | ✅ triggers | ✅ |
-| MFA (TOTP) | ✅ AAL2 forçado | ✅ |
-| Retenção auditoria | 180d | 365d (regulados) |
-| SLO tracking | ✅ p95 baseline vs recent | ✅ |
-| Least privilege em SECDEF | ✅ | ✅ |
-| Observabilidade DB | ✅ 8+ painéis | ✅ |
+| Prática                   | Este projeto              | Padrão Enterprise |
+| ------------------------- | ------------------------- | ----------------- |
+| RLS coverage              | 100%                      | 100%              |
+| Auditoria imutável        | ✅ triggers               | ✅                |
+| MFA (TOTP)                | ✅ AAL2 forçado           | ✅                |
+| Retenção auditoria        | 180d                      | 365d (regulados)  |
+| SLO tracking              | ✅ p95 baseline vs recent | ✅                |
+| Least privilege em SECDEF | ✅                        | ✅                |
+| Observabilidade DB        | ✅ 8+ painéis             | ✅                |
 
 ---
 

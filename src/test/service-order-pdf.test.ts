@@ -83,7 +83,7 @@ describe("generateServiceOrderPdf", () => {
       "LASER FIBER",
       expect.any(Number),
       expect.any(Number),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -93,7 +93,7 @@ describe("generateServiceOrderPdf", () => {
       "#TICKET OS-2503-0001",
       expect.any(Number),
       expect.any(Number),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -118,7 +118,7 @@ describe("generateServiceOrderPdf", () => {
     const doc = generateServiceOrderPdf(fullForm);
     const textCalls = (doc.text as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0]);
     const hasSections = ["Triagem", "Gravação", "Manuseio", "Expedição"].every((s) =>
-      textCalls.some((t: unknown) => typeof t === "string" && t.includes(s))
+      textCalls.some((t: unknown) => typeof t === "string" && t.includes(s)),
     );
     expect(hasSections).toBe(true);
   });
@@ -145,7 +145,9 @@ describe("generateServiceOrderPdf", () => {
       aprovarPrimeiraPeca: true,
     });
     const textCalls = (doc.text as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0]);
-    const hasSimEntries = textCalls.filter((t: unknown) => typeof t === "string" && t.includes("SIM"));
+    const hasSimEntries = textCalls.filter(
+      (t: unknown) => typeof t === "string" && t.includes("SIM"),
+    );
     expect(hasSimEntries.length).toBeGreaterThanOrEqual(2);
   });
 });

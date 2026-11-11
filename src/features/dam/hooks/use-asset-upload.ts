@@ -19,14 +19,14 @@ export type UploadPhase =
   | "done";
 
 export const UPLOAD_PHASE_LABELS: Record<UploadPhase, string> = {
-  "analyzing": "Analisando arquivo…",
+  analyzing: "Analisando arquivo…",
   "rendering-pdf": "Renderizando PDF…",
   "rasterizing-svg": "Rastreando SVG…",
   "processing-image": "Processando imagem…",
   "uploading-file": "Enviando arquivo…",
   "uploading-thumb": "Enviando thumbnail…",
   "saving-record": "Salvando metadados…",
-  "done": "Concluído",
+  done: "Concluído",
 };
 
 export interface UploadOptions {
@@ -96,11 +96,15 @@ async function processRasterImage(file: File): Promise<FileMeta | null> {
         } catch {
           /* ignore CORS-tainted */
         }
-        canvas.toBlob((blob) => {
-          thumbnailBlob = blob;
-          URL.revokeObjectURL(url);
-          resolve({ width, height, thumbnailBlob, dominantColors });
-        }, "image/jpeg", 0.8);
+        canvas.toBlob(
+          (blob) => {
+            thumbnailBlob = blob;
+            URL.revokeObjectURL(url);
+            resolve({ width, height, thumbnailBlob, dominantColors });
+          },
+          "image/jpeg",
+          0.8,
+        );
         return;
       }
       URL.revokeObjectURL(url);

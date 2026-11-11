@@ -32,7 +32,9 @@ Deno.test("breaker starts closed and stays closed while under threshold", () => 
 
 Deno.test("breaker opens after failureThreshold consecutive failures", () => {
   const cb = new CircuitBreaker({ failureThreshold: 3, cooldownMs: 1000 });
-  cb.recordFailure(); cb.recordFailure(); cb.recordFailure();
+  cb.recordFailure();
+  cb.recordFailure();
+  cb.recordFailure();
   assertEquals(cb.getState(), "open");
 });
 
@@ -121,7 +123,8 @@ Deno.test("isRetryableError: network TypeError is retryable", () => {
 });
 
 Deno.test("isRetryableError: AbortError is retryable", () => {
-  const e = new Error("aborted"); e.name = "AbortError";
+  const e = new Error("aborted");
+  e.name = "AbortError";
   assertEquals(isRetryableError(e), true);
 });
 
@@ -149,14 +152,20 @@ Deno.test("computeBackoffDelay respects maxDelayMs and factor", () => {
 
 Deno.test("computeBackoffDelay returns 0 when rng is 0", () => {
   const opts = { maxAttempts: 5, baseDelayMs: 100, maxDelayMs: 800 };
-  assertEquals(computeBackoffDelay(3, opts, () => 0), 0);
+  assertEquals(
+    computeBackoffDelay(3, opts, () => 0),
+    0,
+  );
 });
 
 // -- retryWithBackoff -------------------------------------------------
 
 Deno.test("retryWithBackoff returns immediately on success", async () => {
   let calls = 0;
-  const result = await retryWithBackoff(async () => { calls++; return 42; });
+  const result = await retryWithBackoff(async () => {
+    calls++;
+    return 42;
+  });
   assertEquals(result, 42);
   assertEquals(calls, 1);
 });
@@ -174,7 +183,9 @@ Deno.test("retryWithBackoff retries on retryable error until success", async () 
       maxAttempts: 4,
       baseDelayMs: 100,
       maxDelayMs: 1000,
-      sleep: async (ms) => { sleeps.push(ms); },
+      sleep: async (ms) => {
+        sleeps.push(ms);
+      },
       rng: () => 0.5,
     },
   );
@@ -186,10 +197,14 @@ Deno.test("retryWithBackoff retries on retryable error until success", async () 
 Deno.test("retryWithBackoff throws non-retryable errors on the first attempt", async () => {
   let calls = 0;
   await assertRejects(
-    () => retryWithBackoff(
-      async () => { calls++; throw new BitrixRequestError(400, { error: "bad input" }); },
-      { maxAttempts: 4, baseDelayMs: 10, maxDelayMs: 100, sleep: async () => {} },
-    ),
+    () =>
+      retryWithBackoff(
+        async () => {
+          calls++;
+          throw new BitrixRequestError(400, { error: "bad input" });
+        },
+        { maxAttempts: 4, baseDelayMs: 10, maxDelayMs: 100, sleep: async () => {} },
+      ),
     BitrixRequestError,
   );
   assertEquals(calls, 1);
@@ -198,10 +213,14 @@ Deno.test("retryWithBackoff throws non-retryable errors on the first attempt", a
 Deno.test("retryWithBackoff surfaces the last error after exhausting attempts", async () => {
   let calls = 0;
   await assertRejects(
-    () => retryWithBackoff(
-      async () => { calls++; throw new BitrixRequestError(502, null); },
-      { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 10, sleep: async () => {}, rng: () => 0 },
-    ),
+    () =>
+      retryWithBackoff(
+        async () => {
+          calls++;
+          throw new BitrixRequestError(502, null);
+        },
+        { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 10, sleep: async () => {}, rng: () => 0 },
+      ),
     BitrixRequestError,
   );
   assertEquals(calls, 3);
@@ -218,8 +237,7 @@ function jsonResponse(status: number, body: unknown): Response {
 
 Deno.test("bitrixCall returns parsed JSON on success", async () => {
   const breaker = new CircuitBreaker();
-  const fakeFetch: typeof fetch = async () =>
-    jsonResponse(200, { result: { id: 42 } });
+  const fakeFetch: typeof fetch = async () => jsonResponse(200, { result: { id: 42 } });
   const data = await bitrixCall<{ result: { id: number } }>({
     webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
     method: "crm.lead.add",
@@ -233,13 +251,15 @@ Deno.test("bitrixCall returns parsed JSON on success", async () => {
 Deno.test("bitrixCall records failures against the breaker on retryable errors", async () => {
   const breaker = new CircuitBreaker({ failureThreshold: 2, cooldownMs: 10_000 });
   const fakeFetch: typeof fetch = async () => jsonResponse(503, { error: "boom" });
-  await assertRejects(() => bitrixCall({
-    webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
-    method: "crm.lead.add",
-    breaker,
-    fetchImpl: fakeFetch,
-    retry: { maxAttempts: 2, baseDelayMs: 1, maxDelayMs: 1, sleep: async () => {}, rng: () => 0 },
-  }));
+  await assertRejects(() =>
+    bitrixCall({
+      webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
+      method: "crm.lead.add",
+      breaker,
+      fetchImpl: fakeFetch,
+      retry: { maxAttempts: 2, baseDelayMs: 1, maxDelayMs: 1, sleep: async () => {}, rng: () => 0 },
+    }),
+  );
   // 2 attempts × 1 retryable failure each = 2 breaker failures → open
   assertEquals(breaker.getState(), "open");
 });
@@ -247,13 +267,15 @@ Deno.test("bitrixCall records failures against the breaker on retryable errors",
 Deno.test("bitrixCall does NOT count non-retryable 4xx against the breaker", async () => {
   const breaker = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 10_000 });
   const fakeFetch: typeof fetch = async () => jsonResponse(400, { error: "bad" });
-  await assertRejects(() => bitrixCall({
-    webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
-    method: "crm.lead.add",
-    breaker,
-    fetchImpl: fakeFetch,
-    retry: { maxAttempts: 1, baseDelayMs: 1, maxDelayMs: 1, sleep: async () => {} },
-  }));
+  await assertRejects(() =>
+    bitrixCall({
+      webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
+      method: "crm.lead.add",
+      breaker,
+      fetchImpl: fakeFetch,
+      retry: { maxAttempts: 1, baseDelayMs: 1, maxDelayMs: 1, sleep: async () => {} },
+    }),
+  );
   assertEquals(breaker.getState(), "closed");
 });
 
@@ -261,15 +283,19 @@ Deno.test("bitrixCall short-circuits when breaker is open", async () => {
   const breaker = new CircuitBreaker({ failureThreshold: 1, cooldownMs: 10_000 });
   breaker.recordFailure(); // force open
   let fetchCalls = 0;
-  const fakeFetch: typeof fetch = async () => { fetchCalls++; return jsonResponse(200, {}); };
+  const fakeFetch: typeof fetch = async () => {
+    fetchCalls++;
+    return jsonResponse(200, {});
+  };
   await assertRejects(
-    () => bitrixCall({
-      webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
-      method: "crm.lead.add",
-      breaker,
-      fetchImpl: fakeFetch,
-      retry: { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 1, sleep: async () => {} },
-    }),
+    () =>
+      bitrixCall({
+        webhookBase: "https://portal.bitrix24.com/rest/1/tok/",
+        method: "crm.lead.add",
+        breaker,
+        fetchImpl: fakeFetch,
+        retry: { maxAttempts: 3, baseDelayMs: 1, maxDelayMs: 1, sleep: async () => {} },
+      }),
     BitrixCircuitOpenError,
   );
   assertEquals(fetchCalls, 0); // fetch was never invoked

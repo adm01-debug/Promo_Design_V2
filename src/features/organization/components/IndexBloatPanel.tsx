@@ -29,13 +29,12 @@ export function IndexBloatPanel() {
     queryKey: ["index-bloat-estimate"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: IndexBloatRow[] | null; error: Error | null }>)(
-        "get_index_bloat_estimate",
-        { _min_bytes: 1048576, _limit: 30 },
-      );
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: IndexBloatRow[] | null; error: Error | null }>
+      )("get_index_bloat_estimate", { _min_bytes: 1048576, _limit: 30 });
       if (error) throw error;
       return (data as IndexBloatRow[]) ?? [];
     },
@@ -54,13 +53,20 @@ export function IndexBloatPanel() {
             <Loader2 className="h-4 w-4 animate-spin" /> Analisando índices…
           </div>
         ) : query.isError ? (
-          <p className="text-sm text-destructive">Falha ao carregar. Apenas owner/admin têm acesso.</p>
+          <p className="text-sm text-destructive">
+            Falha ao carregar. Apenas owner/admin têm acesso.
+          </p>
         ) : (query.data?.length ?? 0) === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhum índice acima do limite mínimo (1 MB).</p>
+          <p className="text-xs text-muted-foreground">
+            Nenhum índice acima do limite mínimo (1 MB).
+          </p>
         ) : (
           <div className="space-y-1.5">
             {query.data!.map((r) => (
-              <div key={`${r.schema_name}.${r.index_name}`} className="flex items-center justify-between gap-2 p-2 rounded-md border text-xs">
+              <div
+                key={`${r.schema_name}.${r.index_name}`}
+                className="flex items-center justify-between gap-2 p-2 rounded-md border text-xs"
+              >
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className="font-mono truncate">{r.index_name}</span>
                   <span className="text-[10px] text-muted-foreground truncate">
@@ -72,15 +78,23 @@ export function IndexBloatPanel() {
                 <div className="flex items-center gap-2 font-mono shrink-0">
                   <span className="text-muted-foreground">{r.index_size_pretty}</span>
                   <span className="text-muted-foreground">·</span>
-                  <span className="text-muted-foreground">{r.index_scans.toLocaleString("pt-BR")} scans</span>
+                  <span className="text-muted-foreground">
+                    {r.index_scans.toLocaleString("pt-BR")} scans
+                  </span>
                   <Badge variant="outline" className={TONE[r.severity]}>
-                    {r.severity === "critical" ? "crítico" : r.severity === "warning" ? "aviso" : "ok"}
+                    {r.severity === "critical"
+                      ? "crítico"
+                      : r.severity === "warning"
+                        ? "aviso"
+                        : "ok"}
                   </Badge>
                 </div>
               </div>
             ))}
             <p className="text-[10px] text-muted-foreground pt-2">
-              Bloat estimado por heurística (fillfactor 90%). Rode <code className="font-mono">REINDEX INDEX CONCURRENTLY</code> em índices grandes com poucos scans.
+              Bloat estimado por heurística (fillfactor 90%). Rode{" "}
+              <code className="font-mono">REINDEX INDEX CONCURRENTLY</code> em índices grandes com
+              poucos scans.
             </p>
           </div>
         )}

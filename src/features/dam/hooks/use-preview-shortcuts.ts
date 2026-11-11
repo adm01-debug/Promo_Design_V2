@@ -11,7 +11,7 @@ export function usePreviewShortcuts({
   compare,
   goPrev,
   goNext,
-  onOpenDetails
+  onOpenDetails,
 }: {
   detailAsset: Asset | null;
   queryString: string;
@@ -30,7 +30,7 @@ export function usePreviewShortcuts({
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       const inEditable = tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
-      
+
       if (detailAsset) return;
 
       if (e.key === "Escape") {
@@ -51,7 +51,7 @@ export function usePreviewShortcuts({
         setCompareMode((v) => !v);
         return;
       }
-      
+
       if (compareMode && e.key === " ") {
         e.preventDefault();
         if (activeAsset) compare.toggle(activeAsset.id);
@@ -63,13 +63,13 @@ export function usePreviewShortcuts({
         goPrev();
         return;
       }
-      
+
       if (e.key === "ArrowRight") {
         e.preventDefault();
         goNext();
         return;
       }
-      
+
       if (e.key === "Enter") {
         e.preventDefault();
         onOpenDetails();
@@ -79,5 +79,16 @@ export function usePreviewShortcuts({
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [detailAsset, queryString, compareMode, setCompareMode, activeAsset, compare, goPrev, goNext, onOpenDetails, navigate]);
+  }, [
+    detailAsset,
+    queryString,
+    compareMode,
+    setCompareMode,
+    activeAsset,
+    compare,
+    goPrev,
+    goNext,
+    onOpenDetails,
+    navigate,
+  ]);
 }
