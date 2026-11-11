@@ -44,6 +44,8 @@ export function AssetUploadDialog({
   onUploaded,
 }: Props) {
   const isVersionMode = !!parentAsset;
+
+  const initialTags = useMemo(() => parentAsset?.tags ?? [], [parentAsset]);
   const { uploadFile } = useAssetUpload(organizationId);
   const { clients } = useClients(organizationId);
   const { assets } = useAssets(organizationId, {});
@@ -70,7 +72,7 @@ export function AssetUploadDialog({
     organizationId,
     parentAsset?.client_id ?? defaultClientId,
     parentAsset?.asset_type ?? defaultAssetType,
-    parentAsset?.tags ?? [],
+    initialTags,
     parentAsset?.id ?? null,
     open
   );
