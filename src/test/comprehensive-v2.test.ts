@@ -179,7 +179,7 @@ describe("Status machine – comprehensive", () => {
 
   it("all statuses have a config entry", async () => {
     const { STATUS_CONFIG } = await import("@/features/service-orders/hooks/use-service-orders");
-    const expected = ["aberta", "em_producao", "concluida", "cancelada"];
+    const expected = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
     for (const s of expected) {
       expect(STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]).toBeDefined();
       expect(STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label).toBeTruthy();

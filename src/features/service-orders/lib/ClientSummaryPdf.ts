@@ -11,11 +11,17 @@ const STATUS_LABEL: Record<OsStatus, string> = {
   em_producao: "Em Produção",
   concluida: "Concluída",
   cancelada: "Cancelada",
+  aprovada: "Aprovada",
+  pronta: "Pronta",
+  entregue: "Entregue",
 };
 
 const STATUS_COLOR: Record<OsStatus, [number, number, number]> = {
   aberta: [59, 130, 246],
+  aprovada: [34, 197, 94],
   em_producao: [234, 179, 8],
+  pronta: [152, 55, 38],
+  entregue: [59, 130, 246],
   concluida: [34, 197, 94],
   cancelada: [239, 68, 68],
 };
@@ -163,7 +169,7 @@ export async function generateClientSummaryPdf(
   onProgress?.({ stage: "Calculando KPIs", current: 0, total: 0, percent: 15 });
   const totalOrders = orders.length;
   const totalQty = orders.reduce((s, o) => s + (parseInt(o.quantity) || 0), 0);
-  const byStatus: Record<OsStatus, number> = { aberta: 0, em_producao: 0, concluida: 0, cancelada: 0 };
+  const byStatus: Record<OsStatus, number> = { aberta: 0, aprovada: 0, em_producao: 0, pronta: 0, entregue: 0, concluida: 0, cancelada: 0 };
   orders.forEach((o) => { byStatus[o.status] = (byStatus[o.status] ?? 0) + 1; });
 
   doc.setTextColor(...DARK);

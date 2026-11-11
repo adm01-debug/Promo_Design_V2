@@ -40,8 +40,11 @@ export type OsStatus = "aberta" | "aprovada" | "em_producao" | "pronta" | "entre
 
 // ─── State Machine: transições válidas de status ───────────
 export const STATUS_TRANSITIONS: Record<OsStatus, OsStatus[]> = {
-  aberta: ["em_producao", "cancelada"],
-  em_producao: ["concluida", "cancelada"],
+  aberta: ["aprovada", "cancelada"],
+  aprovada: ["em_producao", "cancelada"],
+  em_producao: ["pronta", "cancelada"],
+  pronta: ["entregue"],
+  entregue: ["concluida"],
   concluida: [],
   cancelada: ["aberta"],
 };

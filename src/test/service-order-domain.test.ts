@@ -12,10 +12,10 @@ import {
 // STATUS_CONFIG — exhaustive tests
 // ============================================================
 describe("STATUS_CONFIG", () => {
-  const allStatuses: OsStatus[] = ["aberta", "em_producao", "concluida", "cancelada"];
+  const allStatuses: OsStatus[] = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
 
-  it("contains exactly 4 statuses", () => {
-    expect(Object.keys(STATUS_CONFIG)).toHaveLength(4);
+    it("contains exactly 7 statuses", () => {
+      expect(Object.keys(STATUS_CONFIG)).toHaveLength(7);
   });
 
   allStatuses.forEach((status) => {
@@ -36,7 +36,10 @@ describe("STATUS_CONFIG", () => {
 
   it("labels are in Portuguese", () => {
     expect(STATUS_CONFIG.aberta.label).toBe("Aberta");
+    expect(STATUS_CONFIG.aprovada.label).toBe("Aprovada");
     expect(STATUS_CONFIG.em_producao.label).toBe("Em Produção");
+    expect(STATUS_CONFIG.pronta.label).toBe("Pronta");
+    expect(STATUS_CONFIG.entregue.label).toBe("Entregue");
     expect(STATUS_CONFIG.concluida.label).toBe("Concluída");
     expect(STATUS_CONFIG.cancelada.label).toBe("Cancelada");
   });

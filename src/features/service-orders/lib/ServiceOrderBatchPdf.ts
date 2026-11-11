@@ -11,6 +11,9 @@ const STATUS_LABEL: Record<OsStatus, string> = {
   em_producao: "Em Produção",
   concluida: "Concluída",
   cancelada: "Cancelada",
+  aprovada: "Aprovada",
+  pronta: "Pronta",
+  entregue: "Entregue",
 };
 
 export interface BatchPdfFilters {

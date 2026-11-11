@@ -274,12 +274,12 @@ describe("TECHNIQUES constant", () => {
 import { canTransition, getNextStatuses, STATUS_CONFIG, STATUS_TRANSITIONS, type OsStatus } from "@/features/service-orders/hooks/use-service-orders";
 
 describe("Status State Machine – canTransition", () => {
-  it("aberta → em_producao allowed", () => expect(canTransition("aberta", "em_producao")).toBe(true));
+  it("aberta → aprovada allowed", () => expect(canTransition("aberta", "aprovada")).toBe(true));
   it("aberta → cancelada allowed", () => expect(canTransition("aberta", "cancelada")).toBe(true));
   it("aberta → concluida NOT allowed", () => expect(canTransition("aberta", "concluida")).toBe(false));
   it("aberta → aberta NOT allowed", () => expect(canTransition("aberta", "aberta")).toBe(false));
 
-  it("em_producao → concluida allowed", () => expect(canTransition("em_producao", "concluida")).toBe(true));
+  it("em_producao → pronta allowed", () => expect(canTransition("em_producao", "pronta")).toBe(true));
   it("em_producao → cancelada allowed", () => expect(canTransition("em_producao", "cancelada")).toBe(true));
   it("em_producao → aberta NOT allowed", () => expect(canTransition("em_producao", "aberta")).toBe(false));
   it("em_producao → em_producao NOT allowed", () => expect(canTransition("em_producao", "em_producao")).toBe(false));
@@ -304,7 +304,7 @@ describe("Status State Machine – getNextStatuses", () => {
 });
 
 describe("STATUS_CONFIG completeness", () => {
-  const allStatuses: OsStatus[] = ["aberta", "em_producao", "concluida", "cancelada"];
+  const allStatuses: OsStatus[] = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
 
   allStatuses.forEach((status) => {
     it(`${status} has label, color, and bg`, () => {
