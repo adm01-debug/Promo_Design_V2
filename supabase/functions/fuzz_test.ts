@@ -1,7 +1,11 @@
 import { assertNotEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
-const BASE_URL = "http://localhost:54321/functions/v1";
+const BASE_URL = Deno.env.get("SUPABASE_URL") || "http://localhost:54321/functions/v1";
 const TOKEN = Deno.env.get("SUPABASE_ANON_KEY") || "mock-token";
+
+// Fuzz tests exercitam o backend real; sem SUPABASE_URL/ANON_KEY no runner
+// nao ha servidor para validar (mesmo criterio da PR #7), entao ignoramos.
+const withBackend = { ignore: !Deno.env.get("SUPABASE_URL") || !Deno.env.get("SUPABASE_ANON_KEY") };
 
 async function callFunction(name: string, body: unknown, headers: Record<string, string> = {}) {
   try {
@@ -33,7 +37,7 @@ const FUZZ_SCENARIOS = [
   { name: "Large numeric assetId", body: { assetId: 1234567890, filePath: "test.png", mimeType: "image/png" } },
 ];
 
-Deno.test("asset-ocr: fuzzing and validation", async () => {
+Deno.test({ ...withBackend, name: "asset-ocr: fuzzing and validation", async fn() {
   for (const scenario of FUZZ_SCENARIOS) {
     console.log(`Testing scenario: ${scenario.name}`);
     const res = await callFunction("asset-ocr", scenario.body);
@@ -43,7 +47,7 @@ Deno.test("asset-ocr: fuzzing and validation", async () => {
       console.warn(`Scenario ${scenario.name} unexpectedly returned 200`);
     }
   }
-});
+}});
 
 const MOCKUP_AI_FUZZ = [
   { name: "Missing action", body: { imageBase64: "data:image/png;base64,..." } },
@@ -55,10 +59,10 @@ const MOCKUP_AI_FUZZ = [
   { name: "Suggest-placement: massive area", body: { action: "suggest-placement", areaWidth: 99999999, areaHeight: 99999999 } },
 ];
 
-Deno.test("mockup-ai: fuzzing and validation", async () => {
+Deno.test({ ...withBackend, name: "mockup-ai: fuzzing and validation", async fn() {
   for (const scenario of MOCKUP_AI_FUZZ) {
     console.log(`Testing scenario: ${scenario.name}`);
     const res = await callFunction("mockup-ai", scenario.body);
     assertNotEquals(res.status, 500, `Scenario ${scenario.name} caused a 500 error`);
   }
-});
+}});
