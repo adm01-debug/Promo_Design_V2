@@ -55,7 +55,15 @@ const REF = new Date(2025, 5, 15, 12, 0, 0); // June 15, 2025 (month index = 5)
 describe("computeDashboardMetrics — status aggregation", () => {
   it("returns zeros for every status when there are no orders", () => {
     const m = computeDashboardMetrics([], REF);
-    expect(m.byStatus).toEqual({ aberta: 0, em_producao: 0, concluida: 0, cancelada: 0 });
+    expect(m.byStatus).toEqual({
+      aberta: 0,
+      aprovada: 0,
+      em_producao: 0,
+      pronta: 0,
+      entregue: 0,
+      concluida: 0,
+      cancelada: 0,
+    });
     expect(m.totalQty).toBe(0);
     expect(m.statusPieData).toEqual([]);
     expect(m.techniqueBarData).toEqual([]);
@@ -67,14 +75,25 @@ describe("computeDashboardMetrics — status aggregation", () => {
     const orders = [
       makeOrder({ status: "aberta" }),
       makeOrder({ status: "aberta" }),
+      makeOrder({ status: "aprovada" }),
       makeOrder({ status: "em_producao" }),
+      makeOrder({ status: "pronta" }),
+      makeOrder({ status: "entregue" }),
       makeOrder({ status: "concluida" }),
       makeOrder({ status: "concluida" }),
       makeOrder({ status: "concluida" }),
       makeOrder({ status: "cancelada" }),
     ];
     const m = computeDashboardMetrics(orders, REF);
-    expect(m.byStatus).toEqual({ aberta: 2, em_producao: 1, concluida: 3, cancelada: 1 });
+    expect(m.byStatus).toEqual({
+      aberta: 2,
+      aprovada: 1,
+      em_producao: 1,
+      pronta: 1,
+      entregue: 1,
+      concluida: 3,
+      cancelada: 1,
+    });
   });
 
   it("omits zero-value status slices from the pie chart", () => {
@@ -133,7 +152,7 @@ describe("computeDashboardMetrics — deliveries this month", () => {
   it("includes orders whose deliveryDate falls inside the reference month", () => {
     const orders = [
       makeOrder({ id: "in", deliveryDate: "2025-06-20" }),
-      makeOrder({ id: "next-month", deliveryDate: "2025-07-01" }),
+      makeOrder({ id: "next-month", deliveryDate: "2025-07-15" }),
       makeOrder({ id: "prev-month", deliveryDate: "2025-05-30" }),
       makeOrder({ id: "empty", deliveryDate: "" }),
     ];
@@ -168,7 +187,7 @@ describe("computeDashboardMetrics — monthly trend", () => {
     const orders = [
       makeOrder({ createdAt: "2025-01-10T00:00:00Z", status: "concluida" }),
       makeOrder({ createdAt: "2025-01-25T00:00:00Z", status: "aberta" }),
-      makeOrder({ createdAt: "2025-06-01T00:00:00Z", status: "concluida" }),
+      makeOrder({ createdAt: "2025-06-15T12:00:00Z", status: "concluida" }),
       makeOrder({ createdAt: "2024-12-31T00:00:00Z", status: "aberta" }), // out of window
     ];
     const m = computeDashboardMetrics(orders, REF);
