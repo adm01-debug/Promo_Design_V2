@@ -69,14 +69,18 @@ export function CacheHitPanel() {
           <>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="rounded-md border p-3">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Heap cache global</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Heap cache global
+                </p>
                 <div className="mt-1 flex items-center gap-2">
                   {ratioBadge(result?.heap_hit_ratio ?? null)}
                   <span className="text-[11px] text-muted-foreground">alvo ≥ 99%</span>
                 </div>
               </div>
               <div className="rounded-md border p-3">
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Índice cache global</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Índice cache global
+                </p>
                 <div className="mt-1 flex items-center gap-2">
                   {ratioBadge(result?.idx_hit_ratio ?? null)}
                   <span className="text-[11px] text-muted-foreground">alvo ≥ 99%</span>
@@ -113,9 +117,7 @@ export function CacheHitPanel() {
                         <td className="py-2 pr-3 text-right">
                           {ratioBadge(t.index_use_ratio, 80, 50)}
                         </td>
-                        <td className="py-2 pr-3 text-right">
-                          {ratioBadge(t.heap_hit_ratio)}
-                        </td>
+                        <td className="py-2 pr-3 text-right">{ratioBadge(t.heap_hit_ratio)}</td>
                         <td className="py-2 pr-3 text-right text-muted-foreground">
                           {nf.format(t.live_tuples)}
                         </td>
@@ -124,7 +126,8 @@ export function CacheHitPanel() {
                   </tbody>
                 </table>
                 <p className="mt-3 text-[11px] text-muted-foreground">
-                  Tabelas com muitos <em>seq scans</em> e baixa taxa de uso de índice em conjuntos &gt;10k linhas indicam índices ausentes ou seletividade baixa.
+                  Tabelas com muitos <em>seq scans</em> e baixa taxa de uso de índice em conjuntos
+                  &gt;10k linhas indicam índices ausentes ou seletividade baixa.
                 </p>
               </div>
             )}

@@ -70,12 +70,16 @@ export function FailureHeatmapPanel() {
       ) : query.isError ? (
         <p className="text-sm text-destructive">Falha ao carregar heatmap.</p>
       ) : totalErr === 0 ? (
-        <p className="text-xs text-muted-foreground">Nenhuma falha no período coberto pelo histórico. 🎉</p>
+        <p className="text-xs text-muted-foreground">
+          Nenhuma falha no período coberto pelo histórico. 🎉
+        </p>
       ) : (
         <div className="space-y-1">
           <div className="flex items-center gap-1 pl-8 text-[9px] text-muted-foreground font-mono">
             {Array.from({ length: 24 }, (_, h) => (
-              <div key={h} className="w-4 text-center">{h % 3 === 0 ? h : ""}</div>
+              <div key={h} className="w-4 text-center">
+                {h % 3 === 0 ? h : ""}
+              </div>
             ))}
           </div>
           {grid.map((row, dow) => (

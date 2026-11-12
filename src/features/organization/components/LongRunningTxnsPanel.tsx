@@ -6,8 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, RefreshCcw, Skull, Timer, AlertTriangle } from "lucide-react";
@@ -39,15 +45,19 @@ interface Payload {
 }
 
 async function fetchTxns(minSeconds: number): Promise<Payload> {
-  const { data, error } = await (supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ data: Payload | null; error: Error | null }>)(
-    "get_long_running_txns",
-    { _min_seconds: minSeconds },
-  );
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: Payload | null; error: Error | null }>
+  )("get_long_running_txns", { _min_seconds: minSeconds });
   if (error) throw error;
-  return (data ?? { threshold_seconds: minSeconds, transactions: [], total: 0, captured_at: new Date().toISOString() }) as Payload;
+  return (data ?? {
+    threshold_seconds: minSeconds,
+    transactions: [],
+    total: 0,
+    captured_at: new Date().toISOString(),
+  }) as Payload;
 }
 
 function formatDuration(ms: number) {
@@ -73,13 +83,12 @@ export function LongRunningTxnsPanel() {
     setTerminatingPid(pid);
     try {
       type TerminateRes = { ok?: boolean; user?: string; elapsed_seconds?: number } | null;
-      const { data: res, error: err } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: TerminateRes; error: Error | null }>)(
-        "terminate_backend",
-        { _pid: pid, _reason: reason.trim() || null },
-      );
+      const { data: res, error: err } = await (
+        supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: TerminateRes; error: Error | null }>
+      )("terminate_backend", { _pid: pid, _reason: reason.trim() || null });
       if (err) throw err;
       const okRes = res;
       toast({
@@ -112,7 +121,8 @@ export function LongRunningTxnsPanel() {
           <div>
             <h3 className="text-base font-semibold">Transações longas</h3>
             <p className="text-xs text-muted-foreground">
-              Backends ativos há mais de {minSeconds}s. Encerramento manual disponível para transações não-sistêmicas.
+              Backends ativos há mais de {minSeconds}s. Encerramento manual disponível para
+              transações não-sistêmicas.
             </p>
           </div>
         </div>
@@ -125,12 +135,18 @@ export function LongRunningTxnsPanel() {
               min={5}
               max={3600}
               value={minSeconds}
-              onChange={(e) => setMinSeconds(Math.max(5, Math.min(3600, parseInt(e.target.value) || 30)))}
+              onChange={(e) =>
+                setMinSeconds(Math.max(5, Math.min(3600, parseInt(e.target.value) || 30)))
+              }
               className="w-20 h-9"
             />
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            {isFetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -138,7 +154,10 @@ export function LongRunningTxnsPanel() {
       <div className="flex gap-2 flex-wrap">
         <Badge variant="outline">Total: {data?.total ?? 0}</Badge>
         {critical > 0 && (
-          <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/30">
+          <Badge
+            variant="outline"
+            className="bg-destructive/15 text-destructive border-destructive/30"
+          >
             Crítico: {critical}
           </Badge>
         )}
@@ -168,16 +187,22 @@ export function LongRunningTxnsPanel() {
                 t.status === "critical"
                   ? "border-destructive/30 bg-destructive/5"
                   : t.status === "warning"
-                  ? "border-amber-500/30 bg-amber-500/5"
-                  : "border-border bg-card/50"
+                    ? "border-amber-500/30 bg-amber-500/5"
+                    : "border-border bg-card/50"
               }`}
             >
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="font-mono text-[10px]">PID {t.pid}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{t.user_name}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{t.state}</Badge>
+                    <Badge variant="outline" className="font-mono text-[10px]">
+                      PID {t.pid}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {t.user_name}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {t.state}
+                    </Badge>
                     {t.wait_event && (
                       <Badge variant="outline" className="text-[10px] bg-muted">
                         {t.wait_event_type}:{t.wait_event}
@@ -188,11 +213,13 @@ export function LongRunningTxnsPanel() {
                         sistema
                       </Badge>
                     )}
-                    <span className="text-xs font-semibold">
-                      {formatDuration(t.duration_ms)}
-                    </span>
+                    <span className="text-xs font-semibold">{formatDuration(t.duration_ms)}</span>
                     <span className="text-[11px] text-muted-foreground">
-                      iniciado {formatDistanceToNow(parseISO(t.xact_start ?? t.query_start), { addSuffix: true, locale: ptBR })}
+                      iniciado{" "}
+                      {formatDistanceToNow(parseISO(t.xact_start ?? t.query_start), {
+                        addSuffix: true,
+                        locale: ptBR,
+                      })}
                     </span>
                   </div>
                   <pre className="text-[11px] font-mono text-foreground/80 mt-2 line-clamp-3 whitespace-pre-wrap break-all">
@@ -206,7 +233,9 @@ export function LongRunningTxnsPanel() {
                       variant="destructive"
                       size="sm"
                       disabled={t.is_system || terminatingPid === t.pid}
-                      title={t.is_system ? "Backend de sistema — proteção ativa" : "Encerrar backend"}
+                      title={
+                        t.is_system ? "Backend de sistema — proteção ativa" : "Encerrar backend"
+                      }
                     >
                       {terminatingPid === t.pid ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -224,14 +253,17 @@ export function LongRunningTxnsPanel() {
                       <AlertDialogDescription asChild>
                         <div className="space-y-2 text-sm">
                           <p>
-                            Isso enviará <code className="font-mono">pg_terminate_backend</code> ao processo.
-                            A transação será revertida (rollback). Use somente para transações travadas ou lentas.
+                            Isso enviará <code className="font-mono">pg_terminate_backend</code> ao
+                            processo. A transação será revertida (rollback). Use somente para
+                            transações travadas ou lentas.
                           </p>
                           <div className="p-2 rounded bg-muted text-xs font-mono line-clamp-4">
                             {t.query}
                           </div>
                           <div>
-                            <label className="text-xs text-muted-foreground">Motivo (opcional, gravado em auditoria):</label>
+                            <label className="text-xs text-muted-foreground">
+                              Motivo (opcional, gravado em auditoria):
+                            </label>
                             <Input
                               value={reason}
                               onChange={(e) => setReason(e.target.value)}

@@ -5,7 +5,7 @@ type ComponentModule = { default: ComponentType<Record<string, unknown>> };
 export function lazyWithRetry(
   factory: () => Promise<ComponentModule>,
   retries = 3,
-  delay = 1000
+  delay = 1000,
 ): ReturnType<typeof lazy> {
   return lazy(() => retryImport(factory, retries, delay));
 }
@@ -13,7 +13,7 @@ export function lazyWithRetry(
 async function retryImport(
   factory: () => Promise<ComponentModule>,
   retries: number,
-  delay: number
+  delay: number,
 ): Promise<ComponentModule> {
   try {
     return await factory();

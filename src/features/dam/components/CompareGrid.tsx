@@ -60,7 +60,9 @@ function writeSavedView(sig: string, view: SavedView): void {
       for (const k of keys.slice(0, keys.length - 20)) delete parsed[k];
     }
     sessionStorage.setItem(COMPARE_VIEW_KEY, JSON.stringify(parsed));
-  } catch { /* ignore quota / serialization errors */ }
+  } catch {
+    /* ignore quota / serialization errors */
+  }
 }
 
 function gridClasses(n: number): string {
@@ -144,7 +146,9 @@ export function CompareGrid({ assets, onRemove }: Props) {
       const dy = e.clientY - dragRef.current.y;
       setTransform((t) => ({ ...t, tx: dragRef.current!.tx + dx, ty: dragRef.current!.ty + dy }));
     };
-    const onUp = () => { dragRef.current = null; };
+    const onUp = () => {
+      dragRef.current = null;
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
@@ -211,7 +215,13 @@ export function CompareGrid({ assets, onRemove }: Props) {
         const dx = pts[0].x - g.startX;
         const dy = pts[0].y - g.startY;
         setTransform({ scale: g.startScale, tx: g.startTx + dx, ty: g.startTy + dy });
-      } else if (g.mode === "pinch" && pts.length >= 2 && g.startDist && g.startMidX != null && g.startMidY != null) {
+      } else if (
+        g.mode === "pinch" &&
+        pts.length >= 2 &&
+        g.startDist &&
+        g.startMidX != null &&
+        g.startMidY != null
+      ) {
         const ax = pts[0].x;
         const ay = pts[0].y;
         const bx = pts[1].x;
@@ -261,7 +271,8 @@ export function CompareGrid({ assets, onRemove }: Props) {
     <div className="flex-1 flex flex-col bg-muted/10 min-w-0">
       <div className="border-b border-border px-3 py-2 flex items-center gap-2 shrink-0">
         <span className="text-xs text-muted-foreground mr-auto">
-          Sincronizado · scroll/pinch · arraste/1 dedo · setas movem · +/- zoom · 0 reset · 1 100% · ⌫ remove
+          Sincronizado · scroll/pinch · arraste/1 dedo · setas movem · +/- zoom · 0 reset · 1 100% ·
+          ⌫ remove
         </span>
         <Button variant="ghost" size="sm" onClick={reset} className="h-8 px-2 text-xs gap-1">
           <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -350,7 +361,9 @@ function CompareCell({
         setLoading(false);
       }
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [asset.file_path]);
 
   return (

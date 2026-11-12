@@ -4,11 +4,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
-  AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, RefreshCcw, Database, Bell, History, HardDrive, Clock, CheckCircle2, XCircle, AlertTriangle, TrendingUp, TrendingDown, Camera, Minus, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  Trash2,
+  RefreshCcw,
+  Database,
+  Bell,
+  History,
+  HardDrive,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Camera,
+  Minus,
+  AlertCircle,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -103,7 +126,10 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-const STATUS_META: Record<MaintenanceRun["status"], { label: string; icon: typeof CheckCircle2; className: string }> = {
+const STATUS_META: Record<
+  MaintenanceRun["status"],
+  { label: string; icon: typeof CheckCircle2; className: string }
+> = {
   success: { label: "Sucesso", icon: CheckCircle2, className: "text-emerald-500" },
   error: { label: "Erro", icon: XCircle, className: "text-destructive" },
   partial: { label: "Parcial", icon: AlertTriangle, className: "text-amber-500" },
@@ -122,7 +148,11 @@ export function MaintenancePanel() {
   const historyQuery = useQuery({
     queryKey: ["maintenance-history"],
     staleTime: 60_000,
-    queryFn: () => invokeMaintenance<{ ok: true; history: MaintenanceRun[] }>({ action: "history", history_limit: 10 }),
+    queryFn: () =>
+      invokeMaintenance<{ ok: true; history: MaintenanceRun[] }>({
+        action: "history",
+        history_limit: 10,
+      }),
   });
 
   const sizesQuery = useQuery({
@@ -134,7 +164,11 @@ export function MaintenancePanel() {
   const growthQuery = useQuery({
     queryKey: ["maintenance-growth", 7],
     staleTime: 5 * 60_000,
-    queryFn: () => invokeMaintenance<{ ok: true; growth: GrowthRow[]; days_back: number }>({ action: "growth", growth_days_back: 7 }),
+    queryFn: () =>
+      invokeMaintenance<{ ok: true; growth: GrowthRow[]; days_back: number }>({
+        action: "growth",
+        growth_days_back: 7,
+      }),
   });
 
   const sizeHistoryQuery = useQuery({
@@ -152,11 +186,12 @@ export function MaintenancePanel() {
     mutationFn: () => invokeMaintenance<{ ok: true; result: CleanupResult }>({ action: "cleanup" }),
     onSuccess: (data) => {
       const r = data.result;
-      const total = (r.audit_log_deleted ?? 0) + (r.notifications_deleted ?? 0) + (r.status_audit_deleted ?? 0);
+      const total =
+        (r.audit_log_deleted ?? 0) + (r.notifications_deleted ?? 0) + (r.status_audit_deleted ?? 0);
       toast.success(
         total > 0
           ? `Limpeza concluída: ${total} registros removidos${r.duration_ms ? ` em ${r.duration_ms}ms` : ""}`
-          : "Limpeza executada — nenhum registro elegível"
+          : "Limpeza executada — nenhum registro elegível",
       );
       qc.invalidateQueries({ queryKey: ["maintenance-stats"] });
       qc.invalidateQueries({ queryKey: ["maintenance-history"] });
@@ -166,7 +201,10 @@ export function MaintenancePanel() {
   });
 
   const snapshotMutation = useMutation({
-    mutationFn: () => invokeMaintenance<{ ok: true; result: { inserted?: number; skipped?: boolean } }>({ action: "capture_snapshot" }),
+    mutationFn: () =>
+      invokeMaintenance<{ ok: true; result: { inserted?: number; skipped?: boolean } }>({
+        action: "capture_snapshot",
+      }),
     onSuccess: (data) => {
       if (data.result?.skipped) {
         toast.info("Snapshot em andamento por outro processo");
@@ -198,9 +236,22 @@ export function MaintenancePanel() {
   })();
 
   const rows = [
-    { icon: Database, label: "Logs de auditoria (>180 dias)", value: stats?.audit_log_older_180d ?? 0, total: stats?.audit_log_total ?? 0 },
-    { icon: Bell, label: "Notificações lidas (>90 dias)", value: stats?.notifications_read_older_90d ?? 0 },
-    { icon: History, label: "Histórico de status (>365 dias)", value: stats?.status_audit_older_365d ?? 0 },
+    {
+      icon: Database,
+      label: "Logs de auditoria (>180 dias)",
+      value: stats?.audit_log_older_180d ?? 0,
+      total: stats?.audit_log_total ?? 0,
+    },
+    {
+      icon: Bell,
+      label: "Notificações lidas (>90 dias)",
+      value: stats?.notifications_read_older_90d ?? 0,
+    },
+    {
+      icon: History,
+      label: "Histórico de status (>365 dias)",
+      value: stats?.status_audit_older_365d ?? 0,
+    },
   ];
 
   const totalPending =
@@ -215,7 +266,11 @@ export function MaintenancePanel() {
     growthQuery.refetch();
   };
 
-  const isFetchingAny = statsQuery.isFetching || historyQuery.isFetching || sizesQuery.isFetching || growthQuery.isFetching;
+  const isFetchingAny =
+    statsQuery.isFetching ||
+    historyQuery.isFetching ||
+    sizesQuery.isFetching ||
+    growthQuery.isFetching;
 
   return (
     <Card>
@@ -223,7 +278,13 @@ export function MaintenancePanel() {
         <CardTitle className="flex items-center gap-2 text-lg">
           <Database className="h-4 w-4" /> Manutenção do banco de dados
         </CardTitle>
-        <Button variant="ghost" size="icon" onClick={refetchAll} disabled={isFetchingAny} title="Atualizar tudo">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={refetchAll}
+          disabled={isFetchingAny}
+          title="Atualizar tudo"
+        >
           <RefreshCcw className={`h-4 w-4 ${isFetchingAny ? "animate-spin" : ""}`} />
         </Button>
       </CardHeader>
@@ -235,7 +296,8 @@ export function MaintenancePanel() {
         <RecentIncidentsPanel />
 
         <p className="text-xs text-muted-foreground">
-          A limpeza automática roda todo domingo às 03:00 UTC. Apenas registros fora do período de retenção são removidos.
+          A limpeza automática roda todo domingo às 03:00 UTC. Apenas registros fora do período de
+          retenção são removidos.
         </p>
 
         {/* Métricas de retenção */}
@@ -244,7 +306,9 @@ export function MaintenancePanel() {
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando estatísticas…
           </div>
         ) : statsQuery.isError ? (
-          <p className="text-sm text-destructive">Não foi possível carregar estatísticas. Verifique se você é owner/admin.</p>
+          <p className="text-sm text-destructive">
+            Não foi possível carregar estatísticas. Verifique se você é owner/admin.
+          </p>
         ) : (
           <div className="space-y-2">
             {rows.map(({ icon: Icon, label, value, total }) => (
@@ -258,7 +322,9 @@ export function MaintenancePanel() {
                     {value.toLocaleString("pt-BR")}
                   </Badge>
                   {typeof total === "number" && (
-                    <span className="text-[10px] text-muted-foreground font-mono">/ {total.toLocaleString("pt-BR")}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      / {total.toLocaleString("pt-BR")}
+                    </span>
                   )}
                 </div>
               </div>
@@ -292,14 +358,16 @@ export function MaintenancePanel() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar limpeza manual</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isso removerá permanentemente registros fora do período de retenção
-                  (auditoria &gt; 180 dias, notificações lidas &gt; 90 dias, histórico &gt; 365 dias).
-                  Esta ação não pode ser desfeita.
+                  Isso removerá permanentemente registros fora do período de retenção (auditoria
+                  &gt; 180 dias, notificações lidas &gt; 90 dias, histórico &gt; 365 dias). Esta
+                  ação não pode ser desfeita.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => cleanupMutation.mutate()}>Executar</AlertDialogAction>
+                <AlertDialogAction onClick={() => cleanupMutation.mutate()}>
+                  Executar
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -309,16 +377,23 @@ export function MaintenancePanel() {
         {(() => {
           const hist = sizeHistoryQuery.data?.history ?? [];
           if (hist.length === 0) return null;
-          const latest = hist.reduce((m, r) => (r.captured_at > m ? r.captured_at : m), hist[0].captured_at);
+          const latest = hist.reduce(
+            (m, r) => (r.captured_at > m ? r.captured_at : m),
+            hist[0].captured_at,
+          );
           const ageMs = Date.now() - new Date(latest).getTime();
           if (ageMs < 24 * 60 * 60 * 1000) return null;
           return (
-            <Alert variant="destructive" className="border-amber-500/40 bg-amber-500/5 text-foreground">
+            <Alert
+              variant="destructive"
+              className="border-amber-500/40 bg-amber-500/5 text-foreground"
+            >
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertTitle className="text-sm">Snapshot desatualizado</AlertTitle>
               <AlertDescription className="text-xs">
-                Último snapshot capturado há {formatDistanceToNow(parseISO(latest), { locale: ptBR })}. O cron pode
-                estar falhando — verifique o painel de diagnóstico abaixo ou execute uma captura manual.
+                Último snapshot capturado há{" "}
+                {formatDistanceToNow(parseISO(latest), { locale: ptBR })}. O cron pode estar
+                falhando — verifique o painel de diagnóstico abaixo ou execute uma captura manual.
               </AlertDescription>
             </Alert>
           );
@@ -355,7 +430,8 @@ export function MaintenancePanel() {
             </div>
           ) : growth.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              Nenhum snapshot histórico. Clique em "Capturar snapshot" para iniciar a coleta de métricas.
+              Nenhum snapshot histórico. Clique em "Capturar snapshot" para iniciar a coleta de
+              métricas.
             </p>
           ) : (
             <div className="space-y-1.5">
@@ -363,7 +439,13 @@ export function MaintenancePanel() {
                 const hasBaseline = g.delta_bytes !== null && g.previous_bytes !== null;
                 const positive = (g.delta_bytes ?? 0) > 0;
                 const negative = (g.delta_bytes ?? 0) < 0;
-                const Icon = !hasBaseline ? Minus : positive ? TrendingUp : negative ? TrendingDown : Minus;
+                const Icon = !hasBaseline
+                  ? Minus
+                  : positive
+                    ? TrendingUp
+                    : negative
+                      ? TrendingDown
+                      : Minus;
                 const color = !hasBaseline
                   ? "text-muted-foreground"
                   : positive
@@ -372,7 +454,10 @@ export function MaintenancePanel() {
                       ? "text-emerald-500"
                       : "text-muted-foreground";
                 return (
-                  <div key={g.table} className="flex items-center justify-between p-2 rounded-md border text-xs">
+                  <div
+                    key={g.table}
+                    className="flex items-center justify-between p-2 rounded-md border text-xs"
+                  >
                     <span className="font-mono text-muted-foreground truncate">{g.table}</span>
                     <div className="flex items-center gap-2 font-mono">
                       <span className="text-muted-foreground">{formatBytes(g.current_bytes)}</span>
@@ -419,7 +504,10 @@ export function MaintenancePanel() {
                         {series.length >= 2 ? (
                           <MiniSparkline data={series} width={72} height={18} />
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/60" title="Aguardando snapshots (mínimo 2 pontos)">
+                          <span
+                            className="text-[10px] text-muted-foreground/60"
+                            title="Aguardando snapshots (mínimo 2 pontos)"
+                          >
                             —
                           </span>
                         )}
@@ -432,7 +520,10 @@ export function MaintenancePanel() {
                       </span>
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary/70 transition-all" style={{ width: `${pct}%` }} />
+                      <div
+                        className="h-full bg-primary/70 transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </div>
                 );
@@ -440,7 +531,6 @@ export function MaintenancePanel() {
             </div>
           )}
         </div>
-
 
         {/* Histórico de execuções */}
         <div className="space-y-3 pt-4 border-t">
@@ -458,30 +548,46 @@ export function MaintenancePanel() {
               {history.map((run) => {
                 const meta = STATUS_META[run.status];
                 const Icon = meta.icon;
-                const total = run.audit_deleted + run.notifications_deleted + run.status_audit_deleted;
+                const total =
+                  run.audit_deleted + run.notifications_deleted + run.status_audit_deleted;
                 return (
-                  <div key={run.id} className="flex items-center justify-between p-2.5 rounded-md border text-xs">
+                  <div
+                    key={run.id}
+                    className="flex items-center justify-between p-2.5 rounded-md border text-xs"
+                  >
                     <div className="flex items-center gap-2 min-w-0">
                       <Icon className={`h-3.5 w-3.5 shrink-0 ${meta.className}`} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="text-[9px] uppercase font-mono h-4 px-1">
+                          <Badge
+                            variant="outline"
+                            className="text-[9px] uppercase font-mono h-4 px-1"
+                          >
                             {run.source}
                           </Badge>
                           <span className="text-muted-foreground">
-                            {format(new Date(run.created_at), "dd/MM/yy HH:mm:ss", { locale: ptBR })}
+                            {format(new Date(run.created_at), "dd/MM/yy HH:mm:ss", {
+                              locale: ptBR,
+                            })}
                           </span>
                         </div>
                         {run.error_message && (
-                          <p className="text-[10px] text-destructive truncate mt-0.5" title={run.error_message}>
+                          <p
+                            className="text-[10px] text-destructive truncate mt-0.5"
+                            title={run.error_message}
+                          >
                             {run.error_message}
                           </p>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 font-mono text-[10px]">
-                      <span className="text-muted-foreground">{total.toLocaleString("pt-BR")} rem.</span>
-                      {run.duration_ms != null && <span className="text-muted-foreground">{run.duration_ms}ms</span>}
+                      <span className="text-muted-foreground">
+                        {total.toLocaleString("pt-BR")} rem.
+                      </span>
+                      {run.duration_ms != null && (
+                        <span className="text-muted-foreground">{run.duration_ms}ms</span>
+                      )}
                     </div>
                   </div>
                 );
@@ -538,8 +644,6 @@ export function MaintenancePanel() {
 
         {/* Saúde de vacuum/analyze por tabela */}
         <VacuumHealthPanel />
-
-
 
         {/* Heatmap de falhas por dia/hora */}
         <FailureHeatmapPanel />

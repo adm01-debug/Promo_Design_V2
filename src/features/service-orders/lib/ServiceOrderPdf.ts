@@ -49,7 +49,7 @@ const TECHNIQUE_COLORS: Record<string, [number, number, number]> = {
   "Serigrafia Têxtil": [200, 50, 50],
   "Serigrafia Vinílica Plana": [200, 160, 170],
   "Serigrafia Vinílica Rotativa": [0, 200, 200],
-  "Tampografia": [230, 150, 50],
+  Tampografia: [230, 150, 50],
   "(DTF) Transfer Digital Têxtil": [220, 50, 80],
   "(DTF) Transfer Digital UV": [180, 50, 50],
   "Sublimação - Caneca": [80, 120, 60],
@@ -57,13 +57,17 @@ const TECHNIQUE_COLORS: Record<string, [number, number, number]> = {
   "Hot Stamping (Baixo Relevo)": [220, 180, 50],
   "Digital UV": [230, 200, 50],
   "Adesivo Resinado": [0, 180, 230],
-  "Bordado": [150, 100, 50],
-  "Decalque": [180, 200, 50],
+  Bordado: [150, 100, 50],
+  Decalque: [180, 200, 50],
   "Filme de Recorte": [180, 30, 50],
 };
 
-function sim(v: boolean) { return v ? "SIM" : "NÃO"; }
-function val(v: string | number | undefined) { return v ? String(v) : "–"; }
+function sim(v: boolean) {
+  return v ? "SIM" : "NÃO";
+}
+function val(v: string | number | undefined) {
+  return v ? String(v) : "–";
+}
 
 export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string): jsPDF {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -83,7 +87,9 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   if (logoDataUrl) {
     try {
       doc.addImage(logoDataUrl, "PNG", m, 2, 35, 14);
-    } catch { /* fallback to text */ }
+    } catch {
+      /* fallback to text */
+    }
   } else {
     doc.setTextColor(...WHITE);
     doc.setFontSize(10);
@@ -127,21 +133,21 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   doc.setFont("helvetica", "bold");
   doc.text("DADOS DO CLIENTE E SOLICITAÇÃO", col1, y + 6);
   doc.line(col1, y + 8, pw - m - 4, y + 8);
-  
+
   doc.setFont("helvetica", "normal");
   doc.text(`Solicitação: ${val(form.date)}`, col1, y + 14);
-  
+
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...GREEN);
   doc.text(`ENTREGA: ${val(form.deliveryDate)}`, pw - m - 4, y + 14, { align: "right" });
-  
+
   doc.setTextColor(0);
   doc.setFont("helvetica", "normal");
   doc.text(`Cliente: ${val(form.clientName)}`, col1, y + 21);
   if (form.clientCompany) {
     doc.text(`Empresa: ${val(form.clientCompany)}`, col2, y + 21);
   }
-  
+
   doc.text(`E-mail: ${val(form.clientEmail)}`, col1, y + 28);
   doc.text(`Telefone: ${val(form.clientPhone)}`, col2, y + 28);
 
@@ -172,7 +178,9 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...GREEN);
-  doc.text("Manter proporção e posicionamento conforme imagem abaixo.", pw / 2, y, { align: "center" });
+  doc.text("Manter proporção e posicionamento conforme imagem abaixo.", pw / 2, y, {
+    align: "center",
+  });
   doc.setTextColor(0);
   y += 6;
 
@@ -182,7 +190,9 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
     try {
       const maxW = pw - m * 4;
       doc.addImage(form.mockupImageUrl, "PNG", (pw - maxW) / 2, y, maxW, mockupMaxH);
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   } else {
     doc.setFillColor(...GRAY_LIGHT);
     doc.rect(m * 2, y, pw - m * 4, mockupMaxH, "F");
@@ -226,14 +236,16 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
       doc.text(`Largura: ${val(form.areaWidth)} cm`, m + 10 + artW + 10, y + 17);
       doc.text(`Altura: ${val(form.areaHeight)} cm`, m + 10 + artW + 10, y + 23);
       doc.text(`Área: ${val(form.areaName)}`, m + 10 + artW + 10, y + 29);
-      
+
       doc.setTextColor(...GREEN);
       doc.setFontSize(7);
       doc.text("* Arte em tamanho ilustrativo. Ajustar para produção.", m + 10 + artW + 10, y + 35);
       doc.setTextColor(0);
 
       y += artH + 10;
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   // ── Rodapé Técnico ──
@@ -271,7 +283,9 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   doc.setTextColor(150);
   doc.text(
     `OS ${form.osNumber} • PROMO DESIGN • ${new Date().toLocaleString("pt-BR")}`,
-    pw / 2, ph - 5, { align: "center" }
+    pw / 2,
+    ph - 5,
+    { align: "center" },
   );
 
   // ═══════════════════════════════════════
@@ -290,7 +304,10 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   ];
 
   for (const section of sections) {
-    if (y > ph - 60) { doc.addPage(); y = 15; }
+    if (y > ph - 60) {
+      doc.addPage();
+      y = 15;
+    }
 
     // Header da seção
     doc.setFillColor(...GRAY_LIGHT);
@@ -358,10 +375,7 @@ export function generateServiceOrderPdf(form: PdfFormData, logoDataUrl?: string)
   // Footer da página 2
   doc.setFontSize(6);
   doc.setTextColor(150);
-  doc.text(
-    `${form.osNumber} • Verso • Promo Design`,
-    pw / 2, ph - 5, { align: "center" }
-  );
+  doc.text(`${form.osNumber} • Verso • Promo Design`, pw / 2, ph - 5, { align: "center" });
 
   return doc;
 }
@@ -376,11 +390,11 @@ export function generateFinalArtPdf(form: PdfFormData): jsPDF {
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text("ARTE FINAL PARA PRODUÇÃO", pw / 2, 15, { align: "center" });
-  
+
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.text(`OS: ${form.osNumber} | Técnica: ${form.technique}`, pw / 2, 20, { align: "center" });
-  
+
   doc.setDrawColor(200);
   doc.line(m, 24, pw - m, 24);
 
@@ -394,7 +408,7 @@ export function generateFinalArtPdf(form: PdfFormData): jsPDF {
   doc.text(`Produto: ${form.productName} (${form.productSku})`, m, y + 6);
   doc.text(`Cores da Gravação (Pantone): ${val(form.artColors)}`, m, y + 12);
   doc.text(`Dimensões Reais: ${val(form.areaWidth)} x ${val(form.areaHeight)} cm`, m, y + 18);
-  
+
   y += 35;
 
   // Arte em destaque
@@ -424,8 +438,18 @@ export function generateFinalArtPdf(form: PdfFormData): jsPDF {
   // Footer de segurança
   doc.setFontSize(7);
   doc.setTextColor(100);
-  doc.text("Documento gerado automaticamente pelo Sistema de Gestão Promo Design.", pw / 2, ph - 15, { align: "center" });
-  doc.text("Verificar dimensões e cores antes de iniciar a produção em larga escala.", pw / 2, ph - 10, { align: "center" });
+  doc.text(
+    "Documento gerado automaticamente pelo Sistema de Gestão Promo Design.",
+    pw / 2,
+    ph - 15,
+    { align: "center" },
+  );
+  doc.text(
+    "Verificar dimensões e cores antes de iniciar a produção em larga escala.",
+    pw / 2,
+    ph - 10,
+    { align: "center" },
+  );
 
   return doc;
 }

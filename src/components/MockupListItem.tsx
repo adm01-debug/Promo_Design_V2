@@ -14,7 +14,15 @@ interface MockupListItemProps {
   path?: string;
 }
 
-const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index, path }: MockupListItemProps) => {
+const MockupListItem = ({
+  title,
+  category,
+  thumbnail,
+  lastEdited,
+  views,
+  index,
+  path,
+}: MockupListItemProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -31,7 +39,7 @@ const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index, 
       className={cn(
         "group relative flex gap-4 p-4 rounded-xl bg-card border border-border/50",
         "transition-all duration-300 ease-out cursor-pointer",
-        "hover:border-primary/30 hover:shadow-lg"
+        "hover:border-primary/30 hover:shadow-lg",
       )}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -39,16 +47,14 @@ const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index, 
     >
       {/* Thumbnail */}
       <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-lg overflow-hidden shrink-0 bg-surface-2">
-        {!imageLoaded && (
-          <div className="absolute inset-0 bg-muted animate-pulse" />
-        )}
+        {!imageLoaded && <div className="absolute inset-0 bg-muted animate-pulse" />}
         <img
           src={thumbnail}
           alt={title}
           className={cn(
             "w-full h-full object-cover transition-all duration-500",
             imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105",
-            isHovered && "scale-110"
+            isHovered && "scale-110",
           )}
           onLoad={() => setImageLoaded(true)}
         />
@@ -57,7 +63,9 @@ const MockupListItem = ({ title, category, thumbnail, lastEdited, views, index, 
       {/* Content */}
       <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
         <div className="space-y-1.5">
-          <span className="text-xs font-mono text-primary uppercase tracking-wider">{category}</span>
+          <span className="text-xs font-mono text-primary uppercase tracking-wider">
+            {category}
+          </span>
           <h3 className="font-display font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
             {title}
           </h3>

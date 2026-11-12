@@ -84,7 +84,8 @@ export function ResultsPagination({
         <strong className="font-semibold text-foreground">
           {from.toLocaleString("pt-BR")}–{to.toLocaleString("pt-BR")}
         </strong>{" "}
-        de <strong className="font-semibold text-foreground">{total.toLocaleString("pt-BR")}</strong>{" "}
+        de{" "}
+        <strong className="font-semibold text-foreground">{total.toLocaleString("pt-BR")}</strong>{" "}
         {total === 1 ? itemNoun : `${itemNoun}s`}
       </span>
     );
@@ -108,16 +109,15 @@ export function ResultsPagination({
           <label htmlFor="page-size" className="text-xs whitespace-nowrap">
             Por página
           </label>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v) => onPageSizeChange(Number(v))}
-          >
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
             <SelectTrigger id="page-size" className="h-8 w-20" aria-label="Resultados por página">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {pageSizeOptions.map((opt) => (
-                <SelectItem key={opt} value={String(opt)}>{opt}</SelectItem>
+                <SelectItem key={opt} value={String(opt)}>
+                  {opt}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -150,9 +150,7 @@ export function ResultsPagination({
                     href="#"
                     isActive={p === safePage}
                     aria-current={p === safePage ? "page" : undefined}
-                    aria-label={
-                      p === safePage ? `Página ${p}, atual` : `Ir para página ${p}`
-                    }
+                    aria-label={p === safePage ? `Página ${p}, atual` : `Ir para página ${p}`}
                     onClick={(e) => {
                       e.preventDefault();
                       go(p);
@@ -179,9 +177,7 @@ export function ResultsPagination({
           </PaginationContent>
         </Pagination>
       )}
-      {totalPages > 5 && (
-        <GoToPage totalPages={totalPages} currentPage={safePage} onGo={go} />
-      )}
+      {totalPages > 5 && <GoToPage totalPages={totalPages} currentPage={safePage} onGo={go} />}
     </div>
   );
 }

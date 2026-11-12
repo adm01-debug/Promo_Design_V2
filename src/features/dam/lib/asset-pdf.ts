@@ -27,12 +27,12 @@ function formatBytes(n?: number | null): string {
  * the user's selection order).
  */
 export const PDF_COLUMNS = [
-  { id: "name",       label: "Nome" },
-  { id: "type",       label: "Tipo" },
-  { id: "client",     label: "Cliente" },
-  { id: "version",    label: "Versão" },
-  { id: "size",       label: "Tamanho" },
-  { id: "tags",       label: "Tags" },
+  { id: "name", label: "Nome" },
+  { id: "type", label: "Tipo" },
+  { id: "client", label: "Cliente" },
+  { id: "version", label: "Versão" },
+  { id: "size", label: "Tamanho" },
+  { id: "tags", label: "Tags" },
   { id: "created_at", label: "Criado em" },
 ] as const;
 
@@ -109,7 +109,8 @@ export function buildFilterRows(filters: AssetsPdfFiltersSummary): Array<[string
   else if (filters.includeArchived) rows.push(["Arquivados", "Inclui arquivados"]);
   if (filters.ocrOnly) rows.push(["OCR", "Apenas com OCR"]);
   if (filters.sortLabel) rows.push(["Ordenação", filters.sortLabel]);
-  if (filters.viewMode) rows.push(["Visualização", filters.viewMode === "list" ? "Lista" : "Grade"]);
+  if (filters.viewMode)
+    rows.push(["Visualização", filters.viewMode === "list" ? "Lista" : "Grade"]);
   if (filters.pageSize) rows.push(["Itens por página", String(filters.pageSize)]);
   rows.push(["Resultados", `${filters.shown} de ${filters.total}`]);
   return rows;
@@ -219,7 +220,13 @@ export function buildAssetsPdf(
   };
   // Flex distribution among active flex columns: name 32, client 22, tags 46 (sums to 1.0 if all three).
   const FLEX_SHARE: Record<PdfColumnId, number> = {
-    name: 0.32, type: 0, client: 0.22, version: 0, size: 0, tags: 0.46, created_at: 0,
+    name: 0.32,
+    type: 0,
+    client: 0.22,
+    version: 0,
+    size: 0,
+    tags: 0.46,
+    created_at: 0,
   };
   const fixedTotal = activeCols.reduce((acc, c) => acc + (FIXED[c.id] ?? 0), 0);
   const flexRoom = Math.max(180, tableWidth - fixedTotal);
@@ -229,17 +236,23 @@ export function buildAssetsPdf(
   const headRow = activeCols.map((c) => c.label);
   const valueFor = (a: Asset, id: PdfColumnId): string => {
     switch (id) {
-      case "name": return a.name;
-      case "type": return TYPE_LABEL[a.asset_type] ?? a.asset_type;
-      case "client": return a.client_id ? clientMap.get(a.client_id) ?? "—" : "—";
-      case "version": return String(a.version ?? "");
-      case "size": return formatBytes(a.file_size);
+      case "name":
+        return a.name;
+      case "type":
+        return TYPE_LABEL[a.asset_type] ?? a.asset_type;
+      case "client":
+        return a.client_id ? (clientMap.get(a.client_id) ?? "—") : "—";
+      case "version":
+        return String(a.version ?? "");
+      case "size":
+        return formatBytes(a.file_size);
       case "tags": {
         const tags = a.tags ?? [];
         const shown = tags.slice(0, 8).join(", ");
         return tags.length > 8 ? `${shown} +${tags.length - 8}` : shown;
       }
-      case "created_at": return a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy") : "—";
+      case "created_at":
+        return a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy") : "—";
     }
   };
   const bodyRows = assets.map((a) => activeCols.map((c) => valueFor(a, c.id)));
@@ -294,11 +307,7 @@ export function buildAssetsPdf(
       doc.line(MARGIN_X, FOOTER_Y - 8, pageW - MARGIN_X, FOOTER_Y - 8);
       doc.setFontSize(8);
       doc.setTextColor(140);
-      doc.text(
-        `Biblioteca de Assets · ${filters.shown} de ${filters.total}`,
-        MARGIN_X,
-        FOOTER_Y,
-      );
+      doc.text(`Biblioteca de Assets · ${filters.shown} de ${filters.total}`, MARGIN_X, FOOTER_Y);
       // Page number is filled in below once the total is known.
       void data;
     },

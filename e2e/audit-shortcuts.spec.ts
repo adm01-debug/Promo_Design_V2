@@ -15,9 +15,15 @@ const hasCreds = Boolean(TEST_EMAIL && TEST_PASSWORD);
 
 async function login(page: import("@playwright/test").Page) {
   await page.goto("/auth");
-  await page.getByLabel(/e-?mail/i).first().fill(TEST_EMAIL!);
+  await page
+    .getByLabel(/e-?mail/i)
+    .first()
+    .fill(TEST_EMAIL!);
   await page.getByLabel(/senha/i).first().fill(TEST_PASSWORD!);
-  await page.getByRole("button", { name: /entrar|login/i }).first().click();
+  await page
+    .getByRole("button", { name: /entrar|login/i })
+    .first()
+    .click();
   await page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 15_000 });
 }
 

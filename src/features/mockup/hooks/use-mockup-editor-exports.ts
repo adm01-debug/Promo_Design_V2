@@ -67,35 +67,93 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
   const [isExporting, setIsExporting] = useState(false);
 
   const {
-    productImage, productSku, productName, technique, areaName, areaW, areaH,
-    logoPreview, logoFile, logoColors, showLogo, placements, logoOpacity,
-    blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH,
-    exportScale, exportQuality, exportFormat, approvedViews, views,
-    watermarkConfig, navigate,
+    productImage,
+    productSku,
+    productName,
+    technique,
+    areaName,
+    areaW,
+    areaH,
+    logoPreview,
+    logoFile,
+    logoColors,
+    showLogo,
+    placements,
+    logoOpacity,
+    blendMode,
+    shadowEnabled,
+    shadowIntensity,
+    viewAreaW,
+    viewAreaH,
+    exportScale,
+    exportQuality,
+    exportFormat,
+    approvedViews,
+    views,
+    watermarkConfig,
+    navigate,
   } = opts;
 
-  const handleExportImage = useCallback(async (format: ExportFormat = "png") => {
-    setIsExporting(true);
-    const exportToast = toast.loading(`Iniciando exportação ${format.toUpperCase()}...`);
-    try {
-      const options: ExportOptions = {
-        productImage, productSku, productName, logoPreview, showLogo,
-        placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity,
-        viewAreaW, viewAreaH, exportScale, exportQuality,
-        exportFormat: format, approvedViews, views,
-        watermarkOptions: watermarkConfig,
-      };
-      toast.loading(`Renderizando multi-vistas (${1200 * exportScale}px)...`, { id: exportToast });
-      await exportMockupImage(options);
-      toast.success(`${format.toUpperCase()} exportado com sucesso!`, { id: exportToast });
-    } catch (error) {
-      console.error("Export error:", error);
-      ErrorLogger.error("Mockup export failed", error, { format, productName, productSku });
-      toast.error("Falha na exportação. Tente reduzir a escala ou qualidade.", { id: exportToast });
-    } finally {
-      setIsExporting(false);
-    }
-  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, views, watermarkConfig]);
+  const handleExportImage = useCallback(
+    async (format: ExportFormat = "png") => {
+      setIsExporting(true);
+      const exportToast = toast.loading(`Iniciando exportação ${format.toUpperCase()}...`);
+      try {
+        const options: ExportOptions = {
+          productImage,
+          productSku,
+          productName,
+          logoPreview,
+          showLogo,
+          placements,
+          logoOpacity,
+          blendMode,
+          shadowEnabled,
+          shadowIntensity,
+          viewAreaW,
+          viewAreaH,
+          exportScale,
+          exportQuality,
+          exportFormat: format,
+          approvedViews,
+          views,
+          watermarkOptions: watermarkConfig,
+        };
+        toast.loading(`Renderizando multi-vistas (${1200 * exportScale}px)...`, {
+          id: exportToast,
+        });
+        await exportMockupImage(options);
+        toast.success(`${format.toUpperCase()} exportado com sucesso!`, { id: exportToast });
+      } catch (error) {
+        console.error("Export error:", error);
+        ErrorLogger.error("Mockup export failed", error, { format, productName, productSku });
+        toast.error("Falha na exportação. Tente reduzir a escala ou qualidade.", {
+          id: exportToast,
+        });
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [
+      productImage,
+      productSku,
+      productName,
+      logoPreview,
+      showLogo,
+      placements,
+      logoOpacity,
+      blendMode,
+      shadowEnabled,
+      shadowIntensity,
+      viewAreaW,
+      viewAreaH,
+      exportScale,
+      exportQuality,
+      approvedViews,
+      views,
+      watermarkConfig,
+    ],
+  );
 
   const handleExportPng = useCallback(
     () => handleExportImage(exportFormat),
@@ -107,10 +165,23 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
     const pdfToast = toast.loading("Gerando PDF de Aprovação...");
     try {
       await exportMockupPdf({
-        productImage, productSku, productName, logoPreview, showLogo,
-        placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity,
-        viewAreaW, viewAreaH, exportScale, exportQuality,
-        exportFormat: "png", approvedViews, views,
+        productImage,
+        productSku,
+        productName,
+        logoPreview,
+        showLogo,
+        placements,
+        logoOpacity,
+        blendMode,
+        shadowEnabled,
+        shadowIntensity,
+        viewAreaW,
+        viewAreaH,
+        exportScale,
+        exportQuality,
+        exportFormat: "png",
+        approvedViews,
+        views,
         watermarkOptions: watermarkConfig,
         colors: logoColors.slice(0, 5),
         area: areaName,
@@ -121,11 +192,34 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
     } catch (error) {
       ErrorLogger.error("Mockup PDF export failed", error, { productName, productSku });
       console.error("PDF export error:", error);
-      toast.error("Erro ao processar o PDF. Verifique se a logo foi carregada corretamente.", { id: pdfToast });
+      toast.error("Erro ao processar o PDF. Verifique se a logo foi carregada corretamente.", {
+        id: pdfToast,
+      });
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, exportScale, exportQuality, approvedViews, views, watermarkConfig, logoColors, areaName, technique]);
+  }, [
+    productImage,
+    productSku,
+    productName,
+    logoPreview,
+    showLogo,
+    placements,
+    logoOpacity,
+    blendMode,
+    shadowEnabled,
+    shadowIntensity,
+    viewAreaW,
+    viewAreaH,
+    exportScale,
+    exportQuality,
+    approvedViews,
+    views,
+    watermarkConfig,
+    logoColors,
+    areaName,
+    technique,
+  ]);
 
   const handleExportArt = useCallback(() => {
     const pdf = generateArtPdf({
@@ -162,17 +256,40 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
     });
     pdf.save(`arte-final-${productSku || "export"}.pdf`);
     toast.success("Arte Final exportada!");
-  }, [productSku, productName, technique, areaName, areaW, areaH, logoColors, logoFile, logoPreview]);
+  }, [
+    productSku,
+    productName,
+    technique,
+    areaName,
+    areaW,
+    areaH,
+    logoColors,
+    logoFile,
+    logoPreview,
+  ]);
 
   const handleOpenServiceOrder = useCallback(async () => {
     setIsExporting(true);
     const loadingToast = toast.loading("Preparando dados para Ordem de Serviço...");
     try {
       const canvas = await renderMultiViewCanvas({
-        productImage, productSku, productName, logoPreview, showLogo,
-        placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity,
-        viewAreaW, viewAreaH, exportScale: 1, exportQuality: 0.8,
-        exportFormat: "png", approvedViews, views,
+        productImage,
+        productSku,
+        productName,
+        logoPreview,
+        showLogo,
+        placements,
+        logoOpacity,
+        blendMode,
+        shadowEnabled,
+        shadowIntensity,
+        viewAreaW,
+        viewAreaH,
+        exportScale: 1,
+        exportQuality: 0.8,
+        exportFormat: "png",
+        approvedViews,
+        views,
         watermarkOptions: watermarkConfig,
       });
 
@@ -181,9 +298,10 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
       const placementInfo = Object.entries(placements)
         .filter(([id]) => approvedViews.has(id))
         .map(([id, p]) => {
-          const view = views.find(v => v.id === id);
+          const view = views.find((v) => v.id === id);
           return `${view?.label}: Escala ${Math.round(p.scale * 100)}%, Rot ${p.rotation}°, X:${Math.round(p.x)} Y:${Math.round(p.y)}`;
-        }).join(" | ");
+        })
+        .join(" | ");
 
       navigate("/mockup/service-order", {
         state: {
@@ -208,8 +326,15 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
       navigate("/mockup/service-order", {
         state: {
           prefill: {
-            productName, productSku, technique, areaWidth: String(areaW), areaHeight: String(areaH),
-            areaName, artFileDataUrl: logoPreview, mockupImageUrl: "", artColors: logoColors.join(", "),
+            productName,
+            productSku,
+            technique,
+            areaWidth: String(areaW),
+            areaHeight: String(areaH),
+            areaName,
+            artFileDataUrl: logoPreview,
+            mockupImageUrl: "",
+            artColors: logoColors.join(", "),
             observations: "Importado do Editor (erro no preview).",
           },
         },
@@ -217,7 +342,29 @@ export function useMockupEditorExports(opts: UseMockupEditorExportsOptions) {
     } finally {
       setIsExporting(false);
     }
-  }, [productImage, productSku, productName, logoPreview, showLogo, placements, logoOpacity, blendMode, shadowEnabled, shadowIntensity, viewAreaW, viewAreaH, approvedViews, views, watermarkConfig, technique, areaW, areaH, areaName, logoColors, navigate]);
+  }, [
+    productImage,
+    productSku,
+    productName,
+    logoPreview,
+    showLogo,
+    placements,
+    logoOpacity,
+    blendMode,
+    shadowEnabled,
+    shadowIntensity,
+    viewAreaW,
+    viewAreaH,
+    approvedViews,
+    views,
+    watermarkConfig,
+    technique,
+    areaW,
+    areaH,
+    areaName,
+    logoColors,
+    navigate,
+  ]);
 
   return {
     isExporting,

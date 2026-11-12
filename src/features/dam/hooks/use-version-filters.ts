@@ -37,17 +37,17 @@ function loadFromStorage<T>(key: string, defaultValue: T): T {
 }
 
 export function useVersionFilters(versions: Asset[]) {
-  const [filters, setFilters] = useState<VersionFilters>(() => 
-    loadFromStorage<VersionFilters>(STORAGE_KEY, DEFAULT_FILTERS)
+  const [filters, setFilters] = useState<VersionFilters>(() =>
+    loadFromStorage<VersionFilters>(STORAGE_KEY, DEFAULT_FILTERS),
   );
-  const [view, setView] = useState<ViewMode>(() => 
-    loadFromStorage<ViewMode>(VIEW_STORAGE_KEY, "list")
+  const [view, setView] = useState<ViewMode>(() =>
+    loadFromStorage<ViewMode>(VIEW_STORAGE_KEY, "list"),
   );
-  const [timelineFollowSort, setTimelineFollowSort] = useState<boolean>(() => 
-    loadFromStorage<boolean>(TIMELINE_FOLLOW_SORT_KEY, false)
+  const [timelineFollowSort, setTimelineFollowSort] = useState<boolean>(() =>
+    loadFromStorage<boolean>(TIMELINE_FOLLOW_SORT_KEY, false),
   );
-  const [timelineGrouping, setTimelineGrouping] = useState<TimelineGrouping>(() => 
-    loadFromStorage<TimelineGrouping>(TIMELINE_GROUPING_KEY, "auto")
+  const [timelineGrouping, setTimelineGrouping] = useState<TimelineGrouping>(() =>
+    loadFromStorage<TimelineGrouping>(TIMELINE_GROUPING_KEY, "auto"),
   );
 
   useEffect(() => {
@@ -56,7 +56,9 @@ export function useVersionFilters(versions: Asset[]) {
       window.localStorage.setItem(TIMELINE_FOLLOW_SORT_KEY, timelineFollowSort ? "1" : "0");
       window.localStorage.setItem(TIMELINE_GROUPING_KEY, timelineGrouping);
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [view, timelineFollowSort, timelineGrouping, filters]);
 
   const authors = useMemo(() => {
@@ -81,17 +83,21 @@ export function useVersionFilters(versions: Asset[]) {
     });
     list = [...list].sort((a, b) => {
       switch (filters.sort) {
-        case "version_asc": return a.version - b.version;
-        case "date_desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case "date_asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "version_asc":
+          return a.version - b.version;
+        case "date_desc":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "date_asc":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case "version_desc":
-        default: return b.version - a.version;
+        default:
+          return b.version - a.version;
       }
     });
     return list;
   }, [versions, filters]);
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     filters.query.trim() !== "" || filters.author !== "all" || filters.sort !== "version_desc";
 
   return {
@@ -106,6 +112,6 @@ export function useVersionFilters(versions: Asset[]) {
     authors,
     filteredVersions,
     hasActiveFilters,
-    resetFilters: () => setFilters(DEFAULT_FILTERS)
+    resetFilters: () => setFilters(DEFAULT_FILTERS),
   };
 }

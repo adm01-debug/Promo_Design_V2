@@ -5,18 +5,50 @@ import { getCorsHeaders, corsPreflight } from "../_shared/cors.ts";
 
 const BodySchema = z.object({
   action: z.enum([
-    "stats", "cleanup", "history", "table_sizes", "growth",
-    "capture_snapshot", "size_history", "snapshots_list", "failures_summary",
-    "duration_stats", "cleanup_per_org", "slo_baseline", "db_health", "slow_queries",
-    "unused_indexes", "bloat_health", "manual_analyze", "top_writers", "cache_hit", "live_activity", "kill_backend", "check_lock_alerts", "replication_status", "vacuum_health", "manual_vacuum", "check_replication_slot_alerts",
+    "stats",
+    "cleanup",
+    "history",
+    "table_sizes",
+    "growth",
+    "capture_snapshot",
+    "size_history",
+    "snapshots_list",
+    "failures_summary",
+    "duration_stats",
+    "cleanup_per_org",
+    "slo_baseline",
+    "db_health",
+    "slow_queries",
+    "unused_indexes",
+    "bloat_health",
+    "manual_analyze",
+    "top_writers",
+    "cache_hit",
+    "live_activity",
+    "kill_backend",
+    "check_lock_alerts",
+    "replication_status",
+    "vacuum_health",
+    "manual_vacuum",
+    "check_replication_slot_alerts",
   ]),
   lock_threshold_ms: z.number().int().min(1000).max(3_600_000).optional(),
   kill_pid: z.number().int().min(1).max(2147483647).optional(),
   kill_mode: z.enum(["cancel", "terminate"]).optional(),
   slow_queries_limit: z.number().int().min(1).max(100).optional(),
   unused_indexes_min_kb: z.number().int().min(0).max(10485760).optional(),
-  analyze_table: z.string().min(1).max(128).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
-  vacuum_table: z.string().min(1).max(128).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
+  analyze_table: z
+    .string()
+    .min(1)
+    .max(128)
+    .regex(/^[a-z_][a-z0-9_]*$/i)
+    .optional(),
+  vacuum_table: z
+    .string()
+    .min(1)
+    .max(128)
+    .regex(/^[a-z_][a-z0-9_]*$/i)
+    .optional(),
   vacuum_mode: z.enum(["standard", "analyze", "full"]).optional(),
   slo_baseline_days: z.number().int().min(14).max(365).optional(),
   slo_recent_days: z.number().int().min(1).max(30).optional(),
@@ -50,7 +82,6 @@ function json(req: Request, body: unknown, status = 200) {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflight(req);
-
 
   const requestId = crypto.randomUUID();
 
@@ -89,7 +120,11 @@ serve(async (req) => {
     const raw = await req.json().catch(() => ({}));
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return json(req, { error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400);
+      return json(
+        req,
+        { error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId },
+        400,
+      );
     }
     const params = parsed.data;
 
@@ -121,7 +156,12 @@ serve(async (req) => {
         _days_back: params.growth_days_back ?? 7,
       });
       if (error) return json(req, { error: error.message, requestId }, 500);
-      return json(req, { ok: true, growth: data, days_back: params.growth_days_back ?? 7, requestId });
+      return json(req, {
+        ok: true,
+        growth: data,
+        days_back: params.growth_days_back ?? 7,
+        requestId,
+      });
     }
 
     if (params.action === "capture_snapshot") {
@@ -150,7 +190,9 @@ serve(async (req) => {
 
       let query = admin
         .from("table_size_snapshots")
-        .select("id,table_name,total_bytes,table_bytes,index_bytes,row_estimate,captured_at", { count: "exact" })
+        .select("id,table_name,total_bytes,table_bytes,index_bytes,row_estimate,captured_at", {
+          count: "exact",
+        })
         .order("captured_at", { ascending: false })
         .range(from, to);
 
@@ -260,7 +302,17 @@ serve(async (req) => {
         const idx = Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length));
         return sorted[idx];
       };
-      const stats: Record<string, { count: number; p50: number | null; p95: number | null; p99: number | null; max: number | null; avg: number | null }> = {};
+      const stats: Record<
+        string,
+        {
+          count: number;
+          p50: number | null;
+          p95: number | null;
+          p99: number | null;
+          max: number | null;
+          avg: number | null;
+        }
+      > = {};
       for (const [src, arr] of bySource.entries()) {
         const sum = arr.reduce((a, b) => a + b, 0);
         stats[src] = {
@@ -300,9 +352,13 @@ serve(async (req) => {
       const recentBySource = new Map<string, number[]>();
       for (const r of runs ?? []) {
         if (r.duration_ms == null) continue;
-        (baselineBySource.get(r.source) ?? baselineBySource.set(r.source, []).get(r.source)!).push(r.duration_ms);
+        (baselineBySource.get(r.source) ?? baselineBySource.set(r.source, []).get(r.source)!).push(
+          r.duration_ms,
+        );
         if (r.created_at >= recentSince) {
-          (recentBySource.get(r.source) ?? recentBySource.set(r.source, []).get(r.source)!).push(r.duration_ms);
+          (recentBySource.get(r.source) ?? recentBySource.set(r.source, []).get(r.source)!).push(
+            r.duration_ms,
+          );
         }
       }
 
@@ -311,8 +367,7 @@ serve(async (req) => {
         const recentArr = recentBySource.get(source) ?? [];
         const baselineP95 = p95(baseArr);
         const recentP95 = p95(recentArr);
-        const ratio =
-          baselineP95 && recentP95 && baselineP95 > 0 ? recentP95 / baselineP95 : null;
+        const ratio = baselineP95 && recentP95 && baselineP95 > 0 ? recentP95 / baselineP95 : null;
         let status: "ok" | "warning" | "critical" | "insufficient_data" = "insufficient_data";
         if (baseArr.length < 5 || recentArr.length < 3) status = "insufficient_data";
         else if (ratio == null) status = "insufficient_data";
@@ -355,7 +410,9 @@ serve(async (req) => {
       if (!orgRole || orgRole.length === 0) {
         return json(req, { error: "Permissão negada nesta organização", requestId }, 403);
       }
-      console.log(`[${requestId}] per-org cleanup by ${userData.user.id} org=${params.organization_id}`);
+      console.log(
+        `[${requestId}] per-org cleanup by ${userData.user.id} org=${params.organization_id}`,
+      );
       const { data, error } = await admin.rpc("cleanup_expired_data_for_org", {
         _org_id: params.organization_id,
         _source: "manual_per_org",
@@ -397,7 +454,9 @@ serve(async (req) => {
       if (!params.analyze_table) {
         return json(req, { error: "analyze_table é obrigatório", requestId }, 400);
       }
-      console.log(`[${requestId}] manual analyze by ${userData.user.id} table=${params.analyze_table}`);
+      console.log(
+        `[${requestId}] manual analyze by ${userData.user.id} table=${params.analyze_table}`,
+      );
       const { data, error } = await admin.rpc("run_manual_analyze", {
         _table_name: params.analyze_table,
       });
@@ -428,7 +487,9 @@ serve(async (req) => {
         return json(req, { error: "kill_pid é obrigatório", requestId }, 400);
       }
       const mode = params.kill_mode ?? "cancel";
-      console.log(`[${requestId}] kill_backend pid=${params.kill_pid} mode=${mode} by ${userData.user.id}`);
+      console.log(
+        `[${requestId}] kill_backend pid=${params.kill_pid} mode=${mode} by ${userData.user.id}`,
+      );
       const { data, error } = await admin.rpc("kill_backend", {
         _pid: params.kill_pid,
         _mode: mode,
@@ -439,7 +500,9 @@ serve(async (req) => {
 
     if (params.action === "check_lock_alerts") {
       const threshold = params.lock_threshold_ms ?? 30_000;
-      console.log(`[${requestId}] check_lock_alerts threshold=${threshold}ms by ${userData.user.id}`);
+      console.log(
+        `[${requestId}] check_lock_alerts threshold=${threshold}ms by ${userData.user.id}`,
+      );
       const { data, error } = await admin.rpc("check_lock_alerts", {
         _threshold_ms: threshold,
       });
@@ -464,7 +527,9 @@ serve(async (req) => {
         return json(req, { error: "vacuum_table é obrigatório", requestId }, 400);
       }
       const mode = params.vacuum_mode ?? "standard";
-      console.log(`[${requestId}] manual_vacuum table=${params.vacuum_table} mode=${mode} by ${userData.user.id}`);
+      console.log(
+        `[${requestId}] manual_vacuum table=${params.vacuum_table} mode=${mode} by ${userData.user.id}`,
+      );
       const { data, error } = await admin.rpc("run_manual_vacuum", {
         _table_name: params.vacuum_table,
         _mode: mode,
@@ -482,11 +547,6 @@ serve(async (req) => {
       return json(req, { ok: true, result: data, requestId });
     }
 
-
-
-
-
-
     // cleanup
     console.log(`[${requestId}] manual cleanup requested by ${userData.user.id}`);
     const { data, error } = await admin.rpc("cleanup_expired_data", {
@@ -500,6 +560,10 @@ serve(async (req) => {
     return json(req, { ok: true, result: data, requestId });
   } catch (e) {
     console.error(`[${requestId}] fatal:`, e);
-    return json(req, { error: e instanceof Error ? e.message : "Erro desconhecido", requestId }, 500);
+    return json(
+      req,
+      { error: e instanceof Error ? e.message : "Erro desconhecido", requestId },
+      500,
+    );
   }
 });

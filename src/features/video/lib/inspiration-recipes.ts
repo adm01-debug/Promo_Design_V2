@@ -6,11 +6,7 @@ import type { AspectRatio, VideoStyle } from "@/features/video/components/VideoN
  * em si é totalmente descrita pelos campos remixáveis.
  */
 export type InspirationCategory =
-  | "produto"
-  | "lifestyle"
-  | "promocional"
-  | "cinematografico"
-  | "social";
+  "produto" | "lifestyle" | "promocional" | "cinematografico" | "social";
 
 export const INSPIRATION_CATEGORY_LABELS: Record<InspirationCategory, string> = {
   produto: "Produto",
@@ -54,7 +50,8 @@ export const INSPIRATION_RECIPES: readonly InspirationRecipe[] = [
     videoStyle: "impactante",
     durationSeconds: 5,
     templateId: "reveal",
-    extraInstructions: "punchy hero reveal, product locked in center frame, crisp specular highlights",
+    extraInstructions:
+      "punchy hero reveal, product locked in center frame, crisp specular highlights",
     tags: ["reels", "hero", "impacto"],
   },
   {
@@ -67,7 +64,8 @@ export const INSPIRATION_RECIPES: readonly InspirationRecipe[] = [
     videoStyle: "premium",
     durationSeconds: 10,
     templateId: "showcase",
-    extraInstructions: "seamless loop orbit on a matte dark backdrop, luxury product photography feel",
+    extraInstructions:
+      "seamless loop orbit on a matte dark backdrop, luxury product photography feel",
     tags: ["360", "loop", "premium"],
   },
   {
@@ -80,7 +78,8 @@ export const INSPIRATION_RECIPES: readonly InspirationRecipe[] = [
     videoStyle: "elegante",
     durationSeconds: 10,
     templateId: "minimal",
-    extraInstructions: "extreme macro detail of material and stitching, then pull focus to full product",
+    extraInstructions:
+      "extreme macro detail of material and stitching, then pull focus to full product",
     tags: ["macro", "detalhe", "textura"],
   },
   {
@@ -171,7 +170,8 @@ export const INSPIRATION_RECIPES: readonly InspirationRecipe[] = [
     videoStyle: "premium",
     durationSeconds: 10,
     templateId: "cinematic",
-    extraInstructions: "cinematic brand opener, slow crane reveal through light haze, letterbox framing",
+    extraInstructions:
+      "cinematic brand opener, slow crane reveal through light haze, letterbox framing",
     tags: ["abertura", "marca", "épico"],
   },
   {
@@ -197,7 +197,8 @@ export const INSPIRATION_RECIPES: readonly InspirationRecipe[] = [
     videoStyle: "elegante",
     durationSeconds: 10,
     templateId: "floating",
-    extraInstructions: "cold vapour rolling over a polished surface, deep blacks, restrained motion",
+    extraInstructions:
+      "cold vapour rolling over a polished surface, deep blacks, restrained motion",
     tags: ["gelo", "luxo", "slow"],
   },
 ] as const;
@@ -230,9 +231,7 @@ export function filterInspirationRecipes(
   return recipes.filter((recipe) => {
     if (category !== "all" && recipe.category !== category) return false;
     if (!term) return true;
-    const haystack = normalize(
-      [recipe.title, recipe.description, ...recipe.tags].join(" "),
-    );
+    const haystack = normalize([recipe.title, recipe.description, ...recipe.tags].join(" "));
     return haystack.includes(term);
   });
 }

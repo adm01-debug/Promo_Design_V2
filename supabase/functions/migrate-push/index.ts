@@ -200,11 +200,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   });
 
   if (!parsed.success) {
-    return json(
-      req,
-      { error: "invalid_params", details: parsed.error.flatten().fieldErrors },
-      400,
-    );
+    return json(req, { error: "invalid_params", details: parsed.error.flatten().fieldErrors }, 400);
   }
 
   const params: Params = parsed.data;
@@ -239,13 +235,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const source = createClient(sourceUrl, sourceKey, clientOptions);
   const destination = createClient(destUrl, destKey, clientOptions);
 
-  const tables: readonly MigratableTable[] = params.table
-    ? [params.table]
-    : TABLE_ORDER;
+  const tables: readonly MigratableTable[] = params.table ? [params.table] : TABLE_ORDER;
 
   try {
     if (params.action === "plan") {
-      const plan: Array<{ table: MigratableTable; source_count: number; destination_count: number | string }> = [];
+      const plan: Array<{
+        table: MigratableTable;
+        source_count: number;
+        destination_count: number | string;
+      }> = [];
 
       for (const table of tables) {
         const { count: sourceCount, error: sourceError } = await source
@@ -258,8 +256,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
         plan.push({
           table,
-          source_count: sourceError ? -1 : sourceCount ?? 0,
-          destination_count: destError ? `erro: ${destError.message.slice(0, 120)}` : destCount ?? 0,
+          source_count: sourceError ? -1 : (sourceCount ?? 0),
+          destination_count: destError
+            ? `erro: ${destError.message.slice(0, 120)}`
+            : (destCount ?? 0),
         });
       }
 
@@ -269,13 +269,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // action === "push"
     const results: TableResult[] = [];
     for (const table of tables) {
-      const result = await copyTable(
-        source,
-        destination,
-        table,
-        params.batch,
-        params.dry_run,
-      );
+      const result = await copyTable(source, destination, table, params.batch, params.dry_run);
       results.push(result);
       // Se uma tabela base falhar, as dependentes falhariam em cascata:
       // interrompe para o operador corrigir antes de continuar.

@@ -94,16 +94,10 @@ describe("search_assets_ranked.ocr_match — backend predicate", () => {
 
   it("is FALSE when ocr_text is null/empty", () => {
     expect(
-      computeOcrMatch(
-        { name: "Banner", description: "Texto", ocr_text: null },
-        "qualquer",
-      ),
+      computeOcrMatch({ name: "Banner", description: "Texto", ocr_text: null }, "qualquer"),
     ).toBe(false);
     expect(
-      computeOcrMatch(
-        { name: "Banner", description: "Texto", ocr_text: "" },
-        "qualquer",
-      ),
+      computeOcrMatch({ name: "Banner", description: "Texto", ocr_text: "" }, "qualquer"),
     ).toBe(false);
   });
 

@@ -25,11 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAuditAlertRule } from "../hooks/use-audit-alerts";
 import type { AuditAdvancedCondition, AuditAdvancedOp } from "../hooks/use-audit-alerts";
@@ -285,9 +281,7 @@ export function AuditAlertRuleForm({
                     value={cond.op}
                     onValueChange={(v) =>
                       setAdvancedConditions((prev) =>
-                        prev.map((c, i) =>
-                          i === idx ? { ...c, op: v as AuditAdvancedOp } : c,
-                        ),
+                        prev.map((c, i) => (i === idx ? { ...c, op: v as AuditAdvancedOp } : c)),
                       )
                     }
                   >
@@ -333,10 +327,7 @@ export function AuditAlertRuleForm({
                 size="sm"
                 className="h-8 gap-1.5"
                 onClick={() =>
-                  setAdvancedConditions((prev) => [
-                    ...prev,
-                    { key: "", op: "contains", value: "" },
-                  ])
+                  setAdvancedConditions((prev) => [...prev, { key: "", op: "contains", value: "" }])
                 }
                 data-testid="audit-alert-rule-advanced-add"
               >

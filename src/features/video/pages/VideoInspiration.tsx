@@ -17,7 +17,10 @@ import { VIDEO_STYLES } from "@/features/video/components/VideoNewConstants";
 import { logRemixApplied } from "@/features/video/lib/remix-telemetry";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
-import { useRemixPopularity, type RemixPopularityItem } from "@/features/video/hooks/use-remix-popularity";
+import {
+  useRemixPopularity,
+  type RemixPopularityItem,
+} from "@/features/video/hooks/use-remix-popularity";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useClientDesignRecommendation } from "@/features/mockup/hooks/use-client-design-recommendation";
 import { usePersistedPreference } from "@/hooks/use-persisted-preference";
@@ -28,7 +31,6 @@ import {
   type RecipeAffinity,
 } from "@/features/video/lib/recipe-affinity";
 
-
 const CATEGORIES: (InspirationCategory | "all")[] = [
   "all",
   "produto",
@@ -38,8 +40,7 @@ const CATEGORIES: (InspirationCategory | "all")[] = [
   "social",
 ];
 
-const styleLabel = (value: string) =>
-  VIDEO_STYLES.find((s) => s.value === value)?.label ?? value;
+const styleLabel = (value: string) => VIDEO_STYLES.find((s) => s.value === value)?.label ?? value;
 
 const RecipeCard = ({
   recipe,
@@ -79,7 +80,6 @@ const RecipeCard = ({
                 {popularity.remixes}
               </span>
             )}
-
 
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-surface-2 border border-border text-muted-foreground">
               {recipe.aspectRatio}
@@ -161,10 +161,7 @@ const VideoInspiration = () => {
   );
   const { data: popularity } = useRemixPopularity(currentOrgId ?? null, 30);
   const { clients } = useClients(currentOrgId ?? null);
-  const { data: recommendation } = useClientDesignRecommendation(
-    currentOrgId ?? null,
-    clientId,
-  );
+  const { data: recommendation } = useClientDesignRecommendation(currentOrgId ?? null, clientId);
 
   // Índice de afinidade: puro e memoizado — recalcula só quando o padrão muda.
   const affinityById = useMemo(
@@ -198,7 +195,6 @@ const VideoInspiration = () => {
     return filtered;
   }, [search, category, sort, popularity, affinityById]);
 
-
   const handleRemix = (recipe: InspirationRecipe) => {
     // Telemetria fire-and-forget: nunca atrasa a navegação.
     const affinity = affinityById[recipe.id];
@@ -212,7 +208,6 @@ const VideoInspiration = () => {
     // deep link válido após reload, nova aba ou compartilhamento.
     navigate(buildRecipeDeepLink(recipe), { state: buildRemixState(recipe) });
   };
-
 
   const handleCopyLink = async (recipe: InspirationRecipe) => {
     const url = `${window.location.origin}${buildRecipeDeepLink(recipe)}`;
@@ -242,7 +237,6 @@ const VideoInspiration = () => {
           </span>
         )}
       </div>
-
 
       <div className="p-4 border-b border-border shrink-0 flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
@@ -316,7 +310,6 @@ const VideoInspiration = () => {
             : "Ainda não há padrão histórico suficiente — exibindo a ordem curada."}
         </p>
       )}
-
 
       <div className="flex-1 overflow-auto p-4">
         {recipes.length === 0 ? (

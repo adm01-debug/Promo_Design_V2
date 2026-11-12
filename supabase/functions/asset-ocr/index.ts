@@ -9,8 +9,10 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  const isAllowed = ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
-  
+  const isAllowed = ALLOWED_ORIGINS.some(
+    (allowed) => origin === allowed || origin.endsWith(".lovable.app"),
+  );
+
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers":
@@ -36,7 +38,11 @@ function jsonResponse(data: unknown, status = 200, req?: Request) {
 /**
  * Exponential backoff fetch
  */
-async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries = 3,
+): Promise<Response> {
   let lastError: Error | null = null;
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -52,12 +58,11 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries
     }
     if (i < maxRetries - 1) {
       const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   throw lastError || new Error(`Fetch failed after ${maxRetries} attempts`);
 }
-
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: getCorsHeaders(req) });
@@ -78,7 +83,11 @@ serve(async (req) => {
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
       console.warn(`[${requestId}] Invalid parameters:`, parsed.error.flatten());
-      return jsonResponse({ error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId }, 400, req);
+      return jsonResponse(
+        { error: "Parâmetros inválidos", details: parsed.error.flatten(), requestId },
+        400,
+        req,
+      );
     }
     const { assetId, filePath, mimeType } = parsed.data;
 
@@ -140,7 +149,9 @@ serve(async (req) => {
 
     const imgRes = await fetchWithRetry(signed.signedUrl);
     if (!imgRes.ok) {
-      console.error(`[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`);
+      console.error(
+        `[${requestId}] Failed to download image from signed URL. Status: ${imgRes.status}`,
+      );
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       return jsonResponse({ error: "Falha ao baixar imagem", requestId }, 500, req);
     }
@@ -186,7 +197,10 @@ serve(async (req) => {
               parameters: {
                 type: "object",
                 properties: {
-                  text: { type: "string", description: "Texto extraído. Vazio se não houver texto." },
+                  text: {
+                    type: "string",
+                    description: "Texto extraído. Vazio se não houver texto.",
+                  },
                   has_text: { type: "boolean" },
                 },
                 required: ["text", "has_text"],
@@ -204,13 +218,21 @@ serve(async (req) => {
       console.error(`[${requestId}] AI gateway error:`, aiRes.status, errText);
       await adminClient.from("assets").update({ ocr_status: "failed" }).eq("id", assetId);
       if (aiRes.status === 429) {
-        return jsonResponse({ error: "Muitas requisições. Tente novamente em instantes.", requestId }, 429, req);
+        return jsonResponse(
+          { error: "Muitas requisições. Tente novamente em instantes.", requestId },
+          429,
+          req,
+        );
       }
       if (aiRes.status === 402) {
         return jsonResponse(
-          { error: "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage.", requestId },
+          {
+            error:
+              "Créditos do AI Gateway esgotados. Adicione créditos em Settings > Workspace > Usage.",
+            requestId,
+          },
           402,
-          req
+          req,
         );
       }
       return jsonResponse({ error: "Falha no AI Gateway", requestId }, 502, req);
@@ -219,7 +241,7 @@ serve(async (req) => {
     const aiJson = await aiRes.json();
     const usage = aiJson?.usage || {};
     const toolCall = aiJson?.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     // Log usage
     await adminClient.from("ai_usage_log").insert({
       organization_id: asset.organization_id,
@@ -228,8 +250,9 @@ serve(async (req) => {
       model_name: "google/gemini-3-flash-preview",
       tokens_in: usage.prompt_tokens || 0,
       tokens_out: usage.completion_tokens || 0,
-      cost_estimate: ((usage.prompt_tokens || 0) * 0.000000075) + ((usage.completion_tokens || 0) * 0.0000003), // Approximate
-      metadata: { assetId }
+      cost_estimate:
+        (usage.prompt_tokens || 0) * 0.000000075 + (usage.completion_tokens || 0) * 0.0000003, // Approximate
+      metadata: { assetId },
     });
 
     let extractedText = "";
@@ -258,14 +281,20 @@ serve(async (req) => {
     }
 
     const executionTimeMs = Date.now() - startTimestamp;
-    console.log(`[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}. Duration: ${executionTimeMs}ms`);
-    return jsonResponse({ ok: true, length: finalText?.length ?? 0, hasText, requestId, executionTimeMs }, 200, req);
+    console.log(
+      `[${requestId}] asset-ocr completed successfully. Text length: ${finalText?.length ?? 0}. Duration: ${executionTimeMs}ms`,
+    );
+    return jsonResponse(
+      { ok: true, length: finalText?.length ?? 0, hasText, requestId, executionTimeMs },
+      200,
+      req,
+    );
   } catch (e) {
     console.error(`[${requestId}] asset-ocr fatal error:`, e);
     return jsonResponse(
       { error: e instanceof Error ? e.message : "Erro desconhecido", requestId },
       500,
-      req
+      req,
     );
   }
 });

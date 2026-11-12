@@ -17,7 +17,7 @@ function calculatePosition(
   preferredPosition: TourStep["position"],
 ): TooltipPosition {
   const GAP = 16;
-    const vw = window.innerWidth;
+  const vw = window.innerWidth;
   const vh = window.innerHeight;
 
   let top = 0;
@@ -72,13 +72,16 @@ function calculatePosition(
 
 const arrowStyles: Record<string, string> = {
   top: "left-1/2 -translate-x-1/2 -top-2 border-l-transparent border-r-transparent border-t-transparent border-b-[hsl(var(--card))]",
-  bottom: "left-1/2 -translate-x-1/2 -bottom-2 border-l-transparent border-r-transparent border-b-transparent border-t-[hsl(var(--card))]",
+  bottom:
+    "left-1/2 -translate-x-1/2 -bottom-2 border-l-transparent border-r-transparent border-b-transparent border-t-[hsl(var(--card))]",
   left: "top-1/2 -translate-y-1/2 -left-2 border-t-transparent border-b-transparent border-l-transparent border-r-[hsl(var(--card))]",
-  right: "top-1/2 -translate-y-1/2 -right-2 border-t-transparent border-b-transparent border-r-transparent border-l-[hsl(var(--card))]",
+  right:
+    "top-1/2 -translate-y-1/2 -right-2 border-t-transparent border-b-transparent border-r-transparent border-l-[hsl(var(--card))]",
 };
 
 const OnboardingTour = () => {
-  const { isActive, currentStep, totalSteps, step, nextStep, prevStep, skipTour } = useOnboardingTour();
+  const { isActive, currentStep, totalSteps, step, nextStep, prevStep, skipTour } =
+    useOnboardingTour();
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<TooltipPosition | null>(null);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -171,7 +174,11 @@ const OnboardingTour = () => {
         <motion.div
           key={step.id}
           ref={tooltipRef}
-          initial={{ opacity: 0, scale: 0.9, y: pos.arrowSide === "top" ? -8 : pos.arrowSide === "bottom" ? 8 : 0 }}
+          initial={{
+            opacity: 0,
+            scale: 0.9,
+            y: pos.arrowSide === "top" ? -8 : pos.arrowSide === "bottom" ? 8 : 0,
+          }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ type: "spring", damping: 25, stiffness: 350 }}
@@ -184,9 +191,7 @@ const OnboardingTour = () => {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Arrow */}
-          <div
-            className={`absolute w-0 h-0 border-[8px] ${arrowStyles[pos.arrowSide]}`}
-          />
+          <div className={`absolute w-0 h-0 border-[8px] ${arrowStyles[pos.arrowSide]}`} />
 
           {/* Progress bar */}
           <div className="h-1 bg-muted">
@@ -206,7 +211,9 @@ const OnboardingTour = () => {
                   <MapPin className="w-3.5 h-3.5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-display font-bold text-foreground leading-tight">{step.title}</h3>
+                  <h3 className="text-sm font-display font-bold text-foreground leading-tight">
+                    {step.title}
+                  </h3>
                   <p className="text-[11px] text-muted-foreground">
                     Passo {currentStep + 1} de {totalSteps}
                   </p>
@@ -237,12 +244,7 @@ const OnboardingTour = () => {
 
               <div className="flex items-center gap-2">
                 {!isFirst && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={prevStep}
-                    className="h-8 px-2 text-xs"
-                  >
+                  <Button variant="ghost" size="sm" onClick={prevStep} className="h-8 px-2 text-xs">
                     <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                     Anterior
                   </Button>

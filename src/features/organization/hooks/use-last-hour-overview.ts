@@ -66,7 +66,10 @@ export function parseOverviewPayload(raw: unknown): LastHourOverviewPayload {
       ai_requests: Number(obj.totals?.ai_requests ?? 0),
     },
     maintenance_errors: Array.isArray(obj.maintenance_errors) ? obj.maintenance_errors : [],
-    maintenance_errors_by_source: (obj.maintenance_errors_by_source ?? {}) as Record<string, number>,
+    maintenance_errors_by_source: (obj.maintenance_errors_by_source ?? {}) as Record<
+      string,
+      number
+    >,
     alerts: Array.isArray(obj.alerts) ? obj.alerts : [],
     alerts_by_type: (obj.alerts_by_type ?? {}) as Record<string, number>,
     ai_usage: {

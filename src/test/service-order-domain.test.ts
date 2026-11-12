@@ -12,10 +12,18 @@ import {
 // STATUS_CONFIG — exhaustive tests
 // ============================================================
 describe("STATUS_CONFIG", () => {
-  const allStatuses: OsStatus[] = ["aberta", "aprovada", "em_producao", "pronta", "entregue", "concluida", "cancelada"];
+  const allStatuses: OsStatus[] = [
+    "aberta",
+    "aprovada",
+    "em_producao",
+    "pronta",
+    "entregue",
+    "concluida",
+    "cancelada",
+  ];
 
-    it("contains exactly 7 statuses", () => {
-      expect(Object.keys(STATUS_CONFIG)).toHaveLength(7);
+  it("contains exactly 7 statuses", () => {
+    expect(Object.keys(STATUS_CONFIG)).toHaveLength(7);
   });
 
   allStatuses.forEach((status) => {
@@ -66,7 +74,8 @@ describe("generateOsNumber — stress", () => {
     const os = generateOsNumber();
     const yearMonth = os.slice(3, 7);
     const now = new Date();
-    const expectedYM = now.getFullYear().toString().slice(-2) + String(now.getMonth() + 1).padStart(2, "0");
+    const expectedYM =
+      now.getFullYear().toString().slice(-2) + String(now.getMonth() + 1).padStart(2, "0");
     expect(yearMonth).toBe(expectedYM);
   });
 
@@ -257,86 +266,104 @@ describe("validateForm — comprehensive", () => {
 
   // ---- Multiple field errors ----
   it("all 4 required fields empty → 4 errors", () => {
-    const errors = validateForm(makeForm({
-      productName: "",
-      clientName: "",
-      technique: "",
-      quantity: "",
-    }));
+    const errors = validateForm(
+      makeForm({
+        productName: "",
+        clientName: "",
+        technique: "",
+        quantity: "",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(4);
   });
 
   it("2 required fields empty → 2 errors", () => {
-    const errors = validateForm(makeForm({
-      productName: "",
-      quantity: "abc",
-    }));
+    const errors = validateForm(
+      makeForm({
+        productName: "",
+        quantity: "abc",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(2);
   });
 
   // ---- Unicode / special characters ----
   it("accepts accented characters in names", () => {
-    const errors = validateForm(makeForm({
-      clientName: "José María García",
-      productName: "Caneta Éco-Friendly ñ",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "José María García",
+        productName: "Caneta Éco-Friendly ñ",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   it("accepts emojis in names", () => {
-    const errors = validateForm(makeForm({
-      clientName: "Cliente 🎉",
-      productName: "Produto ★ Premium 💎",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "Cliente 🎉",
+        productName: "Produto ★ Premium 💎",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   it("accepts CJK characters", () => {
-    const errors = validateForm(makeForm({
-      clientName: "田中太郎",
-      productName: "マグカップ",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "田中太郎",
+        productName: "マグカップ",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   it("accepts Arabic characters", () => {
-    const errors = validateForm(makeForm({
-      clientName: "أحمد",
-      productName: "كوب",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientName: "أحمد",
+        productName: "كوب",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   // ---- Optional fields don't affect validation ----
   it("optional boolean fields don't cause errors", () => {
-    const errors = validateForm(makeForm({
-      materialEvento: true,
-      aprovarPrimeiraPeca: true,
-      fazParteKit: true,
-    }));
+    const errors = validateForm(
+      makeForm({
+        materialEvento: true,
+        aprovarPrimeiraPeca: true,
+        fazParteKit: true,
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   it("optional string fields empty don't cause errors", () => {
-    const errors = validateForm(makeForm({
-      clientCompany: "",
-      clientPhone: "",
-      clientEmail: "",
-      productSku: "",
-      observations: "",
-      gravacaoDetalhe: "",
-    }));
+    const errors = validateForm(
+      makeForm({
+        clientCompany: "",
+        clientPhone: "",
+        clientEmail: "",
+        productSku: "",
+        observations: "",
+        gravacaoDetalhe: "",
+      }),
+    );
     expect(Object.keys(errors)).toHaveLength(0);
   });
 
   // ---- Error messages are in Portuguese ----
   it("error messages are in Portuguese", () => {
-    const errors = validateForm(makeForm({
-      productName: "",
-      clientName: "",
-      technique: "",
-      quantity: "",
-    }));
+    const errors = validateForm(
+      makeForm({
+        productName: "",
+        clientName: "",
+        technique: "",
+        quantity: "",
+      }),
+    );
     expect(errors.productName).toMatch(/produto/i);
     expect(errors.clientName).toMatch(/cliente/i);
     expect(errors.technique).toMatch(/técnica|gravação/i);

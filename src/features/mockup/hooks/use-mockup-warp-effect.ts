@@ -73,7 +73,15 @@ export function useMockupWarpEffect({
 
     const requestWarp = async () => {
       try {
-        const url = await getWarpedPreview(logoPreview, warpW, warpH, surfaceType, rotation, flipH, flipV);
+        const url = await getWarpedPreview(
+          logoPreview,
+          warpW,
+          warpH,
+          surfaceType,
+          rotation,
+          flipH,
+          flipV,
+        );
         if (!cancelled) {
           setWarpedLogoUrl((prev) => {
             if (prev) URL.revokeObjectURL(prev);

@@ -42,7 +42,10 @@ export class OrderEditError extends Error {
 }
 
 export function isOrderEditError(e: unknown): e is OrderEditError {
-  return e instanceof OrderEditError || (typeof e === "object" && e !== null && (e as { code?: string }).code === ERR_ORDER_EDIT);
+  return (
+    e instanceof OrderEditError ||
+    (typeof e === "object" && e !== null && (e as { code?: string }).code === ERR_ORDER_EDIT)
+  );
 }
 
 /** `true` quando a OS aceita edição livre de campos de conteúdo. */
@@ -67,10 +70,7 @@ export function checkOrderEdit(
 }
 
 /** Lança `OrderEditError` quando a edição é proibida. */
-export function assertOrderEditable(
-  status: OsStatus,
-  updates: Partial<StoredServiceOrder>,
-): void {
+export function assertOrderEditable(status: OsStatus, updates: Partial<StoredServiceOrder>): void {
   const violation = checkOrderEdit(status, updates);
   if (violation) throw new OrderEditError(violation);
 }

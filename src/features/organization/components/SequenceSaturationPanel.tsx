@@ -26,13 +26,12 @@ export function SequenceSaturationPanel() {
     queryKey: ["sequence-saturation"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as unknown as (
-        fn: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: SequenceRow[] | null; error: Error | null }>)(
-        "get_sequence_saturation",
-        { _min_pct: 0 },
-      );
+      const { data, error } = await (
+        supabase.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{ data: SequenceRow[] | null; error: Error | null }>
+      )("get_sequence_saturation", { _min_pct: 0 });
       if (error) throw error;
       return (data ?? []).sort((a, b) => b.used_pct - a.used_pct);
     },
@@ -59,13 +58,20 @@ export function SequenceSaturationPanel() {
             <Loader2 className="h-4 w-4 animate-spin" /> Analisando sequências…
           </div>
         ) : query.isError ? (
-          <p className="text-sm text-destructive">Falha ao carregar. Apenas owner/admin têm acesso.</p>
+          <p className="text-sm text-destructive">
+            Falha ao carregar. Apenas owner/admin têm acesso.
+          </p>
         ) : rows.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Nenhuma sequência encontrada no schema public.</p>
+          <p className="text-xs text-muted-foreground">
+            Nenhuma sequência encontrada no schema public.
+          </p>
         ) : (
           <div className="space-y-1.5">
             {rows.map((r) => (
-              <div key={`${r.schema_name}.${r.sequence_name}`} className="flex items-center justify-between gap-2 p-2 rounded-md border text-xs">
+              <div
+                key={`${r.schema_name}.${r.sequence_name}`}
+                className="flex items-center justify-between gap-2 p-2 rounded-md border text-xs"
+              >
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className="font-mono truncate">{r.sequence_name}</span>
                   {r.owned_table && (
@@ -85,7 +91,8 @@ export function SequenceSaturationPanel() {
               </div>
             ))}
             <p className="text-[10px] text-muted-foreground pt-2">
-              Sequências acima de 70% devem ser migradas para <code className="font-mono">bigint</code> antes do overflow.
+              Sequências acima de 70% devem ser migradas para{" "}
+              <code className="font-mono">bigint</code> antes do overflow.
             </p>
           </div>
         )}

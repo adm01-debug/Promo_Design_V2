@@ -12,7 +12,12 @@ interface LayoutPopoverProps {
   setGridColumns: (cols: ColumnCount) => void;
 }
 
-export function LayoutPopover({ viewMode, setViewMode, gridColumns, setGridColumns }: LayoutPopoverProps) {
+export function LayoutPopover({
+  viewMode,
+  setViewMode,
+  gridColumns,
+  setGridColumns,
+}: LayoutPopoverProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -32,7 +37,7 @@ export function LayoutPopover({ viewMode, setViewMode, gridColumns, setGridColum
                 size="sm"
                 className={cn(
                   "flex-1 h-8 gap-1.5 text-xs",
-                  viewMode === "grid" && "bg-card shadow-sm"
+                  viewMode === "grid" && "bg-card shadow-sm",
                 )}
                 onClick={() => setViewMode("grid")}
               >
@@ -44,7 +49,7 @@ export function LayoutPopover({ viewMode, setViewMode, gridColumns, setGridColum
                 size="sm"
                 className={cn(
                   "flex-1 h-8 gap-1.5 text-xs",
-                  viewMode === "list" && "bg-card shadow-sm"
+                  viewMode === "list" && "bg-card shadow-sm",
                 )}
                 onClick={() => setViewMode("list")}
               >

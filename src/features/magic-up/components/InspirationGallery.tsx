@@ -99,7 +99,10 @@ const InspirationGallery = ({ onUsePrompt }: Props) => {
             </div>
             <div className="flex gap-1 mt-1.5 flex-wrap">
               {item.tags.map((tag) => (
-                <span key={tag} className="text-[8px] px-1 py-0.5 rounded bg-card border border-border text-muted-foreground">
+                <span
+                  key={tag}
+                  className="text-[8px] px-1 py-0.5 rounded bg-card border border-border text-muted-foreground"
+                >
                   {tag}
                 </span>
               ))}

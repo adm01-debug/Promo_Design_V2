@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { wcagBoth, contrastRatio, bestTextColor, normalizeHex, isValidHex } from "../color-contrast";
+import {
+  wcagBoth,
+  contrastRatio,
+  bestTextColor,
+  normalizeHex,
+  isValidHex,
+} from "../color-contrast";
 
 describe("color-contrast / wcagBoth", () => {
   it("retorna AAA vs branco para cores muito escuras", () => {
@@ -45,10 +51,7 @@ describe("color-contrast / wcagBoth", () => {
   });
 
   it("contrastRatio é simétrico", () => {
-    expect(contrastRatio("#123456", "#abcdef")).toBeCloseTo(
-      contrastRatio("#abcdef", "#123456"),
-      5,
-    );
+    expect(contrastRatio("#123456", "#abcdef")).toBeCloseTo(contrastRatio("#abcdef", "#123456"), 5);
   });
 });
 

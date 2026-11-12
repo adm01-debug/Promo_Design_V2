@@ -62,7 +62,10 @@ function normalizeFragments(fragments: readonly (string | null | undefined)[]): 
   const out: string[] = [];
   for (const raw of fragments) {
     if (!raw) continue;
-    const value = raw.replace(/\s+/g, " ").trim().replace(/[.,;]+$/, "");
+    const value = raw
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[.,;]+$/, "");
     if (!value) continue;
     const key = value.toLowerCase();
     if (seen.has(key)) continue;

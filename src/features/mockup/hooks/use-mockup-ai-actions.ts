@@ -30,18 +30,29 @@ interface UseMockupAIActionsOptions {
  */
 export function useMockupAIActions(opts: UseMockupAIActionsOptions) {
   const {
-    selectedProduct, selectedArea, selectedTemplate,
-    logoPreview, placement, areaW, areaH,
-    pushHistory, setLogoPreview, setWarpedLogoUrl, setPlacement,
-    setBlendMode, setSurfaceType, setLogoOpacity,
+    selectedProduct,
+    selectedArea,
+    selectedTemplate,
+    logoPreview,
+    placement,
+    areaW,
+    areaH,
+    pushHistory,
+    setLogoPreview,
+    setWarpedLogoUrl,
+    setPlacement,
+    setBlendMode,
+    setSurfaceType,
+    setLogoOpacity,
   } = opts;
 
   const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isSuggestingPlacement, setIsSuggestingPlacement] = useState(false);
   const [aiReasoning, setAiReasoning] = useState<string | null>(null);
-  const [suggestedPlacement, setSuggestedPlacement] = useState<
-    { placement: Placement; reasoning: string } | null
-  >(null);
+  const [suggestedPlacement, setSuggestedPlacement] = useState<{
+    placement: Placement;
+    reasoning: string;
+  } | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -68,7 +79,10 @@ export function useMockupAIActions(opts: UseMockupAIActionsOptions) {
         if (error.name === "AbortError") return;
         throw error;
       }
-      if (data?.error) { toast.error(data.error); return; }
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
       if (data?.imageBase64) {
         clearWarpCache();
         setWarpedLogoUrl(null);
@@ -108,7 +122,10 @@ export function useMockupAIActions(opts: UseMockupAIActionsOptions) {
         if (error.name === "AbortError") return;
         throw error;
       }
-      if (data?.error) { toast.error(data.error); return; }
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
 
       const newPlacement: Placement = {
         x: (data.xPercent / 100) * areaW,
@@ -131,12 +148,23 @@ export function useMockupAIActions(opts: UseMockupAIActionsOptions) {
 
       toast.info("Sugestão de IA recebida. Revise antes de aplicar.");
     } catch (e: unknown) {
-      toast.error("Erro na sugestão de IA: " + (e instanceof Error ? e.message : "Tente novamente"));
+      toast.error(
+        "Erro na sugestão de IA: " + (e instanceof Error ? e.message : "Tente novamente"),
+      );
     } finally {
       setIsSuggestingPlacement(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
-  }, [selectedProduct, selectedTemplate, selectedArea, areaW, areaH, setBlendMode, setSurfaceType, setLogoOpacity]);
+  }, [
+    selectedProduct,
+    selectedTemplate,
+    selectedArea,
+    areaW,
+    areaH,
+    setBlendMode,
+    setSurfaceType,
+    setLogoOpacity,
+  ]);
 
   const applySuggestedPlacement = useCallback(() => {
     if (!suggestedPlacement) return;

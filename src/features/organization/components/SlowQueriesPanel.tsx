@@ -119,14 +119,16 @@ export function SlowQueriesPanel() {
               <Card key={i} className="p-2.5 text-xs space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Badge variant="outline" className={`${meta.color} text-[9px] h-4 px-1 shrink-0`}>
+                    <Badge
+                      variant="outline"
+                      className={`${meta.color} text-[9px] h-4 px-1 shrink-0`}
+                    >
                       {meta.label}
                     </Badge>
-                    <span className="font-mono text-muted-foreground text-[10px]">
-                      #{i + 1}
-                    </span>
+                    <span className="font-mono text-muted-foreground text-[10px]">#{i + 1}</span>
                     <span className="text-[10px] text-muted-foreground truncate">
-                      {q.calls.toLocaleString("pt-BR")} chamadas · média {fmtMs(q.mean_exec_ms)} · max {fmtMs(q.max_exec_ms)}
+                      {q.calls.toLocaleString("pt-BR")} chamadas · média {fmtMs(q.mean_exec_ms)} ·
+                      max {fmtMs(q.max_exec_ms)}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -146,32 +148,52 @@ export function SlowQueriesPanel() {
                       className="h-6 w-6"
                       title={isOpen ? "Recolher" : "Expandir"}
                     >
-                      {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      {isOpen ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
                     </Button>
                   </div>
                 </div>
-                <pre className={`text-[10px] font-mono bg-muted/40 rounded p-1.5 whitespace-pre-wrap break-all ${isOpen ? "" : "line-clamp-2"}`}>
+                <pre
+                  className={`text-[10px] font-mono bg-muted/40 rounded p-1.5 whitespace-pre-wrap break-all ${isOpen ? "" : "line-clamp-2"}`}
+                >
                   {q.query}
                 </pre>
                 {isOpen && (
                   <div className="grid grid-cols-4 gap-1 pt-1">
                     <div className="p-1 rounded bg-muted/40 text-center">
-                      <div className="text-[9px] uppercase text-muted-foreground font-mono">total</div>
+                      <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                        total
+                      </div>
                       <div className="text-[10px] font-mono">{fmtMs(q.total_exec_ms)}</div>
                     </div>
                     <div className="p-1 rounded bg-muted/40 text-center">
-                      <div className="text-[9px] uppercase text-muted-foreground font-mono">linhas</div>
-                      <div className="text-[10px] font-mono">{q.rows_returned.toLocaleString("pt-BR")}</div>
+                      <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                        linhas
+                      </div>
+                      <div className="text-[10px] font-mono">
+                        {q.rows_returned.toLocaleString("pt-BR")}
+                      </div>
                     </div>
                     <div className="p-1 rounded bg-muted/40 text-center">
-                      <div className="text-[9px] uppercase text-muted-foreground font-mono">cache hit</div>
-                      <div className={`text-[10px] font-mono ${cacheHit < 90 ? "text-amber-500" : ""}`}>
+                      <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                        cache hit
+                      </div>
+                      <div
+                        className={`text-[10px] font-mono ${cacheHit < 90 ? "text-amber-500" : ""}`}
+                      >
                         {cacheHit.toFixed(1)}%
                       </div>
                     </div>
                     <div className="p-1 rounded bg-muted/40 text-center">
-                      <div className="text-[9px] uppercase text-muted-foreground font-mono">blks lidos</div>
-                      <div className="text-[10px] font-mono">{q.shared_blks_read.toLocaleString("pt-BR")}</div>
+                      <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                        blks lidos
+                      </div>
+                      <div className="text-[10px] font-mono">
+                        {q.shared_blks_read.toLocaleString("pt-BR")}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -181,7 +203,8 @@ export function SlowQueriesPanel() {
         </div>
       )}
       <p className="text-[10px] text-muted-foreground">
-        Dados agregados por pg_stat_statements desde o último reset. Queries com &lt; 2 chamadas são ignoradas.
+        Dados agregados por pg_stat_statements desde o último reset. Queries com &lt; 2 chamadas são
+        ignoradas.
       </p>
     </div>
   );

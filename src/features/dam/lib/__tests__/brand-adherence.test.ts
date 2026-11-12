@@ -34,7 +34,13 @@ describe("brand-adherence utils", () => {
   });
 
   it("scoreColors dá 0 quando dominante muito distante", () => {
-    expect(scoreColors(["#00ff00"], { ...guidelines, primary_colors: [{ hex: "#ff00ff", name: "" }], secondary_colors: [] })).toBeLessThan(30);
+    expect(
+      scoreColors(["#00ff00"], {
+        ...guidelines,
+        primary_colors: [{ hex: "#ff00ff", name: "" }],
+        secondary_colors: [],
+      }),
+    ).toBeLessThan(30);
   });
 
   it("scoreContrast mapeia WCAG corretamente", () => {
@@ -45,7 +51,13 @@ describe("brand-adherence utils", () => {
   });
 
   it("scorePlacement é neutro sem dados e alto quando bate com percentil", () => {
-    expect(scorePlacement(undefined, { logo_x_percent_p50: 50, logo_y_percent_p50: 50, logo_scale_p50: 0.5 })).toBe(50);
+    expect(
+      scorePlacement(undefined, {
+        logo_x_percent_p50: 50,
+        logo_y_percent_p50: 50,
+        logo_scale_p50: 0.5,
+      }),
+    ).toBe(50);
     const perfect = scorePlacement(
       { x: 0.5, y: 0.5, scale: 0.5 },
       { logo_x_percent_p50: 0.5, logo_y_percent_p50: 0.5, logo_scale_p50: 0.5 },

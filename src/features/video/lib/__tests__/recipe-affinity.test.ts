@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  rankRecipesForClient,
-  indexAffinityById,
-} from "@/features/video/lib/recipe-affinity";
+import { rankRecipesForClient, indexAffinityById } from "@/features/video/lib/recipe-affinity";
 import { INSPIRATION_RECIPES } from "@/features/video/lib/inspiration-recipes";
 import type { DesignRecommendation } from "@/features/mockup/hooks/use-client-design-recommendation";
 

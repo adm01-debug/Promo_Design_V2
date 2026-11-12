@@ -141,10 +141,9 @@ test.describe("DAM Preview — share link round-trip", () => {
       // We can't strictly require equality (the app may strip ?asset= if the
       // asset isn't loadable), but at minimum filters should restore.
       if (key === "asset") continue;
-      expect(
-        urlAfter.searchParams.get(key),
-        `restored URL missing filter ${key}`,
-      ).toBe(SHARE_PARAMS[key as keyof typeof SHARE_PARAMS]);
+      expect(urlAfter.searchParams.get(key), `restored URL missing filter ${key}`).toBe(
+        SHARE_PARAMS[key as keyof typeof SHARE_PARAMS],
+      );
     }
 
     await ctx.close();

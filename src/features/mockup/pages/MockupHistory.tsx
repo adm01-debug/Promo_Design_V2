@@ -13,10 +13,11 @@ const MockupHistory = () => {
   const { drafts, isLoading } = useMockupDrafts();
 
   const filteredDrafts = useMemo(() => {
-    return drafts.filter(d => 
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.productName?.toLowerCase().includes(search.toLowerCase()) ||
-      d.productSku?.toLowerCase().includes(search.toLowerCase())
+    return drafts.filter(
+      (d) =>
+        d.name.toLowerCase().includes(search.toLowerCase()) ||
+        d.productName?.toLowerCase().includes(search.toLowerCase()) ||
+        d.productSku?.toLowerCase().includes(search.toLowerCase()),
     );
   }, [drafts, search]);
 
@@ -66,7 +67,12 @@ const MockupHistory = () => {
             {search ? "Tente ajustar sua busca" : "Comece criando um novo mockup no Studio"}
           </p>
           {!search && (
-            <Button variant="outline" size="sm" className="mt-4" onClick={() => navigate("/mockup/new")}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={() => navigate("/mockup/new")}
+            >
               Ir para o Studio
             </Button>
           )}
@@ -83,7 +89,11 @@ const MockupHistory = () => {
             >
               <div className="aspect-video bg-muted/30 relative flex items-center justify-center overflow-hidden">
                 {m.thumbnailUrl ? (
-                  <img src={m.thumbnailUrl} alt={m.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
+                  <img
+                    src={m.thumbnailUrl}
+                    alt={m.name}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                  />
                 ) : (
                   <Package className="w-10 h-10 text-muted-foreground/30" />
                 )}
@@ -95,7 +105,9 @@ const MockupHistory = () => {
               </div>
               <div className="p-3">
                 <h3 className="text-sm font-semibold text-foreground truncate">{m.name}</h3>
-                {m.productName && <p className="text-[10px] text-primary font-mono mt-1">{m.productName}</p>}
+                {m.productName && (
+                  <p className="text-[10px] text-primary font-mono mt-1">{m.productName}</p>
+                )}
                 <div className="flex items-center gap-2 mt-2 text-[10px] text-muted-foreground">
                   <Clock className="w-3 h-3" />
                   {formatDistanceToNow(new Date(m.updatedAt), { addSuffix: true, locale: ptBR })}

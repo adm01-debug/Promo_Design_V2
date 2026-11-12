@@ -10,7 +10,9 @@ const LS_KEY = "audit-filters-v1";
 
 function parseActions(s: string | null): AuditAction[] {
   if (!s) return [];
-  return s.split(",").filter((x): x is AuditAction => x === "INSERT" || x === "UPDATE" || x === "DELETE");
+  return s
+    .split(",")
+    .filter((x): x is AuditAction => x === "INSERT" || x === "UPDATE" || x === "DELETE");
 }
 
 function parseDate(s: string | null): Date | undefined {
@@ -48,7 +50,9 @@ function writePersisted(p: PersistedFilters) {
     const hasAny = Object.values(p).some((v) => v && v.length > 0);
     if (hasAny) window.localStorage.setItem(LS_KEY, JSON.stringify(p));
     else window.localStorage.removeItem(LS_KEY);
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
 }
 
 export function useAuditFilters() {
@@ -61,7 +65,11 @@ export function useAuditFilters() {
   });
 
   useEffect(() => {
-    try { localStorage.setItem(PAGE_SIZE_KEY, String(pageSize)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(PAGE_SIZE_KEY, String(pageSize));
+    } catch {
+      /* ignore */
+    }
     setPage(0);
   }, [pageSize]);
 
@@ -155,6 +163,6 @@ export function useAuditFilters() {
     pageSize,
     setPageSize,
     hasAnyFilter,
-    pageSizeOptions: PAGE_SIZE_OPTIONS
+    pageSizeOptions: PAGE_SIZE_OPTIONS,
   };
 }

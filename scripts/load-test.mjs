@@ -5,8 +5,8 @@
 
 import { randomUUID } from "crypto";
 
-const BASE_URL = process.env.SUPABASE_URL 
-  ? `\${process.env.SUPABASE_URL}/functions/v1` 
+const BASE_URL = process.env.SUPABASE_URL
+  ? `\${process.env.SUPABASE_URL}/functions/v1`
   : "http://localhost:54321/functions/v1";
 
 const TOKEN = process.env.SUPABASE_ANON_KEY || "mock-token";
@@ -21,7 +21,7 @@ async function runTest(functionName, body) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer \${TOKEN}`,
+        Authorization: `Bearer \${TOKEN}`,
         "X-Request-Id": randomUUID(),
       },
       body: JSON.stringify(body),
@@ -52,11 +52,11 @@ async function stressTest(functionName, payloadGenerator) {
   }
 
   console.log("\n--- Results ---");
-  const successful = results.filter(r => r.ok).length;
+  const successful = results.filter((r) => r.ok).length;
   const failed = results.length - successful;
   const avgDuration = results.reduce((acc, r) => acc + r.duration, 0) / results.length;
-  const maxDuration = Math.max(...results.map(r => r.duration));
-  const minDuration = Math.min(...results.map(r => r.duration));
+  const maxDuration = Math.max(...results.map((r) => r.duration));
+  const minDuration = Math.min(...results.map((r) => r.duration));
 
   const statusCodes = results.reduce((acc, r) => {
     acc[r.status] = (acc[r.status] || 0) + 1;
@@ -83,13 +83,13 @@ async function stressTest(functionName, payloadGenerator) {
     productName: "Stress Test Product",
     templateId: "custom",
     areaWidth: Math.random() * 100,
-    areaHeight: Math.random() * 100
+    areaHeight: Math.random() * 100,
   }));
 
   // Test asset-ocr with invalid IDs (to trigger fast error paths and measure overhead)
   await stressTest("asset-ocr", () => ({
     assetId: randomUUID(),
     filePath: "test.png",
-    mimeType: "image/png"
+    mimeType: "image/png",
   }));
 })();

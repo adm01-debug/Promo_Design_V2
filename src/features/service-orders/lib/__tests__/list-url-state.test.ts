@@ -36,19 +36,27 @@ describe("buildServiceOrderListParams", () => {
   });
 
   it("trims a real search term before storing", () => {
-    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, search: "  acme  " }).get("q")).toBe("acme");
+    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, search: "  acme  " }).get("q")).toBe(
+      "acme",
+    );
   });
 
   it("omits `sort` when descending (the default)", () => {
-    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, sortDesc: true }).has("sort")).toBe(false);
+    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, sortDesc: true }).has("sort")).toBe(
+      false,
+    );
   });
 
   it("adds `sort=asc` when ascending", () => {
-    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, sortDesc: false }).get("sort")).toBe("asc");
+    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, sortDesc: false }).get("sort")).toBe(
+      "asc",
+    );
   });
 
   it("omits `status` when 'all'", () => {
-    expect(buildServiceOrderListParams({ ...DEFAULT_STATE, statusFilter: "all" }).has("status")).toBe(false);
+    expect(
+      buildServiceOrderListParams({ ...DEFAULT_STATE, statusFilter: "all" }).has("status"),
+    ).toBe(false);
   });
 
   it("includes the concrete status", () => {

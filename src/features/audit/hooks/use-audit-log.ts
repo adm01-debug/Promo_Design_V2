@@ -22,9 +22,9 @@ export interface AuditFilters {
   tableName?: string;
   userId?: string;
   recordIdQuery?: string;
-  valueKey?: string;       // chave dentro de old_values/new_values (ex: "status")
-  valueQuery?: string;     // texto a procurar
-  ipQuery?: string;        // substring do ip_address
+  valueKey?: string; // chave dentro de old_values/new_values (ex: "status")
+  valueQuery?: string; // texto a procurar
+  ipQuery?: string; // substring do ip_address
   userAgentQuery?: string; // substring do user_agent
   page: number;
   pageSize: number;
@@ -73,14 +73,10 @@ function applyFilters<Q>(query: Q, f: AuditFilters): Q {
     const term = (f.valueQuery ?? "").trim();
     if (term.length > 0) {
       const safeTerm = term.replace(/[,()]/g, "");
-      q = q.or(
-        `old_values->>${key}.ilike.%${safeTerm}%,new_values->>${key}.ilike.%${safeTerm}%`,
-      );
+      q = q.or(`old_values->>${key}.ilike.%${safeTerm}%,new_values->>${key}.ilike.%${safeTerm}%`);
     } else {
       // só chave: traz registros onde a chave existe em algum dos lados (não-nulo)
-      q = q.or(
-        `old_values->>${key}.not.is.null,new_values->>${key}.not.is.null`,
-      );
+      q = q.or(`old_values->>${key}.not.is.null,new_values->>${key}.not.is.null`);
     }
   }
   return q as unknown as Q;

@@ -4,7 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Activity, Loader2, RefreshCcw, Download } from "lucide-react";
 import { toast } from "sonner";
@@ -14,14 +18,19 @@ type SourceKey = "cron" | "manual" | "snapshot_cron" | "snapshot_manual";
 interface DurationStats {
   ok: true;
   days_back: number;
-  stats: Partial<Record<SourceKey, {
-    count: number;
-    p50: number | null;
-    p95: number | null;
-    p99: number | null;
-    max: number | null;
-    avg: number | null;
-  }>>;
+  stats: Partial<
+    Record<
+      SourceKey,
+      {
+        count: number;
+        p50: number | null;
+        p95: number | null;
+        p99: number | null;
+        max: number | null;
+        avg: number | null;
+      }
+    >
+  >;
 }
 
 const SOURCE_LABELS: Record<SourceKey, string> = {
@@ -71,8 +80,17 @@ export function MaintenanceDurationPanel() {
         return;
       }
       const headers = [
-        "id", "source", "status", "created_at", "started_at", "finished_at",
-        "duration_ms", "audit_deleted", "notifications_deleted", "status_audit_deleted", "error_message",
+        "id",
+        "source",
+        "status",
+        "created_at",
+        "started_at",
+        "finished_at",
+        "duration_ms",
+        "audit_deleted",
+        "notifications_deleted",
+        "status_audit_deleted",
+        "error_message",
       ];
       const escape = (v: unknown): string => {
         if (v == null) return "";
@@ -167,7 +185,9 @@ export function MaintenanceDurationPanel() {
                       { label: "max", value: s.max },
                     ].map((m) => (
                       <div key={m.label} className="p-1 rounded bg-muted/40">
-                        <div className="text-[9px] uppercase text-muted-foreground font-mono">{m.label}</div>
+                        <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                          {m.label}
+                        </div>
                         <div className="text-[11px] font-mono font-medium">{fmtMs(m.value)}</div>
                       </div>
                     ))}

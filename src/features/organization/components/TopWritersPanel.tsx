@@ -86,11 +86,14 @@ export function TopWritersPanel() {
               </thead>
               <tbody>
                 {items.map((r) => {
-                  const hotLow = r.hot_update_ratio !== null && r.updates > 100 && r.hot_update_ratio < 30;
+                  const hotLow =
+                    r.hot_update_ratio !== null && r.updates > 100 && r.hot_update_ratio < 30;
                   return (
                     <tr key={r.table_name} className="border-b last:border-none">
                       <td className="py-2 pr-3 font-mono">{r.table_name}</td>
-                      <td className="py-2 pr-3 text-right font-medium">{nf.format(r.total_writes)}</td>
+                      <td className="py-2 pr-3 text-right font-medium">
+                        {nf.format(r.total_writes)}
+                      </td>
                       <td className="py-2 pr-3 text-right text-muted-foreground">
                         {nf.format(r.inserts)} / {nf.format(r.updates)} / {nf.format(r.deletes)}
                       </td>
@@ -104,7 +107,9 @@ export function TopWritersPanel() {
                           </Badge>
                         )}
                       </td>
-                      <td className="py-2 pr-3 text-right text-muted-foreground">{nf.format(r.dead_tuples)}</td>
+                      <td className="py-2 pr-3 text-right text-muted-foreground">
+                        {nf.format(r.dead_tuples)}
+                      </td>
                       <td className="py-2 pr-3 text-muted-foreground">
                         {relative(r.last_autovacuum)}
                         {r.autovacuum_count > 0 && (
@@ -123,7 +128,9 @@ export function TopWritersPanel() {
               </tbody>
             </table>
             <p className="mt-3 text-[11px] text-muted-foreground">
-              HOT % baixo (&lt;30%) em tabelas com muitos updates indica falta de <code>fillfactor</code> ou índices demais — considere reduzir índices ou ajustar <code>fillfactor</code> para 80–90.
+              HOT % baixo (&lt;30%) em tabelas com muitos updates indica falta de{" "}
+              <code>fillfactor</code> ou índices demais — considere reduzir índices ou ajustar{" "}
+              <code>fillfactor</code> para 80–90.
             </p>
           </div>
         )}

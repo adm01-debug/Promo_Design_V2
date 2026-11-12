@@ -1,5 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { AssetThumbnail } from "./AssetThumbnail";
 import type { Asset } from "../hooks/use-assets";
 import type { Client } from "@/features/clients/hooks/use-clients";
@@ -91,10 +98,14 @@ export function AssetListView({
                 </div>
               </TableCell>
               <TableCell>
-                <div className="font-medium text-sm truncate max-w-xs" title={a.name}>{a.name}</div>
+                <div className="font-medium text-sm truncate max-w-xs" title={a.name}>
+                  {a.name}
+                </div>
                 <div className="flex items-center gap-1 mt-1">
                   {a.is_archived && (
-                    <Badge variant="outline" className="text-[10px]">Arquivado</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      Arquivado
+                    </Badge>
                   )}
                   {a.ocr_match && (
                     <Badge
@@ -108,18 +119,22 @@ export function AssetListView({
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant="secondary" className="capitalize">{a.asset_type}</Badge>
+                <Badge variant="secondary" className="capitalize">
+                  {a.asset_type}
+                </Badge>
                 {a.version > 1 && (
                   <span className="ml-2 text-xs text-muted-foreground">v{a.version}</span>
                 )}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground truncate">
-                {a.client_id ? clientMap.get(a.client_id) ?? "—" : "Geral"}
+                {a.client_id ? (clientMap.get(a.client_id) ?? "—") : "Geral"}
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
                   {a.tags.slice(0, 3).map((t) => (
-                    <Badge key={t} variant="outline" className="text-[10px] px-1.5 py-0">{t}</Badge>
+                    <Badge key={t} variant="outline" className="text-[10px] px-1.5 py-0">
+                      {t}
+                    </Badge>
                   ))}
                   {a.tags.length > 3 && (
                     <span className="text-xs text-muted-foreground">+{a.tags.length - 3}</span>

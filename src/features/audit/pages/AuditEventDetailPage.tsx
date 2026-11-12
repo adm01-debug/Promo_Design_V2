@@ -2,14 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  ArrowLeft,
-  Copy,
-  ExternalLink,
-  ScrollText,
-  AlertCircle,
-  ChevronDown,
-} from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, ScrollText, AlertCircle, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,18 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useOrganizations, useOrgMembers } from "@/hooks/use-organization";
-import {
-  type AuditAction,
-  useAuditEvent,
-  useAuditRecordHistory,
-} from "../hooks/use-audit-log";
+import { type AuditAction, useAuditEvent, useAuditRecordHistory } from "../hooks/use-audit-log";
 import { AuditDiffView } from "../components/AuditDiffView";
 import { cn } from "@/lib/utils";
 
@@ -109,9 +94,7 @@ function JsonBlock({ title, value }: { title: string; value: unknown }) {
       <div className="flex items-center gap-2">
         <CollapsibleTrigger asChild>
           <Button size="sm" variant="ghost" className="h-7 px-2">
-            <ChevronDown
-              className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
-            />
+            <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
             <span className="text-xs font-medium">{title}</span>
           </Button>
         </CollapsibleTrigger>
@@ -212,7 +195,9 @@ const AuditEventDetailPage = () => {
             <p className="text-sm text-muted-foreground mt-1">
               {format(new Date(event.created_at), "dd/MM/yyyy HH:mm:ss")}{" "}
               <span className="ml-2">
-                ({formatDistanceToNow(new Date(event.created_at), { addSuffix: true, locale: ptBR })})
+                (
+                {formatDistanceToNow(new Date(event.created_at), { addSuffix: true, locale: ptBR })}
+                )
               </span>
             </p>
           </div>
@@ -226,9 +211,7 @@ const AuditEventDetailPage = () => {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MetaRow label="ID do evento" value={event.id} mono copyable />
           <div className="flex flex-col gap-1 min-w-0">
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">
-              Record ID
-            </span>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">Record ID</span>
             <div className="flex items-center gap-2 flex-wrap min-w-0">
               <span className="font-mono text-xs break-all">{event.record_id ?? "—"}</span>
               {event.record_id && (
@@ -271,11 +254,7 @@ const AuditEventDetailPage = () => {
           <CardTitle className="text-base">Diff visual</CardTitle>
           {event.action === "UPDATE" && (
             <div className="flex items-center gap-2">
-              <Switch
-                id="only-changed"
-                checked={onlyChanged}
-                onCheckedChange={setOnlyChanged}
-              />
+              <Switch id="only-changed" checked={onlyChanged} onCheckedChange={setOnlyChanged} />
               <Label htmlFor="only-changed" className="text-xs cursor-pointer">
                 Apenas campos alterados
               </Label>
@@ -329,10 +308,7 @@ const AuditEventDetailPage = () => {
                         )}
                         aria-current={isCurrent ? "page" : undefined}
                       >
-                        <Badge
-                          variant={ACTION_VARIANT[h.action]}
-                          className="shrink-0"
-                        >
+                        <Badge variant={ACTION_VARIANT[h.action]} className="shrink-0">
                           {h.action}
                         </Badge>
                         <span className="text-sm tabular-nums">

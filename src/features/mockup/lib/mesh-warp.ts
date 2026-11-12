@@ -1,6 +1,6 @@
 /**
  * Mesh Warp Deformation Engine
- * 
+ *
  * Applies real Canvas 2D transformations to warp images
  * onto cylindrical, spherical, curved and angled surfaces.
  * Uses vertical strip slicing with sine/cosine distortion.
@@ -87,10 +87,10 @@ export function applyMeshWarp(
   width: number,
   height: number,
   surface: SurfaceType,
-  customConfig?: Partial<WarpConfig>
+  customConfig?: Partial<WarpConfig>,
 ): HTMLCanvasElement {
   const config = { ...DEFAULT_CONFIGS[surface], ...customConfig };
-  
+
   // For flat surfaces, just draw normally
   if (surface === "flat" || config.intensity === 0) {
     const canvas = document.createElement("canvas");
@@ -115,11 +115,11 @@ export function applyMeshWarp(
   for (let i = 0; i < strips; i++) {
     // Normalized position: -1 to 1 across the image
     const t = (i / (strips - 1)) * 2 - 1;
-    
+
     // Cylindrical curve: sine-based displacement
     const curve = Math.sin((t * Math.PI) / 2);
     const curveFull = Math.cos((t * Math.PI) / 2);
-    
+
     // Vertical offset (creates the curved illusion)
     let yOffset = 0;
     let yScale = 1;
@@ -151,12 +151,14 @@ export function applyMeshWarp(
     // Horizontal squeeze: edges are compressed
     const xSqueeze = config.squeeze + (1 - config.squeeze) * curveFull;
     const destStripW = stripW * xSqueeze;
-    
+
     // Calculate destination X (accumulate squeeze effect)
     const centerX = width / 2;
     const normalDestX = i * stripW;
-    const destX = centerX + (normalDestX - centerX) * config.squeeze + 
-                  (1 - config.squeeze) * curve * width * 0.02;
+    const destX =
+      centerX +
+      (normalDestX - centerX) * config.squeeze +
+      (1 - config.squeeze) * curve * width * 0.02;
 
     const destY = yOffset;
     const destH = height * yScale;
@@ -165,11 +167,17 @@ export function applyMeshWarp(
     ctx.beginPath();
     ctx.rect(destX, 0, destStripW + 1, height);
     ctx.clip();
-    
+
     ctx.drawImage(
       source,
-      i * srcStripW, 0, srcStripW + 1, srcH,
-      destX, destY, destStripW + 1, destH
+      i * srcStripW,
+      0,
+      srcStripW + 1,
+      srcH,
+      destX,
+      destY,
+      destStripW + 1,
+      destH,
     );
     ctx.restore();
   }
@@ -188,7 +196,7 @@ function applyEdgeShading(
   width: number,
   height: number,
   config: WarpConfig,
-  surface: SurfaceType
+  surface: SurfaceType,
 ) {
   ctx.save();
   ctx.globalCompositeOperation = "multiply";
@@ -264,7 +272,7 @@ export function getWarpedPreview(
   surface: SurfaceType,
   rotation: number = 0,
   flipH: boolean = false,
-  flipV: boolean = false
+  flipV: boolean = false,
 ): Promise<string> {
   const cacheKey = `${logoSrc}_${width}_${height}_${surface}_${rotation}_${flipH}_${flipV}`;
   const cached = warpCache.get(cacheKey);
@@ -279,7 +287,7 @@ export function getWarpedPreview(
       tempCanvas.width = width;
       tempCanvas.height = height;
       const tempCtx = tempCanvas.getContext("2d")!;
-      
+
       tempCtx.save();
       tempCtx.translate(width / 2, height / 2);
       tempCtx.rotate((rotation * Math.PI) / 180);
@@ -290,7 +298,7 @@ export function getWarpedPreview(
       // Then apply warp
       const warped = applyMeshWarp(tempCanvas, width, height, surface);
       const dataUrl = warped.toDataURL("image/png");
-      
+
       // Keep cache bounded
       if (warpCache.size > 50) {
         const firstKey = warpCache.keys().next().value;
@@ -310,7 +318,7 @@ let worker: Worker | null = null;
 
 function getWorker() {
   if (!worker) {
-    worker = new Worker(new URL('./warp-worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL("./warp-worker.ts", import.meta.url), { type: "module" });
   }
   return worker;
 }
@@ -325,14 +333,14 @@ export async function getWarpedPreviewWorker(
   surface: SurfaceType,
   rotation: number = 0,
   flipH: boolean = false,
-  flipV: boolean = false
+  flipV: boolean = false,
 ): Promise<string> {
   const cacheKey = `worker_${logoSrc}_${width}_${height}_${surface}_${rotation}_${flipH}_${flipV}`;
   const cached = warpCache.get(cacheKey);
   if (cached) return cached;
 
   const w = getWorker();
-  
+
   // 1. Fetch the image and convert to ImageBitmap (transferable)
   const response = await fetch(logoSrc);
   const blob = await response.blob();
@@ -342,29 +350,32 @@ export async function getWarpedPreviewWorker(
 
   return new Promise((resolve, reject) => {
     const handleMessage = (e: MessageEvent) => {
-      if (e.data.type === 'WARP_RESULT') {
+      if (e.data.type === "WARP_RESULT") {
         const { bitmap: resultBitmap } = e.data.payload;
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d')!;
+        const ctx = canvas.getContext("2d")!;
         ctx.drawImage(resultBitmap, 0, 0);
-        const dataUrl = canvas.toDataURL('image/png');
-        
+        const dataUrl = canvas.toDataURL("image/png");
+
         warpCache.set(cacheKey, dataUrl);
-        w.removeEventListener('message', handleMessage);
+        w.removeEventListener("message", handleMessage);
         resolve(dataUrl);
-      } else if (e.data.type === 'ERROR') {
-        w.removeEventListener('message', handleMessage);
+      } else if (e.data.type === "ERROR") {
+        w.removeEventListener("message", handleMessage);
         reject(new Error(e.data.payload.message));
       }
     };
 
-    w.addEventListener('message', handleMessage);
-    w.postMessage({
-      type: 'WARP_IMAGE',
-      payload: { bitmap, width, height, surface, config, rotation, flipH, flipV }
-    }, [bitmap] as unknown as Transferable[]);
+    w.addEventListener("message", handleMessage);
+    w.postMessage(
+      {
+        type: "WARP_IMAGE",
+        payload: { bitmap, width, height, surface, config, rotation, flipH, flipV },
+      },
+      [bitmap] as unknown as Transferable[],
+    );
   });
 }
 

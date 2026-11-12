@@ -6,14 +6,14 @@ import { render, screen, waitFor, cleanup } from "@testing-library/react";
 vi.mock("../../hooks/use-asset-upload", () => ({
   useAssetUpload: () => ({ uploadFile: vi.fn(), isUploading: false, progress: 0 }),
   UPLOAD_PHASE_LABELS: {
-    "analyzing": "Analisando arquivo…",
+    analyzing: "Analisando arquivo…",
     "rendering-pdf": "Renderizando PDF…",
     "rasterizing-svg": "Rastreando SVG…",
     "processing-image": "Processando imagem…",
     "uploading-file": "Enviando arquivo…",
     "uploading-thumb": "Enviando thumbnail…",
     "saving-record": "Salvando metadados…",
-    "done": "Concluído",
+    done: "Concluído",
   },
 }));
 
@@ -44,8 +44,7 @@ vi.mock("../../lib/file-preview", async (orig) => {
       buildSvgPreviewUrl(...a),
     rasterizePdfFirstPage: (...a: Parameters<typeof actual.rasterizePdfFirstPage>) =>
       rasterizePdfFirstPage(...a),
-    getPdfPageCount: (...a: Parameters<typeof actual.getPdfPageCount>) =>
-      getPdfPageCount(...a),
+    getPdfPageCount: (...a: Parameters<typeof actual.getPdfPageCount>) => getPdfPageCount(...a),
   };
 });
 
@@ -98,13 +97,7 @@ describe("AssetUploadDialog · preview generation & blob cleanup", () => {
   });
 
   it("renders a PDF preview before upload and exposes page picker", async () => {
-    render(
-      <AssetUploadDialog
-        open
-        onOpenChange={() => {}}
-        organizationId={ORG_ID}
-      />,
-    );
+    render(<AssetUploadDialog open onOpenChange={() => {}} organizationId={ORG_ID} />);
 
     const pdf = new File(["%PDF-1.4"], "doc.pdf", { type: "application/pdf" });
     dropFile(pdf);
@@ -127,13 +120,7 @@ describe("AssetUploadDialog · preview generation & blob cleanup", () => {
   });
 
   it("renders an SVG preview before upload", async () => {
-    render(
-      <AssetUploadDialog
-        open
-        onOpenChange={() => {}}
-        organizationId={ORG_ID}
-      />,
-    );
+    render(<AssetUploadDialog open onOpenChange={() => {}} organizationId={ORG_ID} />);
 
     const svg = new File(["<svg/>"], "logo.svg", { type: "image/svg+xml" });
     dropFile(svg);
@@ -148,13 +135,7 @@ describe("AssetUploadDialog · preview generation & blob cleanup", () => {
   });
 
   it("revokes blob URL when an entry is removed (cleanup)", async () => {
-    render(
-      <AssetUploadDialog
-        open
-        onOpenChange={() => {}}
-        organizationId={ORG_ID}
-      />,
-    );
+    render(<AssetUploadDialog open onOpenChange={() => {}} organizationId={ORG_ID} />);
 
     const img = new File([new Uint8Array([1, 2, 3])], "pic.png", { type: "image/png" });
     dropFile(img);

@@ -10,11 +10,7 @@ export {
   INSPIRATION_GALLERY,
   SAMPLE_PRODUCTS,
 } from "./lib/mockup-types";
-export type {
-  PromptTemplate,
-  MagicUpGeneration,
-  InspirationItem,
-} from "./lib/mockup-types";
+export type { PromptTemplate, MagicUpGeneration, InspirationItem } from "./lib/mockup-types";
 export { default as InspirationGallery } from "./components/InspirationGallery";
 export { default as PromptGenerator } from "./components/PromptGenerator";
 export { default as DownloadMenu } from "./components/DownloadMenu";

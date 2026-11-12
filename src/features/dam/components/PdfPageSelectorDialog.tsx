@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,8 +139,8 @@ export function PdfPageSelectorDialog({
         <DialogHeader>
           <DialogTitle>Selecionar páginas — {file.name}</DialogTitle>
           <DialogDescription>
-            A primeira página marcada será a thumb principal. As demais geram
-            assets adicionais (uma cópia por página).
+            A primeira página marcada será a thumb principal. As demais geram assets adicionais (uma
+            cópia por página).
           </DialogDescription>
         </DialogHeader>
 
@@ -159,9 +166,7 @@ export function PdfPageSelectorDialog({
               <div className="text-[11px] text-muted-foreground">
                 {selected.length} página(s) selecionada(s)
                 {totalPages ? ` · total ${totalPages}` : ""}
-                {selected.length > 0 && (
-                  <> · primária: pág. {selected[0]}</>
-                )}
+                {selected.length > 0 && <> · primária: pág. {selected[0]}</>}
               </div>
             )}
           </div>
@@ -184,7 +189,9 @@ export function PdfPageSelectorDialog({
                       onClick={() => togglePage(p)}
                       className={cn(
                         "relative group border rounded-md overflow-hidden bg-muted aspect-[3/4] flex items-center justify-center text-xs",
-                        isSel ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/50",
+                        isSel
+                          ? "border-primary ring-2 ring-primary"
+                          : "border-border hover:border-primary/50",
                       )}
                       aria-pressed={isSel}
                       aria-label={`Página ${p}${isSel ? " (selecionada)" : ""}`}

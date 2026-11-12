@@ -67,7 +67,11 @@ function drawCover(
   doc.rect(0, 0, pw, 40, "F");
 
   if (logoDataUrl) {
-    try { doc.addImage(logoDataUrl, "PNG", 12, 8, 24, 24); } catch { /* ignore */ }
+    try {
+      doc.addImage(logoDataUrl, "PNG", 12, 8, 24, 24);
+    } catch {
+      /* ignore */
+    }
   }
 
   doc.setTextColor(255, 255, 255);
@@ -76,7 +80,11 @@ function drawCover(
   doc.text("Ordens de Serviço", logoDataUrl ? 42 : 12, 20);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(`Gerado em ${new Date().toLocaleDateString("pt-BR")} • ${orders.length} OS(s)`, logoDataUrl ? 42 : 12, 30);
+  doc.text(
+    `Gerado em ${new Date().toLocaleDateString("pt-BR")} • ${orders.length} OS(s)`,
+    logoDataUrl ? 42 : 12,
+    30,
+  );
 
   doc.setTextColor(...DARK);
   doc.setFontSize(11);
@@ -85,7 +93,8 @@ function drawCover(
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  const statusLabel = !filters.status || filters.status === "all" ? "Todos" : STATUS_LABEL[filters.status];
+  const statusLabel =
+    !filters.status || filters.status === "all" ? "Todos" : STATUS_LABEL[filters.status];
   doc.text(`Status: ${statusLabel}`, 12, 64);
   doc.text(`Busca: ${filters.search?.trim() || "—"}`, 12, 71);
 
@@ -113,11 +122,7 @@ function drawCover(
   });
 }
 
-async function drawOrderPage(
-  doc: jsPDF,
-  order: StoredServiceOrder,
-  onMockupFetch?: () => void,
-) {
+async function drawOrderPage(doc: jsPDF, order: StoredServiceOrder, onMockupFetch?: () => void) {
   const pw = doc.internal.pageSize.getWidth();
   const m = 12;
 
@@ -157,13 +162,15 @@ async function drawOrderPage(
   autoTable(doc, {
     startY: 88,
     head: [["Técnica", "Área", "Dimensões", "Qtd", "Entrega"]],
-    body: [[
-      order.technique,
-      order.areaName || "—",
-      order.areaWidth && order.areaHeight ? `${order.areaWidth} × ${order.areaHeight} cm` : "—",
-      order.quantity,
-      order.deliveryDate || "—",
-    ]],
+    body: [
+      [
+        order.technique,
+        order.areaName || "—",
+        order.areaWidth && order.areaHeight ? `${order.areaWidth} × ${order.areaHeight} cm` : "—",
+        order.quantity,
+        order.deliveryDate || "—",
+      ],
+    ],
     theme: "grid",
     headStyles: { fillColor: GREEN, textColor: 255, fontSize: 9 },
     bodyStyles: { fontSize: 9 },
@@ -180,7 +187,9 @@ async function drawOrderPage(
       const imgH = 90;
       try {
         doc.addImage(dataUrl, "JPEG", m, y, maxW, imgH, undefined, "FAST");
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 

@@ -22,7 +22,9 @@ export interface Client {
   updated_at: string;
 }
 
-export type ClientInput = Partial<Omit<Client, "id" | "created_at" | "updated_at" | "organization_id" | "created_by">> & {
+export type ClientInput = Partial<
+  Omit<Client, "id" | "created_at" | "updated_at" | "organization_id" | "created_by">
+> & {
   name: string;
 };
 

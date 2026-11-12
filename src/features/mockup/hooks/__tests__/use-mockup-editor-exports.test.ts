@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useMockupEditorExports, type UseMockupEditorExportsOptions } from "../use-mockup-editor-exports";
+import {
+  useMockupEditorExports,
+  type UseMockupEditorExportsOptions,
+} from "../use-mockup-editor-exports";
 
 const exportMockupImageMock = vi.fn();
 const exportMockupPdfMock = vi.fn();
@@ -65,14 +68,18 @@ describe("useMockupEditorExports", () => {
   beforeEach(() => {
     exportMockupImageMock.mockReset().mockResolvedValue(undefined);
     exportMockupPdfMock.mockReset().mockResolvedValue(undefined);
-    renderMultiViewCanvasMock.mockReset().mockResolvedValue({ toDataURL: () => "data:image/png;base64,MOCK" });
+    renderMultiViewCanvasMock
+      .mockReset()
+      .mockResolvedValue({ toDataURL: () => "data:image/png;base64,MOCK" });
     generateArtPdfMock.mockReset().mockReturnValue({ save: vi.fn() });
     navigateMock.mockReset();
   });
 
   it("handleExportImage chama exportMockupImage e limpa isExporting", async () => {
     const { result } = renderHook(() => useMockupEditorExports(baseOpts()));
-    await act(async () => { await result.current.handleExportImage("png"); });
+    await act(async () => {
+      await result.current.handleExportImage("png");
+    });
     expect(exportMockupImageMock).toHaveBeenCalledOnce();
     expect(result.current.isExporting).toBe(false);
   });
@@ -80,21 +87,27 @@ describe("useMockupEditorExports", () => {
   it("handleExportImage trata erro sem lançar", async () => {
     exportMockupImageMock.mockRejectedValue(new Error("boom"));
     const { result } = renderHook(() => useMockupEditorExports(baseOpts()));
-    await act(async () => { await result.current.handleExportImage("jpeg"); });
+    await act(async () => {
+      await result.current.handleExportImage("jpeg");
+    });
     expect(result.current.isExporting).toBe(false);
   });
 
   it("handleExportPng usa o exportFormat configurado", async () => {
     const opts = { ...baseOpts(), exportFormat: "webp" as const };
     const { result } = renderHook(() => useMockupEditorExports(opts));
-    await act(async () => { await result.current.handleExportPng(); });
+    await act(async () => {
+      await result.current.handleExportPng();
+    });
     const call = exportMockupImageMock.mock.calls[0]?.[0];
     expect(call.exportFormat).toBe("webp");
   });
 
   it("handleExportPdf chama exportMockupPdf com colors e technique", async () => {
     const { result } = renderHook(() => useMockupEditorExports(baseOpts()));
-    await act(async () => { await result.current.handleExportPdf(); });
+    await act(async () => {
+      await result.current.handleExportPdf();
+    });
     expect(exportMockupPdfMock).toHaveBeenCalledOnce();
     const call = exportMockupPdfMock.mock.calls[0]?.[0];
     expect(call.technique).toBe("DTF");
@@ -105,14 +118,18 @@ describe("useMockupEditorExports", () => {
     const saveMock = vi.fn();
     generateArtPdfMock.mockReturnValue({ save: saveMock });
     const { result } = renderHook(() => useMockupEditorExports(baseOpts()));
-    act(() => { result.current.handleExportArt(); });
+    act(() => {
+      result.current.handleExportArt();
+    });
     expect(generateArtPdfMock).toHaveBeenCalledOnce();
     expect(saveMock).toHaveBeenCalledWith("arte-final-SKU-1.pdf");
   });
 
   it("handleOpenServiceOrder navega com prefill contendo mockupImageUrl", async () => {
     const { result } = renderHook(() => useMockupEditorExports(baseOpts()));
-    await act(async () => { await result.current.handleOpenServiceOrder(); });
+    await act(async () => {
+      await result.current.handleOpenServiceOrder();
+    });
     expect(renderMultiViewCanvasMock).toHaveBeenCalledOnce();
     expect(navigateMock).toHaveBeenCalledWith(
       "/mockup/service-order",
@@ -127,7 +144,9 @@ describe("useMockupEditorExports", () => {
   it("handleOpenServiceOrder faz fallback quando renderMultiViewCanvas falha", async () => {
     renderMultiViewCanvasMock.mockRejectedValue(new Error("render fail"));
     const { result } = renderHook(() => useMockupEditorExports(baseOpts()));
-    await act(async () => { await result.current.handleOpenServiceOrder(); });
+    await act(async () => {
+      await result.current.handleOpenServiceOrder();
+    });
     expect(navigateMock).toHaveBeenCalledWith(
       "/mockup/service-order",
       expect.objectContaining({

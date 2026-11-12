@@ -98,10 +98,16 @@ const DownloadMenu = ({ imageUrl, fileName = "mockup" }: Props) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onClick={() => downloadAs(imageUrl, fileName, "png")} className="gap-2 text-xs">
+        <DropdownMenuItem
+          onClick={() => downloadAs(imageUrl, fileName, "png")}
+          className="gap-2 text-xs"
+        >
           <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" /> Baixar PNG
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadAs(imageUrl, fileName, "jpg")} className="gap-2 text-xs">
+        <DropdownMenuItem
+          onClick={() => downloadAs(imageUrl, fileName, "jpg")}
+          className="gap-2 text-xs"
+        >
           <FileImage className="w-3.5 h-3.5" aria-hidden="true" /> Baixar JPG
         </DropdownMenuItem>
         <DropdownMenuSeparator />

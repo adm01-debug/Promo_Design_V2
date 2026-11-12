@@ -35,9 +35,7 @@ export function usePdfPageMemory() {
 
   const rememberPdfPages = useCallback((f: File, pages: number[]) => {
     if (typeof window === "undefined") return;
-    const safe = pages
-      .filter((p) => typeof p === "number" && p >= 1)
-      .map((p) => Math.floor(p));
+    const safe = pages.filter((p) => typeof p === "number" && p >= 1).map((p) => Math.floor(p));
     if (safe.length === 0) return;
     try {
       const map = readPdfPageMemory();
@@ -49,7 +47,9 @@ export function usePdfPageMemory() {
         }
       }
       localStorage.setItem(PDF_PAGE_MEMORY_KEY, JSON.stringify(map));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   return { getRememberedPdfPages, rememberPdfPages };

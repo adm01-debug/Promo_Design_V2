@@ -76,9 +76,7 @@ describe("buildVideoPrompt", () => {
   });
 
   it("ignora presets desconhecidos sem quebrar", () => {
-    expect(() =>
-      buildVideoPrompt({ ...base, motionPresetIds: ["fantasma"] }),
-    ).not.toThrow();
+    expect(() => buildVideoPrompt({ ...base, motionPresetIds: ["fantasma"] })).not.toThrow();
   });
 
   it("incorpora moodboard, cinema e personagem", () => {

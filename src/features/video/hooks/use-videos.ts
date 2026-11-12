@@ -36,7 +36,9 @@ export function useVideos(options: { search?: string } = {}) {
         .order("created_at", { ascending: false });
 
       if (options.search) {
-        q = q.or(`name.ilike.%${options.search}%,product_name.ilike.%${options.search}%,product_sku.ilike.%${options.search}%`);
+        q = q.or(
+          `name.ilike.%${options.search}%,product_name.ilike.%${options.search}%,product_sku.ilike.%${options.search}%`,
+        );
       }
 
       const { data, error } = await q;

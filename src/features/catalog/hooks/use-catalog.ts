@@ -24,7 +24,10 @@ export interface ProductCategory {
   createdAt: string;
 }
 
-function rowToProduct(row: Tables<"catalog_products">, categories?: ProductCategory[]): CatalogProduct {
+function rowToProduct(
+  row: Tables<"catalog_products">,
+  categories?: ProductCategory[],
+): CatalogProduct {
   const cat = categories?.find((c) => c.id === row.category_id);
   return {
     id: row.id,
@@ -57,10 +60,7 @@ export function useCatalog() {
   const categoriesQuery = useQuery({
     queryKey: ["catalog-categories", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("product_categories")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("product_categories").select("*").order("name");
       if (error) throw error;
       return (data ?? []).map(rowToCategory);
     },
@@ -70,10 +70,7 @@ export function useCatalog() {
   const productsQuery = useQuery({
     queryKey: ["catalog-products", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("catalog_products")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("catalog_products").select("*").order("name");
       if (error) throw error;
       return (data ?? []).map((r) => rowToProduct(r, categoriesQuery.data));
     },
@@ -82,7 +79,14 @@ export function useCatalog() {
 
   // --- Mutations ---
   const addProduct = useMutation({
-    mutationFn: async (p: { name: string; sku?: string; material?: string; colors?: string; imageUrl?: string; categoryId?: string }) => {
+    mutationFn: async (p: {
+      name: string;
+      sku?: string;
+      material?: string;
+      colors?: string;
+      imageUrl?: string;
+      categoryId?: string;
+    }) => {
       const { error } = await supabase.from("catalog_products").insert({
         user_id: user!.id,
         name: p.name,
@@ -98,16 +102,28 @@ export function useCatalog() {
   });
 
   const updateProduct = useMutation({
-    mutationFn: async (p: { id: string; name: string; sku?: string | null; material?: string | null; colors?: string | null; imageUrl?: string | null; categoryId?: string | null; active?: boolean }) => {
-      const { error } = await supabase.from("catalog_products").update({
-        name: p.name,
-        sku: p.sku || null,
-        material: p.material || null,
-        colors: p.colors || null,
-        image_url: p.imageUrl || null,
-        category_id: p.categoryId || null,
-        active: p.active ?? true,
-      }).eq("id", p.id);
+    mutationFn: async (p: {
+      id: string;
+      name: string;
+      sku?: string | null;
+      material?: string | null;
+      colors?: string | null;
+      imageUrl?: string | null;
+      categoryId?: string | null;
+      active?: boolean;
+    }) => {
+      const { error } = await supabase
+        .from("catalog_products")
+        .update({
+          name: p.name,
+          sku: p.sku || null,
+          material: p.material || null,
+          colors: p.colors || null,
+          image_url: p.imageUrl || null,
+          category_id: p.categoryId || null,
+          active: p.active ?? true,
+        })
+        .eq("id", p.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["catalog-products"] }),

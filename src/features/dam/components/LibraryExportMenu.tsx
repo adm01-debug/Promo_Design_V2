@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Download, FileSpreadsheet, FileText, Loader2, Database, AlertTriangle, Settings2, History, Repeat2, Trash2 } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  Database,
+  AlertTriangle,
+  Settings2,
+  History,
+  Repeat2,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -90,16 +101,26 @@ function readHistory(): ExportHistoryEntry[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((e): e is ExportHistoryEntry =>
-      e && typeof e === "object" &&
-      (e.kind === "csv" || e.kind === "pdf") &&
-      (e.scope === "current" || e.scope === "all"),
-    ).slice(0, HISTORY_LIMIT);
-  } catch { return []; }
+    return parsed
+      .filter(
+        (e): e is ExportHistoryEntry =>
+          e &&
+          typeof e === "object" &&
+          (e.kind === "csv" || e.kind === "pdf") &&
+          (e.scope === "current" || e.scope === "all"),
+      )
+      .slice(0, HISTORY_LIMIT);
+  } catch {
+    return [];
+  }
 }
 
 function writeHistory(items: ExportHistoryEntry[]): void {
-  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT))); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT)));
+  } catch {
+    /* ignore */
+  }
 }
 
 function formatRelative(ts: number): string {
@@ -128,7 +149,11 @@ function readCols<Id extends string>(key: string, allowed: readonly Id[], fallba
 }
 
 function writeCols<Id extends string>(key: string, cols: Id[]): void {
-  try { localStorage.setItem(key, JSON.stringify(cols)); } catch { /* quota / disabled */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(cols));
+  } catch {
+    /* quota / disabled */
+  }
 }
 
 export function LibraryExportMenu({
@@ -141,7 +166,9 @@ export function LibraryExportMenu({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ loaded: number; total: number } | null>(null);
-  const [confirmAll, setConfirmAll] = useState<null | { kind: "csv" | "pdf"; estSec: number }>(null);
+  const [confirmAll, setConfirmAll] = useState<null | { kind: "csv" | "pdf"; estSec: number }>(
+    null,
+  );
   // Column selections (persisted) for CSV/PDF.
   const csvAllIds = CSV_COLUMNS.map((c) => c.id) as CsvColumnId[];
   const pdfAllIds = PDF_COLUMNS.map((c) => c.id) as PdfColumnId[];
@@ -186,14 +213,26 @@ export function LibraryExportMenu({
       toast.warning("Nenhum asset para exportar");
       return;
     }
-    const csv = buildAssetsCsvWithMetadata(assets, clients, {
-      ...filtersSummary,
-      shown: count,
-      total,
-    }, csvCols);
+    const csv = buildAssetsCsvWithMetadata(
+      assets,
+      clients,
+      {
+        ...filtersSummary,
+        shown: count,
+        total,
+      },
+      csvCols,
+    );
     const ts = format(new Date(), "yyyyMMdd-HHmmss");
     downloadCsv(`dam-assets-${ts}.csv`, csv);
-    recordExport({ kind: "csv", scope: "current", rows: count, filters, filtersSummary, columns: csvCols });
+    recordExport({
+      kind: "csv",
+      scope: "current",
+      rows: count,
+      filters,
+      filtersSummary,
+      columns: csvCols,
+    });
     toast.success(`CSV exportado (${count} assets)`);
   };
 
@@ -206,7 +245,14 @@ export function LibraryExportMenu({
     try {
       await new Promise((r) => setTimeout(r, 0));
       downloadAssetsPdf(assets, clients, { ...filtersSummary, shown: count, total }, pdfCols);
-      recordExport({ kind: "pdf", scope: "current", rows: count, filters, filtersSummary, columns: pdfCols });
+      recordExport({
+        kind: "pdf",
+        scope: "current",
+        rows: count,
+        filters,
+        filtersSummary,
+        columns: pdfCols,
+      });
       toast.success(`PDF exportado (${count} assets)`);
     } catch (e) {
       toast.error(`Falha ao gerar PDF: ${e instanceof Error ? e.message : "erro"}`);
@@ -225,30 +271,56 @@ export function LibraryExportMenu({
     setProgress({ loaded: 0, total });
     const toastId = toast.loading(`Carregando ${total.toLocaleString("pt-BR")} assets…`);
     try {
-      const { assets: all, truncated, totalReported } = await fetchAllFilteredAssets(
-        organizationId,
-        filters,
-        { onProgress: (loaded, t) => setProgress({ loaded, total: t || total }) },
-      );
+      const {
+        assets: all,
+        truncated,
+        totalReported,
+      } = await fetchAllFilteredAssets(organizationId, filters, {
+        onProgress: (loaded, t) => setProgress({ loaded, total: t || total }),
+      });
       toast.loading(`Gerando ${kind.toUpperCase()}…`, { id: toastId });
       await new Promise((r) => setTimeout(r, 0));
 
       if (kind === "csv") {
-        const csv = buildAssetsCsvWithMetadata(all, clients, {
-          ...filtersSummary,
-          shown: all.length,
-          total: totalReported || all.length,
-        }, csvCols);
+        const csv = buildAssetsCsvWithMetadata(
+          all,
+          clients,
+          {
+            ...filtersSummary,
+            shown: all.length,
+            total: totalReported || all.length,
+          },
+          csvCols,
+        );
         const ts = format(new Date(), "yyyyMMdd-HHmmss");
         downloadCsv(`dam-assets-todos-${ts}.csv`, csv);
-        recordExport({ kind: "csv", scope: "all", rows: all.length, filters, filtersSummary, columns: csvCols });
+        recordExport({
+          kind: "csv",
+          scope: "all",
+          rows: all.length,
+          filters,
+          filtersSummary,
+          columns: csvCols,
+        });
       } else {
-        downloadAssetsPdf(all, clients, {
-          ...filtersSummary,
-          shown: all.length,
-          total: totalReported || all.length,
-        }, pdfCols);
-        recordExport({ kind: "pdf", scope: "all", rows: all.length, filters, filtersSummary, columns: pdfCols });
+        downloadAssetsPdf(
+          all,
+          clients,
+          {
+            ...filtersSummary,
+            shown: all.length,
+            total: totalReported || all.length,
+          },
+          pdfCols,
+        );
+        recordExport({
+          kind: "pdf",
+          scope: "all",
+          rows: all.length,
+          filters,
+          filtersSummary,
+          columns: pdfCols,
+        });
       }
 
       const msg = truncated
@@ -281,18 +353,29 @@ export function LibraryExportMenu({
   const repeatExport = async (entry: ExportHistoryEntry) => {
     // Restore the column selection that was used previously.
     if (entry.kind === "csv") {
-      const cols = entry.columns.filter((c): c is CsvColumnId => (csvAllIds as string[]).includes(c));
-      if (cols.length > 0) { setCsvCols(cols); writeCols(CSV_COLS_KEY, cols); }
+      const cols = entry.columns.filter((c): c is CsvColumnId =>
+        (csvAllIds as string[]).includes(c),
+      );
+      if (cols.length > 0) {
+        setCsvCols(cols);
+        writeCols(CSV_COLS_KEY, cols);
+      }
     } else {
-      const cols = entry.columns.filter((c): c is PdfColumnId => (pdfAllIds as string[]).includes(c));
-      if (cols.length > 0) { setPdfCols(cols); writeCols(PDF_COLS_KEY, cols); }
+      const cols = entry.columns.filter((c): c is PdfColumnId =>
+        (pdfAllIds as string[]).includes(c),
+      );
+      if (cols.length > 0) {
+        setPdfCols(cols);
+        writeCols(PDF_COLS_KEY, cols);
+      }
     }
     if (entry.scope === "all") {
       // Defer to the same confirm flow so large repeats still get a heads-up.
       triggerAllExport(entry.kind);
       return;
     }
-    if (entry.kind === "csv") handleCsv(); else await handlePdf();
+    if (entry.kind === "csv") handleCsv();
+    else await handlePdf();
   };
 
   return (
@@ -303,7 +386,9 @@ export function LibraryExportMenu({
           size="sm"
           className="gap-1.5 mr-1"
           disabled={busy}
-          onClick={() => { void repeatExport(history[0]); }}
+          onClick={() => {
+            void repeatExport(history[0]);
+          }}
           title={`Repetir: ${history[0].label} (${formatRelative(history[0].at)})`}
           aria-label={`Repetir última exportação: ${history[0].label}`}
         >
@@ -330,7 +415,9 @@ export function LibraryExportMenu({
               {history.map((h) => (
                 <DropdownMenuItem
                   key={h.id}
-                  onClick={() => { void repeatExport(h); }}
+                  onClick={() => {
+                    void repeatExport(h);
+                  }}
                   disabled={busy}
                   title={`Repetir ${h.label}`}
                 >
@@ -341,10 +428,7 @@ export function LibraryExportMenu({
                   </span>
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuItem
-                onClick={clearHistory}
-                className="text-xs text-muted-foreground"
-              >
+              <DropdownMenuItem onClick={clearHistory} className="text-xs text-muted-foreground">
                 <Trash2 className="w-3.5 h-3.5" />
                 Limpar histórico
               </DropdownMenuItem>
@@ -368,7 +452,10 @@ export function LibraryExportMenu({
             Colunas
           </DropdownMenuLabel>
           <DropdownMenuItem
-            onSelect={(e) => { e.preventDefault(); setCsvDialogOpen(true); }}
+            onSelect={(e) => {
+              e.preventDefault();
+              setCsvDialogOpen(true);
+            }}
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span className="flex-1">Colunas do CSV</span>
@@ -377,7 +464,10 @@ export function LibraryExportMenu({
             </span>
           </DropdownMenuItem>
           <DropdownMenuItem
-            onSelect={(e) => { e.preventDefault(); setPdfDialogOpen(true); }}
+            onSelect={(e) => {
+              e.preventDefault();
+              setPdfDialogOpen(true);
+            }}
           >
             <FileText className="w-4 h-4" />
             <span className="flex-1">Colunas do PDF</span>
@@ -408,7 +498,8 @@ export function LibraryExportMenu({
               <div className="flex items-start gap-1 text-amber-600 dark:text-amber-500">
                 <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
                 <span>
-                  Limite de {MAX_EXPORT_ROWS.toLocaleString("pt-BR")} linhas — refine os filtros para incluir tudo.
+                  Limite de {MAX_EXPORT_ROWS.toLocaleString("pt-BR")} linhas — refine os filtros
+                  para incluir tudo.
                 </span>
               </div>
             )}
@@ -452,25 +543,33 @@ export function LibraryExportMenu({
 
       <AlertDialog
         open={confirmAll !== null}
-        onOpenChange={(o) => { if (!o) setConfirmAll(null); }}
+        onOpenChange={(o) => {
+          if (!o) setConfirmAll(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              Exportar {Math.min(total, MAX_EXPORT_ROWS).toLocaleString("pt-BR")} assets em {confirmAll?.kind.toUpperCase()}?
+              Exportar {Math.min(total, MAX_EXPORT_ROWS).toLocaleString("pt-BR")} assets em{" "}
+              {confirmAll?.kind.toUpperCase()}?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <p>
-                  Esta exportação inclui todos os assets que correspondem aos filtros atuais (não apenas a página visível).
+                  Esta exportação inclui todos os assets que correspondem aos filtros atuais (não
+                  apenas a página visível).
                 </p>
                 <p>
-                  Tempo estimado: <strong>~{confirmAll?.estSec ?? 1}s</strong> para baixar e gerar o arquivo. Mantenha esta aba aberta até concluir.
+                  Tempo estimado: <strong>~{confirmAll?.estSec ?? 1}s</strong> para baixar e gerar o
+                  arquivo. Mantenha esta aba aberta até concluir.
                 </p>
                 {willTruncate && (
                   <p className="text-amber-600 dark:text-amber-500">
-                    Aviso: o resultado tem mais de {MAX_EXPORT_ROWS.toLocaleString("pt-BR")} linhas. Apenas as primeiras {MAX_EXPORT_ROWS.toLocaleString("pt-BR")} serão incluídas (ordenadas: mais recentes primeiro). Refine os filtros para uma exportação completa.
+                    Aviso: o resultado tem mais de {MAX_EXPORT_ROWS.toLocaleString("pt-BR")} linhas.
+                    Apenas as primeiras {MAX_EXPORT_ROWS.toLocaleString("pt-BR")} serão incluídas
+                    (ordenadas: mais recentes primeiro). Refine os filtros para uma exportação
+                    completa.
                   </p>
                 )}
               </div>

@@ -13,13 +13,7 @@ export type Placement = {
 
 export type HistoryEntry = { placement: Placement; logoPreview: string | null };
 
-export type BlendMode =
-  | "normal"
-  | "multiply"
-  | "screen"
-  | "overlay"
-  | "darken"
-  | "color-burn";
+export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "darken" | "color-burn";
 
 export type ExportFormat = "png" | "jpeg" | "webp";
 

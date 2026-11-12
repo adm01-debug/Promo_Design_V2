@@ -32,9 +32,7 @@ const mockItems: MagicUpHistoryItem[] = [
 ];
 
 vi.mock("@/features/magic-up", async () => {
-  const actual = await vi.importActual<typeof import("@/features/magic-up")>(
-    "@/features/magic-up",
-  );
+  const actual = await vi.importActual<typeof import("@/features/magic-up")>("@/features/magic-up");
   return {
     ...actual,
     useMagicUpHistory: () => ({

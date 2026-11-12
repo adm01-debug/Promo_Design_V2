@@ -148,6 +148,15 @@ export function useVideoGeneration() {
       isCancelling: cancel.isPending,
       reset,
     }),
-    [job, jobId, enqueue.isPending, enqueue.mutate, cancel.mutate, cancel.isPending, isTerminal, reset],
+    [
+      job,
+      jobId,
+      enqueue.isPending,
+      enqueue.mutate,
+      cancel.mutate,
+      cancel.isPending,
+      isTerminal,
+      reset,
+    ],
   );
 }

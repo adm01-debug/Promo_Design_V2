@@ -3,7 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sparkles, TrendingUp, Users, Target, Download } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -26,7 +32,10 @@ export function BrandRecommendationPanel() {
   const [clientId, setClientId] = useState<string>("__all__");
   const [days, setDays] = useState<number>(30);
   const { clients = [] } = useClients(currentOrgId);
-  const { data, isLoading } = useBrandRecommendationStats(days, clientId === "__all__" ? null : clientId);
+  const { data, isLoading } = useBrandRecommendationStats(
+    days,
+    clientId === "__all__" ? null : clientId,
+  );
 
   function handleExportCsv() {
     const rows = data?.daily ?? [];
@@ -37,7 +46,6 @@ export function BrandRecommendationPanel() {
     ].join("\n");
     downloadCsv(`recomendacoes-marca-${days}d.csv`, csv);
   }
-
 
   if (isLoading) {
     return (
@@ -113,7 +121,6 @@ export function BrandRecommendationPanel() {
             <Badge variant="outline" className="text-[10px] font-mono">
               {data?.window_days ?? days}d
             </Badge>
-
           </div>
         </CardTitle>
       </CardHeader>
@@ -143,9 +150,7 @@ export function BrandRecommendationPanel() {
 
         {daily.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">
-              Aplicações por dia
-            </p>
+            <p className="text-xs font-medium text-muted-foreground">Aplicações por dia</p>
             <div className="flex h-14 items-end gap-0.5 rounded-md border border-border/60 bg-muted/20 p-2">
               {daily.map((d) => {
                 const h = Math.max(2, Math.round((d.n / maxDaily) * 100));
@@ -182,7 +187,10 @@ export function BrandRecommendationPanel() {
               {recent.slice(0, 5).map((item, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs">
                   <span className="text-muted-foreground">
-                    {formatDistanceToNow(new Date(item.created_at), { locale: ptBR, addSuffix: true })}
+                    {formatDistanceToNow(new Date(item.created_at), {
+                      locale: ptBR,
+                      addSuffix: true,
+                    })}
                   </span>
                   <span className="flex items-center gap-2">
                     <Badge variant="outline" className="text-[10px]">

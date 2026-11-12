@@ -33,7 +33,6 @@ export const SIZE_RANGE_KEY = "dam-size-range";
 export const UPDATED_RANGE_KEY = "dam-updated-range";
 export const CUSTOM_SIZE_KEY = "dam-custom-size-range";
 
-
 export type SortValue =
   | "relevance"
   | "created_desc"
@@ -61,8 +60,18 @@ export const SORT_OPTIONS: SortOption[] = [
   { value: "name_desc", label: "Nome Z→A", sortBy: "name", sortDir: "desc" },
   { value: "size_desc", label: "Maior arquivo", sortBy: "file_size", sortDir: "desc" },
   { value: "size_asc", label: "Menor arquivo", sortBy: "file_size", sortDir: "asc" },
-  { value: "updated_desc", label: "Modificados recentemente", sortBy: "updated_at", sortDir: "desc" },
-  { value: "updated_asc", label: "Modificados há mais tempo", sortBy: "updated_at", sortDir: "asc" },
+  {
+    value: "updated_desc",
+    label: "Modificados recentemente",
+    sortBy: "updated_at",
+    sortDir: "desc",
+  },
+  {
+    value: "updated_asc",
+    label: "Modificados há mais tempo",
+    sortBy: "updated_at",
+    sortDir: "asc",
+  },
   { value: "version_desc", label: "Versão", sortBy: "version", sortDir: "desc" },
 ];
 
@@ -99,7 +108,14 @@ export const UPDATED_RANGE_OPTIONS: UpdatedRangeOption[] = [
   { value: "90d", label: "Últimos 90 dias", hours: 24 * 90 },
 ];
 
-export const VALID_ASSET_TYPES: AssetType[] = ["logo", "art", "photo", "mockup", "document", "other"];
+export const VALID_ASSET_TYPES: AssetType[] = [
+  "logo",
+  "art",
+  "photo",
+  "mockup",
+  "document",
+  "other",
+];
 
 export const TYPES: { value: AssetType | "all"; label: string }[] = [
   { value: "all", label: "Todos" },

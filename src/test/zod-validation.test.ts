@@ -3,14 +3,36 @@ import { serviceOrderSchema, validateForm } from "@/features/service-orders";
 
 describe("Zod serviceOrderSchema", () => {
   const validData = {
-    osNumber: "OS-2604-0001", date: "2026-04-03", deliveryDate: "",
-    clientName: "Test Client", clientCompany: "", clientPhone: "", clientEmail: "",
-    productName: "Caneca", productSku: "", productMaterial: "", productColors: "",
-    technique: "Laser Fiber", areaName: "", areaWidth: "", areaHeight: "",
-    areaShape: "", artColors: "", artDpi: "", artFile: "", artFileDataUrl: "",
-    quantity: "100", observations: "", mockupImageUrl: "",
-    identificacaoCaixa: "", materialEvento: false, aprovarPrimeiraPeca: false,
-    qtdCompra: "", qtdLiberada: "", fazParteKit: false, gravacaoDetalhe: "",
+    osNumber: "OS-2604-0001",
+    date: "2026-04-03",
+    deliveryDate: "",
+    clientName: "Test Client",
+    clientCompany: "",
+    clientPhone: "",
+    clientEmail: "",
+    productName: "Caneca",
+    productSku: "",
+    productMaterial: "",
+    productColors: "",
+    technique: "Laser Fiber",
+    areaName: "",
+    areaWidth: "",
+    areaHeight: "",
+    areaShape: "",
+    artColors: "",
+    artDpi: "",
+    artFile: "",
+    artFileDataUrl: "",
+    quantity: "100",
+    observations: "",
+    mockupImageUrl: "",
+    identificacaoCaixa: "",
+    materialEvento: false,
+    aprovarPrimeiraPeca: false,
+    qtdCompra: "",
+    qtdLiberada: "",
+    fazParteKit: false,
+    gravacaoDetalhe: "",
   };
 
   it("validates valid data successfully", () => {
@@ -55,7 +77,11 @@ describe("Zod serviceOrderSchema", () => {
 
   it("accumulates all errors", () => {
     const errors = validateForm({
-      ...validData, clientName: "", productName: "", technique: "", quantity: "0",
+      ...validData,
+      clientName: "",
+      productName: "",
+      technique: "",
+      quantity: "0",
     });
     expect(Object.keys(errors).length).toBe(4);
   });

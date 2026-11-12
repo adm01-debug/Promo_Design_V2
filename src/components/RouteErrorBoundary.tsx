@@ -57,7 +57,11 @@ class RouteErrorBoundary extends Component<Props, State> {
             <Button onClick={this.handleRetry} className="flex-1 gap-2 shadow-sm">
               <RefreshCw className="w-4 h-4" /> Tentar novamente
             </Button>
-            <Button onClick={this.handleHardReset} variant="outline" className="flex-1 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5">
+            <Button
+              onClick={this.handleHardReset}
+              variant="outline"
+              className="flex-1 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5"
+            >
               Limpar Cache
             </Button>
           </div>

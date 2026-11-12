@@ -12,7 +12,10 @@ const MagicUpPrompts = () => {
 
   const filtered = SAMPLE_PROMPTS.filter((p) => {
     const matchCategory = category === "Todos" || p.category === category;
-    const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.prompt.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      !search ||
+      p.title.toLowerCase().includes(search.toLowerCase()) ||
+      p.prompt.toLowerCase().includes(search.toLowerCase());
     return matchCategory && matchSearch;
   });
 
@@ -51,7 +54,9 @@ const MagicUpPrompts = () => {
         <button
           onClick={() => setCategory("Todos")}
           className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
-            category === "Todos" ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
+            category === "Todos"
+              ? "bg-primary/20 text-primary border border-primary/40"
+              : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
           }`}
         >
           Todos
@@ -61,7 +66,9 @@ const MagicUpPrompts = () => {
             key={cat}
             onClick={() => setCategory(cat)}
             className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors ${
-              category === cat ? "bg-primary/20 text-primary border border-primary/40" : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
+              category === cat
+                ? "bg-primary/20 text-primary border border-primary/40"
+                : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground"
             }`}
           >
             {cat}
@@ -81,11 +88,15 @@ const MagicUpPrompts = () => {
           >
             <div className="flex items-start justify-between mb-2">
               <div>
-                <span className="text-[10px] font-mono uppercase text-primary bg-primary/10 px-2 py-0.5 rounded">{p.category}</span>
+                <span className="text-[10px] font-mono uppercase text-primary bg-primary/10 px-2 py-0.5 rounded">
+                  {p.category}
+                </span>
                 <h3 className="text-sm font-semibold text-foreground mt-2">{p.title}</h3>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3 font-mono leading-relaxed">{p.prompt}</p>
+            <p className="text-xs text-muted-foreground mb-3 font-mono leading-relaxed">
+              {p.prompt}
+            </p>
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -106,7 +117,10 @@ const MagicUpPrompts = () => {
             {p.tags.length > 0 && (
               <div className="flex gap-1 mt-3 flex-wrap">
                 {p.tags.map((tag) => (
-                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground">
+                  <span
+                    key={tag}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-surface-2 text-muted-foreground"
+                  >
                     #{tag}
                   </span>
                 ))}

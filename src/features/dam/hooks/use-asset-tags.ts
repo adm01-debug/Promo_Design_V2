@@ -2,7 +2,17 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import type { Asset } from "../hooks/use-assets";
 
-export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, updateAsset: { mutateAsync: (args: { id: string; patch: { tags?: string[] } & Record<string, unknown>; lockVersion?: number }) => Promise<Asset> }) {
+export function useAssetTags(
+  asset: Asset | null,
+  assets: Asset[] | undefined,
+  updateAsset: {
+    mutateAsync: (args: {
+      id: string;
+      patch: { tags?: string[] } & Record<string, unknown>;
+      lockVersion?: number;
+    }) => Promise<Asset>;
+  },
+) {
   const [editingTags, setEditingTags] = useState(false);
   const [tagsDraft, setTagsDraft] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
@@ -26,10 +36,10 @@ export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, u
     if (!asset || tagError) return;
     setSavingTags(true);
     try {
-      await updateAsset.mutateAsync({ 
-        id: asset.id, 
+      await updateAsset.mutateAsync({
+        id: asset.id,
         patch: { tags: tagsDraft },
-        lockVersion: (asset as Asset & { lock_version?: number }).lock_version 
+        lockVersion: (asset as Asset & { lock_version?: number }).lock_version,
       });
       toast.success("Tags atualizadas");
       setEditingTags(false);
@@ -49,6 +59,6 @@ export function useAssetTags(asset: Asset | null, assets: Asset[] | undefined, u
     setTagError,
     savingTags,
     tagSuggestions,
-    handleSaveTags
+    handleSaveTags,
   };
 }

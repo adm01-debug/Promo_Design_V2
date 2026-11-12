@@ -76,9 +76,12 @@ function push(entry: LogEntry, error?: unknown) {
         : entry.level === "warn"
           ? console.warn
           : console.log;
-    
+
     // In dev, we use a more readable output but still provide the structured data
-    consoleFn(`[${entry.level.toUpperCase()}]${entry.requestId ? ` [RID:${entry.requestId}]` : ''} ${entry.message}`, logData);
+    consoleFn(
+      `[${entry.level.toUpperCase()}]${entry.requestId ? ` [RID:${entry.requestId}]` : ""} ${entry.message}`,
+      logData,
+    );
   } else if (entry.level === "error" || entry.level === "fatal" || entry.level === "warn") {
     // In production, we log as JSON for structured log collectors
     console.log(JSON.stringify(logData));
@@ -102,28 +105,12 @@ export const ErrorLogger = {
 
   error(message: string, error?: unknown, context?: Record<string, unknown>) {
     const err = error instanceof Error ? error : undefined;
-    push(
-      createEntry(
-        "error",
-        message,
-        { ...context, errorName: err?.name },
-        err?.stack,
-      ),
-      error,
-    );
+    push(createEntry("error", message, { ...context, errorName: err?.name }, err?.stack), error);
   },
 
   fatal(message: string, error?: unknown, context?: Record<string, unknown>) {
     const err = error instanceof Error ? error : undefined;
-    push(
-      createEntry(
-        "fatal",
-        message,
-        { ...context, errorName: err?.name },
-        err?.stack,
-      ),
-      error,
-    );
+    push(createEntry("fatal", message, { ...context, errorName: err?.name }, err?.stack), error);
   },
 
   /** Returns a shallow copy of the ring-buffer (oldest → newest). */

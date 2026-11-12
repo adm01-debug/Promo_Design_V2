@@ -7,7 +7,12 @@ interface MiniSparklineProps {
   height?: number;
 }
 
-const MiniSparkline = ({ data, color = "hsl(var(--primary))", width = 60, height = 20 }: MiniSparklineProps) => {
+const MiniSparkline = ({
+  data,
+  color = "hsl(var(--primary))",
+  width = 60,
+  height = 20,
+}: MiniSparklineProps) => {
   if (!data.length || data.every((v) => v === 0)) return null;
 
   const max = Math.max(...data, 1);
@@ -16,9 +21,7 @@ const MiniSparkline = ({ data, color = "hsl(var(--primary))", width = 60, height
     y: height - (v / max) * height,
   }));
 
-  const pathD = points
-    .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-    .join(" ");
+  const pathD = points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(" ");
 
   return (
     <motion.svg

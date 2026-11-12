@@ -8,7 +8,11 @@ vi.mock("@/hooks/use-organization", () => ({
   useOrganizations: () => ({ currentOrgId: "org-1", can: () => true }),
 }));
 vi.mock("@/hooks/use-auth", () => ({
-  useAuth: () => ({ user: { id: "user-1", email: "test@test.com" }, session: null, loading: false }),
+  useAuth: () => ({
+    user: { id: "user-1", email: "test@test.com" },
+    session: null,
+    loading: false,
+  }),
 }));
 
 import EditorRightPanel from "./EditorRightPanel";
@@ -33,7 +37,7 @@ const queryClient = new QueryClient({
 });
 
 function makeDefaults(overrides: Partial<MockupEditorContextValue> = {}): MockupEditorContextValue {
-  return ({
+  return {
     productName: "Test Product",
     productSku: "SKU-123",
     productImage: "/test.jpg",
@@ -65,7 +69,9 @@ function makeDefaults(overrides: Partial<MockupEditorContextValue> = {}): Mockup
     currentPlacement: { x: 10, y: 10, scale: 0.8, rotation: 0, flipH: false, flipV: false },
     updatePlacement: vi.fn(),
     currentViewLabel: "Frente",
-    views: [{ id: "front", label: "Frente", icon: "🟦", areaPercent: { x: 0, y: 0, w: 100, h: 100 } }],
+    views: [
+      { id: "front", label: "Frente", icon: "🟦", areaPercent: { x: 0, y: 0, w: 100, h: 100 } },
+    ],
     approvedViews: new Set(),
     toggleApproval: vi.fn(),
     exportFormat: "png",
@@ -95,7 +101,7 @@ function makeDefaults(overrides: Partial<MockupEditorContextValue> = {}): Mockup
     setSelectedClientId: vi.fn(),
 
     ...overrides,
-  }) as MockupEditorContextValue;
+  } as MockupEditorContextValue;
 }
 
 function renderPanel(value: MockupEditorContextValue) {

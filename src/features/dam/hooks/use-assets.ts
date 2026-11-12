@@ -99,7 +99,8 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       const page = Math.max(1, filters.page ?? 1);
       const pageSize = filters.pageSize ?? 0;
       const searchTerm = filters.search?.trim() ?? "";
-      const effectiveSearch = searchTerm.length >= MIN_SEARCH_LENGTH ? sanitizeSearchTerm(searchTerm) : "";
+      const effectiveSearch =
+        searchTerm.length >= MIN_SEARCH_LENGTH ? sanitizeSearchTerm(searchTerm) : "";
       const useRelevance = sortBy === "relevance" && effectiveSearch.length > 0;
 
       if (useRelevance) {
@@ -127,9 +128,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
         const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
         if (error) throw error;
         const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
-        const filteredRows = filters.archivedOnly
-          ? rows.filter((r) => r.is_archived)
-          : rows;
+        const filteredRows = filters.archivedOnly ? rows.filter((r) => r.is_archived) : rows;
         return {
           rows: filteredRows as unknown as Asset[],
           total: filters.archivedOnly ? filteredRows.length : (rows[0]?.total_count ?? 0),
@@ -174,7 +173,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       if (error) throw error;
       return {
         rows: (data ?? []) as unknown as Asset[],
-        total: count ?? (data?.length ?? 0),
+        total: count ?? data?.length ?? 0,
       };
     },
   });
@@ -193,7 +192,15 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch, lockVersion }: { id: string; patch: Partial<AssetInsert> & { is_archived?: boolean }; lockVersion?: number }) => {
+    mutationFn: async ({
+      id,
+      patch,
+      lockVersion,
+    }: {
+      id: string;
+      patch: Partial<AssetInsert> & { is_archived?: boolean };
+      lockVersion?: number;
+    }) => {
       let q = supabase.from("assets").update(patch).eq("id", id);
       if (typeof lockVersion === "number") {
         q = q.eq("lock_version", lockVersion);
@@ -201,7 +208,9 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       const { data, error } = await q.select().single();
       if (error) {
         if (error.code === "PGRST116") {
-          throw new Error("Conflito de concorrência: o registro foi alterado ou excluído por outro usuário.");
+          throw new Error(
+            "Conflito de concorrência: o registro foi alterado ou excluído por outro usuário.",
+          );
         }
         throw error;
       }
@@ -212,7 +221,10 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
 
   const archive = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("assets").update({ is_archived: true, updated_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase
+        .from("assets")
+        .update({ is_archived: true, updated_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
@@ -220,7 +232,10 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
 
   const restore = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("assets").update({ is_archived: false, updated_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase
+        .from("assets")
+        .update({ is_archived: false, updated_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
@@ -242,7 +257,9 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     total: query.data?.total ?? 0,
     page: filters.page ?? 1,
     pageSize: filters.pageSize ?? 0,
-    totalPages: filters.pageSize ? Math.max(1, Math.ceil((query.data?.total ?? 0) / filters.pageSize)) : 1,
+    totalPages: filters.pageSize
+      ? Math.max(1, Math.ceil((query.data?.total ?? 0) / filters.pageSize))
+      : 1,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     create,
@@ -296,7 +313,8 @@ export function useLatestAssetVersion(assetId: string | null) {
         .maybeSingle();
       if (e1) throw e1;
       if (!current) return { current: null, latest: null, hasUpdate: false };
-      const rootId = (current as unknown as Asset).parent_asset_id ?? (current as unknown as Asset).id;
+      const rootId =
+        (current as unknown as Asset).parent_asset_id ?? (current as unknown as Asset).id;
       const { data: chain, error: e2 } = await supabase
         .from("assets")
         .select("*")

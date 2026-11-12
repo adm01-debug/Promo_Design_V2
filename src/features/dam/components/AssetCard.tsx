@@ -15,7 +15,14 @@ interface AssetCardProps {
   onRestore?: (asset: Asset) => void;
 }
 
-export function AssetCard({ asset, onClick, onHover, onHoverEnd, isQuickActive, onRestore }: AssetCardProps) {
+export function AssetCard({
+  asset,
+  onClick,
+  onHover,
+  onHoverEnd,
+  isQuickActive,
+  onRestore,
+}: AssetCardProps) {
   return (
     <Card
       role={onClick ? "button" : undefined}

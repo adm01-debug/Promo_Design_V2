@@ -5,14 +5,24 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  AlertOctagon, CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCcw,
-  ChevronDown, ChevronRight, Bug, Download,
+  AlertOctagon,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Loader2,
+  RefreshCcw,
+  ChevronDown,
+  ChevronRight,
+  Bug,
+  Download,
 } from "lucide-react";
 import { format, parseISO, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -47,7 +57,10 @@ const SOURCE_LABELS: Record<RunSource, string> = {
   snapshot_manual: "Snapshot (manual)",
 };
 
-const STATUS_META: Record<RunStatus, { label: string; icon: typeof CheckCircle2; className: string }> = {
+const STATUS_META: Record<
+  RunStatus,
+  { label: string; icon: typeof CheckCircle2; className: string }
+> = {
   success: { label: "Sucesso", icon: CheckCircle2, className: "text-emerald-500" },
   error: { label: "Erro", icon: XCircle, className: "text-destructive" },
   skipped: { label: "Ignorada", icon: AlertTriangle, className: "text-muted-foreground" },
@@ -83,14 +96,25 @@ export function MaintenanceFailuresPanel() {
   const exportCsv = () => {
     if (!data) return;
     const rows = data.failures;
-    const header = ["id", "source", "status", "duration_ms", "started_at", "finished_at", "created_at", "error_message"];
+    const header = [
+      "id",
+      "source",
+      "status",
+      "duration_ms",
+      "started_at",
+      "finished_at",
+      "created_at",
+      "error_message",
+    ];
     const escape = (v: unknown) => {
       const s = v == null ? "" : String(v);
       return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const csv = [
       header.join(","),
-      ...rows.map((r) => header.map((h) => escape((r as unknown as Record<string, unknown>)[h])).join(",")),
+      ...rows.map((r) =>
+        header.map((h) => escape((r as unknown as Record<string, unknown>)[h])).join(","),
+      ),
     ].join("\n");
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -105,7 +129,8 @@ export function MaintenanceFailuresPanel() {
     <div className="space-y-3 pt-4 border-t">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h3 className="text-sm font-semibold flex items-center gap-2">
-          <AlertOctagon className="h-4 w-4 text-muted-foreground" /> Falhas & diagnóstico de manutenção
+          <AlertOctagon className="h-4 w-4 text-muted-foreground" /> Falhas & diagnóstico de
+          manutenção
         </h3>
         <div className="flex items-center gap-2">
           <Select value={String(daysBack)} onValueChange={(v) => setDaysBack(Number(v))}>
@@ -194,7 +219,10 @@ export function MaintenanceFailuresPanel() {
                   ? "bg-destructive"
                   : "bg-muted-foreground/40";
               return (
-                <div key={src} className="flex items-center justify-between p-2 rounded-md border text-xs">
+                <div
+                  key={src}
+                  className="flex items-center justify-between p-2 rounded-md border text-xs"
+                >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={`h-2 w-2 rounded-full shrink-0 ${dot}`} />
                     <span className="font-mono">{SOURCE_LABELS[src]}</span>
@@ -228,7 +256,11 @@ export function MaintenanceFailuresPanel() {
                   const Icon = meta.icon;
                   const isOpen = openRow === f.id;
                   return (
-                    <Collapsible key={f.id} open={isOpen} onOpenChange={(o) => setOpenRow(o ? f.id : null)}>
+                    <Collapsible
+                      key={f.id}
+                      open={isOpen}
+                      onOpenChange={(o) => setOpenRow(o ? f.id : null)}
+                    >
                       <Card className="p-2 text-xs">
                         <CollapsibleTrigger className="flex items-center justify-between w-full gap-2 text-left">
                           <div className="flex items-center gap-2 min-w-0">
@@ -238,7 +270,10 @@ export function MaintenanceFailuresPanel() {
                               <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
                             )}
                             <Icon className={`h-3.5 w-3.5 shrink-0 ${meta.className}`} />
-                            <Badge variant="outline" className="text-[9px] uppercase font-mono h-4 px-1 shrink-0">
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] uppercase font-mono h-4 px-1 shrink-0"
+                            >
                               {SOURCE_LABELS[f.source] ?? f.source}
                             </Badge>
                             <span className="text-muted-foreground truncate">
@@ -254,16 +289,21 @@ export function MaintenanceFailuresPanel() {
                             <span className="text-foreground">status:</span> {meta.label}
                           </div>
                           <div>
-                            <span className="text-foreground">origem:</span> {SOURCE_LABELS[f.source] ?? f.source}
+                            <span className="text-foreground">origem:</span>{" "}
+                            {SOURCE_LABELS[f.source] ?? f.source}
                           </div>
                           <div>
                             <span className="text-foreground">iniciada:</span>{" "}
-                            {format(parseISO(f.started_at), "dd/MM/yy HH:mm:ss.SSS", { locale: ptBR })}
+                            {format(parseISO(f.started_at), "dd/MM/yy HH:mm:ss.SSS", {
+                              locale: ptBR,
+                            })}
                           </div>
                           {f.finished_at && (
                             <div>
                               <span className="text-foreground">finalizada:</span>{" "}
-                              {format(parseISO(f.finished_at), "dd/MM/yy HH:mm:ss.SSS", { locale: ptBR })}
+                              {format(parseISO(f.finished_at), "dd/MM/yy HH:mm:ss.SSS", {
+                                locale: ptBR,
+                              })}
                             </div>
                           )}
                           {f.duration_ms != null && (
@@ -285,7 +325,8 @@ export function MaintenanceFailuresPanel() {
             </div>
           ) : (
             <div className="flex items-center gap-2 p-2 rounded-md border text-xs text-emerald-500">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Nenhuma falha registrada nos últimos {data.days_back} dias.
+              <CheckCircle2 className="h-3.5 w-3.5" /> Nenhuma falha registrada nos últimos{" "}
+              {data.days_back} dias.
             </div>
           )}
         </>
@@ -316,7 +357,9 @@ function SummaryTile({
   return (
     <Card className="p-2.5">
       <div className="text-[10px] uppercase text-muted-foreground font-mono">{label}</div>
-      <div className={`text-xl font-semibold font-mono ${toneClass}`}>{value.toLocaleString("pt-BR")}</div>
+      <div className={`text-xl font-semibold font-mono ${toneClass}`}>
+        {value.toLocaleString("pt-BR")}
+      </div>
       <div className="text-[10px] text-muted-foreground">{hint}</div>
     </Card>
   );

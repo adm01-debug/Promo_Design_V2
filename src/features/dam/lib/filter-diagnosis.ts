@@ -10,12 +10,7 @@ const TYPE_LABELS: Record<AssetType, string> = {
   other: "Outro",
 };
 
-export type DiagnosisCauseKind =
-  | "assetTypes"
-  | "clientId"
-  | "tags"
-  | "includeArchived"
-  | "search";
+export type DiagnosisCauseKind = "assetTypes" | "clientId" | "tags" | "includeArchived" | "search";
 
 export interface DiagnosisCause {
   kind: DiagnosisCauseKind;
@@ -60,7 +55,7 @@ export function diagnoseAssetRemoval(
   ) {
     const filterName = options.clientNameById?.[state.clientId] ?? "selecionado";
     const assetClientName = asset.client_id
-      ? options.clientNameById?.[asset.client_id] ?? "outro cliente"
+      ? (options.clientNameById?.[asset.client_id] ?? "outro cliente")
       : "sem cliente";
     causes.push({
       kind: "clientId",
@@ -74,9 +69,7 @@ export function diagnoseAssetRemoval(
     const lowerFilterTags = state.tags.map((t) => t.toLowerCase());
     const matches = lowerFilterTags.filter((t) => lowerAssetTags.includes(t));
     const passes =
-      state.tagsMode === "all"
-        ? matches.length === lowerFilterTags.length
-        : matches.length > 0;
+      state.tagsMode === "all" ? matches.length === lowerFilterTags.length : matches.length > 0;
     if (!passes) {
       const modeLabel = state.tagsMode === "all" ? "todas" : "qualquer";
       const have = assetTags.length > 0 ? assetTags.join(", ") : "nenhuma";

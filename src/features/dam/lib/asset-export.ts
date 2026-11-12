@@ -13,39 +13,66 @@ function escape(value: string): string {
 
 /** All available CSV columns. Order here defines default column order. */
 export const CSV_COLUMNS = [
-  { id: "id",            label: "ID",             get: (a: Asset) => a.id },
-  { id: "name",          label: "Nome",           get: (a: Asset) => a.name },
-  { id: "type",          label: "Tipo",           get: (a: Asset) => a.asset_type },
-  { id: "client",        label: "Cliente",        get: (a: Asset, c: string) => c },
-  { id: "version",       label: "Versão",         get: (a: Asset) => String(a.version ?? "") },
-  { id: "file_size",     label: "Tamanho (bytes)", get: (a: Asset) => a.file_size != null ? String(a.file_size) : "" },
-  { id: "mime_type",     label: "MIME",           get: (a: Asset) => a.mime_type ?? "" },
-  { id: "tags",          label: "Tags",           get: (a: Asset) => (a.tags ?? []).join("|") },
-  { id: "colors",        label: "Cores dominantes", get: (a: Asset) => (a.dominant_colors ?? []).join("|") },
-  { id: "width",         label: "Largura (px)",   get: (a: Asset) => a.width != null ? String(a.width) : "" },
-  { id: "height",        label: "Altura (px)",    get: (a: Asset) => a.height != null ? String(a.height) : "" },
-  { id: "description",   label: "Descrição",      get: (a: Asset) => a.description ?? "" },
-  { id: "ocr_status",    label: "OCR status",     get: (a: Asset) => a.ocr_status ?? "" },
-  { id: "is_archived",   label: "Arquivado",      get: (a: Asset) => a.is_archived ? "true" : "false" },
-  { id: "created_at",    label: "Criado em",      get: (a: Asset) => a.created_at },
-  { id: "updated_at",    label: "Atualizado em",  get: (a: Asset) => a.updated_at },
-  { id: "storage_path",  label: "Caminho",        get: (a: Asset) => a.file_path },
+  { id: "id", label: "ID", get: (a: Asset) => a.id },
+  { id: "name", label: "Nome", get: (a: Asset) => a.name },
+  { id: "type", label: "Tipo", get: (a: Asset) => a.asset_type },
+  { id: "client", label: "Cliente", get: (a: Asset, c: string) => c },
+  { id: "version", label: "Versão", get: (a: Asset) => String(a.version ?? "") },
+  {
+    id: "file_size",
+    label: "Tamanho (bytes)",
+    get: (a: Asset) => (a.file_size != null ? String(a.file_size) : ""),
+  },
+  { id: "mime_type", label: "MIME", get: (a: Asset) => a.mime_type ?? "" },
+  { id: "tags", label: "Tags", get: (a: Asset) => (a.tags ?? []).join("|") },
+  {
+    id: "colors",
+    label: "Cores dominantes",
+    get: (a: Asset) => (a.dominant_colors ?? []).join("|"),
+  },
+  {
+    id: "width",
+    label: "Largura (px)",
+    get: (a: Asset) => (a.width != null ? String(a.width) : ""),
+  },
+  {
+    id: "height",
+    label: "Altura (px)",
+    get: (a: Asset) => (a.height != null ? String(a.height) : ""),
+  },
+  { id: "description", label: "Descrição", get: (a: Asset) => a.description ?? "" },
+  { id: "ocr_status", label: "OCR status", get: (a: Asset) => a.ocr_status ?? "" },
+  { id: "is_archived", label: "Arquivado", get: (a: Asset) => (a.is_archived ? "true" : "false") },
+  { id: "created_at", label: "Criado em", get: (a: Asset) => a.created_at },
+  { id: "updated_at", label: "Atualizado em", get: (a: Asset) => a.updated_at },
+  { id: "storage_path", label: "Caminho", get: (a: Asset) => a.file_path },
 ] as const;
 
 export type CsvColumnId = (typeof CSV_COLUMNS)[number]["id"];
 
 /** Default column selection — matches the original BASE_HEADERS order. */
 export const DEFAULT_CSV_COLUMNS: CsvColumnId[] = [
-  "id", "name", "type", "client", "version", "file_size", "mime_type",
-  "tags", "colors", "is_archived", "created_at", "updated_at", "storage_path",
+  "id",
+  "name",
+  "type",
+  "client",
+  "version",
+  "file_size",
+  "mime_type",
+  "tags",
+  "colors",
+  "is_archived",
+  "created_at",
+  "updated_at",
+  "storage_path",
 ];
 
 /** Headers used by the ZIP manifest (always full, independent of UI column choice). */
 const BASE_HEADERS = DEFAULT_CSV_COLUMNS;
 
-function pickColumns(ids: CsvColumnId[]): typeof CSV_COLUMNS[number][] {
+function pickColumns(ids: CsvColumnId[]): (typeof CSV_COLUMNS)[number][] {
   const map = new Map(CSV_COLUMNS.map((c) => [c.id, c] as const));
-  const picked: typeof CSV_COLUMNS[number][] = [];
+  const picked: (typeof CSV_COLUMNS)[number][] = [];
   for (const id of ids) {
     const col = map.get(id);
     if (col) picked.push(col);
@@ -68,7 +95,11 @@ function clientName(asset: Asset, clientMap: Map<string, string>): string {
   return clientMap.get(asset.client_id) ?? "";
 }
 
-export function buildAssetsCsv(assets: Asset[], clients: Client[], columns?: CsvColumnId[]): string {
+export function buildAssetsCsv(
+  assets: Asset[],
+  clients: Client[],
+  columns?: CsvColumnId[],
+): string {
   const map = new Map(clients.map((c) => [c.id, c.name]));
   const header = headersFor(columns).join(",");
   const lines = assets.map((a) => rowFor(a, clientName(a, map), columns).map(escape).join(","));
@@ -97,10 +128,7 @@ export function buildAssetsCsvWithMetadata(
   columns?: CsvColumnId[],
 ): string {
   const generatedAt = format(new Date(), "dd/MM/yyyy HH:mm");
-  const meta: string[] = [
-    "# Biblioteca de Assets — Exportação",
-    `# Gerado em ${generatedAt}`,
-  ];
+  const meta: string[] = ["# Biblioteca de Assets — Exportação", `# Gerado em ${generatedAt}`];
   for (const [label, value] of buildFilterRows(filters)) {
     // Escape line breaks inside values so each metadata line is exactly one row.
     const safeValue = String(value).replace(/[\r\n]+/g, " ");
@@ -123,7 +151,12 @@ export function downloadCsv(filename: string, csv: string): void {
 }
 
 function safeName(name: string): string {
-  return name.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_").slice(0, 120) || "asset";
+  return (
+    name
+      .replace(/[/\\?%*:|"<>]/g, "_")
+      .replace(/\s+/g, "_")
+      .slice(0, 120) || "asset"
+  );
 }
 
 function formatBytes(bytes?: number | null): string {
@@ -131,7 +164,10 @@ function formatBytes(bytes?: number | null): string {
   const units = ["B", "KB", "MB", "GB"];
   let i = 0;
   let n = bytes;
-  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
   return `${n.toFixed(n >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
@@ -167,7 +203,9 @@ export function buildManifestPdf(opts: ManifestPdfOptions): Blob {
     `Gerado em ${generatedAt}`,
     opts.scopeLabel ?? "",
     `${opts.rows.length} assets · ${totalOk} ok${totalFailed > 0 ? ` · ${totalFailed} falha(s)` : ""}`,
-  ].filter(Boolean).join("  ·  ");
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
   doc.text(meta, margin, y);
   y += 16;
   doc.setTextColor(0);
@@ -221,7 +259,8 @@ export function buildManifestPdf(opts: ManifestPdfOptions): Blob {
     doc.text(`Tags: ${tags}`, margin + 4, y + 6);
     y += lineH;
     const path = zipPath || asset.file_path;
-    const pathClipped = doc.splitTextToSize(`Arquivo: ${path}`, pageWidth - margin * 2 - 8)[0] ?? path;
+    const pathClipped =
+      doc.splitTextToSize(`Arquivo: ${path}`, pageWidth - margin * 2 - 8)[0] ?? path;
     doc.text(pathClipped, margin + 4, y + 6);
     doc.setTextColor(0);
     y += lineH + 6;
@@ -263,15 +302,23 @@ function extFromMime(mime?: string | null, fallbackPath?: string): string {
   }
   if (!mime) return "bin";
   const map: Record<string, string> = {
-    "image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg",
-    "image/webp": "webp", "image/svg+xml": "svg", "image/gif": "gif",
-    "application/pdf": "pdf", "application/zip": "zip",
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+    "image/gif": "gif",
+    "application/pdf": "pdf",
+    "application/zip": "zip",
   };
   return map[mime] ?? mime.split("/")[1] ?? "bin";
 }
 
 export class ExportCanceledError extends Error {
-  constructor() { super("Exportação cancelada"); this.name = "ExportCanceledError"; }
+  constructor() {
+    super("Exportação cancelada");
+    this.name = "ExportCanceledError";
+  }
 }
 
 function checkAborted(signal?: AbortSignal): void {
@@ -320,7 +367,11 @@ export async function downloadAssetsZip(
       failed++;
     }
 
-    manifestRows.push([...rowFor(asset, clientName(asset, map)), status, status === "ok" ? candidate : ""]);
+    manifestRows.push([
+      ...rowFor(asset, clientName(asset, map)),
+      status,
+      status === "ok" ? candidate : "",
+    ]);
     pdfRows.push({ asset, status, zipPath: status === "ok" ? candidate : "" });
     onProgress?.(i + 1, assets.length);
   }
@@ -329,12 +380,15 @@ export async function downloadAssetsZip(
   const header = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
   const manifest = [header, ...manifestRows.map((r) => r.map(escape).join(","))].join("\n");
   zip.file("manifest.csv", `\ufeff${manifest}`);
-  zip.file("manifest.pdf", buildManifestPdf({
-    title: "Manifesto de Assets",
-    scopeLabel: `${assets.length} assets`,
-    rows: pdfRows,
-    clientMap: map,
-  }));
+  zip.file(
+    "manifest.pdf",
+    buildManifestPdf({
+      title: "Manifesto de Assets",
+      scopeLabel: `${assets.length} assets`,
+      rows: pdfRows,
+      clientMap: map,
+    }),
+  );
 
   const blob = await zip.generateAsync({ type: "blob" });
   const url = URL.createObjectURL(blob);
@@ -368,7 +422,10 @@ export async function downloadAssetsZipsByType(
 }> {
   const map = new Map(clients.map((c) => [c.id, c.name]));
   const master = new JSZip();
-  const perType = new Map<string, { zip: JSZip; used: Map<string, number>; rows: string[][]; ok: number; failed: number }>();
+  const perType = new Map<
+    string,
+    { zip: JSZip; used: Map<string, number>; rows: string[][]; ok: number; failed: number }
+  >();
   const globalRows: string[][] = [];
   const perTypePdfRows = new Map<string, ManifestPdfOptions["rows"]>();
   const globalPdfRows: ManifestPdfOptions["rows"] = [];
@@ -416,7 +473,11 @@ export async function downloadAssetsZipsByType(
       failed++;
     }
 
-    const row = [...rowFor(asset, clientName(asset, map)), status, status === "ok" ? candidate : ""];
+    const row = [
+      ...rowFor(asset, clientName(asset, map)),
+      status,
+      status === "ok" ? candidate : "",
+    ];
     bucket.rows.push(row);
     globalRows.push([...rowFor(asset, clientName(asset, map)), status, zipPath]);
     if (!perTypePdfRows.has(type)) perTypePdfRows.set(type, []);
@@ -432,12 +493,15 @@ export async function downloadAssetsZipsByType(
   for (const [type, bucket] of perType) {
     const manifest = [perTypeHeader, ...bucket.rows.map((r) => r.map(escape).join(","))].join("\n");
     bucket.zip.file("manifest.csv", `\ufeff${manifest}`);
-    bucket.zip.file("manifest.pdf", buildManifestPdf({
-      title: `Manifesto — ${type}`,
-      scopeLabel: `${bucket.rows.length} assets`,
-      rows: perTypePdfRows.get(type) ?? [],
-      clientMap: map,
-    }));
+    bucket.zip.file(
+      "manifest.pdf",
+      buildManifestPdf({
+        title: `Manifesto — ${type}`,
+        scopeLabel: `${bucket.rows.length} assets`,
+        rows: perTypePdfRows.get(type) ?? [],
+        clientMap: map,
+      }),
+    );
     const nestedBlob = await bucket.zip.generateAsync({ type: "blob" });
     master.file(`${safeName(type)}.zip`, nestedBlob);
     byType[type] = { ok: bucket.ok, failed: bucket.failed };
@@ -445,15 +509,20 @@ export async function downloadAssetsZipsByType(
 
   // Global manifest at the top of the master ZIP.
   const globalHeader = [...BASE_HEADERS, "download_status", "zip_path"].join(",");
-  const globalManifest = [globalHeader, ...globalRows.map((r) => r.map(escape).join(","))].join("\n");
+  const globalManifest = [globalHeader, ...globalRows.map((r) => r.map(escape).join(","))].join(
+    "\n",
+  );
   master.file("manifest.csv", `\ufeff${globalManifest}`);
-  master.file("manifest.pdf", buildManifestPdf({
-    title: "Manifesto de Assets — por tipo",
-    scopeLabel: `${assets.length} assets · ${perType.size} tipo(s)`,
-    rows: globalPdfRows,
-    clientMap: map,
-    groupByType: true,
-  }));
+  master.file(
+    "manifest.pdf",
+    buildManifestPdf({
+      title: "Manifesto de Assets — por tipo",
+      scopeLabel: `${assets.length} assets · ${perType.size} tipo(s)`,
+      rows: globalPdfRows,
+      clientMap: map,
+      groupByType: true,
+    }),
+  );
 
   const blob = await master.generateAsync({ type: "blob" });
   const url = URL.createObjectURL(blob);

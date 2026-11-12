@@ -29,10 +29,7 @@ async function loadPdfjs() {
   if (!pdfjsPromise) {
     pdfjsPromise = (async () => {
       const pdfjs = await import("pdfjs-dist");
-      const workerUrl = new URL(
-        "pdfjs-dist/build/pdf.worker.min.mjs",
-        import.meta.url
-      ).toString();
+      const workerUrl = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
       pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
       return pdfjs;
     })();
@@ -59,7 +56,7 @@ export async function rasterizePdfFirstPage(
   targetWidth = 512,
   mime: "image/jpeg" | "image/png" = "image/jpeg",
   quality = 0.85,
-  pageNumber = 1
+  pageNumber = 1,
 ): Promise<RasterResult | null> {
   try {
     const pdfjs = await loadPdfjs();
@@ -77,7 +74,7 @@ export async function rasterizePdfFirstPage(
     if (!ctx) return null;
     await page.render({ canvasContext: ctx, viewport, canvas }).promise;
     const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob((b) => resolve(b), mime, quality)
+      canvas.toBlob((b) => resolve(b), mime, quality),
     );
     return {
       blob,
@@ -111,7 +108,7 @@ export async function rasterizeSvg(
   file: File,
   targetMax = 256,
   mime: "image/jpeg" | "image/png" = "image/jpeg",
-  quality = 0.85
+  quality = 0.85,
 ): Promise<RasterResult | null> {
   const text = await file.text();
   const svgBlob = new Blob([text], { type: "image/svg+xml" });
@@ -147,7 +144,7 @@ export async function rasterizeSvg(
               canvas,
             }),
           mime,
-          quality
+          quality,
         );
       };
       img.onerror = () => resolve(null);
@@ -181,9 +178,7 @@ export function extractDominantColors(canvas: HTMLCanvasElement): string[] {
       .slice(0, 3)
       .map(([k]) => {
         const [r, g, b] = k.split(",").map(Number);
-        return (
-          "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("")
-        );
+        return "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("");
       });
   } catch {
     return [];

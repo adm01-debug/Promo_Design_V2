@@ -6,9 +6,7 @@
     "noUnusedParameters": false,
     "strictNullChecks": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "skipLibCheck": true
   },

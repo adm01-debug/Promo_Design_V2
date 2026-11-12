@@ -66,10 +66,7 @@ export function useMagicUpHistory() {
 
   const toggleFavMutation = useMutation({
     mutationFn: async (id: string) => {
-      const current = queryClient.getQueryData<MagicUpHistoryItem[]>([
-        "magicup-history",
-        user?.id,
-      ]);
+      const current = queryClient.getQueryData<MagicUpHistoryItem[]>(["magicup-history", user?.id]);
       const item = current?.find((i) => i.id === id);
       if (!item) return;
       const { error } = await supabase
@@ -108,17 +105,21 @@ export function useMagicUpHistory() {
     (entry: Omit<MagicUpHistoryItem, "id" | "createdAt" | "favorite">) => {
       addMutation.mutate(entry);
     },
-    [addMutation]
+    [addMutation],
   );
 
   const toggleFavorite = useCallback(
-    (id: string) => { toggleFavMutation.mutate(id); },
-    [toggleFavMutation]
+    (id: string) => {
+      toggleFavMutation.mutate(id);
+    },
+    [toggleFavMutation],
   );
 
   const deleteItem = useCallback(
-    (id: string) => { deleteMutation.mutate(id); },
-    [deleteMutation]
+    (id: string) => {
+      deleteMutation.mutate(id);
+    },
+    [deleteMutation],
   );
 
   return { items, addGeneration, toggleFavorite, deleteItem };

@@ -8,7 +8,7 @@ import { PREVIEW_QS_KEY, COMPARE_IDS_KEY } from "../pages/DamPreviewPage";
 export function usePreviewSync(
   searchParams: URLSearchParams,
   setSearchParams: (next: URLSearchParams, options?: { replace?: boolean }) => void,
-  compareSelectedIds: string[]
+  compareSelectedIds: string[],
 ) {
   const navigate = useNavigate();
   const didRestoreSessionRef = useRef(false);
@@ -19,11 +19,15 @@ export function usePreviewSync(
     didRestoreSessionRef.current = true;
     if (typeof window === "undefined") return;
     if (searchParams.toString() !== "") return;
-    
+
     let saved: string | null = null;
-    try { saved = sessionStorage.getItem(PREVIEW_QS_KEY); } catch { /* ignore */ }
+    try {
+      saved = sessionStorage.getItem(PREVIEW_QS_KEY);
+    } catch {
+      /* ignore */
+    }
     if (!saved) return;
-    
+
     const trimmed = saved.startsWith("?") ? saved.slice(1) : saved;
     if (!trimmed) return;
     navigate(`/dam/preview?${trimmed}`, { replace: true });
@@ -35,7 +39,9 @@ export function usePreviewSync(
     try {
       const qs = searchParams.toString();
       if (qs) sessionStorage.setItem(PREVIEW_QS_KEY, qs);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [searchParams]);
 
   // Persist compare selection
@@ -46,7 +52,9 @@ export function usePreviewSync(
       } else {
         sessionStorage.removeItem(COMPARE_IDS_KEY);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [compareSelectedIds]);
 
   return { didRestore: didRestoreSessionRef.current };

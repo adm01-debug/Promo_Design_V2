@@ -134,9 +134,7 @@ export function ActiveFiltersSummaryPanel({
     <div className="border-b border-border bg-muted/20" data-testid="active-filters-summary">
       <div className="px-4 py-2 flex items-center gap-2">
         <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-xs font-medium text-muted-foreground">
-          Filtros ativos
-        </span>
+        <span className="text-xs font-medium text-muted-foreground">Filtros ativos</span>
         <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono tabular-nums">
           {chips.length}
         </Badge>
@@ -197,7 +195,11 @@ export function ActiveFiltersSummaryPanel({
             >
               {chip.suspect && <AlertTriangle className="w-2.5 h-2.5" />}
               <span className="truncate max-w-[220px]">{chip.label}</span>
-              {chip.onClear && <span aria-hidden className="text-muted-foreground">×</span>}
+              {chip.onClear && (
+                <span aria-hidden className="text-muted-foreground">
+                  ×
+                </span>
+              )}
             </button>
           ))}
         </div>

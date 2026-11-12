@@ -6,15 +6,15 @@ isoladamente — nada é escondido atrás de um step sequencial.
 
 ## Gates executados em cada PR
 
-| Job                  | Comando                              | Bloqueia merge? |
-| -------------------- | ------------------------------------ | --------------- |
-| **Typecheck**        | `tsc --noEmit -p tsconfig.app.json`  | ✅ sim          |
-| **Lint**             | `eslint . --max-warnings=0`          | ✅ sim          |
-| **Format**           | `prettier --check`                   | ✅ sim          |
-| **Tests (Vitest)**   | `vitest run` (+ JUnit report)        | ✅ sim          |
-| **Build (Vite)**     | `vite build`                         | ✅ sim          |
-| **Edge (Deno)**      | `deno test` para `_shared` + `*_test.ts` | ✅ sim      |
-| **Quality Gate**     | Agrega os 6 acima em um único check  | ✅ sim          |
+| Job                | Comando                                  | Bloqueia merge? |
+| ------------------ | ---------------------------------------- | --------------- |
+| **Typecheck**      | `tsc --noEmit -p tsconfig.app.json`      | ✅ sim          |
+| **Lint**           | `eslint . --max-warnings=0`              | ✅ sim          |
+| **Format**         | `prettier --check`                       | ✅ sim          |
+| **Tests (Vitest)** | `vitest run` (+ JUnit report)            | ✅ sim          |
+| **Build (Vite)**   | `vite build`                             | ✅ sim          |
+| **Edge (Deno)**    | `deno test` para `_shared` + `*_test.ts` | ✅ sim          |
+| **Quality Gate**   | Agrega os 6 acima em um único check      | ✅ sim          |
 
 Suites pesadas (**load tests**, **Playwright E2E**, **audit PDF**) rodam
 apenas em `push` para `main`/`master` — não bloqueiam revisões e usam

@@ -46,9 +46,15 @@ export function useAssetOcr(asset: Asset | null, searchQuery?: string) {
         headers: { "X-Request-Id": requestId },
       });
       if (error) throw error;
-      const result = data as { ok?: boolean; length?: number; hasText?: boolean; skipped?: boolean; error?: string };
+      const result = data as {
+        ok?: boolean;
+        length?: number;
+        hasText?: boolean;
+        skipped?: boolean;
+        error?: string;
+      };
       if (result?.error) throw new Error(result.error);
-      
+
       const { data: row } = await supabase
         .from("assets")
         .select("ocr_text, ocr_status")
@@ -58,7 +64,7 @@ export function useAssetOcr(asset: Asset | null, searchQuery?: string) {
         setOcrText((row as { ocr_text: string | null }).ocr_text);
         setOcrStatus((row as { ocr_status: string }).ocr_status);
       }
-      
+
       if (result?.skipped) {
         toast.info("Tipo de arquivo não suporta OCR");
       } else if (result?.hasText) {
@@ -104,6 +110,6 @@ export function useAssetOcr(asset: Asset | null, searchQuery?: string) {
     setOcrOpen,
     ocrClearing,
     runOcr,
-    clearOcr
+    clearOcr,
   };
 }

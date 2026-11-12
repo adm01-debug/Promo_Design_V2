@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { cn } from "@/lib/utils";
 import { getProductImageUrl } from "@/features/mockup";
-import type { DbProduct, DbProductImage, DbPrintAreaTechnique, DbCategory, DbProductVariant } from "@/features/mockup";
+import type {
+  DbProduct,
+  DbProductImage,
+  DbPrintAreaTechnique,
+  DbCategory,
+  DbProductVariant,
+} from "@/features/mockup";
 
 // ============================================================
 // cn() utility — exhaustive tests
@@ -87,7 +93,10 @@ describe("cn() — class merging", () => {
 // ============================================================
 describe("getProductImageUrl", () => {
   it("returns primary_image_url when available", () => {
-    const product = { primary_image_url: "https://cdn.example.com/primary.jpg", image_url: "https://cdn.example.com/fallback.jpg" };
+    const product = {
+      primary_image_url: "https://cdn.example.com/primary.jpg",
+      image_url: "https://cdn.example.com/fallback.jpg",
+    };
     expect(getProductImageUrl(product)).toBe("https://cdn.example.com/primary.jpg");
   });
 
@@ -178,7 +187,13 @@ describe("DbProduct type shape", () => {
 
   it("handles dimensions with all fields", () => {
     const product = makeProduct({
-      dimensions: { width_cm: 10, height_cm: 15, length_cm: 5, shape_type: "rectangle", diameter_cm: 0 },
+      dimensions: {
+        width_cm: 10,
+        height_cm: 15,
+        length_cm: 5,
+        shape_type: "rectangle",
+        diameter_cm: 0,
+      },
     });
     expect(product.dimensions?.width_cm).toBe(10);
     expect(product.dimensions?.shape_type).toBe("rectangle");

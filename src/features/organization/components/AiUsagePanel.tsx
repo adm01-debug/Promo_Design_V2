@@ -9,7 +9,11 @@ interface Props {
 }
 
 const currency = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 }).format(v);
+  new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  }).format(v);
 
 const compact = (n: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(n);
@@ -106,7 +110,8 @@ export function AiUsagePanel({ organizationId }: Props) {
               Tokens (in / out)
             </div>
             <div className="mt-1 text-sm font-semibold text-foreground tabular-nums">
-              {compact(data.totalTokensIn)} <span className="text-muted-foreground">/</span> {compact(data.totalTokensOut)}
+              {compact(data.totalTokensIn)} <span className="text-muted-foreground">/</span>{" "}
+              {compact(data.totalTokensOut)}
             </div>
           </div>
         </div>
@@ -116,13 +121,20 @@ export function AiUsagePanel({ organizationId }: Props) {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Cota mensal</span>
               <span className="font-mono tabular-nums">
-                {currency(data.totalCost)} / {currency(data.quota)} ({data.quotaUsedPct.toFixed(1)}%)
+                {currency(data.totalCost)} / {currency(data.quota)} ({data.quotaUsedPct.toFixed(1)}
+                %)
               </span>
             </div>
             <Progress
               value={data.quotaUsedPct}
               aria-label={`Cota mensal de IA: ${data.quotaUsedPct.toFixed(1)} por cento utilizada`}
-              className={isCritical ? "[&>div]:bg-destructive" : isWarning ? "[&>div]:bg-amber-500" : undefined}
+              className={
+                isCritical
+                  ? "[&>div]:bg-destructive"
+                  : isWarning
+                    ? "[&>div]:bg-amber-500"
+                    : undefined
+              }
             />
           </div>
         )}

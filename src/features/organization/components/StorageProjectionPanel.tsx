@@ -145,7 +145,8 @@ export function StorageProjectionPanel() {
                     )}
                   </div>
                   <span className={`font-mono ${growing ? "text-amber-500" : "text-emerald-500"}`}>
-                    {growing ? "+" : ""}{formatBytes(p.slopeBytesPerDay)}/dia
+                    {growing ? "+" : ""}
+                    {formatBytes(p.slopeBytesPerDay)}/dia
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-1 pt-1">
@@ -155,8 +156,12 @@ export function StorageProjectionPanel() {
                     { label: "+90d", value: p.in90d },
                   ].map((m) => (
                     <div key={m.label} className="p-1 rounded bg-muted/40 text-center">
-                      <div className="text-[9px] uppercase text-muted-foreground font-mono">{m.label}</div>
-                      <div className="text-[10px] font-mono font-medium">{formatBytes(m.value)}</div>
+                      <div className="text-[9px] uppercase text-muted-foreground font-mono">
+                        {m.label}
+                      </div>
+                      <div className="text-[10px] font-mono font-medium">
+                        {formatBytes(m.value)}
+                      </div>
                     </div>
                   ))}
                 </div>

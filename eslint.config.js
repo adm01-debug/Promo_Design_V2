@@ -24,11 +24,14 @@ export default tseslint.config(
       // shadcn/ui e contextos co-exportam variants/hooks por design — a regra
       // gera falso-positivo. Mantida como "off" no lint estrito.
       "react-refresh/only-export-components": "off",
-      "@typescript-eslint/no-unused-vars": ["error", { 
-        "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-        "caughtErrorsIgnorePattern": "^_"
-      }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       "@typescript-eslint/no-explicit-any": "error",
       // Non-null assertion is idiomatic and safe in specific contexts:
       // - Deno.env.get() in Edge Functions (fail-fast on missing secrets)

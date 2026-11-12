@@ -58,10 +58,9 @@ beforeEach(() => {
 
 describe("useClientDesignRecommendation", () => {
   it("returns source='none' when nothing available", async () => {
-    const { result } = renderHook(
-      () => useClientDesignRecommendation("org-1", "client-1"),
-      { wrapper },
-    );
+    const { result } = renderHook(() => useClientDesignRecommendation("org-1", "client-1"), {
+      wrapper,
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.source).toBe("none");
     expect(result.current.data?.confidence).toBe(0);
@@ -79,10 +78,9 @@ describe("useClientDesignRecommendation", () => {
       confidence: 0.85,
     };
     orgRow = null;
-    const { result } = renderHook(
-      () => useClientDesignRecommendation("org-1", "client-1"),
-      { wrapper },
-    );
+    const { result } = renderHook(() => useClientDesignRecommendation("org-1", "client-1"), {
+      wrapper,
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.source).toBe("client");
     expect(result.current.data?.placement).toEqual({ x: 0.5, y: 0.3, scale: 0.35 });
@@ -105,10 +103,9 @@ describe("useClientDesignRecommendation", () => {
       sample_size: 200,
       confidence: 0.5,
     };
-    const { result } = renderHook(
-      () => useClientDesignRecommendation("org-1", "client-1"),
-      { wrapper },
-    );
+    const { result } = renderHook(() => useClientDesignRecommendation("org-1", "client-1"), {
+      wrapper,
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.source).toBe("organization");
     expect(result.current.data?.placement?.x).toBeCloseTo(0.6);
@@ -117,28 +114,35 @@ describe("useClientDesignRecommendation", () => {
   });
 
   it("does not run when organizationId is null", () => {
-    const { result } = renderHook(
-      () => useClientDesignRecommendation(null, "client-1"),
-      { wrapper },
-    );
+    const { result } = renderHook(() => useClientDesignRecommendation(null, "client-1"), {
+      wrapper,
+    });
     expect(result.current.fetchStatus).toBe("idle");
   });
 
   it("skips client lookup when clientId is null", async () => {
-    clientRow = { // would incorrectly match if code queried client
-      logo_x_percent_p50: 10, logo_y_percent_p50: 10, logo_scale_p50: 0.1,
-      opacity_p50: null, preferred_blend_modes: {}, preferred_surface_types: {},
-      sample_size: 0, confidence: 0,
+    clientRow = {
+      // would incorrectly match if code queried client
+      logo_x_percent_p50: 10,
+      logo_y_percent_p50: 10,
+      logo_scale_p50: 0.1,
+      opacity_p50: null,
+      preferred_blend_modes: {},
+      preferred_surface_types: {},
+      sample_size: 0,
+      confidence: 0,
     };
     orgRow = {
-      logo_x_percent_p50: 60, logo_y_percent_p50: 40, logo_scale_p50: 0.4,
-      opacity_p50: null, preferred_blend_modes: {}, preferred_surface_types: {},
-      sample_size: 5, confidence: 0.3,
+      logo_x_percent_p50: 60,
+      logo_y_percent_p50: 40,
+      logo_scale_p50: 0.4,
+      opacity_p50: null,
+      preferred_blend_modes: {},
+      preferred_surface_types: {},
+      sample_size: 5,
+      confidence: 0.3,
     };
-    const { result } = renderHook(
-      () => useClientDesignRecommendation("org-1", null),
-      { wrapper },
-    );
+    const { result } = renderHook(() => useClientDesignRecommendation("org-1", null), { wrapper });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.source).toBe("organization");
     expect(result.current.data?.placement?.scale).toBeCloseTo(0.4);

@@ -1,6 +1,7 @@
 # Relatório de Dependências e Cobertura das Edge Functions
 
 ## asset-ocr
+
 - **Status**: Produção
 - **Tabelas Usadas**:
   - `assets`: SELECT, UPDATE (status, ocr_text)
@@ -12,6 +13,7 @@
 - **Resiliência**: Fetch with Retry (Max 3, Exponential Backoff)
 
 ## mockup-ai
+
 - **Status**: Produção
 - **Tabelas Usadas**:
   - `organization_members`: SELECT (org_id)
@@ -24,6 +26,7 @@
 - **Resiliência**: Fetch with Retry (Max 3, Exponential Backoff)
 
 ## Cobertura de Testes
+
 - Testes unitários para validação de entrada (Zod)
 - Testes de integração para autenticação e erros 400
 - Logs estruturados com requestId em todas as funções

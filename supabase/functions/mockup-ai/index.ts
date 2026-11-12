@@ -9,8 +9,10 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  const isAllowed = ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
-  
+  const isAllowed = ALLOWED_ORIGINS.some(
+    (allowed) => origin === allowed || origin.endsWith(".lovable.app"),
+  );
+
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers":
@@ -29,7 +31,11 @@ function jsonResponse(data: unknown, status: number, req: Request) {
 /**
  * Exponential backoff fetch
  */
-async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries = 3): Promise<Response> {
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries = 3,
+): Promise<Response> {
   let lastError: Error | null = null;
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -44,7 +50,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, maxRetries
     }
     if (i < maxRetries - 1) {
       const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
   throw lastError || new Error(`Fetch failed after ${maxRetries} attempts`);
@@ -104,7 +110,7 @@ serve(async (req) => {
       return jsonResponse(
         { error: "Validação falhou", details: parsed.error.flatten().fieldErrors, requestId },
         400,
-        req
+        req,
       );
     }
     const body = parsed.data;
@@ -112,7 +118,7 @@ serve(async (req) => {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } },
     );
 
     const { data: userData, error: userErr } = await supabase.auth.getUser();
@@ -141,10 +147,17 @@ serve(async (req) => {
 
     // Check quota before call
     if (orgId) {
-      const { data: hasQuota } = await admin.rpc("check_ai_quota", { _org_id: orgId, _required_cost: 0 });
+      const { data: hasQuota } = await admin.rpc("check_ai_quota", {
+        _org_id: orgId,
+        _required_cost: 0,
+      });
       if (hasQuota === false) {
         console.warn(`[${requestId}] Quota exceeded for org \${orgId}`);
-        return jsonResponse({ error: "Quota de IA da organização atingida para este mês.", requestId }, 403, req);
+        return jsonResponse(
+          { error: "Quota de IA da organização atingida para este mês.", requestId },
+          403,
+          req,
+        );
       }
     }
 
@@ -202,10 +215,25 @@ serve(async (req) => {
         const t = await response.text().catch(() => "");
         console.error(`[${requestId}] AI gateway error (remove-bg):`, response.status, t);
         if (response.status === 429) {
-          return jsonResponse({ error: "Limite de requisições excedido. Tente novamente em alguns segundos.", requestId }, 429, req);
+          return jsonResponse(
+            {
+              error: "Limite de requisições excedido. Tente novamente em alguns segundos.",
+              requestId,
+            },
+            429,
+            req,
+          );
         }
         if (response.status === 402) {
-          return jsonResponse({ error: "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.", requestId }, 402, req);
+          return jsonResponse(
+            {
+              error:
+                "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.",
+              requestId,
+            },
+            402,
+            req,
+          );
         }
         return jsonResponse({ error: "Erro no serviço de IA", requestId }, 500, req);
       }
@@ -224,7 +252,7 @@ serve(async (req) => {
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
           cost_estimate: 0.01,
-          metadata: { action: body.action }
+          metadata: { action: body.action },
         });
       }
 
@@ -251,7 +279,8 @@ serve(async (req) => {
           messages: [
             {
               role: "system",
-              content: "You are a mockup placement expert. Suggest optimal parameters. Always use the suggest_placement tool.",
+              content:
+                "You are a mockup placement expert. Suggest optimal parameters. Always use the suggest_placement tool.",
             },
             {
               role: "user",
@@ -271,12 +300,27 @@ serve(async (req) => {
                     xPercent: { type: "number" },
                     yPercent: { type: "number" },
                     rotation: { type: "number" },
-                    blendMode: { type: "string", enum: ["normal", "multiply", "screen", "overlay", "darken", "color-burn"] },
-                    surfaceType: { type: "string", enum: ["flat", "curved", "cylindrical", "spherical", "angled"] },
+                    blendMode: {
+                      type: "string",
+                      enum: ["normal", "multiply", "screen", "overlay", "darken", "color-burn"],
+                    },
+                    surfaceType: {
+                      type: "string",
+                      enum: ["flat", "curved", "cylindrical", "spherical", "angled"],
+                    },
                     opacity: { type: "number" },
                     reasoning: { type: "string" },
                   },
-                  required: ["scale", "xPercent", "yPercent", "rotation", "blendMode", "surfaceType", "opacity", "reasoning"],
+                  required: [
+                    "scale",
+                    "xPercent",
+                    "yPercent",
+                    "rotation",
+                    "blendMode",
+                    "surfaceType",
+                    "opacity",
+                    "reasoning",
+                  ],
                 },
               },
             },
@@ -304,7 +348,7 @@ serve(async (req) => {
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
           cost_estimate: 0.001,
-          metadata: { action: body.action }
+          metadata: { action: body.action },
         });
       }
 
@@ -314,7 +358,9 @@ serve(async (req) => {
 
       const suggestion = JSON.parse(toolCall.function.arguments);
       const executionTimeMs = Date.now() - startTimestamp;
-      console.log(`[${requestId}] suggest-placement completed successfully in \${executionTimeMs}ms`);
+      console.log(
+        `[${requestId}] suggest-placement completed successfully in \${executionTimeMs}ms`,
+      );
       return jsonResponse({ ...suggestion, requestId, executionTimeMs }, 200, req);
     }
 
@@ -324,7 +370,7 @@ serve(async (req) => {
     return jsonResponse(
       { error: e instanceof Error ? e.message : "Unknown error", requestId },
       500,
-      req
+      req,
     );
   }
 });

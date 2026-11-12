@@ -23,7 +23,7 @@ export function getCorsHeaders(req: Request): Record<string, string> {
     origin.endsWith(".lovable.dev");
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : ALLOWED_ORIGINS[0],
-    "Vary": "Origin",
+    Vary: "Origin",
     "Access-Control-Allow-Headers": ALLOW_HEADERS,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   };

@@ -31,6 +31,7 @@ const ALLOWED_ORIGINS = [
 ## 🚀 Como Fazer Deploy
 
 ### Opção 1: Via Dashboard do Supabase (Recomendado)
+
 1. Acesse: https://supabase.com/dashboard/project/fygxlswpkjtjpcefjfty/functions
 2. Clique em `admin-maintenance`
 3. Copie e cole o conteúdo de `supabase/functions/_shared/cors.ts` no início do arquivo
@@ -39,6 +40,7 @@ const ALLOWED_ORIGINS = [
    - Outras functions admin
 
 ### Opção 2: Via CLI (requer login)
+
 ```bash
 # Login primeiro
 supabase login

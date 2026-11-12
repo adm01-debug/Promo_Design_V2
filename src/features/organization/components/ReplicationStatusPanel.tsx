@@ -110,7 +110,11 @@ export function ReplicationStatusPanel() {
             )}
           </CardTitle>
           <Button size="sm" variant="outline" onClick={checkSlots} disabled={checking}>
-            {checking ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Bell className="h-3 w-3 mr-1" />}
+            {checking ? (
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : (
+              <Bell className="h-3 w-3 mr-1" />
+            )}
             Verificar slots agora
           </Button>
         </div>

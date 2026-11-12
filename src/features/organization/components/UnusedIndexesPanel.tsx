@@ -95,9 +95,13 @@ export function UnusedIndexesPanel() {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {items.length} índice{items.length === 1 ? "" : "s"} ocioso{items.length === 1 ? "" : "s"}
+                {items.length} índice{items.length === 1 ? "" : "s"} ocioso
+                {items.length === 1 ? "" : "s"}
               </span>
-              <span>Total desperdiçado: <strong className="text-foreground">{formatBytes(totalBytes)}</strong></span>
+              <span>
+                Total desperdiçado:{" "}
+                <strong className="text-foreground">{formatBytes(totalBytes)}</strong>
+              </span>
             </div>
             <div className="max-h-[420px] overflow-y-auto rounded-md border">
               <table className="w-full text-xs">
@@ -114,7 +118,9 @@ export function UnusedIndexesPanel() {
                       <td className="px-3 py-2 font-mono">
                         {idx.index_name}
                         {idx.is_unique && (
-                          <Badge variant="outline" className="ml-2 text-[10px]">unique</Badge>
+                          <Badge variant="outline" className="ml-2 text-[10px]">
+                            unique
+                          </Badge>
                         )}
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">{idx.table_name}</td>
@@ -125,7 +131,8 @@ export function UnusedIndexesPanel() {
               </table>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              Dica: estatísticas acumulam desde o último reset do pg_stat_statements. Índices recém-criados podem aparecer aqui até serem usados.
+              Dica: estatísticas acumulam desde o último reset do pg_stat_statements. Índices
+              recém-criados podem aparecer aqui até serem usados.
             </p>
           </div>
         )}
