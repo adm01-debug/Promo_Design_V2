@@ -61,9 +61,9 @@ const MockupNew = () => {
   });
 
   // Restore draft (executa uma vez quando restoreDraft estabilizar).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     editor.restoreDraft(setStep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor.restoreDraft]);
 
   return (

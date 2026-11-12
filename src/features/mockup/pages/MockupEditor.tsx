@@ -292,8 +292,8 @@ const MockupEditor = () => {
       };
       img.src = dataUrl;
       // updatePlacement vem de um reducer estável do hook.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [viewAreaW, viewAreaH],
   );
 
@@ -317,8 +317,8 @@ const MockupEditor = () => {
       };
       reader.readAsDataURL(file);
       // updatePlacement vem de reducer estável.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [viewAreaW, viewAreaH, pushLogoToHistory],
   );
 
