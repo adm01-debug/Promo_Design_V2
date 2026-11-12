@@ -15,6 +15,7 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
 
 # Cancel in-flight runs for the same PR when a new commit is pushed — saves
 # CI minutes and always reports the freshest verdict.
