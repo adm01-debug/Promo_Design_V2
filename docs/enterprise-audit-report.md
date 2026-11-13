@@ -25,29 +25,29 @@ O **Promo Design** é uma plataforma SaaS multi-tenant de alta performance proje
 
 | Funcionalidade                  | Motivo de Existir                                                | Status | Evidência (Arquivo/Path)                       |
 | :------------------------------ | :--------------------------------------------------------------- | :----- | :--------------------------------------------- |
-| **Editor 2D de Alta Precisão**  | Criação de layouts técnicos para aprovação do cliente.           | ✅     | `src/features/mockup/pages/MockupEditor.tsx`   |
-| **Geração de PDF de Aprovação** | Documento formal para assinatura/validação do cliente.           | ✅     | `src/features/mockup/lib/pdf-generator.ts`     |
-| **Warping de Logo (Curvatura)** | Simular aplicação realista em superfícies cilíndricas/esféricas. | ✅     | `src/features/mockup/hooks/use-warp-engine.ts` |
-| **Remoção de Fundo (AI)**       | Limpar logos de clientes recebidos em formatos não-vetoriais.    | ✅     | `src/features/mockup/services/bg-removal.ts`   |
-| **Auto-Encaixe Inteligente**    | Posicionamento automático baseado na área de gravação máxima.    | ✅     | `src/features/mockup/lib/auto-fit.ts`          |
+| **Editor 2D de Alta Precisão**  | Criação de layouts técnicos para aprovação do cliente.           | OK     | `src/features/mockup/pages/MockupEditor.tsx`   |
+| **Geração de PDF de Aprovação** | Documento formal para assinatura/validação do cliente.           | OK     | `src/features/mockup/lib/pdf-generator.ts`     |
+| **Warping de Logo (Curvatura)** | Simular aplicação realista em superfícies cilíndricas/esféricas. | OK     | `src/features/mockup/hooks/use-warp-engine.ts` |
+| **Remoção de Fundo (AI)**       | Limpar logos de clientes recebidos em formatos não-vetoriais.    | OK     | `src/features/mockup/services/bg-removal.ts`   |
+| **Auto-Encaixe Inteligente**    | Posicionamento automático baseado na área de gravação máxima.    | OK     | `src/features/mockup/lib/auto-fit.ts`          |
 
 ### Módulo: Magic Up & Video Studio (Suíte de IA)
 
 | Funcionalidade                         | Motivo de Existir                                                       | Status | Evidência (Arquivo/Path)                                           |
 | :------------------------------------- | :---------------------------------------------------------------------- | :----- | :----------------------------------------------------------------- |
-| **Geração de Imagens Publicitárias**   | Criar fotos de catálogo realistas sem necessidade de fotografia física. | ✅     | `src/features/magic-up/pages/MagicUpGenerate.tsx`                  |
-| **Prompt Inteligente (Context-Aware)** | Construir prompts baseados no material e SKU do produto real.           | ✅     | `src/features/magic-up/lib/prompt-builder.ts`                      |
-| **Video Creation Mode**                | Gerar vídeos de "reveal" de produtos para redes sociais.                | ✅     | `src/features/video/pages/VideoNew.tsx`                            |
-| **Character Studio**                   | Criação de avatares de marca para vídeos explicativos.                  | ✅     | `src/features/video/pages/CharacterStudio.tsx`                     |
-| **Brand Ambassador Template**          | Integração nativa entre personagens e templates de vídeo.               | ✅     | `src/features/video/components/animations/AmbassadorAnimation.tsx` |
+| **Geração de Imagens Publicitárias**   | Criar fotos de catálogo realistas sem necessidade de fotografia física. | OK     | `src/features/magic-up/pages/MagicUpGenerate.tsx`                  |
+| **Prompt Inteligente (Context-Aware)** | Construir prompts baseados no material e SKU do produto real.           | OK     | `src/features/magic-up/lib/prompt-builder.ts`                      |
+| **Video Creation Mode**                | Gerar vídeos de "reveal" de produtos para redes sociais.                | OK     | `src/features/video/pages/VideoNew.tsx`                            |
+| **Character Studio**                   | Criação de avatares de marca para vídeos explicativos.                  | OK     | `src/features/video/pages/CharacterStudio.tsx`                     |
+| **Brand Ambassador Template**          | Integração nativa entre personagens e templates de vídeo.               | OK     | `src/features/video/components/animations/AmbassadorAnimation.tsx` |
 
 ### Módulo: Gestão de Ordens de Serviço (Workflow)
 
 | Funcionalidade                    | Motivo de Existir                                                      | Status | Evidência (Arquivo/Path)                                              |
 | :-------------------------------- | :--------------------------------------------------------------------- | :----- | :-------------------------------------------------------------------- |
-| **Workflow de Status (Pipeline)** | Controle do ciclo de vida da OS (Aberta -> Produção -> Concluída).     | ✅     | `src/features/service-orders/pages/ServiceOrderList.tsx`              |
-| **Painel de Analytics (BI)**      | Visualizar gargalos de produção e técnicas mais utilizadas.            | ✅     | `src/features/service-orders/pages/ServiceOrderDashboard.tsx`         |
-| **Sincronização de Versão DAM**   | Alertar se a arte vinculada à OS foi atualizada na biblioteca central. | ✅     | `src/features/service-orders/components/AssetVersionUpdateBanner.tsx` |
+| **Workflow de Status (Pipeline)** | Controle do ciclo de vida da OS (Aberta -> Produção -> Concluída).     | OK     | `src/features/service-orders/pages/ServiceOrderList.tsx`              |
+| **Painel de Analytics (BI)**      | Visualizar gargalos de produção e técnicas mais utilizadas.            | OK     | `src/features/service-orders/pages/ServiceOrderDashboard.tsx`         |
+| **Sincronização de Versão DAM**   | Alertar se a arte vinculada à OS foi atualizada na biblioteca central. | OK     | `src/features/service-orders/components/AssetVersionUpdateBanner.tsx` |
 
 ---
 
