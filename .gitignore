@@ -25,3 +25,6 @@ dist-ssr
 
 # Vite incremental build info
 *.tsbuildinfo
+
+test-results
+playwright-report

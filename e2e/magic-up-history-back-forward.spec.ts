@@ -28,7 +28,7 @@ async function login(page: import("@playwright/test").Page) {
 
 test.describe("Magic Up History — back/forward (smoke)", () => {
   test("history page redirects to /auth without session", async ({ page }) => {
-    await page.goto("/magic-up/history");
+    await page.goto("/magicup/history");
     await page.waitForURL(/\/auth/, { timeout: 10_000 });
     await expect(page).toHaveURL(/\/auth/);
   });
@@ -42,13 +42,13 @@ test.describe.serial("Magic Up History — back/forward keeps fav filter in sync
     await login(page);
 
     // 1) Land on the filtered URL.
-    await page.goto("/magic-up/history?fav=1");
+    await page.goto("/magicup/history?fav=1");
     const favBtn = page.getByRole("button", { name: /favoritos/i });
     await expect(favBtn).toHaveAttribute("aria-pressed", "true");
     await expect(page).toHaveURL(/[?&]fav=1\b/);
 
     // 2) Navigate to the clean URL.
-    await page.goto("/magic-up/history");
+    await page.goto("/magicup/history");
     await expect(favBtn).toHaveAttribute("aria-pressed", "false");
     await expect(page).not.toHaveURL(/[?&]fav=1\b/);
 
