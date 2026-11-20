@@ -54,7 +54,7 @@ const Dashboard = () => {
   const { orders, isLoading: ordersLoading } = useServiceOrders({ fetchAll: true });
   const { items: magicUpItems } = useMagicUpHistory();
   const { drafts, isLoading: draftsLoading } = useMockupDrafts();
-  const { widgetOrder, updateOrder, resetOrder, isDefault } = useWidgetLayout();
+  const { widgetOrder, hiddenWidgets, updateOrder, resetOrder, isDefault } = useWidgetLayout();
   const { invites, acceptInvite } = useOrganizationInvites(null);
   const { hasNoOrg: noOrg } = useOrganizations();
 
@@ -366,17 +366,19 @@ const Dashboard = () => {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={widgetOrder} strategy={verticalListSortingStrategy}>
           <div className="space-y-0">
-            {widgetOrder.map((widgetId) => (
-              <DashboardWidgetWrapper key={widgetId} id={widgetId} isEditing={isEditing}>
-                {WIDGET_RENDERERS[widgetId] ? (
-                  WIDGET_RENDERERS[widgetId](widgetProps)
-                ) : (
-                  <div className="p-4 border border-dashed rounded-xl text-muted-foreground text-xs italic">
-                    Widget "{widgetId}" não encontrado ou desabilitado.
-                  </div>
-                )}
-              </DashboardWidgetWrapper>
-            ))}
+            {widgetOrder
+              .filter((widgetId) => !hiddenWidgets.includes(widgetId))
+              .map((widgetId) => (
+                <DashboardWidgetWrapper key={widgetId} id={widgetId} isEditing={isEditing}>
+                  {WIDGET_RENDERERS[widgetId] ? (
+                    WIDGET_RENDERERS[widgetId](widgetProps)
+                  ) : (
+                    <div className="p-4 border border-dashed rounded-xl text-muted-foreground text-xs italic">
+                      Widget "{widgetId}" não encontrado ou desabilitado.
+                    </div>
+                  )}
+                </DashboardWidgetWrapper>
+              ))}
           </div>
         </SortableContext>
       </DndContext>

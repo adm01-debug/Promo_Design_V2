@@ -22,6 +22,7 @@ const guard = (moduleName: string, node: React.ReactNode) => (
 );
 
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+const DashboardWidgetsPage = lazyWithRetry(() => import("./pages/DashboardWidgetsPage"));
 const CatalogPage = lazyWithRetry(() => import("./features/catalog/pages/CatalogPage"));
 const MockupNew = lazyWithRetry(() => import("./features/mockup/pages/MockupNew"));
 const MockupDrafts = lazyWithRetry(() => import("./features/mockup/pages/MockupDrafts"));
@@ -30,6 +31,7 @@ const MockupEditor = lazyWithRetry(() => import("./features/mockup/pages/MockupE
 const MagicUpGenerate = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpGenerate"));
 const MagicUpPrompts = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpHistory"));
+const MagicUpFavorites = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpFavorites"));
 const VideoNew = lazyWithRetry(() => import("./features/video/pages/VideoNew"));
 const VideoHistory = lazyWithRetry(() => import("./features/video/pages/VideoHistory"));
 const VideoMoodboard = lazyWithRetry(() => import("./features/video/pages/VideoMoodboard"));
@@ -60,6 +62,7 @@ const AuditEventDetailPage = lazyWithRetry(
   () => import("./features/audit/pages/AuditEventDetailPage"),
 );
 const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
+const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
@@ -90,6 +93,10 @@ const App = () => (
                         }
                       >
                         <Route path="/" element={guard("Dashboard", <Dashboard />)} />
+                        <Route
+                          path="/dashboard/widgets"
+                          element={guard("Widgets", <DashboardWidgetsPage />)}
+                        />
                         <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
                         <Route path="/mockup/new" element={guard("Mockup", <MockupNew />)} />
                         <Route path="/mockup/drafts" element={guard("Mockup", <MockupDrafts />)} />
@@ -129,6 +136,10 @@ const App = () => (
                         <Route
                           path="/magicup/history"
                           element={guard("Magic Up", <MagicUpHistory />)}
+                        />
+                        <Route
+                          path="/magicup/favorites"
+                          element={guard("Magic Up Favoritos", <MagicUpFavorites />)}
                         />
                         <Route path="/video" element={<Navigate to="/video/new" replace />} />
                         <Route path="/video/new" element={guard("Video Studio", <VideoNew />)} />
@@ -173,6 +184,7 @@ const App = () => (
                           element={guard("Brand Guidelines", <BrandGuidelinesPage />)}
                         />
                         <Route path="/dam" element={guard("DAM", <DamLibraryPage />)} />
+                        <Route path="/dam/trash" element={guard("Lixeira DAM", <DamTrashPage />)} />
                         <Route
                           path="/dam/preview"
                           element={guard("DAM Preview", <DamPreviewPage />)}
