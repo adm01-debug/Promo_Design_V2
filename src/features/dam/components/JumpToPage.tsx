@@ -26,7 +26,7 @@ export function JumpToPage({ currentPage, totalPages, onJump }: JumpToPageProps)
   }, [currentPage]);
 
   const schema = z.coerce
-    .number({ invalid_type_error: "Número inválido" })
+    .number({ error: "Número inválido" })
     .int("Use um número inteiro")
     .min(1, "Página mínima é 1")
     .max(totalPages, `Página máxima é ${totalPages}`);
