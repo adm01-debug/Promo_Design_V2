@@ -252,6 +252,17 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
   });
 
+  const restoreMany = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from("assets")
+        .update({ is_archived: false, updated_at: new Date().toISOString() })
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
+  });
+
   return {
     assets: query.data?.rows ?? [],
     total: query.data?.total ?? 0,
@@ -266,6 +277,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     update,
     archive,
     restore,
+    restoreMany,
     remove,
   };
 }

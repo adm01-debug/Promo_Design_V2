@@ -31,6 +31,10 @@ import {
   Users,
   ScrollText,
   FolderArchive,
+  Trash2,
+  Heart,
+  LayoutDashboard,
+  SlidersHorizontal,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -49,6 +53,17 @@ import {
 
 const modules = [
   {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    path: "/",
+    description: "Visão geral",
+    children: [
+      { label: "Visão Geral", path: "/", icon: LayoutDashboard },
+      { label: "Widgets", path: "/dashboard/widgets", icon: SlidersHorizontal },
+    ],
+  },
+  {
     id: "mockup",
     label: "Mockup Studio",
     icon: Image,
@@ -62,6 +77,7 @@ const modules = [
       { label: "Catálogo", path: "/catalog", icon: Package },
       { label: "Clientes", path: "/clients", icon: Users },
       { label: "Biblioteca (DAM)", path: "/dam", icon: FolderArchive },
+      { label: "Lixeira", path: "/dam/trash", icon: Trash2 },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
   },
@@ -75,6 +91,7 @@ const modules = [
       { label: "Gerar Imagem", path: "/magicup/generate", icon: Wand2 },
       { label: "Banco de Prompts", path: "/magicup/prompts", icon: BookOpen },
       { label: "Histórico", path: "/magicup/history", icon: History },
+      { label: "Favoritos", path: "/magicup/favorites", icon: Heart },
     ],
   },
   {
@@ -105,6 +122,7 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
   const [expandedModule, setExpandedModule] = useState<string | null>(() => {
     if (location.pathname.startsWith("/magicup")) return "magicup";
     if (location.pathname.startsWith("/video")) return "video";
+    if (location.pathname === "/" || location.pathname.startsWith("/dashboard")) return "dashboard";
     return "mockup";
   });
 
