@@ -144,9 +144,9 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 6   | Comparador de versões de mockup         | `/mockup/compare`                  | 🔴     | M       | Facilita revisão A/B entre iterações.                         |
 | 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                     |
 | 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.          |
-| 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | 🔴     | M       | Métricas de uso e produtividade além dos widgets atuais.      |
-| 10  | Lixeira DAM                             | `/dam/trash`                       | 🟡     | P       | Existe filtro `archived`, falta UI dedicada com restore.      |
-| 11  | Magic Up — favoritos                    | `/magicup/favorites`               | 🟡     | P       | Existe filtro em `/magicup/history`, falta galeria dedicada.  |
-| 12  | Widgets customizáveis (config UI)       | `/dashboard/widgets`               | 🔴     | P       | Hoje layout é editável inline; falta tela de gestão.          |
+| 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models. |
+| 10  | Lixeira DAM                             | `/dam/trash`                       | ✅     | P       | Implementado: galeria com seleção e restauração em lote.         |
+| 11  | Magic Up — favoritos                    | `/magicup/favorites`               | ✅     | P       | Implementado: galeria dedicada com toggle/delete inline.        |
+| 12  | Widgets customizáveis (config UI)       | `/dashboard/widgets`               | ✅     | P       | Implementado: mostrar/ocultar, reordenar e reset (localStorage).|
 
 **Esforço:** P = até 1 dia · M = 2-4 dias · G = 5+ dias.
