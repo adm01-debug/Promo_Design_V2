@@ -134,19 +134,19 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / desbloqueia fluxos) ao fim (refinamentos).
 
-| #   | Funcionalidade                          | Rota proposta                      | Status | Esforço | Justificativa                                                 |
-| --- | --------------------------------------- | ---------------------------------- | ------ | ------- | ------------------------------------------------------------- |
-| 1   | Coleções/Pastas no DAM                  | `/dam/collections`                 | 🔴     | G       | Organização hierárquica é gap crítico em libraries grandes.   |
-| 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.      |
-| 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.        |
-| 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.            |
-| 5   | Templates de mockup salvos              | `/mockup/templates`                | 🔴     | M       | Reuso de configurações; hoje só existe `/templates` genérico. |
-| 6   | Comparador de versões de mockup         | `/mockup/compare`                  | 🔴     | M       | Facilita revisão A/B entre iterações.                         |
-| 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                     |
-| 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.          |
-| 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models. |
+| #   | Funcionalidade                          | Rota proposta                      | Status | Esforço | Justificativa                                                    |
+| --- | --------------------------------------- | ---------------------------------- | ------ | ------- | ---------------------------------------------------------------- |
+| 1   | Coleções/Pastas no DAM                  | `/dam/collections`                 | 🔴     | G       | Organização hierárquica é gap crítico em libraries grandes.      |
+| 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.         |
+| 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.           |
+| 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.               |
+| 5   | Templates de mockup salvos              | `/mockup/templates`                | 🔴     | M       | Reuso de configurações; hoje só existe `/templates` genérico.    |
+| 6   | Comparador de versões de mockup         | `/mockup/compare`                  | 🔴     | M       | Facilita revisão A/B entre iterações.                            |
+| 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                        |
+| 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.             |
+| 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models.  |
 | 10  | Lixeira DAM                             | `/dam/trash`                       | ✅     | P       | Implementado: galeria com seleção e restauração em lote.         |
-| 11  | Magic Up — favoritos                    | `/magicup/favorites`               | ✅     | P       | Implementado: galeria dedicada com toggle/delete inline.        |
-| 12  | Widgets customizáveis (config UI)       | `/dashboard/widgets`               | ✅     | P       | Implementado: mostrar/ocultar, reordenar e reset (localStorage).|
+| 11  | Magic Up — favoritos                    | `/magicup/favorites`               | ✅     | P       | Implementado: galeria dedicada com toggle/delete inline.         |
+| 12  | Widgets customizáveis (config UI)       | `/dashboard/widgets`               | ✅     | P       | Implementado: mostrar/ocultar, reordenar e reset (localStorage). |
 
 **Esforço:** P = até 1 dia · M = 2-4 dias · G = 5+ dias.
