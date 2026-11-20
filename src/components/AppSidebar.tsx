@@ -60,6 +60,7 @@ const modules = [
     description: "Visão geral",
     children: [
       { label: "Visão Geral", path: "/", icon: LayoutDashboard },
+      { label: "Analytics", path: "/dashboard/analytics", icon: BarChart3 },
       { label: "Widgets", path: "/dashboard/widgets", icon: SlidersHorizontal },
     ],
   },

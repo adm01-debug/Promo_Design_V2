@@ -23,6 +23,9 @@ const guard = (moduleName: string, node: React.ReactNode) => (
 
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const DashboardWidgetsPage = lazyWithRetry(() => import("./pages/DashboardWidgetsPage"));
+const DashboardAnalyticsPage = lazyWithRetry(
+  () => import("./features/dashboard/pages/DashboardAnalyticsPage"),
+);
 const CatalogPage = lazyWithRetry(() => import("./features/catalog/pages/CatalogPage"));
 const MockupNew = lazyWithRetry(() => import("./features/mockup/pages/MockupNew"));
 const MockupDrafts = lazyWithRetry(() => import("./features/mockup/pages/MockupDrafts"));
@@ -96,6 +99,10 @@ const App = () => (
                         <Route
                           path="/dashboard/widgets"
                           element={guard("Widgets", <DashboardWidgetsPage />)}
+                        />
+                        <Route
+                          path="/dashboard/analytics"
+                          element={guard("Analytics", <DashboardAnalyticsPage />)}
                         />
                         <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
                         <Route path="/mockup/new" element={guard("Mockup", <MockupNew />)} />
