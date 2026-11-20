@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useEffect, useState } from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { Router, MemoryRouter } from "react-router-dom";
-import { createMemoryHistory, type History } from "@remix-run/router";
+import { UNSAFE_createMemoryHistory as createMemoryHistory } from "react-router";
+type History = ReturnType<typeof createMemoryHistory>;
 import MagicUpHistory from "../MagicUpHistory";
 import type { MagicUpHistoryItem } from "@/features/magic-up";
 
