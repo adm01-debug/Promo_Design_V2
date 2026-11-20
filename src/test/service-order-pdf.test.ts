@@ -27,7 +27,11 @@ vi.mock("jspdf", () => {
     lastAutoTable: { finalY: 100 },
   };
   return {
-    default: vi.fn().mockImplementation(() => mockDoc),
+    // Vitest 5's `vi.fn()` is not `new`-able, so use a constructor that
+    // returns the shared mock instance the assertions read from.
+    default: function jsPDFMock() {
+      return mockDoc;
+    },
   };
 });
 
