@@ -92,7 +92,7 @@ export function useAnalytics(organizationId: string | null | undefined) {
           .map(([feature, v]) => ({ feature, ...v }))
           .sort((a, b) => b.cost - a.cost),
         byModel: Array.from(modelMap.entries())
-          .map((model, v) => ({ model, ...v }))
+          .map(([model, v]) => ({ model, ...v }))
           .sort((a, b) => b.cost - a.cost),
       };
     },
