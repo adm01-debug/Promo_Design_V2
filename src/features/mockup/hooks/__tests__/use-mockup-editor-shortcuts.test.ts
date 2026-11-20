@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Mock } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useMockupEditorShortcuts } from "../use-mockup-editor-shortcuts";
 import type { Placement } from "../use-mockup-editor-state";
@@ -13,10 +14,10 @@ const basePlacement: Placement = {
 };
 
 interface Handles {
-  undo: ReturnType<typeof vi.fn>;
-  redo: ReturnType<typeof vi.fn>;
-  updatePlacement: ReturnType<typeof vi.fn>;
-  centerLogo: ReturnType<typeof vi.fn>;
+  undo: Mock<() => void>;
+  redo: Mock<() => void>;
+  updatePlacement: Mock<(update: Partial<Placement>) => void>;
+  centerLogo: Mock<() => void>;
 }
 
 function setup(
