@@ -491,7 +491,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
   // Draft save/restore
   const autoSaveRef = useRef(false);
   const handleSaveDraft = useCallback(
-    async (silent = false) => {
+    async (silent = false, asTemplate = false) => {
       const editorState: Record<string, unknown> = {
         placement,
         logoPreview,
@@ -513,6 +513,8 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
         selectedAreaId: selectedArea?.id ?? null,
         selectedVariantId: selectedVariant?.id ?? null,
       };
+      // Preserva o estado de template do draft atual ao salvar (autosave nao apaga a flag).
+      const currentIsTemplate = asTemplate || (draftId ? getDraft(draftId)?.isTemplate : false);
       try {
         const name = selectedProduct
           ? `${selectedProduct.name}${selectedArea ? ` – ${selectedArea.location_name}` : ""}`
@@ -524,12 +526,15 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
           productSku: selectedProduct?.sku ?? null,
           thumbnailUrl: selectedProductImage ?? null,
           editorState,
+          isTemplate: currentIsTemplate,
         });
         if (!draftId) {
           setDraftId(result.id);
           setSearchParams({ draft: result.id }, { replace: true });
         }
-        if (!silent) toast.success("Rascunho salvo na nuvem!");
+        if (!silent) {
+          toast.success(asTemplate ? "Mockup salvo como template!" : "Rascunho salvo na nuvem!");
+        }
       } catch {
         if (!silent) toast.error("Erro ao salvar rascunho.");
       }
@@ -557,6 +562,7 @@ export function useMockupEditor(options: UseMockupEditorOptions) {
       selectedProductImage,
       draftId,
       saveDraft,
+      getDraft,
       setSearchParams,
     ],
   );

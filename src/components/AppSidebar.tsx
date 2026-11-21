@@ -35,6 +35,8 @@ import {
   Heart,
   LayoutDashboard,
   SlidersHorizontal,
+  LayoutTemplate,
+  GitCompareArrows,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -73,6 +75,8 @@ const modules = [
     children: [
       { label: "Novo Mockup", path: "/mockup/new", icon: Palette },
       { label: "Rascunhos", path: "/mockup/drafts", icon: FolderOpen },
+      { label: "Templates", path: "/mockup/templates", icon: LayoutTemplate },
+      { label: "Comparador", path: "/mockup/compare", icon: GitCompareArrows },
       { label: "Ordens de Serviço", path: "/mockup/service-orders", icon: ClipboardList },
       { label: "Dashboard OS", path: "/mockup/service-dashboard", icon: BarChart3 },
       { label: "Catálogo", path: "/catalog", icon: Package },

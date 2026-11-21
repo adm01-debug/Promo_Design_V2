@@ -80,6 +80,7 @@ const MockupNew = () => {
         isSaving={editor.isSaving}
         draftId={editor.draftId}
         onSave={() => editor.handleSaveDraft(false)}
+        onSaveAsTemplate={() => void editor.handleSaveDraft(false, true)}
         onExportPdf={editor.handleExportPdf}
         onExportPng={editor.handleExportPng}
         isExporting={editor.isExporting}

@@ -1,5 +1,15 @@
-import { Undo2, Redo2, Save, FileText, Download, Loader2, ChevronDown } from "lucide-react";
+import {
+  Undo2,
+  Redo2,
+  Save,
+  FileText,
+  Download,
+  Loader2,
+  ChevronDown,
+  LayoutTemplate,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MockupTopBarProps {
   step: "product" | "area" | "canvas";
@@ -13,6 +23,7 @@ interface MockupTopBarProps {
   isSaving: boolean;
   draftId: string | null;
   onSave: () => void;
+  onSaveAsTemplate?: () => void;
   onExportPdf: () => void;
   onExportPng: () => void;
   isExporting: boolean;
@@ -30,6 +41,7 @@ const MockupTopBar = ({
   isSaving,
   draftId,
   onSave,
+  onSaveAsTemplate,
   onExportPdf,
   onExportPng,
   isExporting,
@@ -80,6 +92,31 @@ const MockupTopBar = ({
           </Button>
           <div className="w-px h-5 bg-border" />
         </>
+      )}
+      {onSaveAsTemplate && step === "canvas" && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs gap-1.5 h-8 border border-dashed border-primary/40 text-primary"
+                onClick={onSaveAsTemplate}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <LayoutTemplate className="w-3.5 h-3.5" />
+                )}{" "}
+                Salvar como Template
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Salva este mockup na galeria de templates para reutilização em novos pedidos
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       <Button
         variant="ghost"
