@@ -117,11 +117,11 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 ## 9. Outros
 
-| Funcionalidade  | Rota         | Arquivo principal         | Status |
-| --------------- | ------------ | ------------------------- | ------ |
-| Templates       | `/templates` | `src/pages/Templates.tsx` | ✅     |
-| Editor genérico | `/editor`    | `src/pages/Editor.tsx`    | ✅     |
-| 404 animado     | `*`          | `src/pages/NotFound.tsx`  | ✅     |
+| Funcionalidade  | Rota         | Arquivo principal                                                                | Status |
+| --------------- | ------------ | -------------------------------------------------------------------------------- | ------ |
+| Templates       | `/templates` | `src/pages/Templates.tsx`                                                        | ✅     |
+| Editor genérico | `/editor`    | `src/features/mockup/pages/MockupEditor.tsx` (redireciona para `/mockup/editor`) | ✅     |
+| 404 animado     | `*`          | `src/pages/NotFound.tsx`                                                         | ✅     |
 
 ## 10. Backlog consolidado (rotas planejadas)
 
