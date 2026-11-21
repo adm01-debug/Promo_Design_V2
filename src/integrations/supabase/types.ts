@@ -1159,6 +1159,70 @@ export type Database = {
           },
         ]
       }
+      approval_tokens: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          decision_note: string | null
+          decided_at: string | null
+          expires_at: string
+          id: string
+          mockup_id: string
+          organization_id: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_note?: string | null
+          decided_at?: string | null
+          expires_at: string
+          id?: string
+          mockup_id: string
+          organization_id?: string | null
+          status?: string
+          token: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_note?: string | null
+          decided_at?: string | null
+          expires_at?: string
+          id?: string
+          mockup_id?: string
+          organization_id?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tokens_mockup_id_fkey"
+            columns: ["mockup_id"]
+            isOneToOne: false
+            referencedRelation: "mockup_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string

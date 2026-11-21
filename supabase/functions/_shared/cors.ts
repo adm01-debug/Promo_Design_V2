@@ -4,6 +4,7 @@
 const ALLOWED_ORIGINS = [
   "https://id-preview--5da5ba25-dbc3-474e-b521-f7c17b3151a4.lovable.app",
   "https://lovable.app",
+  "https://promo-design-v2.vercel.app",
   "http://localhost:8081",
   "http://localhost:5173",
   "http://localhost:3000",
