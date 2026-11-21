@@ -37,6 +37,7 @@ import {
   SlidersHorizontal,
   LayoutTemplate,
   GitCompareArrows,
+  ListTodo,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -97,6 +98,7 @@ const modules = [
       { label: "Banco de Prompts", path: "/magicup/prompts", icon: BookOpen },
       { label: "Histórico", path: "/magicup/history", icon: History },
       { label: "Favoritos", path: "/magicup/favorites", icon: Heart },
+      { label: "Fila de Jobs", path: "/magicup/jobs", icon: ListTodo },
     ],
   },
   {
