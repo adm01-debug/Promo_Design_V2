@@ -6,8 +6,18 @@ import { History, Link2, ScanText, Plus, RotateCcw, FolderArchive, PanelRight } 
 import { SavedSearchesMenu } from "./SavedSearchesMenu";
 import { LibraryExportMenu } from "./LibraryExportMenu";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { HardDrive } from "lucide-react";
+import { SizeRangeFilter } from "./SizeRangeFilter";
 import { MIN_SEARCH_LENGTH } from "../hooks/use-assets";
-import { SORT_OPTIONS } from "../lib/dam-constants";
+import { SORT_OPTIONS, SIZE_RANGE_OPTIONS, UPDATED_RANGE_OPTIONS } from "../lib/dam-constants";
+import type { SizeRangeKey, UpdatedRangeKey } from "../lib/dam-constants";
 import type { UseDamFiltersReturn } from "../hooks/use-dam-filters";
 import type { Asset, AssetType } from "../hooks/use-assets";
 import type { SortValue } from "../lib/dam-constants";
@@ -42,7 +52,7 @@ export function DamLibraryHeader({
   debouncedSearch,
   organizationId,
 }: Props) {
-  const { state, setSort, setOcrOnly } = filters;
+  const { state, setSort, setOcrOnly, setSizeRange, setUpdatedRange, setCustomSize } = filters;
   const [copiedLink, setCopiedLink] = useState(false);
 
   const handleCopyLink = async () => {
@@ -103,6 +113,42 @@ export function DamLibraryHeader({
             filters.setSort((snap.sort as SortValue) ?? "created_desc");
           }}
         />
+        <Select
+          value={state.updatedRange}
+          onValueChange={(v) => setUpdatedRange(v as UpdatedRangeKey)}
+        >
+          <SelectTrigger className="h-9 w-[150px]" aria-label="Filtrar por data de modificação">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {UPDATED_RANGE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={state.customSize ? "custom" : state.sizeRange}
+          onValueChange={(v) => {
+            if (v === "custom") return;
+            setCustomSize(null);
+            setSizeRange(v as SizeRangeKey);
+          }}
+        >
+          <SelectTrigger className="h-9 w-[160px]" aria-label="Filtrar por tamanho do arquivo">
+            <HardDrive className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SIZE_RANGE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <SizeRangeFilter value={state.customSize} onChange={setCustomSize} className="h-9" />
         <Button variant="outline" size="sm" onClick={handleCopyLink} data-testid="dam-copy-link">
           <Link2 className="w-4 h-4 mr-2" />
           {copiedLink ? "Copiado!" : "Compartilhar"}

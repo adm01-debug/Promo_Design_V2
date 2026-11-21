@@ -25,8 +25,15 @@ import { BatchOcrDialog } from "../components/BatchOcrDialog";
 import { AssetGridSkeleton } from "../components/AssetGridSkeleton";
 import { useDamFilters } from "../hooks/use-dam-filters";
 import { useDamLibraryResults } from "../hooks/use-dam-library-results";
+import { JumpToPage } from "../components/JumpToPage";
+import { formatCustomSizeLabel } from "../components/SizeRangeFilter";
 import { DamLibraryHeader } from "../components/DamLibraryHeader";
-import { TYPES, SORT_OPTIONS } from "../lib/dam-constants";
+import {
+  TYPES,
+  SORT_OPTIONS,
+  SIZE_RANGE_OPTIONS,
+  UPDATED_RANGE_OPTIONS,
+} from "../lib/dam-constants";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +58,10 @@ export default function DamLibraryPage() {
     setTagsMode,
     setIncludeArchived,
     setPage,
+    setPageSize,
+    setSizeRange,
+    setUpdatedRange,
+    setCustomSize,
     setViewMode,
     reset: resetFilters,
   } = filters;
@@ -67,6 +78,9 @@ export default function DamLibraryPage() {
     paginationMode,
     viewMode,
     showSizeColumn,
+    sizeRange,
+    updatedRange,
+    customSize,
   } = state;
 
   const [activityOpen, setActivityOpen] = useState(false);
@@ -221,6 +235,23 @@ export default function DamLibraryPage() {
         onRemoveTag={(t) => setTags(tags.filter((x) => x !== t))}
         includeArchived={includeArchived}
         onClearArchived={() => setIncludeArchived(false)}
+        sizeLabel={
+          customSize
+            ? formatCustomSizeLabel(customSize)
+            : SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange)?.value !== "all"
+              ? SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange)?.label
+              : undefined
+        }
+        onClearSize={() => {
+          setCustomSize(null);
+          setSizeRange("all");
+        }}
+        updatedLabel={
+          updatedRange !== "all"
+            ? UPDATED_RANGE_OPTIONS.find((o) => o.value === updatedRange)?.label
+            : undefined
+        }
+        onClearUpdated={() => setUpdatedRange("all")}
         onClearAll={resetFilters}
       />
 
@@ -272,14 +303,19 @@ export default function DamLibraryPage() {
       )}
 
       {paginationMode === "pages" && totalPages > 1 && (
-        <div className="flex justify-center pt-6">
+        <div className="flex flex-col items-center gap-2 pt-6">
           <ResultsPagination
             page={page}
             pageSize={pageSize}
             total={total}
             totalPages={totalPages}
             onPageChange={setPage}
+            pageSizeOptions={[24, 48, 96]}
+            onPageSizeChange={setPageSize}
           />
+          <div className="w-full flex justify-end">
+            <JumpToPage currentPage={page} totalPages={totalPages} onJump={setPage} />
+          </div>
         </div>
       )}
 
