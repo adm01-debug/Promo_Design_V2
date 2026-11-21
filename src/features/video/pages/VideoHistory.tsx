@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useVideos } from "../hooks/use-videos";
+import { downloadUrl } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -165,7 +166,12 @@ const VideoHistory = () => {
                     >
                       <Eye className="w-3 h-3" /> Ver
                     </Button>
-                    <Button variant="secondary" size="sm" className="h-8 text-xs gap-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 text-xs gap-1"
+                      onClick={() => downloadUrl(video.video_url, `${video.name}.mp4`)}
+                    >
                       <Download className="w-3 h-3" /> Baixar
                     </Button>
                   </div>

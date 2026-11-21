@@ -98,7 +98,15 @@ const MockupHistory = () => {
                   <Package className="w-10 h-10 text-muted-foreground/30" />
                 )}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity gap-2">
-                  <Button variant="secondary" size="sm" className="h-8 text-xs gap-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 text-xs gap-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/mockup/new?draft=${m.id}`);
+                    }}
+                  >
                     <Eye className="w-3.5 h-3.5" /> Editar
                   </Button>
                 </div>

@@ -11,6 +11,8 @@ import {
 interface Props {
   imageUrl: string;
   fileName?: string;
+  fullWidth?: boolean;
+  label?: string;
 }
 
 /**
@@ -84,17 +86,18 @@ function shareWhatsApp(imageUrl: string, text?: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-const DownloadMenu = ({ imageUrl, fileName = "mockup" }: Props) => {
+const DownloadMenu = ({ imageUrl, fileName = "mockup", fullWidth = false, label }: Props) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0"
-          aria-label="Baixar ou compartilhar mockup"
+          className={fullWidth ? "w-full gap-2 text-xs h-8" : "h-8 w-8 p-0"}
+          aria-label={label ?? "Baixar ou compartilhar mockup"}
         >
           <Download className="w-4 h-4" aria-hidden="true" />
+          {label && <span>{label}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">

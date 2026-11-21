@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Wand2, Sparkles, Send, Loader2, AlertCircle, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ const MagicUpGenerate = () => {
   const { enqueueBatch } = useMagicUpJobs();
   const { styles: customStyles } = useMagicUpStyles();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPromptBank, setShowPromptBank] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
@@ -213,6 +214,15 @@ const MagicUpGenerate = () => {
   const applySmartPrompt = () => {
     if (smartPrompt) setPrompt(smartPrompt);
   };
+
+  // Prompts vindos do Banco de Prompts (/magicup/prompts) via state.
+  const incomingPrompt = (location.state as { prompt?: string } | null)?.prompt;
+  useEffect(() => {
+    if (incomingPrompt) {
+      setPrompt(incomingPrompt);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [incomingPrompt, navigate, location.pathname]);
 
   const filteredPrompts = SAMPLE_PROMPTS.filter(
     (p) => selectedCategory === "Todos" || p.category === selectedCategory,

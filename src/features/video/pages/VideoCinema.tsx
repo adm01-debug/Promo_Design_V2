@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useCinemaStore } from "@/hooks/use-cinema-preferences";
 import {
   Film,
@@ -61,6 +62,72 @@ const VideoCinema = () => {
     background: `radial-gradient(ellipse at center, transparent ${100 - vignette}%, rgba(0,0,0,0.7) 100%)`,
   };
 
+  // Exporta o frame atual como PNG aplicando os mesmos filtros do preview.
+  const handleExportFrame = async () => {
+    if (!selectedProduct) {
+      toast.error("Selecione um produto para exportar o frame");
+      return;
+    }
+    try {
+      const { loadImageWithFallback } = await import("@/features/mockup/lib/canvas-utils");
+      const img = await loadImageWithFallback(getProductImageUrl(selectedProduct));
+      const W = 1920;
+      const H = 1080;
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D indisponível");
+
+      ctx.filter = filterStyle.filter;
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, selectedPreset.colors[2]);
+      grad.addColorStop(0.4, selectedPreset.colors[0]);
+      grad.addColorStop(0.7, selectedPreset.colors[1]);
+      grad.addColorStop(1, selectedPreset.colors[2]);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      const maxW = W * 0.6;
+      const maxH = H * 0.7;
+      const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+      const dw = img.width * ratio;
+      const dh = img.height * ratio;
+      ctx.filter = "none";
+      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+
+      // Vinheta
+      const vg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) / 2);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(Math.max(0, Math.min(1, (100 - vignette) / 100)), "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(0,0,0,0.7)");
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Letterbox 2.39:1
+      if (letterbox) {
+        const barH = (H - W / 2.39) / 2;
+        if (barH > 0) {
+          ctx.fillStyle = "#000";
+          ctx.fillRect(0, 0, W, barH);
+          ctx.fillRect(0, H - barH, W, barH);
+        }
+      }
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Falha ao gerar PNG");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cinema-${selectedPreset.id}-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Frame exportado em PNG");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível exportar o frame");
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
@@ -75,7 +142,12 @@ const VideoCinema = () => {
           <Button variant="ghost" size="sm" className="text-xs gap-1" onClick={resetAll}>
             <RotateCcw className="w-3 h-3" /> Reset
           </Button>
-          <Button variant="outline" size="sm" className="text-xs gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={handleExportFrame}
+          >
             <Download className="w-3.5 h-3.5" /> Exportar
           </Button>
           <Button
