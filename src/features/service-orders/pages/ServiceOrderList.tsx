@@ -351,7 +351,12 @@ const ServiceOrderList = () => {
                 {f.label}
               </Button>
             ))}
-            <Button variant="ghost" size="icon" onClick={() => setSortDesc(!sortDesc)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={sortDesc ? "Ordenar por data crescente" : "Ordenar por data decrescente"}
+              onClick={() => setSortDesc(!sortDesc)}
+            >
               <ArrowUpDown className="w-4 h-4" />
             </Button>
           </div>
@@ -537,7 +542,12 @@ const ServiceOrderList = () => {
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                aria-label={`Ações da OS ${order.osNumber}`}
+                              >
                                 <MoreHorizontal className="w-3.5 h-3.5" />
                               </Button>
                             </DropdownMenuTrigger>

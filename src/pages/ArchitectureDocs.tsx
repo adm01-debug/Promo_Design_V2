@@ -156,7 +156,7 @@ const ArchitectureDocs = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <header className="h-16 border-b flex items-center px-6 gap-4 shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" aria-label="Voltar" onClick={() => navigate(-1)}>
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <div className="flex items-center gap-2">
