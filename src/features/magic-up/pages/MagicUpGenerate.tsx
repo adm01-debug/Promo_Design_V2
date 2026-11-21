@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Wand2, Sparkles, Send, Loader2, AlertCircle } from "lucide-react";
+import { Wand2, Sparkles, Send, Loader2, AlertCircle, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
 import { useProducts, useCategories, useProductVariants } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
-import { useMagicUpHistory } from "@/features/magic-up";
+import { useMagicUpHistory, useMagicUpJobs } from "@/features/magic-up";
 import MagicUpLeftPanel, { STYLE_OPTIONS } from "@/features/magic-up/components/MagicUpLeftPanel";
 import MagicUpProductPickerModal from "@/features/magic-up/components/MagicUpProductPickerModal";
 import MagicUpResultsGrid from "@/features/magic-up/components/MagicUpResultsGrid";
@@ -56,6 +57,8 @@ const MagicUpGenerate = () => {
     }[]
   >([]);
   const { addGeneration: saveToHistory } = useMagicUpHistory();
+  const { enqueueBatch } = useMagicUpJobs();
+  const navigate = useNavigate();
   const [showPromptBank, setShowPromptBank] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<DbProduct | null>(null);
@@ -81,6 +84,20 @@ const MagicUpGenerate = () => {
 
   const VARIATION_STYLES = ["premium", "lifestyle", "flatlay", "minimal"];
   const VARIATION_LABELS = ["Premium", "Lifestyle", "Flat Lay", "Minimalista"];
+
+  const handleGenerateBatch = () => {
+    const finalPrompt = prompt.trim() || smartPrompt;
+    if (!finalPrompt) return;
+    enqueueBatch.mutate(
+      {
+        prompt: finalPrompt,
+        productName: selectedProduct?.name,
+        productSku: selectedProduct?.sku,
+        styles: VARIATION_STYLES,
+      },
+      { onSuccess: () => navigate("/magicup/jobs") },
+    );
+  };
 
   const handleGenerate = async () => {
     const finalPrompt = prompt.trim() || smartPrompt;
@@ -232,6 +249,20 @@ const MagicUpGenerate = () => {
                     onClick={() => setShowPromptBank(!showPromptBank)}
                   >
                     <Wand2 className="w-3.5 h-3.5" /> Prompts
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1.5"
+                    onClick={handleGenerateBatch}
+                    disabled={enqueueBatch.isPending || (!prompt.trim() && !smartPrompt)}
+                  >
+                    {enqueueBatch.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Layers className="w-3.5 h-3.5" />
+                    )}{" "}
+                    Gerar lote
                   </Button>
                   <Button
                     size="sm"

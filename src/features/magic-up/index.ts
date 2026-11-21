@@ -4,6 +4,8 @@
  */
 export { useMagicUpHistory } from "./hooks/use-magicup-history";
 export type { MagicUpHistoryItem } from "./hooks/use-magicup-history";
+export { useMagicUpJobs, MAGIC_UP_STYLE_LABELS } from "./hooks/use-magic-up-jobs";
+export type { MagicUpJob } from "./hooks/use-magic-up-jobs";
 export {
   SAMPLE_PROMPTS,
   PROMPT_CATEGORIES,

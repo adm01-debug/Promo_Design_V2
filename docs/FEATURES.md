@@ -99,15 +99,15 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 ## 7. Magic Up (AI)
 
-| Funcionalidade               | Rota                 | Arquivo principal                                      | Status | Observação                                                                         |
-| ---------------------------- | -------------------- | ------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------- |
-| Gerar variações              | `/magicup/generate`  | `src/features/magic-up/pages/MagicUpGenerate.tsx`      | ✅     | —                                                                                  |
-| Galeria de prompts           | `/magicup/prompts`   | `src/features/magic-up/pages/MagicUpPrompts.tsx`       | ✅     | —                                                                                  |
-| Histórico                    | `/magicup/history`   | `src/features/magic-up/pages/MagicUpHistory.tsx`       | ✅     | —                                                                                  |
-| Edge function AI             | (backend)            | `supabase/functions/mockup-ai/index.ts`                | ✅     | —                                                                                  |
-| Favoritos (galeria dedicada) | `/magicup/favorites` | _(parcial via filtro em `/magicup/history`)_           | 🟡     | Filtro `favorite` existe em `/magicup/history`; falta galeria com layout dedicado. |
-| Batch jobs (status fila)     | `/magicup/jobs`      | _(planejado)_                                          | 🔴     | Geração é síncrona/simulada; falta fila + status async + edge function worker.     |
-| Estilos/presets gerenciáveis | `/magicup/styles`    | _(planejado, hoje hardcoded em `MagicUpGenerate.tsx`)_ | 🔴     | `SAMPLE_PROMPTS` hardcoded em `mockup-types.ts`; falta CRUD por organização.       |
+| Funcionalidade               | Rota                 | Arquivo principal                                      | Status | Observação                                                                                                              |
+| ---------------------------- | -------------------- | ------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Gerar variações              | `/magicup/generate`  | `src/features/magic-up/pages/MagicUpGenerate.tsx`      | ✅     | —                                                                                                                       |
+| Galeria de prompts           | `/magicup/prompts`   | `src/features/magic-up/pages/MagicUpPrompts.tsx`       | ✅     | —                                                                                                                       |
+| Histórico                    | `/magicup/history`   | `src/features/magic-up/pages/MagicUpHistory.tsx`       | ✅     | —                                                                                                                       |
+| Edge function AI             | (backend)            | `supabase/functions/mockup-ai/index.ts`                | ✅     | —                                                                                                                       |
+| Favoritos (galeria dedicada) | `/magicup/favorites` | _(parcial via filtro em `/magicup/history`)_           | 🟡     | Filtro `favorite` existe em `/magicup/history`; falta galeria com layout dedicado.                                      |
+| Batch jobs (status fila)     | `/magicup/jobs`      | `src/features/magic-up/pages/MagicUpJobs.tsx`          | ✅     | Fila `magic_up_jobs` + RPCs `enqueue/cancel` + edge `magic-up-jobs`; botão "Gerar lote" no gerador e polling de status. |
+| Estilos/presets gerenciáveis | `/magicup/styles`    | _(planejado, hoje hardcoded em `MagicUpGenerate.tsx`)_ | 🔴     | `SAMPLE_PROMPTS` hardcoded em `mockup-types.ts`; falta CRUD por organização.                                            |
 
 ## 8. Video Studio
 
@@ -139,7 +139,7 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 1   | Coleções/Pastas no DAM                  | `/dam/collections`                 | 🔴     | G       | Organização hierárquica é gap crítico em libraries grandes.                                              |
 | 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.                                                 |
 | 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.                                                   |
-| 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.                                                       |
+| 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | ✅     | G       | Implementado: fila `magic_up_jobs` + RPCs + edge `magic-up-jobs`, página de fila, botão "Gerar lote".    |
 | 5   | Templates de mockup salvos              | `/mockup/templates`                | ✅     | M       | Implementado: CRUD sobre `mockup_drafts`, salvar como template no Studio/Rascunhos, usar/clonar/excluir. |
 | 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                       |
 | 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | ✅     | M       | Implementado: snapshot automático, diff A/B e restaurar.                                                 |
