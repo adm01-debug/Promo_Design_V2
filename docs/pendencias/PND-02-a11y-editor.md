@@ -1,7 +1,7 @@
 ﻿---
 ID: PND-02
 Titulo: ARIA em seletor de views e toolbars do editor
-Estado: PENDENTE
+Estado: DONE
 Fonte: docs/senior-frontend-audit.md [ALTO]
 Data: 2026-11-21
 ---
@@ -10,7 +10,7 @@ Data: 2026-11-21
 
 ## Estado
 
-PENDENTE
+DONE (2026-11-21)
 
 ## Fonte
 
@@ -22,4 +22,4 @@ Componentes complexos do editor sem aria-label/aria-selected; exige aria-label e
 
 ## Evidencia / Acao
 
-(Verificacao pendente ou executada - preencher ao fechar o item.)
+Editor acessivel no head d2004c6e: EditorViewThumbnails.tsx usa aria-label + aria-pressed nos botoes de vista; EditorTopBar.tsx e EditorRightPanel.tsx usam aria-label, role/toolbar, aria-labelledby e text em vez de apenas icone. Verificado na fonte.
