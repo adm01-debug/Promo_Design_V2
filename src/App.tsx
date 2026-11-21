@@ -70,6 +70,9 @@ const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibra
 const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
+const BrandSharePublicPage = lazyWithRetry(
+  () => import("./features/dam/pages/BrandSharePublicPage"),
+);
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
 
 const queryClient = new QueryClient();
@@ -90,6 +93,14 @@ const App = () => (
                     <Routes>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route
+                        path="/brand/public/:token"
+                        element={
+                          <Suspense fallback={<LoadingScreen />}>
+                            <BrandSharePublicPage />
+                          </Suspense>
+                        }
+                      />
                       <Route
                         element={
                           <ProtectedRoute>

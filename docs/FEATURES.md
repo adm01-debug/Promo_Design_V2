@@ -80,7 +80,7 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Resumo PDF do cliente            | (lib)                              | `src/features/service-orders/lib/ClientSummaryPdf.ts` | ✅     | —                                                                                          |
 | Brand Kit PDF                    | (lib)                              | `src/features/dam/lib/brand-kit-pdf.ts`               | ✅     | —                                                                                          |
 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | _(planejado)_                                         | 🔴     | Hoje sobrescreve registro único em `brand_guidelines`; falta histórico em tabela separada. |
-| Brand Guidelines — share público | `/brand/public/:token`             | _(planejado)_                                         | 🔴     | Mesma infra do approval token; ainda não modelado.                                         |
+| Brand Guidelines — share público | `/brand/public/:token`             | `src/features/dam/pages/BrandSharePublicPage.tsx`     | ✅     | Link temporário público via `brand_share_tokens` + edge `brand-share` (PR #72).            |
 
 ## 6. DAM (Digital Asset Management)
 
@@ -138,7 +138,7 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | --- | --------------------------------------- | ---------------------------------- | ------ | ------- | -------------------------------------------------------------------------------------------------------- |
 | 1   | Coleções/Pastas no DAM                  | `/dam/collections`                 | 🔴     | G       | Organização hierárquica é gap crítico em libraries grandes.                                              |
 | 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.                                                 |
-| 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.                                                   |
+| 3   | Brand Guidelines — share público        | `/brand/public/:token`             | ✅     | G       | Link temporário público via `brand_share_tokens` + edge `brand-share` (PR #72).                          |
 | 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.                                                       |
 | 5   | Templates de mockup salvos              | `/mockup/templates`                | ✅     | M       | Implementado: CRUD sobre `mockup_drafts`, salvar como template no Studio/Rascunhos, usar/clonar/excluir. |
 | 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                       |
