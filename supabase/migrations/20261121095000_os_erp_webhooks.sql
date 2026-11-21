@@ -1,4 +1,4 @@
-﻿-- OS → ERP webhook queue.
+-- OS → ERP webhook queue.
 -- Owner decision 2026-11-21: dispatch on ALL service-order changes
 -- (created, content edited, status changed incl. cancel/reopen, deleted).
 --

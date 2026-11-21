@@ -1,4 +1,4 @@
-﻿-- Client approval flow: share a public link so the client can
+-- Client approval flow: share a public link so the client can
 -- approve/reject a finished mockup without logging in.
 --
 -- Design (owner decision 2026-11-21):
