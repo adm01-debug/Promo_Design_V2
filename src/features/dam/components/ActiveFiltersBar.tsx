@@ -25,6 +25,10 @@ interface ActiveFiltersBarProps {
   onRemoveTag: (t: string) => void;
   includeArchived: boolean;
   onClearArchived: () => void;
+  sizeLabel?: string;
+  onClearSize?: () => void;
+  updatedLabel?: string;
+  onClearUpdated?: () => void;
   onClearAll: () => void;
 }
 
@@ -41,10 +45,20 @@ export function ActiveFiltersBar({
   onRemoveTag,
   includeArchived,
   onClearArchived,
+  sizeLabel,
+  onClearSize,
+  updatedLabel,
+  onClearUpdated,
   onClearAll,
 }: ActiveFiltersBarProps) {
   const hasAny =
-    !!search || assetTypes.length > 0 || clientId !== "all" || tags.length > 0 || includeArchived;
+    !!search ||
+    assetTypes.length > 0 ||
+    clientId !== "all" ||
+    tags.length > 0 ||
+    includeArchived ||
+    !!sizeLabel ||
+    !!updatedLabel;
 
   if (!hasAny) return null;
 
@@ -90,6 +104,22 @@ export function ActiveFiltersBar({
           label="Arquivados incluídos"
           onRemove={onClearArchived}
           ariaLabel="Ocultar arquivados"
+        />
+      )}
+
+      {sizeLabel && (
+        <Chip
+          label={`Tamanho: ${sizeLabel}`}
+          onRemove={onClearSize}
+          ariaLabel={`Remover filtro de tamanho ${sizeLabel}`}
+        />
+      )}
+
+      {updatedLabel && (
+        <Chip
+          label={`Modificado: ${updatedLabel}`}
+          onRemove={onClearUpdated}
+          ariaLabel={`Remover filtro de data ${updatedLabel}`}
         />
       )}
 

@@ -373,6 +373,11 @@ export function useDamFilters() {
     if (state.tags.length > 1) sp.set("tagsMode", state.tagsMode);
     if (state.includeArchived) sp.set("archived", "1");
     if (state.sort !== "created_desc") sp.set("sort", state.sort);
+    if (state.sizeRange !== "all") sp.set("size", state.sizeRange);
+    if (state.updatedRange !== "all") sp.set("updated", state.updatedRange);
+    if (state.customSize?.minBytes != null) sp.set("sizeMin", String(state.customSize.minBytes));
+    if (state.customSize?.maxBytes != null) sp.set("sizeMax", String(state.customSize.maxBytes));
+    if (state.customSize) sp.set("sizeUnit", state.customSize.unit);
     const s = sp.toString();
     return s ? `?${s}` : "";
   }, [state]);

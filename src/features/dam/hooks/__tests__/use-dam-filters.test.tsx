@@ -124,3 +124,78 @@ describe("useDamFilters — Arquivados toggle persistence", () => {
     expect(localStorage.getItem(ARCHIVED_KEY)).toBeNull();
   });
 });
+
+describe("useDamFilters — filtros de tamanho e data (UI da biblioteca)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("hydrates sizeRange from ?size=5to20mb", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam?size=5to20mb"]),
+    });
+    expect(result.current.state.sizeRange).toBe("5to20mb");
+  });
+
+  it("ignores an unknown ?size value and falls back to all", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam?size=huge"]),
+    });
+    expect(result.current.state.sizeRange).toBe("all");
+  });
+
+  it("hydrates customSize from ?sizeMin/sizeMax/sizeUnit in bytes", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam?sizeMin=1048576&sizeMax=5242880&sizeUnit=MB"]),
+    });
+    expect(result.current.state.customSize?.minBytes).toBe(1048576);
+    expect(result.current.state.customSize?.maxBytes).toBe(5242880);
+    expect(result.current.state.customSize?.unit).toBe("MB");
+  });
+
+  it("syncs sizeRange to the shareable queryString", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam"]),
+    });
+    act(() => result.current.setSizeRange("gt20mb"));
+    expect(result.current.queryString).toContain("size=gt20mb");
+  });
+
+  it("syncs customSize to the shareable queryString", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam"]),
+    });
+    act(() =>
+      result.current.setCustomSize({
+        minBytes: 2048,
+        maxBytes: null,
+        unit: "KB",
+        minRaw: "2",
+        maxRaw: "",
+      }),
+    );
+    expect(result.current.queryString).toContain("sizeMin=2048");
+    expect(result.current.queryString).toContain("sizeUnit=KB");
+  });
+
+  it("hydrates updatedRange from ?updated=7d and syncs it back", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam?updated=7d"]),
+    });
+    expect(result.current.state.updatedRange).toBe("7d");
+    act(() => result.current.setUpdatedRange("30d"));
+    expect(result.current.queryString).toContain("updated=30d");
+  });
+
+  it("reset() clears size and date filters", () => {
+    const { result } = renderHook(() => useDamFilters(), {
+      wrapper: wrapper(["/dam?size=lt1mb&updated=24h"]),
+    });
+    expect(result.current.state.sizeRange).toBe("lt1mb");
+    expect(result.current.state.updatedRange).toBe("24h");
+    act(() => result.current.reset());
+    expect(result.current.state.sizeRange).toBe("all");
+    expect(result.current.state.updatedRange).toBe("all");
+    expect(result.current.state.customSize).toBeNull();
+  });
+});

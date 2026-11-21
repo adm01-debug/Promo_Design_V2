@@ -16,6 +16,7 @@ import { PreviewStage } from "../components/PreviewStage";
 import { PreviewThumbStrip } from "../components/PreviewThumbStrip";
 import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 import { CompareGrid } from "../components/CompareGrid";
+import { CompareTopBar } from "../components/CompareTopBar";
 import { useCompareSelection } from "../hooks/use-compare-selection";
 import { ExportMenu } from "../components/ExportMenu";
 import { ExportProgressPanel } from "../components/ExportProgressPanel";
@@ -430,7 +431,21 @@ export default function DamPreviewPage() {
         />
         <main className="flex-1 relative flex flex-col bg-muted/20 overflow-hidden">
           {compareMode ? (
-            <CompareGrid assets={selectedAssets} onRemove={(id) => compare.toggle(id)} />
+            <>
+              <CompareTopBar
+                count={compare.selectedIds.length}
+                max={compare.max}
+                onClear={compare.clear}
+                onExit={() => setCompareMode(false)}
+                onExitAndClear={() => {
+                  compare.clear();
+                  setCompareMode(false);
+                }}
+              />
+              <div className="flex-1 overflow-auto">
+                <CompareGrid assets={selectedAssets} onRemove={(id) => compare.toggle(id)} />
+              </div>
+            </>
           ) : (
             <PreviewStage
               asset={activeAsset}
