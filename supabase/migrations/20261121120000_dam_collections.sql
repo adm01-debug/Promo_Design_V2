@@ -43,6 +43,14 @@ ALTER TABLE public.dam_collection_assets ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.dam_collections FROM PUBLIC, anon;
 REVOKE ALL ON public.dam_collection_assets FROM PUBLIC, anon;
 
+-- Sem estes GRANT a RLS nunca chega a ser avaliada: o PostgREST responde
+-- "permission denied for table" e as telas de colecoes ficam vazias para todos,
+-- inclusive para os membros da organizacao.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.dam_collections TO authenticated;
+GRANT SELECT, INSERT, DELETE ON public.dam_collection_assets TO authenticated;
+GRANT ALL ON public.dam_collections TO service_role;
+GRANT ALL ON public.dam_collection_assets TO service_role;
+
 CREATE POLICY "Members select collections"
   ON public.dam_collections FOR SELECT TO authenticated
   USING (public.is_member_of(auth.uid(), organization_id));
