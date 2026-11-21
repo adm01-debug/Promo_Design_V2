@@ -16,18 +16,10 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import CharacterCreator from "@/features/video/components/CharacterCreator";
-
-interface CharacterProfile {
-  id: string;
-  name: string;
-  avatar: string;
-  style: string;
-  traits: string[];
-  outfits: string[];
-  poses: string[];
-  createdAt: string;
-  favorite: boolean;
-}
+import {
+  useCharacterProfiles,
+  type CharacterProfile,
+} from "@/features/video/hooks/use-character-profiles";
 
 const STYLES = [
   { id: "professional", label: "Profissional", emoji: "👔", desc: "Terno, blazer, roupas formais" },
@@ -110,7 +102,12 @@ const DEMO_CHARACTERS: CharacterProfile[] = [
 
 const CharacterStudio = () => {
   const navigate = useNavigate();
-  const [characters, setCharacters] = useState<CharacterProfile[]>(DEMO_CHARACTERS);
+  const {
+    characters,
+    add: addCharacter,
+    remove: removeCharacter,
+    toggleFavorite,
+  } = useCharacterProfiles(DEMO_CHARACTERS);
   const [selectedChar, setSelectedChar] = useState<CharacterProfile | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -178,10 +175,8 @@ const CharacterStudio = () => {
   const filteredChars = characters.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const toggleFavorite = (id: string) =>
-    setCharacters((prev) => prev.map((c) => (c.id === id ? { ...c, favorite: !c.favorite } : c)));
   const deleteChar = (id: string) => {
-    setCharacters((prev) => prev.filter((c) => c.id !== id));
+    removeCharacter(id);
     if (selectedChar?.id === id) setSelectedChar(null);
     toast.success("Personagem removido");
   };
@@ -207,7 +202,7 @@ const CharacterStudio = () => {
       createdAt: new Date().toISOString(),
       favorite: false,
     };
-    setCharacters((prev) => [newChar, ...prev]);
+    addCharacter(newChar);
     setSelectedChar(newChar);
     setIsCreating(false);
     setNewName("");
