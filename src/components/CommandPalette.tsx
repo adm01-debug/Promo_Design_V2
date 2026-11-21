@@ -67,7 +67,6 @@ const pages = [
   { label: "Moodboard", path: "/video/moodboard", icon: Palette, group: "Video Studio" },
   { label: "Photodump", path: "/video/photodump", icon: Camera, group: "Video Studio" },
   { label: "Character Studio", path: "/video/characters", icon: User, group: "Video Studio" },
-  { label: "Inspiração", path: "/video/gallery", icon: Eye, group: "Video Studio" },
   { label: "Histórico Vídeo", path: "/video/history", icon: History, group: "Video Studio" },
 ];
 
