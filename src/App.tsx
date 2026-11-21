@@ -71,6 +71,7 @@ const DamCollectionsPage = lazyWithRetry(() => import("./features/dam/pages/DamC
 const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
+const BrandHistoryPage = lazyWithRetry(() => import("./features/dam/pages/BrandHistoryPage"));
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
 const ClientApprovalPage = lazyWithRetry(
   () => import("./features/mockup/pages/ClientApprovalPage"),
@@ -207,6 +208,10 @@ const App = () => (
                         <Route
                           path="/clients/:clientId/brand"
                           element={guard("Brand Guidelines", <BrandGuidelinesPage />)}
+                        />
+                        <Route
+                          path="/clients/:clientId/brand/history"
+                          element={guard("Histórico de Brand", <BrandHistoryPage />)}
                         />
                         <Route path="/dam" element={guard("DAM", <DamLibraryPage />)} />
                         <Route

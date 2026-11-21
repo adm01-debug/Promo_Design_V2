@@ -649,6 +649,64 @@ export type Database = {
           },
         ]
       }
+      brand_guidelines_history: {
+        Row: {
+          brand_guideline_id: string
+          change_summary: string | null
+          changed_by: string | null
+          client_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          brand_guideline_id: string
+          change_summary?: string | null
+          changed_by?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          snapshot: Json
+          version: number
+        }
+        Update: {
+          brand_guideline_id?: string
+          change_summary?: string | null
+          changed_by?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_guidelines_history_brand_guideline_id_fkey"
+            columns: ["brand_guideline_id"]
+            isOneToOne: false
+            referencedRelation: "brand_guidelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_guidelines_infer_history: {
         Row: {
           applied: boolean
