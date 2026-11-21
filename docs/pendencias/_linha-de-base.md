@@ -22,14 +22,14 @@
 
 ## Qualidade no baseline (head 246e410c)
 
-| Verificacao | Resultado | Evidencia |
-| --- | --- | --- |
-| typecheck | pass | tsc --noEmit exit 0 |
-| lint ESLint | pass | eslint . exit 0 |
-| prettier check (src + docs + raiz) | pass | prettier --check exit 0 |
-| vitest | pass | vitest run: 42 files, 728/728 tests pass (2026-11-21) |
-| CI no main | pass | run 44901004005 head cda35d4e: 11/11 jobs success (Install, Edge, Format, Lint, Tests, Build, Typecheck, Quality Gate, Generate audit PDF, E2E, Load tests) |
-| Producao | deploy success | deployment "Production - promo-design-v2" head 246e410c; smoke HTTP 200 em https://promo-design-v2.vercel.app |
+| Verificacao                        | Resultado      | Evidencia                                                                                                                                                   |
+| ---------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| typecheck                          | pass           | tsc --noEmit exit 0                                                                                                                                         |
+| lint ESLint                        | pass           | eslint . exit 0                                                                                                                                             |
+| prettier check (src + docs + raiz) | pass           | prettier --check exit 0                                                                                                                                     |
+| vitest                             | pass           | vitest run: 42 files, 728/728 tests pass (2026-11-21)                                                                                                       |
+| CI no main                         | pass           | run 44901004005 head cda35d4e: 11/11 jobs success (Install, Edge, Format, Lint, Tests, Build, Typecheck, Quality Gate, Generate audit PDF, E2E, Load tests) |
+| Producao                           | deploy success | deployment "Production - promo-design-v2" head 246e410c; smoke HTTP 200 em https://promo-design-v2.vercel.app                                               |
 
 ## Regressoes conhecidas (baseline, pre GOAL)
 
