@@ -1061,6 +1061,69 @@ export type Database = {
           },
         ]
       }
+      magic_up_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          product_name: string | null
+          product_sku: string | null
+          prompt: string
+          result_image_url: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["magic_up_job_status"]
+          style: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt: string
+          result_image_url?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["magic_up_job_status"]
+          style?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt?: string
+          result_image_url?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["magic_up_job_status"]
+          style?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_up_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magic_up_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_runs: {
         Row: {
           audit_deleted: number
@@ -1951,6 +2014,12 @@ export type Database = {
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
       asset_type: "logo" | "art" | "photo" | "mockup" | "document" | "other"
+      magic_up_job_status:
+        | "queued"
+        | "processing"
+        | "done"
+        | "failed"
+        | "cancelled"
       video_job_status:
         | "queued"
         | "generating"
