@@ -31,6 +31,8 @@ const MockupNew = lazyWithRetry(() => import("./features/mockup/pages/MockupNew"
 const MockupDrafts = lazyWithRetry(() => import("./features/mockup/pages/MockupDrafts"));
 const MockupHistory = lazyWithRetry(() => import("./features/mockup/pages/MockupHistory"));
 const MockupEditor = lazyWithRetry(() => import("./features/mockup/pages/MockupEditor"));
+const MockupTemplates = lazyWithRetry(() => import("./features/mockup/pages/MockupTemplates"));
+const MockupCompare = lazyWithRetry(() => import("./features/mockup/pages/MockupCompare"));
 const MagicUpGenerate = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpGenerate"));
 const MagicUpPrompts = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpHistory"));
@@ -107,6 +109,14 @@ const App = () => (
                         <Route path="/mockup" element={<Navigate to="/mockup/new" replace />} />
                         <Route path="/mockup/new" element={guard("Mockup", <MockupNew />)} />
                         <Route path="/mockup/drafts" element={guard("Mockup", <MockupDrafts />)} />
+                        <Route
+                          path="/mockup/templates"
+                          element={guard("Templates de Mockup", <MockupTemplates />)}
+                        />
+                        <Route
+                          path="/mockup/compare"
+                          element={guard("Comparador de Mockups", <MockupCompare />)}
+                        />
                         <Route
                           path="/mockup/history"
                           element={guard("Mockup", <MockupHistory />)}

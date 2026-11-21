@@ -15,18 +15,27 @@ export interface MockupDraft {
   editorState: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
+  isTemplate: boolean;
+}
+
+/** Flag persisted inside editor_state.meta — avoids a DDL migration on mockup_drafts. */
+export function isDraftTemplate(editorState: Record<string, unknown> | null): boolean {
+  const meta = editorState?.meta as Record<string, unknown> | undefined;
+  return meta?.isTemplate === true;
 }
 
 function rowToDraft(row: Tables<"mockup_drafts">): MockupDraft {
+  const editorState = row.editor_state as Record<string, unknown> | null;
   return {
     id: row.id,
     name: row.name,
     productName: row.product_name,
     productSku: row.product_sku,
     thumbnailUrl: row.thumbnail_url,
-    editorState: row.editor_state as Record<string, unknown> | null,
+    editorState,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    isTemplate: isDraftTemplate(editorState),
   };
 }
 
@@ -60,8 +69,20 @@ export function useMockupDrafts() {
       productSku?: string | null;
       thumbnailUrl?: string | null;
       editorState?: Record<string, unknown> | null;
+      isTemplate?: boolean;
     }) => {
       if (!user) throw new Error("Not authenticated");
+
+      const mergedState: Record<string, unknown> | null =
+        draft.isTemplate !== undefined
+          ? {
+              ...(draft.editorState ?? {}),
+              meta: {
+                ...((draft.editorState?.meta as Record<string, unknown> | undefined) ?? {}),
+                isTemplate: draft.isTemplate,
+              },
+            }
+          : (draft.editorState ?? null);
 
       if (draft.id) {
         const { data, error } = await supabase
@@ -71,7 +92,7 @@ export function useMockupDrafts() {
             product_name: draft.productName ?? null,
             product_sku: draft.productSku ?? null,
             thumbnail_url: draft.thumbnailUrl ?? null,
-            editor_state: (draft.editorState ?? null) as Json,
+            editor_state: mergedState as Json,
           })
           .eq("id", draft.id)
           .select()
@@ -89,7 +110,7 @@ export function useMockupDrafts() {
           product_name: draft.productName ?? null,
           product_sku: draft.productSku ?? null,
           thumbnail_url: draft.thumbnailUrl ?? null,
-          editor_state: (draft.editorState ?? null) as Json,
+          editor_state: mergedState as Json,
         })
 
         .select()
@@ -108,6 +129,37 @@ export function useMockupDrafts() {
     onSuccess: invalidate,
   });
 
+  const setTemplateMutation = useMutation({
+    mutationFn: async ({ id, isTemplate }: { id: string; isTemplate: boolean }) => {
+      if (!user) throw new Error("Not authenticated");
+      // Le o estado atual no banco para preservar o editor_state (nao usar cache stale).
+      const { data: current, error: fetchError } = await supabase
+        .from("mockup_drafts")
+        .select("editor_state")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw fetchError;
+      const editorState = (current?.editor_state as Record<string, unknown> | null) ?? {};
+      const { data, error } = await supabase
+        .from("mockup_drafts")
+        .update({
+          editor_state: {
+            ...editorState,
+            meta: {
+              ...((editorState.meta as Record<string, unknown>) ?? {}),
+              isTemplate,
+            },
+          } as Json,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return rowToDraft(data);
+    },
+    onSuccess: invalidate,
+  });
+
   const saveDraft = useCallback(
     (draft: Parameters<typeof saveMutation.mutateAsync>[0]) => saveMutation.mutateAsync(draft),
     [saveMutation],
@@ -115,7 +167,21 @@ export function useMockupDrafts() {
 
   const deleteDraft = useCallback((id: string) => deleteMutation.mutateAsync(id), [deleteMutation]);
 
+  const setTemplate = useCallback(
+    (id: string, isTemplate: boolean) => setTemplateMutation.mutateAsync({ id, isTemplate }),
+    [setTemplateMutation],
+  );
+
   const getDraft = useCallback((id: string) => drafts.find((d) => d.id === id) ?? null, [drafts]);
 
-  return { drafts, isLoading, saveDraft, deleteDraft, getDraft, isSaving: saveMutation.isPending };
+  return {
+    drafts,
+    isLoading,
+    saveDraft,
+    deleteDraft,
+    setTemplate,
+    getDraft,
+    isSaving: saveMutation.isPending,
+    isSettingTemplate: setTemplateMutation.isPending,
+  };
 }

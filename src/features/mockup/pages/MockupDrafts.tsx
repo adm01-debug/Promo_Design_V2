@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FolderOpen, Clock, Trash2, Edit3, Loader2, Package, TrendingUp } from "lucide-react";
+import { FolderOpen, Clock, Trash2, Edit3, Loader2, Package, TrendingUp, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useMockupDrafts } from "@/features/mockup";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const MockupDrafts = () => {
-  const { drafts, isLoading, deleteDraft } = useMockupDrafts();
+  const { drafts, isLoading, deleteDraft, setTemplate, isSettingTemplate } = useMockupDrafts();
   const navigate = useNavigate();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -32,6 +32,15 @@ const MockupDrafts = () => {
       toast.error("Erro ao excluir rascunho.");
     }
     setDeleteId(null);
+  };
+
+  const handleToggleTemplate = async (d: (typeof drafts)[number]) => {
+    try {
+      await setTemplate(d.id, !d.isTemplate);
+      toast.success(d.isTemplate ? "Removido dos templates." : "Promovido a template!");
+    } catch {
+      toast.error("Erro ao atualizar template.");
+    }
   };
 
   const formatDate = (iso: string) => {
@@ -154,7 +163,7 @@ const MockupDrafts = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="rounded-xl border border-border bg-card overflow-hidden group hover:border-primary/40 transition-colors"
               >
-                <div className="aspect-video bg-muted/30 flex items-center justify-center overflow-hidden">
+                <div className="aspect-video bg-muted/30 relative flex items-center justify-center overflow-hidden">
                   {draft.thumbnailUrl ? (
                     <img
                       src={draft.thumbnailUrl}
@@ -163,6 +172,11 @@ const MockupDrafts = () => {
                     />
                   ) : (
                     <Package className="w-8 h-8 text-muted-foreground/40" />
+                  )}
+                  {draft.isTemplate && (
+                    <span className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 text-white text-[10px] font-medium px-2 py-0.5 rounded-md">
+                      <Star className="w-3 h-3" /> Template
+                    </span>
                   )}
                 </div>
                 <div className="p-3">
@@ -184,6 +198,19 @@ const MockupDrafts = () => {
                       onClick={() => navigate(`/mockup/new?draft=${draft.id}`)}
                     >
                       <Edit3 className="w-3 h-3" /> Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      disabled={isSettingTemplate}
+                      onClick={() => void handleToggleTemplate(draft)}
+                      aria-pressed={draft.isTemplate}
+                    >
+                      <Star
+                        className={`w-3 h-3 ${draft.isTemplate ? "fill-amber-400 text-amber-400" : ""}`}
+                      />
+                      {draft.isTemplate ? "Template" : "Usar como Template"}
                     </Button>
                     <Button
                       variant="ghost"
