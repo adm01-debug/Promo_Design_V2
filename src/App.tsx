@@ -218,7 +218,10 @@ const App = () => (
                           element={guard("Histórico de Vídeo", <VideoHistory />)}
                         />
                         <Route path="/settings" element={guard("Configurações", <Settings />)} />
-                        <Route path="/templates" element={<Navigate to="/mockup/templates" replace />} />
+                        <Route
+                          path="/templates"
+                          element={<Navigate to="/mockup/templates" replace />}
+                        />
                         <Route path="/editor" element={<Navigate to="/mockup/editor" replace />} />
                         <Route
                           path="/organization"
