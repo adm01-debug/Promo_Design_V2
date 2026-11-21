@@ -9,10 +9,17 @@
 // goes through SECURITY DEFINER RPCs; the table RLS is closed.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCorsHeaders, corsPreflight } from "../_shared/cors.ts";
-import { CreateSchema, DecideSchema, isValidToken, makeClient, parseJwtSub } from "./lib.ts";
+import { CreateSchema, DecideSchema, isValidToken, parseJwtSub } from "./lib.ts";
 
 const SHARE_BASE = Deno.env.get("APP_BASE_URL") || "https://promo-design-v2.vercel.app";
+
+function makeClient(serviceRole: string) {
+  return createClient("https://fygxlswpkjtjpcefjfty.supabase.co", serviceRole, {
+    auth: { persistSession: false },
+  });
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflight(req);
