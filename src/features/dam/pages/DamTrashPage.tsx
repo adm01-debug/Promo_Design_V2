@@ -152,9 +152,7 @@ export default function DamTrashPage() {
         <AssetGridSkeleton viewMode="grid" count={PAGE_SIZE} />
       ) : assets.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
-          {searchDetails
-            ? "Nenhum asset arquivado corresponde à busca"
-            : "A lixeira está vazia"}
+          {searchDetails ? "Nenhum asset arquivado corresponde à busca" : "A lixeira está vazia"}
         </Card>
       ) : (
         <>
