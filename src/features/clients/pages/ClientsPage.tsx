@@ -22,9 +22,12 @@ import {
   generateClientSummaryPdf,
   getLogoDataUrl,
   clientSlug,
-  type OsStatus,
+  rowToOrder,
 } from "@/features/service-orders";
+import type { Tables } from "@/integrations/supabase/types";
 import PdfProgressOverlay, { type PdfProgress } from "@/components/PdfProgressOverlay";
+
+type ServiceOrderRow = Tables<"service_orders">;
 
 const empty: ClientInput = { name: "", company: "", email: "", phone: "", notes: "" };
 
@@ -57,15 +60,24 @@ const ClientsPage = () => {
     try {
       const since = new Date();
       since.setDate(since.getDate() - summaryPeriod);
-      const { data, error } = await supabase
-        .from("service_orders")
-        .select("*")
-        .ilike("client_name", clientName)
-        .gte("created_at", since.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      if (error) throw error;
-      if (!data || data.length === 0) {
+      // Pagina em blocos de 1000: um .limit(1000) fixo truncava o resumo de
+      // clientes com mais de mil OSs no periodo.
+      const data: ServiceOrderRow[] = [];
+      const CHUNK = 1000;
+      for (let offset = 0; ; offset += CHUNK) {
+        const { data: rows, error } = await supabase
+          .from("service_orders")
+          .select("*")
+          .ilike("client_name", clientName)
+          .gte("created_at", since.toISOString())
+          .order("created_at", { ascending: false })
+          .range(offset, offset + CHUNK - 1);
+        if (error) throw error;
+        const batch = (rows ?? []) as ServiceOrderRow[];
+        data.push(...batch);
+        if (batch.length < CHUNK) break;
+      }
+      if (data.length === 0) {
         toast({
           title: "Sem dados",
           description: "Cliente não tem OSs no período selecionado.",
@@ -79,45 +91,7 @@ const ClientsPage = () => {
         total: data.length,
         percent: 3,
       });
-      const orders = data.map((row) => ({
-        id: row.id,
-        osNumber: row.os_number,
-        status: row.status as OsStatus,
-        date: row.date,
-        deliveryDate: row.delivery_date ?? "",
-        clientName: row.client_name,
-        clientCompany: row.client_company ?? "",
-        clientPhone: row.client_phone ?? "",
-        clientEmail: row.client_email ?? "",
-        productName: row.product_name,
-        productSku: row.product_sku ?? "",
-        productMaterial: row.product_material ?? "",
-        productColors: row.product_colors ?? "",
-        technique: row.technique,
-        areaName: row.area_name ?? "",
-        areaWidth: row.area_width ?? "",
-        areaHeight: row.area_height ?? "",
-        areaShape: row.area_shape ?? "",
-        artColors: row.art_colors ?? "",
-        artDpi: row.art_dpi ?? "",
-        artFile: row.art_file ?? "",
-        artFileDataUrl: row.art_file_data_url ?? "",
-        quantity: String(row.quantity),
-        observations: row.observations ?? "",
-        mockupImageUrl: row.mockup_image_url ?? "",
-        identificacaoCaixa: row.identificacao_caixa ?? "",
-        materialEvento: row.material_evento ?? false,
-        aprovarPrimeiraPeca: row.aprovar_primeira_peca ?? false,
-        qtdCompra: row.qtd_compra ?? "",
-        qtdLiberada: row.qtd_liberada ?? "",
-        fazParteKit: row.faz_parte_kit ?? false,
-        gravacaoDetalhe: row.gravacao_detalhe ?? "",
-        artAssetId: row.art_asset_id ?? null,
-        lockVersion: (row as { lock_version?: number }).lock_version ?? 1,
-        deletedAt: (row as { deleted_at?: string | null }).deleted_at,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
+      const orders = data.map((row) => rowToOrder(row as never));
       const logo = await getLogoDataUrl().catch(() => undefined);
       const doc = await generateClientSummaryPdf(
         {
