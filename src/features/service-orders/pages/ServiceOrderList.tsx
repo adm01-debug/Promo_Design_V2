@@ -54,7 +54,6 @@ import {
   generateBatchPdf,
   getLogoDataUrl,
 } from "@/features/service-orders";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import PdfProgressOverlay, { type PdfProgress } from "@/components/PdfProgressOverlay";
 import {
@@ -136,6 +135,18 @@ const ServiceOrderList = () => {
   // Also fetch total unfiltered count for display
   const { total: allTotal } = useServiceOrders({ pageSize: 1 });
 
+  // Dataset completo com os mesmos filtros da tela, para o PDF nao truncar em
+  // uma unica pagina nem ignorar produto/periodo.
+  const { orders: allFilteredOrders, isLoading: loadingAllFiltered } = useServiceOrders({
+    fetchAll: true,
+    search,
+    status: statusFilter,
+    sortAsc: !sortDesc,
+    productQuery,
+    dateFrom: dateFromIso,
+    dateTo: dateToIso,
+  });
+
   const handleChangeStatus = (id: string, status: OsStatus) => {
     try {
       updateStatus(id, status);
@@ -178,17 +189,7 @@ const ServiceOrderList = () => {
     setExporting(true);
     setPdfProgress({ stage: "Buscando OSs", current: 0, total: 0, percent: 0 });
     try {
-      // Buscar todas as OSs respeitando filtros (até 1000)
-      let query = supabase.from("service_orders").select("*");
-      if (statusFilter !== "all") query = query.eq("status", statusFilter);
-      if (search) {
-        query = query.or(
-          `os_number.ilike.%${search}%,client_name.ilike.%${search}%,client_company.ilike.%${search}%,product_name.ilike.%${search}%`,
-        );
-      }
-      query = query.order("created_at", { ascending: !sortDesc }).limit(1000);
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = allFilteredOrders;
       if (!data || data.length === 0) {
         toast.warning("Nenhuma OS para exportar com os filtros atuais");
         return;
@@ -201,42 +202,42 @@ const ServiceOrderList = () => {
       });
       const orders = data.map((row) => ({
         id: row.id,
-        osNumber: row.os_number,
+        osNumber: row.osNumber,
         status: row.status as OsStatus,
         date: row.date,
-        deliveryDate: row.delivery_date ?? "",
-        clientName: row.client_name,
-        clientCompany: row.client_company ?? "",
-        clientPhone: row.client_phone ?? "",
-        clientEmail: row.client_email ?? "",
-        productName: row.product_name,
-        productSku: row.product_sku ?? "",
-        productMaterial: row.product_material ?? "",
-        productColors: row.product_colors ?? "",
+        deliveryDate: row.deliveryDate ?? "",
+        clientName: row.clientName,
+        clientCompany: row.clientCompany ?? "",
+        clientPhone: row.clientPhone ?? "",
+        clientEmail: row.clientEmail ?? "",
+        productName: row.productName,
+        productSku: row.productSku ?? "",
+        productMaterial: row.productMaterial ?? "",
+        productColors: row.productColors ?? "",
         technique: row.technique,
-        areaName: row.area_name ?? "",
-        areaWidth: row.area_width ?? "",
-        areaHeight: row.area_height ?? "",
-        areaShape: row.area_shape ?? "",
-        artColors: row.art_colors ?? "",
-        artDpi: row.art_dpi ?? "",
-        artFile: row.art_file ?? "",
-        artFileDataUrl: row.art_file_data_url ?? "",
+        areaName: row.areaName ?? "",
+        areaWidth: row.areaWidth ?? "",
+        areaHeight: row.areaHeight ?? "",
+        areaShape: row.areaShape ?? "",
+        artColors: row.artColors ?? "",
+        artDpi: row.artDpi ?? "",
+        artFile: row.artFile ?? "",
+        artFileDataUrl: row.artFileDataUrl ?? "",
         quantity: String(row.quantity),
         observations: row.observations ?? "",
-        mockupImageUrl: row.mockup_image_url ?? "",
-        identificacaoCaixa: row.identificacao_caixa ?? "",
-        materialEvento: row.material_evento ?? false,
-        aprovarPrimeiraPeca: row.aprovar_primeira_peca ?? false,
-        qtdCompra: row.qtd_compra ?? "",
-        qtdLiberada: row.qtd_liberada ?? "",
-        fazParteKit: row.faz_parte_kit ?? false,
-        gravacaoDetalhe: row.gravacao_detalhe ?? "",
-        artAssetId: row.art_asset_id ?? null,
-        lockVersion: (row as unknown as { lock_version?: number }).lock_version ?? 1,
-        deletedAt: (row as unknown as { deleted_at?: string | null }).deleted_at,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
+        mockupImageUrl: row.mockupImageUrl ?? "",
+        identificacaoCaixa: row.identificacaoCaixa ?? "",
+        materialEvento: row.materialEvento ?? false,
+        aprovarPrimeiraPeca: row.aprovarPrimeiraPeca ?? false,
+        qtdCompra: row.qtdCompra ?? "",
+        qtdLiberada: row.qtdLiberada ?? "",
+        fazParteKit: row.fazParteKit ?? false,
+        gravacaoDetalhe: row.gravacaoDetalhe ?? "",
+        artAssetId: row.artAssetId ?? null,
+        lockVersion: row.lockVersion ?? 1,
+        deletedAt: row.deletedAt,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
       }));
       const logo = await getLogoDataUrl().catch(() => undefined);
       const doc = await generateBatchPdf(orders, { status: statusFilter, search }, logo, (p) =>
@@ -313,7 +314,7 @@ const ServiceOrderList = () => {
               variant="outline"
               className="gap-2"
               onClick={handleExportPdf}
-              disabled={exporting || total === 0}
+              disabled={exporting || total === 0 || loadingAllFiltered}
             >
               {exporting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
