@@ -72,15 +72,15 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 ## 5. Catálogo & Clientes
 
-| Funcionalidade                   | Rota                               | Arquivo principal                                     | Status | Observação                                                                                 |
-| -------------------------------- | ---------------------------------- | ----------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------ |
-| Catálogo de produtos             | `/catalog`                         | `src/features/catalog/pages/CatalogPage.tsx`          | ✅     | —                                                                                          |
-| Lista de clientes                | `/clients`                         | `src/features/clients/pages/ClientsPage.tsx`          | ✅     | —                                                                                          |
-| Brand Guidelines do cliente      | `/clients/:clientId/brand`         | `src/features/dam/pages/BrandGuidelinesPage.tsx`      | ✅     | —                                                                                          |
-| Resumo PDF do cliente            | (lib)                              | `src/features/service-orders/lib/ClientSummaryPdf.ts` | ✅     | —                                                                                          |
-| Brand Kit PDF                    | (lib)                              | `src/features/dam/lib/brand-kit-pdf.ts`               | ✅     | —                                                                                          |
+| Funcionalidade                   | Rota                               | Arquivo principal                                     | Status | Observação                                                                                       |
+| -------------------------------- | ---------------------------------- | ----------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------ |
+| Catálogo de produtos             | `/catalog`                         | `src/features/catalog/pages/CatalogPage.tsx`          | ✅     | —                                                                                                |
+| Lista de clientes                | `/clients`                         | `src/features/clients/pages/ClientsPage.tsx`          | ✅     | —                                                                                                |
+| Brand Guidelines do cliente      | `/clients/:clientId/brand`         | `src/features/dam/pages/BrandGuidelinesPage.tsx`      | ✅     | —                                                                                                |
+| Resumo PDF do cliente            | (lib)                              | `src/features/service-orders/lib/ClientSummaryPdf.ts` | ✅     | —                                                                                                |
+| Brand Kit PDF                    | (lib)                              | `src/features/dam/lib/brand-kit-pdf.ts`               | ✅     | —                                                                                                |
 | Brand Guidelines — versionamento | `/clients/:clientId/brand/history` | `src/features/dam/pages/BrandHistoryPage.tsx`         | ✅     | Histórico em `brand_guidelines_history` (snapshot + trigger + RLS), diff A/B e restaurar versão. |
-| Brand Guidelines — share público | `/brand/public/:token`             | _(planejado)_                                         | 🔴     | Mesma infra do approval token; ainda não modelado.                                         |
+| Brand Guidelines — share público | `/brand/public/:token`             | _(planejado)_                                         | 🔴     | Mesma infra do approval token; ainda não modelado.                                               |
 
 ## 6. DAM (Digital Asset Management)
 
@@ -142,7 +142,7 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.                                                       |
 | 5   | Templates de mockup salvos              | `/mockup/templates`                | ✅     | M       | Implementado: CRUD sobre `mockup_drafts`, salvar como template no Studio/Rascunhos, usar/clonar/excluir. |
 | 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                       |
-| 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | ✅     | M       | Implementado: snapshot automático, diff A/B e restaurar.                                                |
+| 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | ✅     | M       | Implementado: snapshot automático, diff A/B e restaurar.                                                 |
 | 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.                                                     |
 | 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models.                                          |
 | 10  | Lixeira DAM                             | `/dam/trash`                       | ✅     | P       | Implementado: galeria com seleção e restauração em lote.                                                 |
