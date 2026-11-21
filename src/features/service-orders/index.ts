@@ -8,6 +8,7 @@ export {
   STATUS_TRANSITIONS,
   canTransition,
   getNextStatuses,
+  rowToOrder,
 } from "./hooks/use-service-orders";
 export type {
   OsStatus,
