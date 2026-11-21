@@ -67,6 +67,7 @@ const AuditEventDetailPage = lazyWithRetry(
   () => import("./features/audit/pages/AuditEventDetailPage"),
 );
 const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
+const DamCollectionsPage = lazyWithRetry(() => import("./features/dam/pages/DamCollectionsPage"));
 const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
@@ -201,6 +202,10 @@ const App = () => (
                           element={guard("Brand Guidelines", <BrandGuidelinesPage />)}
                         />
                         <Route path="/dam" element={guard("DAM", <DamLibraryPage />)} />
+                        <Route
+                          path="/dam/collections"
+                          element={guard("Coleções DAM", <DamCollectionsPage />)}
+                        />
                         <Route path="/dam/trash" element={guard("Lixeira DAM", <DamTrashPage />)} />
                         <Route
                           path="/dam/preview"

@@ -15,6 +15,7 @@ import {
   Pencil,
   Check,
   X,
+  FolderPlus,
 } from "lucide-react";
 import { useAssets, type Asset } from "../hooks/use-assets";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ import { useAssetOcr } from "../hooks/use-asset-ocr";
 import { useAssetTags } from "../hooks/use-asset-tags";
 import { useAssetDetailActions } from "../hooks/use-asset-detail-actions";
 import { AssetDetailOcrSection } from "./AssetDetailOcrSection";
+import { AddToCollectionDialog } from "./AddToCollectionDialog";
 
 interface Props {
   asset: Asset | null;
@@ -44,6 +46,7 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
   const { archive, restore, remove, update, assets } = useAssets(currentOrgId);
   const { isFavorite, toggleFavorite } = useAssetFavorites(currentOrgId);
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
 
   const { url, handleCopyUrl } = useAssetDetailActions(asset, { toggleFavorite });
   const { ocrText, ocrStatus, ocrLoading, ocrOpen, setOcrOpen, ocrClearing, runOcr, clearOcr } =
@@ -251,6 +254,10 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar URL
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setCollectionDialogOpen(true)}>
+                <FolderPlus className="w-4 h-4 mr-2" />
+                Adicionar à coleção
+              </Button>
               {canEdit && (
                 <Button variant="outline" size="sm" onClick={() => setVersionDialogOpen(true)}>
                   <GitBranch className="w-4 h-4 mr-2" />
@@ -316,6 +323,13 @@ export function AssetDetailDrawer({ asset, onClose, onSelectAsset, searchQuery }
             organizationId={currentOrgId}
             parentAsset={asset}
             onUploaded={(newAsset) => onSelectAsset?.(newAsset)}
+          />
+        )}
+        {asset && (
+          <AddToCollectionDialog
+            open={collectionDialogOpen}
+            onOpenChange={setCollectionDialogOpen}
+            asset={asset}
           />
         )}
       </SheetContent>

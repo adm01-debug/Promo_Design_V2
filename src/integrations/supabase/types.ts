@@ -978,6 +978,103 @@ export type Database = {
           },
         ]
       }
+      dam_collection_assets: {
+        Row: {
+          added_by: string | null
+          asset_id: string
+          collection_id: string
+          created_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          asset_id: string
+          collection_id: string
+          created_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          asset_id?: string
+          collection_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dam_collection_assets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dam_collection_assets_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "dam_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dam_collections: {
+        Row: {
+          cover_asset_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          organization_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cover_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          organization_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cover_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          organization_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dam_collections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dam_collections_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "dam_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dam_collections_cover_asset_id_fkey"
+            columns: ["cover_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dam_saved_searches: {
         Row: {
           created_at: string
@@ -1718,6 +1815,10 @@ export type Database = {
       cleanup_expired_data_for_org: {
         Args: { _org_id: string; _source?: string; _triggered_by?: string }
         Returns: Json
+      }
+      count_collection_assets: {
+        Args: { _collection_id: string }
+        Returns: number
       }
       create_audit_log_partition: {
         Args: { _month_start: string }
