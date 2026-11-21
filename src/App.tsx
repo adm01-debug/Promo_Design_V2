@@ -37,6 +37,8 @@ const MagicUpGenerate = lazyWithRetry(() => import("./features/magic-up/pages/Ma
 const MagicUpPrompts = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpHistory"));
 const MagicUpFavorites = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpFavorites"));
+const MagicUpStyles = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpStyles"));
+const MagicUpJobs = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpJobs"));
 const VideoNew = lazyWithRetry(() => import("./features/video/pages/VideoNew"));
 const VideoHistory = lazyWithRetry(() => import("./features/video/pages/VideoHistory"));
 const VideoMoodboard = lazyWithRetry(() => import("./features/video/pages/VideoMoodboard"));
@@ -67,10 +69,18 @@ const AuditEventDetailPage = lazyWithRetry(
   () => import("./features/audit/pages/AuditEventDetailPage"),
 );
 const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibraryPage"));
+const DamCollectionsPage = lazyWithRetry(() => import("./features/dam/pages/DamCollectionsPage"));
 const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
+const BrandHistoryPage = lazyWithRetry(() => import("./features/dam/pages/BrandHistoryPage"));
+const BrandSharePublicPage = lazyWithRetry(
+  () => import("./features/dam/pages/BrandSharePublicPage"),
+);
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
+const ClientApprovalPage = lazyWithRetry(
+  () => import("./features/mockup/pages/ClientApprovalPage"),
+);
 
 const queryClient = new QueryClient();
 
@@ -90,6 +100,18 @@ const App = () => (
                     <Routes>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route
+                        path="/mockup/approve/:token"
+                        element={guard("Aprovação de Mockup", <ClientApprovalPage />)}
+                      />
+                      <Route
+                        path="/brand/public/:token"
+                        element={
+                          <Suspense fallback={<LoadingScreen />}>
+                            <BrandSharePublicPage />
+                          </Suspense>
+                        }
+                      />
                       <Route
                         element={
                           <ProtectedRoute>
@@ -158,6 +180,14 @@ const App = () => (
                           path="/magicup/favorites"
                           element={guard("Magic Up Favoritos", <MagicUpFavorites />)}
                         />
+                        <Route
+                          path="/magicup/styles"
+                          element={guard("Magic Up Estilos", <MagicUpStyles />)}
+                        />
+                        <Route
+                          path="/magicup/jobs"
+                          element={guard("Magic Up Jobs", <MagicUpJobs />)}
+                        />
                         <Route path="/video" element={<Navigate to="/video/new" replace />} />
                         <Route path="/video/new" element={guard("Video Studio", <VideoNew />)} />
                         <Route
@@ -200,7 +230,15 @@ const App = () => (
                           path="/clients/:clientId/brand"
                           element={guard("Brand Guidelines", <BrandGuidelinesPage />)}
                         />
+                        <Route
+                          path="/clients/:clientId/brand/history"
+                          element={guard("Histórico de Brand", <BrandHistoryPage />)}
+                        />
                         <Route path="/dam" element={guard("DAM", <DamLibraryPage />)} />
+                        <Route
+                          path="/dam/collections"
+                          element={guard("Coleções DAM", <DamCollectionsPage />)}
+                        />
                         <Route path="/dam/trash" element={guard("Lixeira DAM", <DamTrashPage />)} />
                         <Route
                           path="/dam/preview"

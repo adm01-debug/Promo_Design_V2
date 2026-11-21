@@ -31,12 +31,14 @@ import {
   Users,
   ScrollText,
   FolderArchive,
+  Folder,
   Trash2,
   Heart,
   LayoutDashboard,
   SlidersHorizontal,
   LayoutTemplate,
   GitCompareArrows,
+  ListTodo,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -82,6 +84,7 @@ const modules = [
       { label: "Catálogo", path: "/catalog", icon: Package },
       { label: "Clientes", path: "/clients", icon: Users },
       { label: "Biblioteca (DAM)", path: "/dam", icon: FolderArchive },
+      { label: "Coleções", path: "/dam/collections", icon: Folder },
       { label: "Lixeira", path: "/dam/trash", icon: Trash2 },
       { label: "Histórico", path: "/mockup/history", icon: History },
     ],
@@ -97,6 +100,8 @@ const modules = [
       { label: "Banco de Prompts", path: "/magicup/prompts", icon: BookOpen },
       { label: "Histórico", path: "/magicup/history", icon: History },
       { label: "Favoritos", path: "/magicup/favorites", icon: Heart },
+      { label: "Estilos", path: "/magicup/styles", icon: Palette },
+      { label: "Fila de Jobs", path: "/magicup/jobs", icon: ListTodo },
     ],
   },
   {
