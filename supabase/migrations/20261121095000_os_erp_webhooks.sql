@@ -12,7 +12,11 @@
 
 CREATE TABLE IF NOT EXISTS public.os_webhook_queue (
   event_id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  os_id            uuid NOT NULL REFERENCES public.service_orders(id),
+  -- No FK to service_orders: the AFTER DELETE trigger enqueues os.deleted
+  -- after the parent row is gone, so a FK would reject the delete. The queue
+  -- is an event log (payload is a snapshot); os_id is kept as plain uuid so
+  -- the ERP can identify the deleted order.
+  os_id            uuid NOT NULL,
   event            text NOT NULL CHECK (event IN
     ('os.created','os.updated','os.status_changed','os.deleted')),
   payload          jsonb NOT NULL DEFAULT '{}'::jsonb,
