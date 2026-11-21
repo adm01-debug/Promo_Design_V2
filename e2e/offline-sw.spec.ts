@@ -4,8 +4,17 @@ import { test, expect } from "@playwright/test";
  * PND-09 â€” Service Worker offline real, validado contra o BUILD de produÃ§Ã£o
  * (`vite preview`), que Ã© o Ãºnico ambiente onde o SW Ã© registrado.
  * Rodar com: npx playwright test --config playwright.offline.config.ts
+ *
+ * No CI estes testes são pulados: o job E2E sobe `npm run dev`, onde o SW não
+ * registra por design (bootstrapServiceWorker é guardado por `import.meta.env.PROD`),
+ * e o spec falharia sem indicar bug real.
  */
 test.describe("offline support (PND-09)", () => {
+  test.skip(
+    !process.env.PLAYWRIGHT_PROD_BUILD,
+    "requer build de produção: use playwright.offline.config.ts",
+  );
+
   test("sw.js e servido com escopo raiz e conteudo valido", async ({ request }) => {
     const res = await request.get("/sw.js");
     expect(res.status()).toBe(200);
