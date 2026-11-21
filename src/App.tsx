@@ -71,6 +71,9 @@ const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPa
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
+const ClientApprovalPage = lazyWithRetry(
+  () => import("./features/mockup/pages/ClientApprovalPage"),
+);
 
 const queryClient = new QueryClient();
 
@@ -90,6 +93,10 @@ const App = () => (
                     <Routes>
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route
+                        path="/mockup/approve/:token"
+                        element={guard("Aprovação de Mockup", <ClientApprovalPage />)}
+                      />
                       <Route
                         element={
                           <ProtectedRoute>

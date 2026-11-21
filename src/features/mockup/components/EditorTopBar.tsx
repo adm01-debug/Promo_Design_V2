@@ -7,6 +7,7 @@ import {
   FileDown,
   PlusCircle,
   PanelRight,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -19,9 +20,11 @@ interface EditorTopBarProps {
   onExportPng: () => void;
   onExportArt: () => void;
   onOpenServiceOrder: () => void;
+  onOpenApproval: () => void;
   onTogglePanel?: () => void;
   isExporting: boolean;
   isSaving?: boolean;
+  isCreatingApproval?: boolean;
 }
 
 const EditorTopBar = ({
@@ -31,9 +34,11 @@ const EditorTopBar = ({
   onExportPng,
   onExportArt,
   onOpenServiceOrder,
+  onOpenApproval,
   onTogglePanel,
   isExporting,
   isSaving,
+  isCreatingApproval,
 }: EditorTopBarProps) => {
   const navigate = useNavigate();
 
@@ -111,6 +116,28 @@ const EditorTopBar = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>Gerar PDF para aprovação do cliente</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1.5 h-8"
+                onClick={onOpenApproval}
+                disabled={isCreatingApproval}
+              >
+                {isCreatingApproval ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="w-3.5 h-3.5" />
+                )}{" "}
+                APROVAR CLIENTE
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Gerar link público para o cliente aprovar o mockup
+            </TooltipContent>
           </Tooltip>
 
           <Tooltip>

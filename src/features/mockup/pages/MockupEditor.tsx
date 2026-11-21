@@ -16,6 +16,7 @@ import {
   Redo2,
   Trash2,
   Square,
+  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,6 +25,7 @@ import { countUniqueColors, calculateAutoFit, type SurfaceType } from "@/feature
 import { clearWarpCache } from "@/features/mockup";
 
 import { useMockupDrafts } from "../hooks/use-mockup-drafts";
+import { invokeFunction } from "@/lib/functions-client";
 import { useMockupEditorState, type Placement } from "../hooks/use-mockup-editor-state";
 import { useMockupEditorAI } from "../hooks/use-mockup-editor-ai";
 import { useMockupEditorExports } from "../hooks/use-mockup-editor-exports";
@@ -53,6 +55,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Copy, CheckCircle2 } from "lucide-react";
 
 /**
  * MockupEditor Component
@@ -146,6 +159,11 @@ const MockupEditor = () => {
     position: "center",
   });
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [approvalLink, setApprovalLink] = useState<string | null>(null);
+  const [approvalClientName, setApprovalClientName] = useState("");
+  const [isCreatingApproval, setIsCreatingApproval] = useState(false);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [copiedApproval, setCopiedApproval] = useState(false);
 
   const {
     placements,
@@ -488,6 +506,59 @@ const MockupEditor = () => {
     selectedClientId,
   ]);
 
+  /** Persiste o draft atual, cria o token de aprovação via edge e mostra o link. */
+  const handleCreateApproval = async () => {
+    if (!logoPreview) {
+      toast.error("Adicione a arte (logo) antes de enviar para aprovação.");
+      return;
+    }
+    if (isCreatingApproval) return;
+    setIsCreatingApproval(true);
+    try {
+      const saved = await saveDraft({
+        id: draftId || undefined,
+        name: `Draft ${productName}`,
+        productName,
+        productSku,
+        editorState: {
+          placements,
+          logoPreview,
+          logoOpacity,
+          blendMode,
+          surfaceType,
+          shadowEnabled,
+          shadowIntensity,
+          approvedViews: Array.from(approvedViews),
+          watermarkConfig,
+          selectedClientId,
+        },
+      });
+      const { data, error } = await invokeFunction<{ token: string; url: string }>(
+        "mockup-approval",
+        {
+          action: "create",
+          mockup_id: saved.id,
+          client_name: approvalClientName.trim() || undefined,
+          valid_days: 7,
+        },
+      );
+      if (error || !data?.url) {
+        toast.error(error
+          ? (typeof error === "object" && "message" in error
+              ? String(error.message)
+              : "Erro ao criar link de aprovação")
+          : "Erro ao criar link de aprovação");
+        return;
+      }
+      setApprovalLink(data.url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao criar link de aprovação";
+      toast.error(msg);
+    } finally {
+      setIsCreatingApproval(false);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <EditorTopBar
@@ -497,9 +568,16 @@ const MockupEditor = () => {
         onExportPng={handleExportPng}
         onExportArt={handleExportArt}
         onOpenServiceOrder={handleOpenServiceOrder}
+        onOpenApproval={() => {
+          setApprovalLink(null);
+          setApprovalClientName("");
+          setCopiedApproval(false);
+          setApprovalDialogOpen(true);
+        }}
         onTogglePanel={() => setShowRightPanel(!showRightPanel)}
         isExporting={isExporting}
         isSaving={isSaving}
+        isCreatingApproval={isCreatingApproval}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -982,6 +1060,82 @@ const MockupEditor = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Aprovação do cliente</DialogTitle>
+              <DialogDescription>
+                Crie um link público para o cliente aprovar ou rejeitar o mockup sem precisar de
+                login. O link expira em 7 dias e só aceita uma resposta.
+              </DialogDescription>
+            </DialogHeader>
+            {approvalLink ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-600">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+                  <span>Link criado! Envie ao cliente para ele aprovar ou rejeitar a arte.</span>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={approvalLink}
+                    aria-label="Link de aprovação"
+                    className="font-mono text-xs"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(approvalLink);
+                        setCopiedApproval(true);
+                        toast.success("Link copiado!");
+                        setTimeout(() => setCopiedApproval(false), 2000);
+                      } catch {
+                        toast.error("Não foi possível copiar o link.");
+                      }
+                    }}
+                  >
+                    {copiedApproval ? (
+                      <Check className="w-3.5 h-3.5 text-green-500" aria-hidden="true" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" aria-hidden="true" />
+                    )}{" "}
+                    {copiedApproval ? "Copiado" : "Copiar"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="approval-client-name">Nome do cliente (opcional)</Label>
+                  <Input
+                    id="approval-client-name"
+                    value={approvalClientName}
+                    onChange={(e) => setApprovalClientName(e.target.value)}
+                    placeholder="Ex.: Loja Aurora"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={handleCreateApproval}
+                    disabled={isCreatingApproval}
+                    className="w-full"
+                  >
+                    {isCreatingApproval ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" aria-hidden="true" />
+                    ) : (
+                      <Share2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                    )}
+                    Gerar link de aprovação
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
