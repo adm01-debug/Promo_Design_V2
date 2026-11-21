@@ -17,6 +17,7 @@ import {
   Trash2,
   Square,
   Share2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,6 +38,7 @@ import EditorViewThumbnails from "@/features/mockup/components/EditorViewThumbna
 import EditorRightPanel from "@/features/mockup/components/EditorRightPanel";
 import { MockupEditorProvider } from "@/features/mockup/context/mockup-editor-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -543,11 +545,13 @@ const MockupEditor = () => {
         },
       );
       if (error || !data?.url) {
-        toast.error(error
-          ? (typeof error === "object" && "message" in error
+        toast.error(
+          error
+            ? typeof error === "object" && "message" in error
               ? String(error.message)
-              : "Erro ao criar link de aprovação")
-          : "Erro ao criar link de aprovação");
+              : "Erro ao criar link de aprovação"
+            : "Erro ao criar link de aprovação",
+        );
         return;
       }
       setApprovalLink(data.url);

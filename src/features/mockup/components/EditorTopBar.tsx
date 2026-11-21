@@ -135,9 +135,7 @@ const EditorTopBar = ({
                 APROVAR CLIENTE
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              Gerar link público para o cliente aprovar o mockup
-            </TooltipContent>
+            <TooltipContent>Gerar link público para o cliente aprovar o mockup</TooltipContent>
           </Tooltip>
 
           <Tooltip>

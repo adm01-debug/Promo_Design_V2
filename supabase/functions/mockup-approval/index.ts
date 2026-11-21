@@ -10,13 +10,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, corsPreflight } from "../_shared/cors.ts";
-import {
-  CreateSchema,
-  DecideSchema,
-  isValidToken,
-  makeClient,
-  parseJwtSub,
-} from "./lib.ts";
+import { CreateSchema, DecideSchema, isValidToken, makeClient, parseJwtSub } from "./lib.ts";
 
 const SHARE_BASE = Deno.env.get("APP_BASE_URL") || "https://promo-design-v2.vercel.app";
 

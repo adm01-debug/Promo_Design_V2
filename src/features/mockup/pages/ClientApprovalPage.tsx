@@ -16,7 +16,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { getWarpedPreview } from "@/features/mockup/lib/mesh-warp";
-import type { Placement, SurfaceType } from "@/features/mockup";
+import type { SurfaceType } from "@/features/mockup";
+import type { Placement } from "@/features/mockup/hooks/use-mockup-editor-state";
 
 const EDGE_URL = "https://fygxlswpkjtjpcefjfty.supabase.co/functions/v1/mockup-approval";
 
@@ -90,7 +91,8 @@ const ClientApprovalPage = () => {
 
   const editorState = data?.mockup?.editor_state ?? null;
   const logoPreview = (editorState?.logoPreview as string | undefined) ?? null;
-  const surfaceType = ((editorState?.surfaceType as SurfaceType | undefined) ?? "flat") as SurfaceType;
+  const surfaceType = ((editorState?.surfaceType as SurfaceType | undefined) ??
+    "flat") as SurfaceType;
   const placement = editorState?.placement as Placement | undefined;
   const thumbnail = data?.mockup?.thumbnail_url ?? null;
 
@@ -141,7 +143,9 @@ const ClientApprovalPage = () => {
         return;
       }
       toast.success(
-        status === "approved" ? "Aprovação registrada! Obrigado." : "Rejeição registrada. Obrigado.",
+        status === "approved"
+          ? "Aprovação registrada! Obrigado."
+          : "Rejeição registrada. Obrigado.",
       );
       reload();
     } catch {
@@ -167,7 +171,11 @@ const ClientApprovalPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-3xl">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-3xl"
+      >
         {/* Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium mb-3">
@@ -237,7 +245,9 @@ const ClientApprovalPage = () => {
             {data?.decided_at && (
               <p className="text-xs text-muted-foreground mt-2">
                 Respondido em{" "}
-                {format(new Date(data.decided_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                {format(new Date(data.decided_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", {
+                  locale: ptBR,
+                })}
               </p>
             )}
           </div>
@@ -261,7 +271,10 @@ const ClientApprovalPage = () => {
                   >
                     <ZoomOut className="w-3.5 h-3.5" aria-hidden="true" />
                   </Button>
-                  <span className="text-xs font-mono text-muted-foreground w-10 text-center" aria-live="polite">
+                  <span
+                    className="text-xs font-mono text-muted-foreground w-10 text-center"
+                    aria-live="polite"
+                  >
                     {zoom}%
                   </span>
                   <Button
@@ -282,7 +295,10 @@ const ClientApprovalPage = () => {
                     "repeating-conic-gradient(hsl(var(--muted)) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 20px 20px",
                 }}
               >
-                <div className="relative bg-white rounded-lg border border-border shadow" style={{ width: 420, height: 420 }}>
+                <div
+                  className="relative bg-white rounded-lg border border-border shadow"
+                  style={{ width: 420, height: 420 }}
+                >
                   {thumbnail && (
                     <img
                       src={thumbnail}
@@ -307,7 +323,8 @@ const ClientApprovalPage = () => {
                         className="w-full h-full object-contain"
                         style={{
                           mixBlendMode:
-                            (editorState?.blendMode as React.CSSProperties["mixBlendMode"]) ?? "normal",
+                            (editorState?.blendMode as React.CSSProperties["mixBlendMode"]) ??
+                            "normal",
                           opacity: ((editorState?.logoOpacity as number | undefined) ?? 100) / 100,
                           filter: editorState?.shadowEnabled
                             ? `drop-shadow(3px 3px ${Math.round(
