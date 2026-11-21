@@ -55,8 +55,8 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Editor multi-view                   | `/mockup/editor`         | `src/features/mockup/pages/MockupEditor.tsx`      | ✅     | —                                                                                                       |
 | Canvas + mesh warp                  | (componente)             | `src/features/mockup/components/MockupCanvas.tsx` | ✅     | —                                                                                                       |
 | Hook editor (state, AI, draft)      | (hook)                   | `src/features/mockup/hooks/use-mockup-editor.ts`  | ✅     | —                                                                                                       |
-| Templates de mockup salvos          | `/mockup/templates`      | _(planejado, hoje só `/templates` genérico)_      | 🔴     | `/templates` é genérico (mock estático); falta CRUD vinculado a `mockup_drafts` com flag `is_template`. |
-| Comparador de versões               | `/mockup/compare`        | _(planejado)_                                     | 🔴     | `MockupHistory` lista mockups; falta UI side-by-side com diff visual.                                   |
+| Templates de mockup salvos          | `/mockup/templates`      | `src/features/mockup/pages/MockupTemplates.tsx`  | ✅     | CRUD sobre `mockup_drafts` (flag `is_template` em `editor_state.meta`); usar, clonar e excluir. |
+| Comparador de versões               | `/mockup/compare`        | `src/features/mockup/pages/MockupCompare.tsx`    | ✅     | Seleção A/B de rascunhos, preview lado a lado e tabela de diff de configurações. |
 | Aprovação de cliente (link público) | `/mockup/approve/:token` | _(planejado)_                                     | 🔴     | Requer tabela `approval_tokens`, edge function pública e página sem auth.                               |
 
 ## 4. Service Orders
@@ -140,8 +140,8 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.         |
 | 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.           |
 | 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.               |
-| 5   | Templates de mockup salvos              | `/mockup/templates`                | 🔴     | M       | Reuso de configurações; hoje só existe `/templates` genérico.    |
-| 6   | Comparador de versões de mockup         | `/mockup/compare`                  | 🔴     | M       | Facilita revisão A/B entre iterações.                            |
+| 5   | Templates de mockup salvos              | `/mockup/templates`                | ✅     | M       | Implementado: CRUD sobre `mockup_drafts`, salvar como template no Studio/Rascunhos, usar/clonar/excluir. |
+| 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                      |
 | 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                        |
 | 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.             |
 | 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models.  |
