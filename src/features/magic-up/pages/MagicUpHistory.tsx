@@ -5,7 +5,6 @@ import {
   History,
   Search,
   Heart,
-  Download,
   Eye,
   Trash2,
   Calendar,
@@ -19,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useMagicUpHistory, type MagicUpHistoryItem } from "@/features/magic-up";
+import DownloadMenu from "@/features/magic-up/components/DownloadMenu";
 import {
   XAxis,
   YAxis,
@@ -518,12 +518,21 @@ const MagicUpHistory = () => {
                   <div className="aspect-square bg-surface-2 relative flex items-center justify-center">
                     <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-white h-8 w-8 p-0"
+                        aria-label="Ver detalhes"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedItem(item);
+                        }}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <DownloadMenu imageUrl={item.imageUrl} fileName={`magicup-${item.id}`} />
+                      </span>
                       <Button
                         variant="ghost"
                         size="sm"

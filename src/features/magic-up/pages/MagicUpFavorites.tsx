@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Search, Download, Eye, Trash2, X, StopCircle } from "lucide-react";
+import { Heart, Search, Eye, Trash2, X, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useMagicUpHistory, type MagicUpHistoryItem } from "@/features/magic-up";
 import MagicUpHistoryDetail from "@/features/magic-up/components/MagicUpHistoryDetail";
+import DownloadMenu from "@/features/magic-up/components/DownloadMenu";
 
 const MagicUpFavorites = () => {
   const { items, toggleFavorite, deleteItem } = useMagicUpHistory();
@@ -99,12 +100,21 @@ const MagicUpFavorites = () => {
                 <div className="aspect-square bg-surface-2 relative flex items-center justify-center">
                   <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white h-8 w-8 p-0"
+                      aria-label="Ver detalhes"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedItem(item);
+                      }}
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
-                      <Download className="w-4 h-4" />
-                    </Button>
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <DownloadMenu imageUrl={item.imageUrl} fileName={`magicup-${item.id}`} />
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"

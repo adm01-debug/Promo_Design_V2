@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
@@ -45,12 +45,12 @@ export function AddToCollectionDialog({ open, onOpenChange, asset }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Adicionar a uma coleÃ§Ã£o</DialogTitle>
+          <DialogTitle>Adicionar a uma coleção</DialogTitle>
         </DialogHeader>
         <div className="space-y-1.5 pt-1 max-h-72 overflow-y-auto">
           {items.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Nenhuma coleÃ§Ã£o ainda. Crie uma em ColeÃ§Ãµes na barra lateral.
+              Nenhuma coleção ainda. Crie uma em Coleções na barra lateral.
             </p>
           )}
           {items.map((c) => {
@@ -77,7 +77,7 @@ export function AddToCollectionDialog({ open, onOpenChange, asset }: Props) {
                       await refetch();
                       toast.success(`Adicionado a "${c.name}"`);
                     } catch {
-                      toast.error("Falha ao adicionar Ã  coleÃ§Ã£o");
+                      toast.error("Falha ao adicionar Ã  coleção");
                     } finally {
                       setBusyId(null);
                     }

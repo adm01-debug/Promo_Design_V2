@@ -23,7 +23,7 @@ export default function DamTrashPage() {
   const [detail, setDetail] = useState<Asset | null>(null);
   const debouncedSearch = useDebounce(search, 300);
 
-  const { assets, total, totalPages, isLoading, isFetching, restoreMany } = useAssets(
+  const { assets, total, totalPages, isLoading, isFetching, restoreMany, purgeMany } = useAssets(
     currentOrgId || "",
     {
       archivedOnly: true,
@@ -37,7 +37,7 @@ export default function DamTrashPage() {
   if (!currentOrgId)
     return (
       <div className="p-6 text-center">
-        <Card className="p-8">Selecione uma organizaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o</Card>
+        <Card className="p-8">Selecione uma organização</Card>
       </div>
     );
 
@@ -68,6 +68,22 @@ export default function DamTrashPage() {
     }
   };
 
+  const handlePurgeSelected = async () => {
+    const count = selectedIds.size;
+    const confirmed = window.confirm(
+      `Excluir definitivamente ${count} asset(s)? Os arquivos serão removidos do storage. Isso não pode ser desfeito.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      const purged = await purgeMany.mutateAsync(Array.from(selectedIds));
+      toast.success(`${purged} asset(s) excluído(s) definitivamente`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Falha ao excluir definitivamente. Tente novamente.");
+    }
+  };
+
   const searchDetails =
     debouncedSearch.trim().length >= MIN_SEARCH_LENGTH ? debouncedSearch.trim() : undefined;
 
@@ -80,7 +96,7 @@ export default function DamTrashPage() {
             Lixeira de Assets
           </h1>
           <p className="text-sm text-muted-foreground">
-            Assets arquivados aguardando restauraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o ou exclusÃƒÆ’Ã‚Â£o definitiva
+            Assets arquivados aguardando restauração ou exclusão definitiva
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -91,7 +107,7 @@ export default function DamTrashPage() {
             disabled={!hasSelection}
             onClick={() => setSelectedIds(new Set())}
           >
-            Limpar seleÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o ({selectedIds.size})
+            Limpar seleção ({selectedIds.size})
           </Button>
           <Button
             size="sm"
@@ -104,6 +120,19 @@ export default function DamTrashPage() {
               <ArchiveRestore className="w-4 h-4 mr-2" />
             )}
             Restaurar selecionados
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={!hasSelection || !canDelete || purgeMany.isPending}
+            onClick={handlePurgeSelected}
+          >
+            {purgeMany.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Trash2 className="w-4 h-4 mr-2" />
+            )}
+            Excluir definitivamente
           </Button>
         </div>
       </header>
@@ -123,9 +152,7 @@ export default function DamTrashPage() {
         <AssetGridSkeleton viewMode="grid" count={PAGE_SIZE} />
       ) : assets.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
-          {searchDetails
-            ? "Nenhum asset arquivado corresponde ÃƒÆ’Ã‚Â  busca"
-            : "A lixeira estÃƒÆ’Ã‚Â¡ vazia"}
+          {searchDetails ? "Nenhum asset arquivado corresponde à busca" : "A lixeira está vazia"}
         </Card>
       ) : (
         <>
@@ -133,9 +160,9 @@ export default function DamTrashPage() {
             <Checkbox
               checked={allSelected}
               onCheckedChange={toggleAll}
-              aria-label="Selecionar todos os arquivados da pÃƒÆ’Ã‚Â¡gina"
+              aria-label="Selecionar todos os arquivados da página"
             />
-            <span>Selecionar pÃƒÆ’Ã‚Â¡gina ({assets.length})</span>
+            <span>Selecionar página ({assets.length})</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {assets.map((a) => (
@@ -165,14 +192,14 @@ export default function DamTrashPage() {
             Anterior
           </Button>
           <span className="flex items-center text-sm text-muted-foreground">
-            PÃƒÆ’Ã‚Â¡gina {page} de {totalPages}
+            Página {page} de {totalPages}
           </span>
           <Button
             variant="outline"
             disabled={page >= totalPages || isFetching}
             onClick={() => setPage((p) => p + 1)}
           >
-            PrÃƒÆ’Ã‚Â³xima
+            Próxima
           </Button>
         </div>
       )}
