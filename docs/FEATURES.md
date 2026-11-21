@@ -107,7 +107,7 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 | Edge function AI             | (backend)            | `supabase/functions/mockup-ai/index.ts`                | ✅     | —                                                                                                                       |
 | Favoritos (galeria dedicada) | `/magicup/favorites` | _(parcial via filtro em `/magicup/history`)_           | 🟡     | Filtro `favorite` existe em `/magicup/history`; falta galeria com layout dedicado.                                      |
 | Batch jobs (status fila)     | `/magicup/jobs`      | `src/features/magic-up/pages/MagicUpJobs.tsx`          | ✅     | Fila `magic_up_jobs` + RPCs `enqueue/cancel` + edge `magic-up-jobs`; botão "Gerar lote" no gerador e polling de status. |
-| Estilos/presets gerenciáveis | `/magicup/styles`    | _(planejado, hoje hardcoded em `MagicUpGenerate.tsx`)_ | 🔴     | `SAMPLE_PROMPTS` hardcoded em `mockup-types.ts`; falta CRUD por organização.                                            |
+| Estilos/presets gerenciáveis | `/magicup/styles`    | `src/features/magic-up/pages/MagicUpStyles.tsx` | ✅     | CRUD por organização em `magic_up_styles` (RLS + UNIQUE org/slug); edge `magic-up-jobs` aceita slug custom; gerador e painel mesclam presets custom |
 
 ## 8. Video Studio
 
@@ -143,7 +143,7 @@ Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / de
 | 5   | Templates de mockup salvos              | `/mockup/templates`                | ✅     | M       | Implementado: CRUD sobre `mockup_drafts`, salvar como template no Studio/Rascunhos, usar/clonar/excluir. |
 | 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                       |
 | 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                                                                |
-| 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.                                                     |
+| 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | ✅     | M       | Implementado: CRUD por org em `magic_up_styles`, edge aceita slug custom, gerador/painel/fila usam os presets. |
 | 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models.                                          |
 | 10  | Lixeira DAM                             | `/dam/trash`                       | ✅     | P       | Implementado: galeria com seleção e restauração em lote.                                                 |
 | 11  | Magic Up — favoritos                    | `/magicup/favorites`               | ✅     | P       | Implementado: galeria dedicada com toggle/delete inline.                                                 |

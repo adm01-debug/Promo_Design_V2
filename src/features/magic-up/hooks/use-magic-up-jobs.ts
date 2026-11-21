@@ -1,12 +1,14 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganizations } from "@/hooks/use-organization";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { useMagicUpStyles } from "./use-magic-up-styles";
 
 export type MagicUpJob = Tables<"magic_up_jobs">;
 
-export const MAGIC_UP_STYLE_LABELS: Record<string, string> = {
+const MAGIC_UP_STYLE_LABELS: Record<string, string> = {
   premium: "Premium",
   lifestyle: "Lifestyle",
   flatlay: "Flat Lay",
@@ -20,6 +22,12 @@ export const MAGIC_UP_STYLE_LABELS: Record<string, string> = {
 export function useMagicUpJobs() {
   const { currentOrgId } = useOrganizations();
   const queryClient = useQueryClient();
+  const { styles: customStyles } = useMagicUpStyles();
+  const styleLabels: Record<string, string> = useMemo(() => {
+    const merged = { ...MAGIC_UP_STYLE_LABELS };
+    for (const s of customStyles) merged[s.slug] = s.name;
+    return merged;
+  }, [customStyles]);
   const queryKey = ["magic-up-jobs", currentOrgId];
 
   const { data: jobs = [], isLoading } = useQuery({
@@ -89,5 +97,5 @@ export function useMagicUpJobs() {
     },
   });
 
-  return { jobs, isLoading, enqueueBatch, cancelJob };
+  return { jobs, isLoading, styleLabels, enqueueBatch, cancelJob };
 }

@@ -2,15 +2,18 @@
 import { assertEquals, assert } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 import { z } from "https://esm.sh/zod@3.23.8";
 
-const STYLE_ENUM = z.enum([
-  "premium",
-  "lifestyle",
-  "flatlay",
-  "minimal",
-  "corporate",
-  "ecommerce",
-  "social",
-  "outdoor",
+const STYLE_ENUM = z.union([
+  z.enum([
+    "premium",
+    "lifestyle",
+    "flatlay",
+    "minimal",
+    "corporate",
+    "ecommerce",
+    "social",
+    "outdoor",
+  ]),
+  z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/, "slug inválido"),
 ]);
 
 const EnqueueSchema = z.object({
@@ -89,12 +92,65 @@ Deno.test("magic-up-jobs - enqueue rejeita mais de 8 estilos", () => {
   assertEquals(result.success, false);
 });
 
+Deno.test("magic-up-jobs - enqueue aceita slug customizado", () => {
+  const result = BodySchema.safeParse({
+    action: "enqueue",
+    organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    prompt: "Uma caneca personalizada",
+    styles: ["natal-2026"],
+  });
+  assertEquals(result.success, true);
+  if (result.success && result.data.action === "enqueue") {
+    assertEquals(result.data.styles, ["natal-2026"]);
+  }
+});
+
+Deno.test("magic-up-jobs - enqueue aceita slug customizado com numero inicial", () => {
+  const result = BodySchema.safeParse({
+    action: "enqueue",
+    organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    prompt: "Uma caneca personalizada",
+    styles: ["2026-black-friday"],
+  });
+  assertEquals(result.success, true);
+});
+
+Deno.test("magic-up-jobs - enqueue rejeita slug com maiuscula", () => {
+  const result = BodySchema.safeParse({
+    action: "enqueue",
+    organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    prompt: "Uma caneca personalizada",
+    styles: ["Natal-2026"],
+  });
+  assertEquals(result.success, false);
+});
+
+Deno.test("magic-up-jobs - enqueue rejeita slug com underline", () => {
+  const result = BodySchema.safeParse({
+    action: "enqueue",
+    organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    prompt: "Uma caneca personalizada",
+    styles: ["natal_2026"],
+  });
+  assertEquals(result.success, false);
+});
+
+Deno.test("magic-up-jobs - enqueue rejeita slug vazio", () => {
+  const result = BodySchema.safeParse({
+    action: "enqueue",
+    organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    prompt: "Uma caneca personalizada",
+    styles: [""],
+  });
+  assertEquals(result.success, false);
+});
+
 Deno.test("magic-up-jobs - enqueue rejeita estilo desconhecido", () => {
   const result = BodySchema.safeParse({
     action: "enqueue",
     organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     prompt: "Uma caneca personalizada",
-    styles: ["hacker-style"],
+    styles: [".invalid"],
   });
   assertEquals(result.success, false);
 });

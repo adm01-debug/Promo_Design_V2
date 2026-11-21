@@ -11,15 +11,12 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
 
-const STYLE_ENUM = z.enum([
-  "premium",
-  "lifestyle",
-  "flatlay",
-  "minimal",
-  "corporate",
-  "ecommerce",
-  "social",
-  "outdoor",
+// Estilos padrão do sistema + slugs customizados da organização
+// (Feature 8 — presets gerenciáveis em magic_up_styles). Slug custom
+// segue o mesmo formato da migration: ^[a-z0-9][a-z0-9-]{0,39}$.
+const STYLE_ENUM = z.union([
+  z.enum(["premium", "lifestyle", "flatlay", "minimal", "corporate", "ecommerce", "social", "outdoor"]),
+  z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/, "slug inválido"),
 ]);
 const ALLOWED_STYLES = 8;
 
@@ -184,6 +181,19 @@ Deno.serve(async (req) => {
     return json(req, { error: enqueueError?.message ?? "Falha ao enfileirar o batch." }, 400);
   }
 
+  // Presets customizados da organização (Feature 8): se o slug veio de
+  // magic_up_styles, o prompt do estilo é o que foi cadastrado na página
+  // /magicup/styles. Estilos padrão continuam no STYLE_PROMPT embutido.
+  const customPromptMap: Record<string, string> = {};
+  const { data: customRows, error: customError } = await admin
+    .from("magic_up_styles")
+    .select("slug, prompt")
+    .in("slug", body.styles)
+    .eq("organization_id", body.organizationId);
+  if (!customError) {
+    for (const row of customRows ?? []) customPromptMap[row.slug] = row.prompt;
+  }
+
   const results: Json[] = [];
   const createdRows = created as { id: string; style: string }[];
   for (const job of createdRows) {
@@ -197,7 +207,7 @@ Deno.serve(async (req) => {
     let errorMessage: string | null = null;
 
     if (apiKey) {
-      const stylePrompt = STYLE_PROMPT[job.style] ?? "";
+      const stylePrompt = customPromptMap[job.style] ?? STYLE_PROMPT[job.style] ?? "";
       try {
         resultImageUrl = await generateImage(apiKey, `${body.prompt}\n\n${stylePrompt}`.trim());
       } catch (err) {

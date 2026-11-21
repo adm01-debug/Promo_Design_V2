@@ -12,7 +12,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useMagicUpJobs, MAGIC_UP_STYLE_LABELS, type MagicUpJob } from "@/features/magic-up";
+import { useMagicUpJobs, type MagicUpJob } from "@/features/magic-up";
 
 type StatusFilter = "all" | MagicUpJob["status"];
 
@@ -70,7 +70,7 @@ function StatusBadge({ status }: { status: MagicUpJob["status"] }) {
 const isFinal = (job: MagicUpJob) => ["done", "failed", "cancelled"].includes(job.status);
 
 const MagicUpJobs = () => {
-  const { jobs, isLoading, cancelJob } = useMagicUpJobs();
+  const { jobs, isLoading, styleLabels, cancelJob } = useMagicUpJobs();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const counts = useMemo(() => {
@@ -181,7 +181,7 @@ const MagicUpJobs = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <StatusBadge status={job.status} />
                       <span className="text-xs font-semibold text-foreground">
-                        {MAGIC_UP_STYLE_LABELS[job.style] ?? job.style}
+                        {styleLabels[job.style] ?? job.style}
                       </span>
                       {isFinal(job) && job.completed_at && (
                         <span className="text-[10px] text-muted-foreground">

@@ -1124,6 +1124,47 @@ export type Database = {
           },
         ]
       }
+      magic_up_styles: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          name: string
+          organization_id: string
+          prompt: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          name: string
+          organization_id: string
+          prompt: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          prompt?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_up_styles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_runs: {
         Row: {
           audit_deleted: number

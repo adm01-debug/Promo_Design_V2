@@ -31,6 +31,7 @@ interface MagicUpLeftPanelProps {
   applySmartPrompt: () => void;
   setPrompt: (p: string) => void;
   onOpenProductPicker: () => void;
+  customStyles?: { id: string; label: string; emoji: string; prompt: string }[];
 }
 
 const MagicUpLeftPanel = ({
@@ -43,6 +44,7 @@ const MagicUpLeftPanel = ({
   applySmartPrompt,
   setPrompt,
   onOpenProductPicker,
+  customStyles = [],
 }: MagicUpLeftPanelProps) => (
   <div className="w-72 bg-surface-1 border-r border-border flex flex-col overflow-hidden shrink-0">
     <div className="p-3 border-b border-border">
@@ -125,19 +127,37 @@ const MagicUpLeftPanel = ({
         Estilo Visual
       </h3>
       <div className="grid grid-cols-2 gap-1.5">
-        {STYLE_OPTIONS.map((style) => (
-          <button
-            key={style.id}
-            onClick={() => setSelectedStyle(style.id)}
-            className={`px-2 py-1.5 rounded-md text-xs text-left transition-all ${
-              selectedStyle === style.id
-                ? "bg-primary/20 text-primary border border-primary/40"
-                : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground hover:border-primary/30"
-            }`}
-          >
-            {style.emoji} {style.label}
-          </button>
-        ))}
+        {[...STYLE_OPTIONS, ...customStyles].map((style) =>
+          "prompt" in style && style.prompt ? (
+            <button
+              key={style.id}
+              onClick={() => {
+                setSelectedStyle(style.id);
+                if (selectedProduct) setPrompt(style.prompt);
+              }}
+              title={style.prompt}
+              className={`px-2 py-1.5 rounded-md text-xs text-left transition-all ${
+                selectedStyle === style.id
+                  ? "bg-primary/20 text-primary border border-primary/40"
+                  : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground hover:border-primary/30"
+              }`}
+            >
+              {style.emoji} {style.label}
+            </button>
+          ) : (
+            <button
+              key={style.id}
+              onClick={() => setSelectedStyle(style.id)}
+              className={`px-2 py-1.5 rounded-md text-xs text-left transition-all ${
+                selectedStyle === style.id
+                  ? "bg-primary/20 text-primary border border-primary/40"
+                  : "bg-surface-2 text-muted-foreground border border-border hover:text-foreground hover:border-primary/30"
+              }`}
+            >
+              {style.emoji} {style.label}
+            </button>
+          ),
+        )}
       </div>
     </div>
 
