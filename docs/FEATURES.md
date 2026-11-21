@@ -47,17 +47,17 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 ## 3. Mockup Studio
 
-| Funcionalidade                      | Rota                     | Arquivo principal                                 | Status | Observação                                                                                              |
-| ----------------------------------- | ------------------------ | ------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| Novo mockup (3 steps)               | `/mockup/new`            | `src/features/mockup/pages/MockupNew.tsx`         | ✅     | —                                                                                                       |
-| Drafts salvos                       | `/mockup/drafts`         | `src/features/mockup/pages/MockupDrafts.tsx`      | ✅     | —                                                                                                       |
-| Histórico                           | `/mockup/history`        | `src/features/mockup/pages/MockupHistory.tsx`     | ✅     | —                                                                                                       |
-| Editor multi-view                   | `/mockup/editor`         | `src/features/mockup/pages/MockupEditor.tsx`      | ✅     | —                                                                                                       |
-| Canvas + mesh warp                  | (componente)             | `src/features/mockup/components/MockupCanvas.tsx` | ✅     | —                                                                                                       |
-| Hook editor (state, AI, draft)      | (hook)                   | `src/features/mockup/hooks/use-mockup-editor.ts`  | ✅     | —                                                                                                       |
-| Templates de mockup salvos          | `/mockup/templates`      | `src/features/mockup/pages/MockupTemplates.tsx`  | ✅     | CRUD sobre `mockup_drafts` (flag `is_template` em `editor_state.meta`); usar, clonar e excluir. |
-| Comparador de versões               | `/mockup/compare`        | `src/features/mockup/pages/MockupCompare.tsx`    | ✅     | Seleção A/B de rascunhos, preview lado a lado e tabela de diff de configurações. |
-| Aprovação de cliente (link público) | `/mockup/approve/:token` | _(planejado)_                                     | 🔴     | Requer tabela `approval_tokens`, edge function pública e página sem auth.                               |
+| Funcionalidade                      | Rota                     | Arquivo principal                                 | Status | Observação                                                                                      |
+| ----------------------------------- | ------------------------ | ------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| Novo mockup (3 steps)               | `/mockup/new`            | `src/features/mockup/pages/MockupNew.tsx`         | ✅     | —                                                                                               |
+| Drafts salvos                       | `/mockup/drafts`         | `src/features/mockup/pages/MockupDrafts.tsx`      | ✅     | —                                                                                               |
+| Histórico                           | `/mockup/history`        | `src/features/mockup/pages/MockupHistory.tsx`     | ✅     | —                                                                                               |
+| Editor multi-view                   | `/mockup/editor`         | `src/features/mockup/pages/MockupEditor.tsx`      | ✅     | —                                                                                               |
+| Canvas + mesh warp                  | (componente)             | `src/features/mockup/components/MockupCanvas.tsx` | ✅     | —                                                                                               |
+| Hook editor (state, AI, draft)      | (hook)                   | `src/features/mockup/hooks/use-mockup-editor.ts`  | ✅     | —                                                                                               |
+| Templates de mockup salvos          | `/mockup/templates`      | `src/features/mockup/pages/MockupTemplates.tsx`   | ✅     | CRUD sobre `mockup_drafts` (flag `is_template` em `editor_state.meta`); usar, clonar e excluir. |
+| Comparador de versões               | `/mockup/compare`        | `src/features/mockup/pages/MockupCompare.tsx`     | ✅     | Seleção A/B de rascunhos, preview lado a lado e tabela de diff de configurações.                |
+| Aprovação de cliente (link público) | `/mockup/approve/:token` | _(planejado)_                                     | 🔴     | Requer tabela `approval_tokens`, edge function pública e página sem auth.                       |
 
 ## 4. Service Orders
 
@@ -134,19 +134,19 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 Tabela resumo de gaps funcionais. Prioridade sugerida do topo (alto impacto / desbloqueia fluxos) ao fim (refinamentos).
 
-| #   | Funcionalidade                          | Rota proposta                      | Status | Esforço | Justificativa                                                    |
-| --- | --------------------------------------- | ---------------------------------- | ------ | ------- | ---------------------------------------------------------------- |
-| 1   | Coleções/Pastas no DAM                  | `/dam/collections`                 | 🔴     | G       | Organização hierárquica é gap crítico em libraries grandes.      |
-| 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.         |
-| 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.           |
-| 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.               |
+| #   | Funcionalidade                          | Rota proposta                      | Status | Esforço | Justificativa                                                                                            |
+| --- | --------------------------------------- | ---------------------------------- | ------ | ------- | -------------------------------------------------------------------------------------------------------- |
+| 1   | Coleções/Pastas no DAM                  | `/dam/collections`                 | 🔴     | G       | Organização hierárquica é gap crítico em libraries grandes.                                              |
+| 2   | Aprovação de cliente (link público)     | `/mockup/approve/:token`           | 🔴     | G       | Fecha o loop de homologação sem exigir login do cliente.                                                 |
+| 3   | Brand Guidelines — share público        | `/brand/public/:token`             | 🔴     | G       | Permite enviar manual de marca sem expor a plataforma.                                                   |
+| 4   | Magic Up — Batch jobs                   | `/magicup/jobs`                    | 🔴     | G       | Visibilidade de fila para gerações longas em lote.                                                       |
 | 5   | Templates de mockup salvos              | `/mockup/templates`                | ✅     | M       | Implementado: CRUD sobre `mockup_drafts`, salvar como template no Studio/Rascunhos, usar/clonar/excluir. |
-| 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                      |
-| 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                        |
-| 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.             |
-| 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models.  |
-| 10  | Lixeira DAM                             | `/dam/trash`                       | ✅     | P       | Implementado: galeria com seleção e restauração em lote.         |
-| 11  | Magic Up — favoritos                    | `/magicup/favorites`               | ✅     | P       | Implementado: galeria dedicada com toggle/delete inline.         |
-| 12  | Widgets customizáveis (config UI)       | `/dashboard/widgets`               | ✅     | P       | Implementado: mostrar/ocultar, reordenar e reset (localStorage). |
+| 6   | Comparador de versões de mockup         | `/mockup/compare`                  | ✅     | M       | Implementado: A/B com preview lado a lado e diff de configurações.                                       |
+| 7   | Brand Guidelines — versionamento        | `/clients/:clientId/brand/history` | 🔴     | M       | Auditoria de mudanças no manual de marca.                                                                |
+| 8   | Magic Up — estilos/presets gerenciáveis | `/magicup/styles`                  | 🔴     | M       | Hoje hardcoded; bloqueia personalização por cliente.                                                     |
+| 9   | Dashboard analytics avançado            | `/dashboard/analytics`             | ✅     | M       | Implementado: custo, chamadas, tokens, dias ativos, top models.                                          |
+| 10  | Lixeira DAM                             | `/dam/trash`                       | ✅     | P       | Implementado: galeria com seleção e restauração em lote.                                                 |
+| 11  | Magic Up — favoritos                    | `/magicup/favorites`               | ✅     | P       | Implementado: galeria dedicada com toggle/delete inline.                                                 |
+| 12  | Widgets customizáveis (config UI)       | `/dashboard/widgets`               | ✅     | P       | Implementado: mostrar/ocultar, reordenar e reset (localStorage).                                         |
 
 **Esforço:** P = até 1 dia · M = 2-4 dias · G = 5+ dias.
