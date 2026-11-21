@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * PND-09 â€” Service Worker offline real, validado contra o BUILD de produÃ§Ã£o
- * (`vite preview`), que Ã© o Ãºnico ambiente onde o SW Ã© registrado.
+ * PND-09 — Service Worker offline real, validado contra o BUILD de produção
+ * (`vite preview`), que é o único ambiente onde o SW é registrado.
  * Rodar com: npx playwright test --config playwright.offline.config.ts
  *
  * No CI estes testes são pulados: o job E2E sobe `npm run dev`, onde o SW não

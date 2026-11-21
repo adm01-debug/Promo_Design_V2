@@ -263,6 +263,37 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
   });
 
+  const purgeMany = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { data, error } = await supabase
+        .from("assets")
+        .select("id,file_path,thumbnail_path")
+        .in("id", ids)
+        .eq("is_archived", true);
+      if (error) throw error;
+
+      const targets = data ?? [];
+      const paths: string[] = [];
+      for (const asset of targets) {
+        if (asset.file_path) paths.push(asset.file_path);
+        if (asset.thumbnail_path) paths.push(asset.thumbnail_path);
+      }
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage.from("assets").remove(paths);
+        if (storageError) throw storageError;
+      }
+
+      const { error: deleteError } = await supabase
+        .from("assets")
+        .delete()
+        .in("id", ids)
+        .eq("is_archived", true);
+      if (deleteError) throw deleteError;
+      return targets.length;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["assets", organizationId] }),
+  });
+
   return {
     assets: query.data?.rows ?? [],
     total: query.data?.total ?? 0,
@@ -278,6 +309,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
     archive,
     restore,
     restoreMany,
+    purgeMany,
     remove,
   };
 }
