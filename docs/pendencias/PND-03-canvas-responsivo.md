@@ -1,7 +1,7 @@
 ﻿---
 ID: PND-03
 Titulo: Canvas responsivo (aspect-ratio + ResizeObserver)
-Estado: PENDENTE
+Estado: DONE
 Fonte: docs/senior-frontend-audit.md [MEDIO]
 Data: 2026-11-21
 ---
@@ -10,7 +10,7 @@ Data: 2026-11-21
 
 ## Estado
 
-PENDENTE
+DONE (2026-11-21)
 
 ## Fonte
 
@@ -22,4 +22,4 @@ CANVAS_SIZE=460 causa overflow em telas pequenas; usar container responsivo com 
 
 ## Evidencia / Acao
 
-(Verificacao pendente ou executada - preencher ao fechar o item.)
+Canvas responsivo no head d2004c6e: MockupCanvas.tsx usa ResizeObserver e displayScale = min(1, available/CANVAS_SIZE) com espacamento pad 48, ajustando o canvas fixo ao container (aspect-ratio preservado pelo canvas). Verificado na fonte.

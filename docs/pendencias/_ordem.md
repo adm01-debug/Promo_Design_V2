@@ -7,18 +7,12 @@ Prioridade por impacto no negocio e dependencia, validada no baseline 246e410c.
 - [DONO] Rotacionar service_role + reset senha postgres (Dashboard fygxlswpkjtjpcefjfty) - item 19 prod-readiness.
 - [DONO] Deletar edge function migrate-helper no Dashboard - responde HTTP 401 hoje.
 
-## Sequencia executavel via PR
+## Estado real (revalidado 2026-11-21 no head d2004c6e)
 
-1. PND-06 idx notifications - 15min, impacta polling 15s, sem DDL destrutivo. Migration aditiva.
-2. PND-07 deprecar overloads - 30min, remove ambiguidade em check_ai_quota/cleanup_expired_data.
-3. PND-08 dashboard erros 60min - 2h, fecha lacuna de observabilidade (RPC + painel).
-4. PND-02 a11y editor - acessibilidade critica (ALTO).
-5. PND-03 canvas responsivo - mobile/tablet.
-6. PND-04 revokeObjectURL - memoria em sessoes longas.
-7. PND-01 web worker warp - ALTO, maior esforco, ultimo entre os de editor (depende de testes).
-8. PND-05 undo/redo - gap de UX no editor.
-9. PND-09 offline mode - lacuna enterprise.
-10. PND-10 webhooks ERP - integracao externa, depende de decisao de negocio (formato/ERP).
+PND-01..08 e PND-08: DONE (verificados na fonte, docs fechados com evidencia). Pendentes reais:
+
+1. PND-09 offline mode - lacuna enterprise (hoje so ha indicador OnlineIndicator).
+2. PND-10 webhooks ERP - integracao externa, depende de decisao de negocio (formato/ERP).
 
 ## Iteracao contabilizada
 
