@@ -309,13 +309,17 @@ BEGIN
   END IF;
 
   v_url := rtrim(v_base, '/') || '/os-webhook-dispatcher';
-  v_res := extensions.net.http_post(
+  -- net.http_post (NOT extensions.net.http_post): the pg_net extension lives
+  -- in the `net` schema, so a three-part name parses as database.schema.function
+  -- and fails with "cross-database references are not implemented".
+  -- body is jsonb in pg_net, so it must be jsonb_encode'd, not a text literal.
+  v_res := net.http_post(
     url := v_url,
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'x-cron-secret', v_secret
     ),
-    body := '{}'
+    body := '{}'::jsonb
   );
   RETURN jsonb_build_object(
     'ok', true,
