@@ -70,6 +70,7 @@ const DamLibraryPage = lazyWithRetry(() => import("./features/dam/pages/DamLibra
 const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPage"));
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
+const BrandHistoryPage = lazyWithRetry(() => import("./features/dam/pages/BrandHistoryPage"));
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
 
 const queryClient = new QueryClient();
@@ -199,6 +200,10 @@ const App = () => (
                         <Route
                           path="/clients/:clientId/brand"
                           element={guard("Brand Guidelines", <BrandGuidelinesPage />)}
+                        />
+                        <Route
+                          path="/clients/:clientId/brand/history"
+                          element={guard("Histórico de Brand", <BrandHistoryPage />)}
                         />
                         <Route path="/dam" element={guard("DAM", <DamLibraryPage />)} />
                         <Route path="/dam/trash" element={guard("Lixeira DAM", <DamTrashPage />)} />

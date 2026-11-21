@@ -5,7 +5,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Save,
+  Sparkles,
+  Download,
+  Copy,
+  Loader2,
+  History as HistoryIcon,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -501,6 +511,11 @@ export default function BrandGuidelinesPage() {
               <Download className="w-4 h-4 mr-2" />
             )}
             Exportar PDF
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to={`/clients/${clientId}/brand/history`}>
+              <HistoryIcon className="w-4 h-4 mr-1" /> Histórico
+            </Link>
           </Button>
           {editable && (
             <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
