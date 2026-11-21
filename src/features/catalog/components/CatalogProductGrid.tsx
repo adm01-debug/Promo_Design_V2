@@ -132,12 +132,23 @@ const CatalogProductGrid = ({
                   <ToggleLeft className="w-4 h-4 text-muted-foreground" />
                 )}
               </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(p)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label={`Editar ${p.name}`}
+                onClick={() => onEdit(p)}
+              >
                 <Edit3 className="w-3.5 h-3.5" />
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive"
+                    aria-label={`Excluir ${p.name}`}
+                  >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </AlertDialogTrigger>
