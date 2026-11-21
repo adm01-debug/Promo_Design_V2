@@ -1,7 +1,7 @@
 ﻿/** Unit tests for the os-webhook-dispatcher delivery + signature. */
 import { assertEquals, assertStrictEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
-import { deliverEvent, signBody, type QueuedOsEvent } from "./index.ts";
+import { deliverEvent, signBody, type QueuedOsEvent } from "./lib.ts";
 
 const EVENT: QueuedOsEvent = {
   event_id: "11111111-1111-4111-8111-111111111111",
