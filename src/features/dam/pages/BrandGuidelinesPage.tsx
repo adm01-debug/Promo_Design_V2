@@ -5,7 +5,17 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save, Sparkles, Download, Copy, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Save,
+  Sparkles,
+  Download,
+  Copy,
+  Share2,
+  Loader2,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +32,14 @@ import {
 import { useOrganizations } from "@/hooks/use-organization";
 import { useClients } from "@/features/clients/hooks/use-clients";
 import { useBrandGuidelines, type ColorEntry, type FontEntry } from "../hooks/use-brand-guidelines";
+import { createBrandShareLink } from "../lib/brand-share";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useAssets, type Asset } from "../hooks/use-assets";
 import { AssetThumbnail } from "../components/AssetThumbnail";
 import { AssetPicker } from "..";
@@ -89,6 +107,9 @@ export default function BrandGuidelinesPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [inferOpen, setInferOpen] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [proposal, setProposal] = useState<InferredGuidelines | null>(null);
   const [assetsUsed, setAssetsUsed] = useState(0);
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
@@ -229,6 +250,23 @@ export default function BrandGuidelinesPage() {
       notes: notes || null,
     });
     toast.success("Brand guidelines salvas");
+  };
+
+  const handleShare = async () => {
+    if (isSharing) return;
+    if (!guidelines || !currentOrgId) return;
+    setShareOpen(true);
+    setShareLink(null);
+    setIsSharing(true);
+    try {
+      const { url } = await createBrandShareLink(guidelines, currentOrgId);
+      setShareLink(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao criar link de compartilhamento";
+      toast.error(msg);
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const doList = doRules
@@ -503,6 +541,16 @@ export default function BrandGuidelinesPage() {
             Exportar PDF
           </Button>
           {editable && (
+            <Button variant="outline" onClick={handleShare} disabled={!guidelines || isSharing}>
+              {isSharing ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Share2 className="w-4 h-4 mr-2" />
+              )}
+              Compartilhar
+            </Button>
+          )}
+          {editable && (
             <Button onClick={handleSave} disabled={upsert.isPending || isLoading}>
               <Save className="w-4 h-4 mr-2" /> Salvar
             </Button>
@@ -737,6 +785,42 @@ export default function BrandGuidelinesPage() {
         onApply={applyProposal}
         onRegenerate={runInfer}
       />
+
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Compartilhar marca</DialogTitle>
+            <DialogDescription>
+              Qualquer pessoa com o link pode visualizar a marca publicamente. Você pode revogar o
+              acesso a qualquer momento.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-3">
+            <Label htmlFor="share-link">Link público</Label>
+            <div className="flex gap-2">
+              <Input
+                id="share-link"
+                readOnly
+                value={shareLink ?? "Gerando link…"}
+                aria-label="Link público da marca"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  if (!shareLink) return;
+                  void navigator.clipboard.writeText(shareLink);
+                  toast.success("Link copiado");
+                }}
+                disabled={!shareLink}
+                aria-label="Copiar link"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="pt-4">
         <BrandGuidelinesInferHistoryPanel
