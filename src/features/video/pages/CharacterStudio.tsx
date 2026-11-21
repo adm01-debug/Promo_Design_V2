@@ -129,6 +129,52 @@ const CharacterStudio = () => {
     navigate("/video/new");
   };
 
+  const handleUseInMockup = (char: CharacterProfile) => {
+    localStorage.setItem("selected_character_avatar", char.avatar);
+    localStorage.setItem("selected_character_id", char.id);
+    toast.info(`Personagem ${char.name} selecionado para o Mockup`);
+    navigate("/mockup/new");
+  };
+
+  // Exporta a ficha do personagem (avatar + prompt) como PNG 1024x1024.
+  const handleGeneratePhoto = async (char: CharacterProfile) => {
+    try {
+      const canvas = document.createElement("canvas");
+      const size = 1024;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D indisponível");
+
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, "#1a1a2e");
+      grad.addColorStop(1, "#16213e");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, size, size);
+
+      ctx.font = `${Math.round(size * 0.45)}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(char.avatar, size / 2, size * 0.42);
+
+      ctx.font = `bold ${Math.round(size * 0.05)}px sans-serif`;
+      ctx.fillText(char.name, size / 2, size * 0.78);
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Falha ao gerar PNG");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `personagem-${char.id}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Foto do personagem exportada");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível gerar a foto");
+    }
+  };
+
   const filteredChars = characters.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -384,7 +430,11 @@ const CharacterStudio = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 pt-4">
-                  <Button variant="outline" className="gap-2 text-xs">
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-xs"
+                    onClick={() => void handleGeneratePhoto(selectedChar)}
+                  >
                     <Camera className="w-4 h-4" /> Gerar Foto
                   </Button>
                   <Button
@@ -393,7 +443,11 @@ const CharacterStudio = () => {
                   >
                     <Video className="w-4 h-4" /> Usar no Vídeo
                   </Button>
-                  <Button variant="outline" className="gap-2 text-xs">
+                  <Button
+                    variant="outline"
+                    className="gap-2 text-xs"
+                    onClick={() => handleUseInMockup(selectedChar)}
+                  >
                     <Sparkles className="w-4 h-4" /> Usar no Mockup
                   </Button>
                 </div>

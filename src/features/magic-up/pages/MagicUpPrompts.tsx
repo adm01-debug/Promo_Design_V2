@@ -30,7 +30,12 @@ const MagicUpPrompts = () => {
           <h1 className="text-xl font-display font-bold text-foreground">Banco de Prompts</h1>
           <p className="text-sm text-muted-foreground">Templates prontos para geração de imagens</p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => navigate("/magicup/generate")}
+        >
           <Plus className="w-3.5 h-3.5" /> Novo Prompt
         </Button>
       </div>

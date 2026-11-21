@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { X, Heart, Trash2, Download } from "lucide-react";
+import { X, Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { MagicUpHistoryItem } from "@/features/magic-up";
+import DownloadMenu from "@/features/magic-up/components/DownloadMenu";
 
 interface MagicUpHistoryDetailProps {
   item: MagicUpHistoryItem;
@@ -77,12 +78,12 @@ const MagicUpHistoryDetail = ({
       </div>
     </div>
     <div className="p-4 border-t border-border space-y-2">
-      <Button
-        className="w-full gap-2 text-xs bg-gradient-primary text-primary-foreground"
-        size="sm"
-      >
-        <Download className="w-3.5 h-3.5" /> Baixar Imagem
-      </Button>
+      <DownloadMenu
+        imageUrl={item.imageUrl}
+        fileName={`magicup-${item.id}`}
+        fullWidth
+        label="Baixar Imagem"
+      />
       <div className="flex gap-2">
         <Button
           variant="outline"

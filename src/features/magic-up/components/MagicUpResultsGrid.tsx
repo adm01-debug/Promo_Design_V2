@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Sparkles, Heart, Copy, Image as ImageIcon, Package, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import DownloadMenu from "@/features/magic-up/components/DownloadMenu";
 import type { DbProduct } from "@/features/mockup";
 
@@ -124,7 +125,17 @@ const MagicUpResultsGrid = ({
                   )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <DownloadMenu imageUrl={v.imageUrl} fileName={`magicup-${v.id}`} />
-                    <Button variant="ghost" size="sm" className="text-white h-8 w-8 p-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white h-8 w-8 p-0"
+                      aria-label="Copiar link da imagem"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void navigator.clipboard.writeText(v.imageUrl);
+                        toast.success("Link da imagem copiado");
+                      }}
+                    >
                       <Copy className="w-4 h-4" />
                     </Button>
                     <Button

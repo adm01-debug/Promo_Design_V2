@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
+import { downloadUrl } from "@/lib/utils";
 
 const SCENARIOS = [
   {
@@ -352,7 +353,14 @@ const VideoPhotodump = () => {
                               className="max-w-[70%] max-h-[70%] object-contain drop-shadow-xl"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
-                              <Button size="sm" variant="outline" className="text-xs gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs gap-1"
+                                onClick={() =>
+                                  downloadUrl(img.url, `photodump-${img.scenario}.png`)
+                                }
+                              >
                                 <Download className="w-3 h-3" /> Baixar
                               </Button>
                             </div>
