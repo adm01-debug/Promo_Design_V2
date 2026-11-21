@@ -1,1 +1,9 @@
 project_id = "qmwvvvrdufjpgkcorjeb"
+
+# Functions acessadas por link publico (o token na URL E a credencial): o gateway
+# precisa deixar passar sem JWT, senao responde 401 antes do codigo rodar.
+[functions.mockup-approval]
+verify_jwt = false
+
+[functions.brand-share]
+verify_jwt = false

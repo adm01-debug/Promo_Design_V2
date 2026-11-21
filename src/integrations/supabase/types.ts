@@ -649,6 +649,64 @@ export type Database = {
           },
         ]
       }
+      brand_guidelines_history: {
+        Row: {
+          brand_guideline_id: string
+          change_summary: string | null
+          changed_by: string | null
+          client_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          brand_guideline_id: string
+          change_summary?: string | null
+          changed_by?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          snapshot: Json
+          version: number
+        }
+        Update: {
+          brand_guideline_id?: string
+          change_summary?: string | null
+          changed_by?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_guidelines_history_brand_guideline_id_fkey"
+            columns: ["brand_guideline_id"]
+            isOneToOne: false
+            referencedRelation: "brand_guidelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_guidelines_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brand_guidelines_infer_history: {
         Row: {
           applied: boolean
@@ -723,6 +781,61 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brand_share_tokens: {
+        Row: {
+          brand_guideline_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          organization_id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          brand_guideline_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          organization_id: string
+          revoked_at?: string | null
+          token: string
+        }
+        Update: {
+          brand_guideline_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          organization_id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_share_tokens_brand_guideline_id_fkey"
+            columns: ["brand_guideline_id"]
+            isOneToOne: false
+            referencedRelation: "brand_guidelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_share_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_share_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -978,6 +1091,103 @@ export type Database = {
           },
         ]
       }
+      dam_collection_assets: {
+        Row: {
+          added_by: string | null
+          asset_id: string
+          collection_id: string
+          created_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          asset_id: string
+          collection_id: string
+          created_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          asset_id?: string
+          collection_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dam_collection_assets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dam_collection_assets_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "dam_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dam_collections: {
+        Row: {
+          cover_asset_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          organization_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cover_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          organization_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cover_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          organization_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dam_collections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dam_collections_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "dam_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dam_collections_cover_asset_id_fkey"
+            columns: ["cover_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dam_saved_searches: {
         Row: {
           created_at: string
@@ -1054,6 +1264,110 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "magicup_history_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magic_up_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          product_name: string | null
+          product_sku: string | null
+          prompt: string
+          result_image_url: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["magic_up_job_status"]
+          style: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt: string
+          result_image_url?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["magic_up_job_status"]
+          style?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt?: string
+          result_image_url?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["magic_up_job_status"]
+          style?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_up_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magic_up_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magic_up_styles: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          name: string
+          organization_id: string
+          prompt: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          name: string
+          organization_id: string
+          prompt: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          prompt?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_up_styles_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1152,6 +1466,70 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "mockup_drafts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_tokens: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          decision_note: string | null
+          decided_at: string | null
+          expires_at: string
+          id: string
+          mockup_id: string
+          organization_id: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_note?: string | null
+          decided_at?: string | null
+          expires_at: string
+          id?: string
+          mockup_id: string
+          organization_id?: string | null
+          status?: string
+          token: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          decision_note?: string | null
+          decided_at?: string | null
+          expires_at?: string
+          id?: string
+          mockup_id?: string
+          organization_id?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tokens_mockup_id_fkey"
+            columns: ["mockup_id"]
+            isOneToOne: false
+            referencedRelation: "mockup_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tokens_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1719,6 +2097,10 @@ export type Database = {
         Args: { _org_id: string; _source?: string; _triggered_by?: string }
         Returns: Json
       }
+      count_collection_assets: {
+        Args: { _collection_id: string }
+        Returns: number
+      }
       create_audit_log_partition: {
         Args: { _month_start: string }
         Returns: string
@@ -1951,6 +2333,12 @@ export type Database = {
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
       asset_type: "logo" | "art" | "photo" | "mockup" | "document" | "other"
+      magic_up_job_status:
+        | "queued"
+        | "processing"
+        | "done"
+        | "failed"
+        | "cancelled"
       video_job_status:
         | "queued"
         | "generating"
