@@ -11,10 +11,12 @@ import {
   Grid3X3,
   Package,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
 import { downloadUrl } from "@/lib/utils";
+import { renderPhotodumpScene } from "@/features/video/lib/photodump-scenes";
 
 const SCENARIOS = [
   {
@@ -95,18 +97,26 @@ const VideoPhotodump = () => {
     );
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!selectedProduct || selectedScenarios.length === 0) return;
+    const productUrl = getProductImageUrl(selectedProduct);
     setIsGenerating(true);
-    // Simulate generation — real implementation requires Cloud
-    setTimeout(() => {
-      setGeneratedImages(
-        selectedScenarios.map((s) => ({
-          scenario: s,
-          url: selectedProduct ? getProductImageUrl(selectedProduct) : "",
+    try {
+      // Compõe cada cenário no canvas: paleta, piso, sombra de contato e vinheta
+      // próprios. Antes todos os cards repetiam a mesma imagem do produto.
+      const rendered = await Promise.all(
+        selectedScenarios.map(async (scene) => ({
+          scenario: scene,
+          url: await renderPhotodumpScene(scene, productUrl),
         })),
       );
+      setGeneratedImages(rendered);
+      toast.success(`${rendered.length} cenas geradas`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar as cenas");
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -328,7 +338,7 @@ const VideoPhotodump = () => {
                 </Button>
 
                 <p className="text-[10px] text-muted-foreground text-center">
-                  Geração real requer Lovable Cloud ativo
+                  Cada cena é composta localmente com paleta, piso e iluminação próprios
                 </p>
               </div>
 
