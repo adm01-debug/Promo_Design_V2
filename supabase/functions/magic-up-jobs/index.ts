@@ -15,7 +15,16 @@ import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
 // (Feature 8 — presets gerenciáveis em magic_up_styles). Slug custom
 // segue o mesmo formato da migration: ^[a-z0-9][a-z0-9-]{0,39}$.
 const STYLE_ENUM = z.union([
-  z.enum(["premium", "lifestyle", "flatlay", "minimal", "corporate", "ecommerce", "social", "outdoor"]),
+  z.enum([
+    "premium",
+    "lifestyle",
+    "flatlay",
+    "minimal",
+    "corporate",
+    "ecommerce",
+    "social",
+    "outdoor",
+  ]),
   z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/, "slug inválido"),
 ]);
 const ALLOWED_STYLES = 8;

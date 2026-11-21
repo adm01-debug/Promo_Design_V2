@@ -91,7 +91,11 @@ const MagicUpGenerate = () => {
       emoji: s.emoji,
       prompt: s.prompt,
     }));
-    return [...DEFAULT_STYLE_OPTIONS, ...custom];
+    // Defaults não têm prompt próprio; aplicam o smart prompt do estilo.
+    return [
+      ...DEFAULT_STYLE_OPTIONS.map((s) => ({ ...s, prompt: undefined as string | undefined })),
+      ...custom,
+    ];
   }, [customStyles]);
 
   const smartPrompt = useMemo(() => {
@@ -319,11 +323,11 @@ const MagicUpGenerate = () => {
                     setSelectedStyle(style.id);
                     if (selectedProduct) {
                       const promptBody =
-                        style.customPrompt || buildSmartPrompt(selectedProduct, style.id, "");
+                        style.prompt ?? buildSmartPrompt(selectedProduct, style.id, "");
                       setPrompt(promptBody);
                     }
                   }}
-                  title={style.prompt || `Estilo ${style.label}`}
+                  title={style.prompt ?? `Estilo ${style.label}`}
                   className="px-3 py-1 rounded-full bg-surface-2 border border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                 >
                   {style.emoji} {style.label}

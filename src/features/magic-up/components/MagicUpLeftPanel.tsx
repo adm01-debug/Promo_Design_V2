@@ -133,9 +133,9 @@ const MagicUpLeftPanel = ({
               key={style.id}
               onClick={() => {
                 setSelectedStyle(style.id);
-                if (selectedProduct) setPrompt(style.prompt);
+                if (selectedProduct) setPrompt(String(style.prompt));
               }}
-              title={style.prompt}
+              title={String(style.prompt)}
               className={`px-2 py-1.5 rounded-md text-xs text-left transition-all ${
                 selectedStyle === style.id
                   ? "bg-primary/20 text-primary border border-primary/40"
