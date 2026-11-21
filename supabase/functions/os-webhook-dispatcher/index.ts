@@ -130,7 +130,10 @@ serve(async (req) => {
         await admin.rpc("mark_os_webhook_delivered", { _event_id: ev.event_id });
         delivered += 1;
       } else {
-        await admin.rpc("mark_os_webhook_failed", { _event_id: ev.event_id, _error: "non-2xx response" });
+        await admin.rpc("mark_os_webhook_failed", {
+          _event_id: ev.event_id,
+          _error: "non-2xx response",
+        });
         failed += 1;
       }
     } catch (err) {

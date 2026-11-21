@@ -1,8 +1,5 @@
 ﻿/** Unit tests for the os-webhook-dispatcher delivery + signature. */
-import {
-  assertEquals,
-  assertStrictEquals,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, assertStrictEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
 import { deliverEvent, signBody, type QueuedOsEvent } from "./index.ts";
 
@@ -35,34 +32,36 @@ Deno.test("signBody differs when the secret changes", async () => {
   assertEquals(a === b, false);
 });
 
-Deno.test("deliverEvent returns true on 2xx and sets signature/event-id headers + body", async () => {
-  let captured: { url: string; body: string; signature: string; eventId: string } | null = null as
-    | { url: string; body: string; signature: string; eventId: string }
-    | null;
-  const fakeFetch = async (url: unknown, init?: RequestInit) => {
-    const headers = (init?.headers ?? {}) as Record<string, string>;
-    captured = {
-      url: String(url),
-      body: String(init?.body ?? ""),
-      signature: headers["X-Webhook-Signature"] ?? "",
-      eventId: headers["X-Webhook-Event-Id"] ?? "",
+Deno.test(
+  "deliverEvent returns true on 2xx and sets signature/event-id headers + body",
+  async () => {
+    let captured: { url: string; body: string; signature: string; eventId: string } | null =
+      null as { url: string; body: string; signature: string; eventId: string } | null;
+    const fakeFetch = async (url: unknown, init?: RequestInit) => {
+      const headers = (init?.headers ?? {}) as Record<string, string>;
+      captured = {
+        url: String(url),
+        body: String(init?.body ?? ""),
+        signature: headers["X-Webhook-Signature"] ?? "",
+        eventId: headers["X-Webhook-Event-Id"] ?? "",
+      };
+      return new Response("{}", { status: 200 });
     };
-    return new Response("{}", { status: 200 });
-  };
 
-  const ok = await deliverEvent(EVENT, "https://erp.example/hook", "sekrit", fakeFetch);
-  assertEquals(ok, true);
-  const c = captured!;
-  assertEquals(c.url, "https://erp.example/hook");
-  assertEquals(c.eventId, EVENT.event_id);
-  const parsed = JSON.parse(c.body) as Record<string, unknown>;
-  assertEquals(parsed.event_id, EVENT.event_id);
-  assertEquals(parsed.event, "os.status_changed");
-  assertEquals((parsed.payload as Record<string, unknown>).status, "concluida");
-  assertEquals(c.signature.startsWith("sha256="), true);
-  const hex = c.signature.replace("sha256=", "");
-  assertEquals(/^[0-9a-f]{64}$/.test(hex), true);
-});
+    const ok = await deliverEvent(EVENT, "https://erp.example/hook", "sekrit", fakeFetch);
+    assertEquals(ok, true);
+    const c = captured!;
+    assertEquals(c.url, "https://erp.example/hook");
+    assertEquals(c.eventId, EVENT.event_id);
+    const parsed = JSON.parse(c.body) as Record<string, unknown>;
+    assertEquals(parsed.event_id, EVENT.event_id);
+    assertEquals(parsed.event, "os.status_changed");
+    assertEquals((parsed.payload as Record<string, unknown>).status, "concluida");
+    assertEquals(c.signature.startsWith("sha256="), true);
+    const hex = c.signature.replace("sha256=", "");
+    assertEquals(/^[0-9a-f]{64}$/.test(hex), true);
+  },
+);
 
 Deno.test("deliverEvent returns false on 5xx without throwing", async () => {
   const ok = await deliverEvent(EVENT, "https://erp.example/hook", "sekrit", async () => {
