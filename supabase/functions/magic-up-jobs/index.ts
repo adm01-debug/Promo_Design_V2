@@ -12,8 +12,14 @@ import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
 
 const STYLE_ENUM = z.enum([
-  "premium", "lifestyle", "flatlay", "minimal", "corporate", "ecommerce",
-  "social", "outdoor",
+  "premium",
+  "lifestyle",
+  "flatlay",
+  "minimal",
+  "corporate",
+  "ecommerce",
+  "social",
+  "outdoor",
 ]);
 const ALLOWED_STYLES = 8;
 
@@ -36,11 +42,7 @@ const CancelSchema = z.object({
   jobId: z.string().uuid(),
 });
 
-const BodySchema = z.discriminatedUnion("action", [
-  EnqueueSchema,
-  ListSchema,
-  CancelSchema,
-]);
+const BodySchema = z.discriminatedUnion("action", [EnqueueSchema, ListSchema, CancelSchema]);
 
 type Json = Record<string, unknown>;
 
@@ -51,26 +53,22 @@ function json(req: Request, body: Json, status = 200): Response {
   });
 }
 
-const STYLE_LABEL: Record<string, string> = {
-  premium: "Premium",
-  lifestyle: "Lifestyle",
-  flatlay: "Flat Lay",
-  minimal: "Minimalista",
-  corporate: "Corporativo",
-  ecommerce: "E-commerce",
-  social: "Social Media",
-  outdoor: "Outdoor",
-};
-
 const STYLE_PROMPT: Record<string, string> = {
-  premium: "professional product photography, dark executive desk, warm ambient lighting, shallow depth of field, premium corporate feel, photorealistic",
-  lifestyle: "clean flat lay product photography on white marble surface, centered, soft natural overhead light, e-commerce ready, ultra sharp",
-  flatlay: "modern lifestyle scene in daily use, natural environment, authentic feel, bokeh background, Instagram-worthy composition",
-  minimal: "corporate gift set arrangement, elegant presentation, branded items, professional studio lighting, catalog quality",
-  corporate: "e-commerce product photo on pure white background, centered, even lighting, high resolution, Amazon and Shopify ready",
-  ecommerce: "eye-catching social media post, vibrant colors, modern design, trending aesthetic, square format",
-  social: "product photographed in outdoor natural setting, golden hour lighting, depth of field, lifestyle brand aesthetic",
-  outdoor: "minimalist product shot, negative space, single accent color, editorial magazine style",
+  premium:
+    "professional product photography, dark executive desk, warm ambient lighting, shallow depth of field, premium corporate feel, photorealistic",
+  lifestyle:
+    "modern lifestyle scene in daily use, natural environment, authentic feel, bokeh background, Instagram-worthy composition",
+  flatlay:
+    "clean flat lay product photography on white marble surface, centered, soft natural overhead light, e-commerce ready, ultra sharp",
+  minimal: "minimalist product shot, negative space, single accent color, editorial magazine style",
+  corporate:
+    "corporate gift set arrangement, elegant presentation, branded items, professional studio lighting, catalog quality",
+  ecommerce:
+    "e-commerce product photo on pure white background, centered, even lighting, high resolution, Amazon and Shopify ready",
+  social:
+    "eye-catching social media post, vibrant colors, modern design, trending aesthetic, square format",
+  outdoor:
+    "product photographed in outdoor natural setting, golden hour lighting, depth of field, lifestyle brand aesthetic",
 };
 
 /**
@@ -97,7 +95,9 @@ async function generateImage(apiKey: string, prompt: string): Promise<string> {
     });
     if (!response.ok) {
       const text = await response.text().catch(() => "");
-      throw new Error(`Gateway retornou HTTP ${response.status}${text ? `: ${text.slice(0, 200)}` : ""}`);
+      throw new Error(
+        `Gateway retornou HTTP ${response.status}${text ? `: ${text.slice(0, 200)}` : ""}`,
+      );
     }
     const data = await response.json();
     const url = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
@@ -220,7 +220,11 @@ Deno.serve(async (req) => {
       })
       .eq("id", job.id);
 
-    const { data: finalRow } = await admin.from("magic_up_jobs").select("*").eq("id", job.id).single();
+    const { data: finalRow } = await admin
+      .from("magic_up_jobs")
+      .select("*")
+      .eq("id", job.id)
+      .single();
     if (finalRow) results.push(finalRow);
   }
 

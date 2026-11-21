@@ -3,8 +3,14 @@ import { assertEquals, assert } from "https://deno.land/std@0.168.0/testing/asse
 import { z } from "https://esm.sh/zod@3.23.8";
 
 const STYLE_ENUM = z.enum([
-  "premium", "lifestyle", "flatlay", "minimal", "corporate", "ecommerce",
-  "social", "outdoor",
+  "premium",
+  "lifestyle",
+  "flatlay",
+  "minimal",
+  "corporate",
+  "ecommerce",
+  "social",
+  "outdoor",
 ]);
 
 const EnqueueSchema = z.object({
@@ -68,7 +74,17 @@ Deno.test("magic-up-jobs - enqueue rejeita mais de 8 estilos", () => {
     action: "enqueue",
     organizationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
     prompt: "Uma caneca personalizada",
-    styles: ["premium", "lifestyle", "flatlay", "minimal", "corporate", "ecommerce", "social", "outdoor", "premium"],
+    styles: [
+      "premium",
+      "lifestyle",
+      "flatlay",
+      "minimal",
+      "corporate",
+      "ecommerce",
+      "social",
+      "outdoor",
+      "premium",
+    ],
   });
   assertEquals(result.success, false);
 });
