@@ -30,7 +30,12 @@ export function useMagicUpJobs() {
   }, [customStyles]);
   const queryKey = ["magic-up-jobs", currentOrgId];
 
-  const { data: jobs = [], isLoading } = useQuery({
+  const {
+    data: jobs = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey,
     enabled: !!currentOrgId,
     // Polling: a fila é processada na edge function fora do navegador.
@@ -97,5 +102,5 @@ export function useMagicUpJobs() {
     },
   });
 
-  return { jobs, isLoading, styleLabels, enqueueBatch, cancelJob };
+  return { jobs, isLoading, isError, error, styleLabels, enqueueBatch, cancelJob };
 }

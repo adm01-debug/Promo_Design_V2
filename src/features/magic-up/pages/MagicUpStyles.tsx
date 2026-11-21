@@ -13,7 +13,8 @@ import { DEFAULT_STYLE_OPTIONS } from "@/features/magic-up";
 
 const MagicUpStyles = () => {
   const navigate = useNavigate();
-  const { styles, isLoading, create, update, remove } = useMagicUpStyles();
+  const { styles, isLoading, isError, error, create, update, remove } = useMagicUpStyles();
+
   const [editing, setEditing] = useState<MagicUpStyle | null>(null);
   const [form, setForm] = useState({ slug: "", name: "", emoji: "🎨", prompt: "" });
   const [confirmDelete, setConfirmDelete] = useState<MagicUpStyle | null>(null);
@@ -219,6 +220,19 @@ const MagicUpStyles = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Carregando estilos...
+          </div>
+        ) : isError ? (
+          <div
+            className="flex flex-col items-center justify-center py-16 text-center gap-2"
+            role="alert"
+          >
+            <AlertCircle className="w-8 h-8 text-destructive" />
+            <p className="text-sm font-medium text-foreground">
+              Não foi possível carregar os estilos
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {error instanceof Error ? error.message : "Tente novamente em instantes."}
+            </p>
           </div>
         ) : styles.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center gap-2">

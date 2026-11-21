@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Layers,
   ImageIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMagicUpJobs, type MagicUpJob } from "@/features/magic-up";
@@ -70,7 +71,7 @@ function StatusBadge({ status }: { status: MagicUpJob["status"] }) {
 const isFinal = (job: MagicUpJob) => ["done", "failed", "cancelled"].includes(job.status);
 
 const MagicUpJobs = () => {
-  const { jobs, isLoading, styleLabels, cancelJob } = useMagicUpJobs();
+  const { jobs, isLoading, isError, error, styleLabels, cancelJob } = useMagicUpJobs();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const counts = useMemo(() => {
@@ -146,6 +147,18 @@ const MagicUpJobs = () => {
         {isLoading && jobs.length === 0 ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
             <Loader2 className="w-4 h-4 animate-spin mr-2" /> Carregando jobs...
+          </div>
+        ) : isError ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center text-muted-foreground" role="alert">
+              <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-destructive opacity-70" />
+              <p className="text-sm font-display font-semibold text-foreground mb-1">
+                Não foi possível carregar a fila
+              </p>
+              <p className="text-xs">
+                {error instanceof Error ? error.message : "Tente novamente em instantes."}
+              </p>
+            </div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="h-full flex items-center justify-center">

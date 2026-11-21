@@ -23,6 +23,7 @@ import {
   Images,
   ArrowLeft,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useOrganizations } from "@/hooks/use-organization";
@@ -35,8 +36,17 @@ import { AssetDetailDrawer } from "../components/AssetDetailDrawer";
 
 export default function DamCollectionsPage() {
   const { currentOrgId, can } = useOrganizations();
-  const { items, isLoading, create, rename, remove, addAsset, removeAsset, useCollectionAssets } =
-    useDamCollections();
+  const {
+    items,
+    isLoading,
+    isError,
+    create,
+    rename,
+    remove,
+    addAsset,
+    removeAsset,
+    useCollectionAssets,
+  } = useDamCollections();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -236,6 +246,16 @@ export default function DamCollectionsPage() {
         </div>
       ) : isLoading ? (
         <AssetGridSkeleton viewMode="grid" count={8} />
+      ) : isError ? (
+        <Card className="p-12 text-center" role="alert">
+          <AlertCircle className="w-8 h-8 mx-auto mb-2 text-destructive" />
+          <p className="text-sm font-medium text-foreground">
+            Não foi possível carregar as coleções
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Verifique sua conexão e tente novamente em instantes.
+          </p>
+        </Card>
       ) : items.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           Nenhuma coleÃ§Ã£o criada ainda. Crie uma para organizar seus assets.

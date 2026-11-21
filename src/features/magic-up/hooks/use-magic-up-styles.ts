@@ -103,6 +103,8 @@ export function useMagicUpStyles() {
   return {
     styles: list.data ?? [],
     isLoading: list.isLoading,
+    isError: list.isError,
+    error: list.error,
     create,
     update,
     remove,
