@@ -43,7 +43,6 @@ const VideoNew = lazyWithRetry(() => import("./features/video/pages/VideoNew"));
 const VideoHistory = lazyWithRetry(() => import("./features/video/pages/VideoHistory"));
 const VideoMoodboard = lazyWithRetry(() => import("./features/video/pages/VideoMoodboard"));
 const VideoPhotodump = lazyWithRetry(() => import("./features/video/pages/VideoPhotodump"));
-const VideoGallery = lazyWithRetry(() => import("./features/video/pages/VideoGallery"));
 const VideoCinema = lazyWithRetry(() => import("./features/video/pages/VideoCinema"));
 const VideoInspiration = lazyWithRetry(() => import("./features/video/pages/VideoInspiration"));
 const CharacterStudio = lazyWithRetry(() => import("./features/video/pages/CharacterStudio"));
@@ -199,7 +198,7 @@ const App = () => (
                         />
                         <Route
                           path="/video/gallery"
-                          element={guard("Galeria de Vídeo", <VideoGallery />)}
+                          element={<Navigate to="/video/inspiration" replace />}
                         />
                         <Route
                           path="/video/cinema"
