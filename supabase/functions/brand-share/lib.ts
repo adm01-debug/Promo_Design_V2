@@ -1,0 +1,32 @@
+/**
+ * brand-share — lógica pura testável.
+ *
+ * Schemas zod + helpers para o fluxo de compartilhar o manual de marca.
+ * O index.ts apenas encaixa HTTP/Deno; aqui fica o que dá para testar sem rede.
+ */
+import { z } from "https://esm.sh/zod@3.23.8";
+
+export const TOKEN_RE = /^[0-9a-f]{48}$/;
+
+export const CreateSchema = z.object({
+  action: z.literal("create"),
+  brand_guideline_id: z.string().uuid(),
+  organization_id: z.string().uuid(),
+  valid_days: z.number().int().min(1).max(90).optional(),
+});
+
+export function isValidToken(token: string): boolean {
+  return TOKEN_RE.test(token);
+}
+
+export function parseJwtSub(jwt: string): string | null {
+  try {
+    const payload = JSON.parse(atob(jwt.split(".")[1] ?? ""));
+    if (payload?.sub && typeof payload.sub === "string") return payload.sub;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export type BrandShareStatus = "active" | "revoked" | "expired";

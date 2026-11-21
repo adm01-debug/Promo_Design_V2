@@ -785,6 +785,61 @@ export type Database = {
           },
         ]
       }
+      brand_share_tokens: {
+        Row: {
+          brand_guideline_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          organization_id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          brand_guideline_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          organization_id: string
+          revoked_at?: string | null
+          token: string
+        }
+        Update: {
+          brand_guideline_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          organization_id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_share_tokens_brand_guideline_id_fkey"
+            columns: ["brand_guideline_id"]
+            isOneToOne: false
+            referencedRelation: "brand_guidelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_share_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_share_tokens_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalog_products: {
         Row: {
           active: boolean

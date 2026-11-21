@@ -73,6 +73,9 @@ const DamTrashPage = lazyWithRetry(() => import("./features/dam/pages/DamTrashPa
 const DamPreviewPage = lazyWithRetry(() => import("./features/dam/pages/DamPreviewPage"));
 const BrandGuidelinesPage = lazyWithRetry(() => import("./features/dam/pages/BrandGuidelinesPage"));
 const BrandHistoryPage = lazyWithRetry(() => import("./features/dam/pages/BrandHistoryPage"));
+const BrandSharePublicPage = lazyWithRetry(
+  () => import("./features/dam/pages/BrandSharePublicPage"),
+);
 const ArchitectureDocs = lazyWithRetry(() => import("./pages/ArchitectureDocs"));
 const ClientApprovalPage = lazyWithRetry(
   () => import("./features/mockup/pages/ClientApprovalPage"),
@@ -99,6 +102,14 @@ const App = () => (
                       <Route
                         path="/mockup/approve/:token"
                         element={guard("Aprovação de Mockup", <ClientApprovalPage />)}
+                      />
+                      <Route
+                        path="/brand/public/:token"
+                        element={
+                          <Suspense fallback={<LoadingScreen />}>
+                            <BrandSharePublicPage />
+                          </Suspense>
+                        }
                       />
                       <Route
                         element={
