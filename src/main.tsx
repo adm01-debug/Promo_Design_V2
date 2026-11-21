@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import "./index.css";
 import * as Sentry from "@sentry/react";
 import { installGlobalErrorHandlers } from "./lib/global-error-handlers";
+import { bootstrapServiceWorker } from "./lib/service-worker";
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
@@ -21,6 +22,9 @@ if (SENTRY_DSN) {
 }
 
 installGlobalErrorHandlers();
+
+// Suporte offline (PND-09). No-op em dev e em navegadores sem suporte.
+bootstrapServiceWorker();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
