@@ -1,17 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  User,
-  Plus,
-  Trash2,
-  Copy,
-  Sparkles,
-  Camera,
-  Palette,
-  Search,
-  Heart,
-  Video,
-} from "lucide-react";
+import { User, Plus, Trash2, Copy, Camera, Palette, Search, Heart, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -20,15 +9,13 @@ import {
   useCharacterProfiles,
   type CharacterProfile,
 } from "@/features/video/hooks/use-character-profiles";
+import { CHARACTER_STYLES } from "@/features/video/lib/character-styles";
+import {
+  STORAGE_KEY_AVATAR,
+  STORAGE_KEY_ID,
+  buildCharacterDescription,
+} from "@/features/video/lib/selected-character";
 
-const STYLES = [
-  { id: "professional", label: "Profissional", emoji: "👔", desc: "Terno, blazer, roupas formais" },
-  { id: "casual", label: "Casual", emoji: "👕", desc: "Camiseta, jeans, confortável" },
-  { id: "sporty", label: "Esportivo", emoji: "🏃", desc: "Roupas fitness, ativas" },
-  { id: "elegant", label: "Elegante", emoji: "👗", desc: "Vestido, tailleur, sofisticado" },
-  { id: "streetwear", label: "Streetwear", emoji: "🧢", desc: "Urbano, moderno, despojado" },
-  { id: "corporate", label: "Corporativo", emoji: "💼", desc: "Uniforme empresarial, crachá" },
-];
 const TRAIT_OPTIONS = [
   "Sorridente",
   "Sério",
@@ -118,19 +105,13 @@ const CharacterStudio = () => {
   const [newOutfits, setNewOutfits] = useState<string[]>([]);
   const [consistency, setConsistency] = useState(80);
 
+  // Transferência completa: o Video Studio relê o perfil pelo id em
+  // character-studio-characters e reaproveita nome, traits e figurinos.
   const handleUseInVideo = (char: CharacterProfile) => {
-    // Store selected character in a way VideoNew can access (e.g., localStorage or state management)
-    localStorage.setItem("selected_character_avatar", char.avatar);
-    localStorage.setItem("selected_character_id", char.id);
+    localStorage.setItem(STORAGE_KEY_AVATAR, char.avatar);
+    localStorage.setItem(STORAGE_KEY_ID, char.id);
     toast.info(`Personagem ${char.name} selecionado para o Video Studio`);
     navigate("/video/new");
-  };
-
-  const handleUseInMockup = (char: CharacterProfile) => {
-    localStorage.setItem("selected_character_avatar", char.avatar);
-    localStorage.setItem("selected_character_id", char.id);
-    toast.info(`Personagem ${char.name} selecionado para o Mockup`);
-    navigate("/mockup/new");
   };
 
   // Exporta a ficha do personagem (avatar + prompt) como PNG 1024x1024.
@@ -180,17 +161,14 @@ const CharacterStudio = () => {
     if (selectedChar?.id === id) setSelectedChar(null);
     toast.success("Personagem removido");
   };
-  const generatePrompt = (char: CharacterProfile) => {
-    const style = STYLES.find((s) => s.id === char.style);
-    return `A ${char.traits.join(", ").toLowerCase()} person wearing ${char.outfits.join(" or ")}, in a ${style?.desc || "professional"} style, ${char.poses[0] || "holding a product"}, photorealistic, studio lighting, high quality product photography`;
-  };
+  const generatePrompt = (char: CharacterProfile) => buildCharacterDescription(char);
 
   const handleCreate = () => {
     if (!newName.trim()) {
       toast.error("Dê um nome ao personagem");
       return;
     }
-    const style = STYLES.find((s) => s.id === newStyle);
+    const style = CHARACTER_STYLES.find((s) => s.id === newStyle);
     const newChar: CharacterProfile = {
       id: `char-${Date.now()}`,
       name: newName,
@@ -289,7 +267,7 @@ const CharacterStudio = () => {
                       </span>
                     </div>
                     <span className="text-[10px] text-primary font-mono">
-                      {STYLES.find((s) => s.id === char.style)?.label}
+                      {CHARACTER_STYLES.find((s) => s.id === char.style)?.label}
                     </span>
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {char.traits.slice(0, 3).map((t) => (
@@ -327,7 +305,7 @@ const CharacterStudio = () => {
                 setConsistency={setConsistency}
                 onCancel={() => setIsCreating(false)}
                 onCreate={handleCreate}
-                styles={STYLES}
+                styles={CHARACTER_STYLES}
                 traitOptions={TRAIT_OPTIONS}
                 outfitOptions={OUTFIT_OPTIONS}
                 poseOptions={POSE_OPTIONS}
@@ -348,7 +326,7 @@ const CharacterStudio = () => {
                     <div>
                       <h2 className="text-lg font-bold text-foreground">{selectedChar.name}</h2>
                       <span className="text-xs text-primary font-mono">
-                        {STYLES.find((s) => s.id === selectedChar.style)?.label}
+                        {CHARACTER_STYLES.find((s) => s.id === selectedChar.style)?.label}
                       </span>
                       <div className="flex gap-1.5 mt-2 flex-wrap">
                         {selectedChar.traits.map((t) => (
@@ -424,7 +402,7 @@ const CharacterStudio = () => {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 pt-4">
+                <div className="grid grid-cols-2 gap-3 pt-4">
                   <Button
                     variant="outline"
                     className="gap-2 text-xs"
@@ -437,13 +415,6 @@ const CharacterStudio = () => {
                     onClick={() => handleUseInVideo(selectedChar)}
                   >
                     <Video className="w-4 h-4" /> Usar no Vídeo
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="gap-2 text-xs"
-                    onClick={() => handleUseInMockup(selectedChar)}
-                  >
-                    <Sparkles className="w-4 h-4" /> Usar no Mockup
                   </Button>
                 </div>
               </motion.div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -19,6 +19,11 @@ import { Button } from "@/components/ui/button";
 import { useProducts, getProductImageUrl } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
 import VideoPreviewAnimation from "@/features/video/components/VideoPreviewAnimation";
+import {
+  LABEL_MAX_LENGTH,
+  clearSelectedCharacter,
+  readSelectedCharacter,
+} from "@/features/video/lib/selected-character";
 import {
   useMoodboardStore,
   TONE_LABELS,
@@ -119,8 +124,11 @@ const VideoNew = () => {
   const [creationMode, setCreationMode] = useState<CreationMode>("template");
   const [aiPrompt, setAiPrompt] = useState(() => remix?.extraInstructions ?? "");
   const [duration, setDuration] = useState<5 | 10>(() => remix?.durationSeconds ?? 5);
+  // Handoff do Character Studio: perfil completo (nome, traits, figurinos), não só o emoji.
+  const studioCharacter = useMemo(() => readSelectedCharacter(), []);
+  const [characterId, setCharacterId] = useState<string | null>(() => studioCharacter?.id ?? null);
   const [selectedCharacter, setSelectedCharacter] = useState<string>(() => {
-    return localStorage.getItem("selected_character_avatar") || "👩‍💼";
+    return studioCharacter?.avatar || "👩‍💼";
   });
   const [motionPresetIds, setMotionPresetIds] = useState<string[]>(
     () => remix?.motionPresetIds ?? [],
@@ -132,10 +140,13 @@ const VideoNew = () => {
 
   useEffect(() => {
     // Clear selection after consumption to avoid sticky states between sessions
-    return () => {
-      localStorage.removeItem("selected_character_avatar");
-      localStorage.removeItem("selected_character_id");
-    };
+    return () => clearSelectedCharacter();
+  }, []);
+
+  // Escolher outro avatar no grid invalida o personagem do Studio.
+  const handleSelectCharacter = useCallback((avatar: string) => {
+    setSelectedCharacter(avatar);
+    setCharacterId(null);
   }, []);
 
   // Telemetria de origem `deep_link` — uma vez por receita/organização.
@@ -162,7 +173,13 @@ const VideoNew = () => {
   // Estado derivado — nunca useEffect. Só âncoras válidas entram no prompt/payload.
   const validStartFrame = isValidFrameUrl(startFrameUrl) ? startFrameUrl.trim() : null;
   const validEndFrame = isValidFrameUrl(endFrameUrl) ? endFrameUrl.trim() : null;
-  const soulLabel = CHARACTER_SOUL_LABELS[selectedCharacter] ?? null;
+  const soulLabel =
+    (studioCharacter ? studioCharacter.name.slice(0, LABEL_MAX_LENGTH) : null) ??
+    CHARACTER_SOUL_LABELS[selectedCharacter] ??
+    null;
+  const characterDescription = studioCharacter
+    ? studioCharacter.description
+    : (CHARACTER_DESCRIPTIONS[selectedCharacter] ?? null);
 
   const generatedPrompt = useMemo(
     () =>
@@ -178,7 +195,7 @@ const VideoNew = () => {
             cinema,
             characterDescription:
               selectedTemplate === "ambassador" && creationMode === "template"
-                ? CHARACTER_DESCRIPTIONS[selectedCharacter]
+                ? characterDescription
                 : null,
             characterSoulLabel:
               selectedTemplate === "ambassador" && creationMode === "template" ? soulLabel : null,
@@ -197,9 +214,9 @@ const VideoNew = () => {
       cinema,
       selectedTemplate,
       creationMode,
-      selectedCharacter,
       aiPrompt,
       soulLabel,
+      characterDescription,
       validStartFrame,
       validEndFrame,
     ],
@@ -598,7 +615,7 @@ const VideoNew = () => {
                         {["👩‍💼", "🧑", "🧔", "👩‍🎨", "👮", "🧑‍💻", "👩‍🔬", "👤"].map((avatar) => (
                           <button
                             key={avatar}
-                            onClick={() => setSelectedCharacter(avatar)}
+                            onClick={() => handleSelectCharacter(avatar)}
                             className={`h-12 flex items-center justify-center rounded-xl border-2 transition-all text-2xl ${selectedCharacter === avatar ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}
                           >
                             {avatar}
@@ -755,9 +772,10 @@ const VideoNew = () => {
                             characterRef:
                               selectedTemplate === "ambassador" && creationMode === "template"
                                 ? {
+                                    id: characterId,
                                     label: soulLabel,
                                     avatar: selectedCharacter,
-                                    description: CHARACTER_DESCRIPTIONS[selectedCharacter] ?? null,
+                                    description: characterDescription,
                                   }
                                 : null,
                           })
