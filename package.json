@@ -51,7 +51,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@sentry/browser": "^10.53.1",
-    "@sentry/react": "^10.53.1",
+    "@sentry/react": "^11.14.0",
     "@sentry/tracing": "^7.120.4",
     "@supabase/supabase-js": "^2.99.2",
     "@tanstack/react-query": "^5.83.0",
