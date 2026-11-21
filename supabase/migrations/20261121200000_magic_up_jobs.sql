@@ -1,4 +1,4 @@
-﻿-- Magic Up — fila de gerações em lote (Feature #4).
+-- Magic Up — fila de gerações em lote (Feature #4).
 -- Batch jobs: permite enfileirar N estilos de uma vez e acompanhar o
 -- progresso real na página /magicup/jobs, em vez de esperar 2s simulados.
 --

@@ -1,4 +1,4 @@
-﻿-- DAM collections: hierarchical folders to organize assets per organization.
+-- DAM collections: hierarchical folders to organize assets per organization.
 --
 -- Design (owner decision 2026-11-21):
 --   * dam_collections holds folder rows (name + parent for nesting). Assets are
