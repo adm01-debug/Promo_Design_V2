@@ -28,7 +28,7 @@ test.describe("offline support (PND-09)", () => {
     expect(Array.isArray(manifest.icons)).toBe(true);
   });
 
-  test("SW ativa, popula o shell cache e mantem o app carregando", async ({ page, context }) => {
+  test("SW ativa, popula o shell cache e mantem o app carregando", async ({ page }) => {
     const consoleErrors: string[] = [];
     page.on("console", (msg) => {
       if (msg.type() === "error") consoleErrors.push(msg.text());
