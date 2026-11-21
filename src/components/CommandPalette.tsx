@@ -55,6 +55,7 @@ const pages = [
   { label: "Banco de Prompts", path: "/magicup/prompts", icon: BookOpen, group: "Magic Up" },
   { label: "Histórico Magic Up", path: "/magicup/history", icon: History, group: "Magic Up" },
   { label: "Fila de Jobs Magic Up", path: "/magicup/jobs", icon: ListTodo, group: "Magic Up" },
+  { label: "Estilos Magic Up", path: "/magicup/styles", icon: Palette, group: "Magic Up" },
   { label: "Novo Vídeo", path: "/video/new", icon: Film, group: "Video Studio" },
   { label: "Cinema Mode", path: "/video/cinema", icon: Eye, group: "Video Studio" },
   {

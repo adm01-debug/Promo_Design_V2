@@ -37,6 +37,7 @@ const MagicUpGenerate = lazyWithRetry(() => import("./features/magic-up/pages/Ma
 const MagicUpPrompts = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpPrompts"));
 const MagicUpHistory = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpHistory"));
 const MagicUpFavorites = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpFavorites"));
+const MagicUpStyles = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpStyles"));
 const MagicUpJobs = lazyWithRetry(() => import("./features/magic-up/pages/MagicUpJobs"));
 const VideoNew = lazyWithRetry(() => import("./features/video/pages/VideoNew"));
 const VideoHistory = lazyWithRetry(() => import("./features/video/pages/VideoHistory"));
@@ -178,6 +179,10 @@ const App = () => (
                         <Route
                           path="/magicup/favorites"
                           element={guard("Magic Up Favoritos", <MagicUpFavorites />)}
+                        />
+                        <Route
+                          path="/magicup/styles"
+                          element={guard("Magic Up Estilos", <MagicUpStyles />)}
                         />
                         <Route
                           path="/magicup/jobs"

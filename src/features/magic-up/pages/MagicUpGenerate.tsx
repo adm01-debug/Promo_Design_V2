@@ -6,8 +6,13 @@ import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
 import { useProducts, useCategories, useProductVariants } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
-import { useMagicUpHistory, useMagicUpJobs } from "@/features/magic-up";
-import MagicUpLeftPanel, { STYLE_OPTIONS } from "@/features/magic-up/components/MagicUpLeftPanel";
+import {
+  useMagicUpHistory,
+  useMagicUpJobs,
+  useMagicUpStyles,
+  DEFAULT_STYLE_OPTIONS,
+} from "@/features/magic-up";
+import MagicUpLeftPanel from "@/features/magic-up/components/MagicUpLeftPanel";
 import MagicUpProductPickerModal from "@/features/magic-up/components/MagicUpProductPickerModal";
 import MagicUpResultsGrid from "@/features/magic-up/components/MagicUpResultsGrid";
 import { ErrorLogger } from "@/lib/error-logger";
@@ -58,6 +63,7 @@ const MagicUpGenerate = () => {
   >([]);
   const { addGeneration: saveToHistory } = useMagicUpHistory();
   const { enqueueBatch } = useMagicUpJobs();
+  const { styles: customStyles } = useMagicUpStyles();
   const navigate = useNavigate();
   const [showPromptBank, setShowPromptBank] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
@@ -76,6 +82,21 @@ const MagicUpGenerate = () => {
   const { data: variants } = useProductVariants(selectedProduct?.id || null);
   const products = productsData?.products || [];
   const colorVariants = (variants || []).filter((v) => v.color_hex);
+
+  // Estilos disponíveis = padrões do sistema + presets da organização (Feature 8).
+  const allStyles = useMemo(() => {
+    const custom = (customStyles ?? []).map((s) => ({
+      id: s.slug,
+      label: s.name,
+      emoji: s.emoji,
+      prompt: s.prompt,
+    }));
+    // Defaults não têm prompt próprio; aplicam o smart prompt do estilo.
+    return [
+      ...DEFAULT_STYLE_OPTIONS.map((s) => ({ ...s, prompt: undefined as string | undefined })),
+      ...custom,
+    ];
+  }, [customStyles]);
 
   const smartPrompt = useMemo(() => {
     if (!selectedProduct) return "";
@@ -150,7 +171,7 @@ const MagicUpGenerate = () => {
         imageUrl: "/placeholder.svg",
         productName: selectedProduct?.name,
         productSku: selectedProduct?.sku,
-        style: STYLE_OPTIONS.find((s) => s.id === selectedStyle)?.label,
+        style: allStyles.find((s) => s.id === selectedStyle)?.label ?? selectedStyle,
       });
 
       ErrorLogger.info("Generation successful", { batchId, requestId });
@@ -217,6 +238,12 @@ const MagicUpGenerate = () => {
           applySmartPrompt={applySmartPrompt}
           setPrompt={setPrompt}
           onOpenProductPicker={() => setShowProductPicker(true)}
+          customStyles={(customStyles ?? []).map((s) => ({
+            id: s.slug,
+            label: s.name,
+            emoji: s.emoji,
+            prompt: s.prompt,
+          }))}
         />
 
         <div className="flex-1 flex flex-col">
@@ -289,13 +316,18 @@ const MagicUpGenerate = () => {
                   <Sparkles className="w-3 h-3" /> Prompt Inteligente
                 </button>
               )}
-              {STYLE_OPTIONS.slice(0, 4).map((style) => (
+              {allStyles.slice(0, 6).map((style) => (
                 <button
                   key={style.id}
                   onClick={() => {
                     setSelectedStyle(style.id);
-                    if (selectedProduct) setPrompt(buildSmartPrompt(selectedProduct, style.id, ""));
+                    if (selectedProduct) {
+                      const promptBody =
+                        style.prompt ?? buildSmartPrompt(selectedProduct, style.id, "");
+                      setPrompt(promptBody);
+                    }
                   }}
+                  title={style.prompt ?? `Estilo ${style.label}`}
                   className="px-3 py-1 rounded-full bg-surface-2 border border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                 >
                   {style.emoji} {style.label}

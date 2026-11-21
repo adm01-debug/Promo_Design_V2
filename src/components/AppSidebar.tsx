@@ -100,6 +100,7 @@ const modules = [
       { label: "Banco de Prompts", path: "/magicup/prompts", icon: BookOpen },
       { label: "Histórico", path: "/magicup/history", icon: History },
       { label: "Favoritos", path: "/magicup/favorites", icon: Heart },
+      { label: "Estilos", path: "/magicup/styles", icon: Palette },
       { label: "Fila de Jobs", path: "/magicup/jobs", icon: ListTodo },
     ],
   },
