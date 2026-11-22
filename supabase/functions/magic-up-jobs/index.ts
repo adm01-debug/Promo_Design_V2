@@ -2,9 +2,9 @@
 //
 // Ações:
 //   enqueue -> cria N jobs (via RPC SECURITY DEFINER) e processa cada um:
-//              geração de imagem via OpenRouter quando OPENROUTER_API_KEY existe;
-//              senão fallback determinístico (placeholder) para nunca travar
-//              a fila em ambientes sem provedor.
+//              geração de imagem via OpenRouter. Sem OPENROUTER_API_KEY a ação
+//              responde 500 antes de enfileirar — nunca marca job como `done`
+//              sem imagem, que a UI exibiria como "Concluído".
 //   list    -> jobs da organização atual (RLS do usuário).
 //   cancel  -> cancela um job ainda não finalizado (RPC SECURITY DEFINER).
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -169,7 +169,13 @@ Deno.serve(async (req) => {
   }
 
   // action === "enqueue"
+  // Sem provedor configurado nenhum job tem como virar `done`: gerar imagem é
+  // a razão de existir da fila. Falhar aqui evita o falso positivo de jobs
+  // "Concluídos" com imagem placeholder, que o usuário vê como sucesso.
   const apiKey = Deno.env.get("OPENROUTER_API_KEY");
+  if (!apiKey) {
+    return json(req, { error: "Configuração do servidor incompleta" }, 500);
+  }
   // Cliente admin para marcar processamento/resultado (RLS da tabela não dá UPDATE ao app).
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -213,18 +219,12 @@ Deno.serve(async (req) => {
     let resultImageUrl: string | null = "/placeholder.svg";
     let errorMessage: string | null = null;
 
-    if (apiKey) {
-      const stylePrompt = customPromptMap[job.style] ?? STYLE_PROMPT[job.style] ?? "";
-      try {
-        resultImageUrl = await generateImage(apiKey, `${body.prompt}\n\n${stylePrompt}`.trim());
-      } catch (err) {
-        status = "failed";
-        errorMessage = err instanceof Error ? err.message : "Falha desconhecida ao gerar imagem";
-      }
-    } else {
-      // Sem provedor configurado: fallback determinístico para manter a fila
-      // funcional neste ambiente (mesmo comportamento visual do gerador atual).
-      resultImageUrl = "/placeholder.svg";
+    const stylePrompt = customPromptMap[job.style] ?? STYLE_PROMPT[job.style] ?? "";
+    try {
+      resultImageUrl = await generateImage(apiKey, `${body.prompt}\n\n${stylePrompt}`.trim());
+    } catch (err) {
+      status = "failed";
+      errorMessage = err instanceof Error ? err.message : "Falha desconhecida ao gerar imagem";
     }
 
     await admin
