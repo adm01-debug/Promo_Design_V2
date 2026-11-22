@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +85,9 @@ const LEVEL_META: Record<
 };
 
 export function HealthDashboardPanel() {
+  // Ancora o "agora" na montagem: `Date.now()` no render mudaria a idade do
+  // snapshot a cada re-render, alterando o score sem nenhum dado novo.
+  const [nowMs] = useState(() => Date.now());
   const statsQuery = useQuery({
     queryKey: ["maintenance-stats"],
     staleTime: 60_000,
@@ -173,7 +176,7 @@ export function HealthDashboardPanel() {
         (m, r) => (r.captured_at > m ? r.captured_at : m),
         hist[0].captured_at,
       );
-      const ageMs = Date.now() - new Date(latestIso).getTime();
+      const ageMs = nowMs - new Date(latestIso).getTime();
       const hours = ageMs / (60 * 60 * 1000);
       let status: HealthLevel = "excellent";
       if (hours > 72) status = "critical";
@@ -211,7 +214,7 @@ export function HealthDashboardPanel() {
     }
 
     return list;
-  }, [statsQuery.data, historyQuery.data, sizeHistoryQuery.data, sloQuery.data]);
+  }, [statsQuery.data, historyQuery.data, sizeHistoryQuery.data, sloQuery.data, nowMs]);
 
   const { score, overall } = useMemo(() => {
     if (signals.length === 0) return { score: 0, overall: "good" as HealthLevel };

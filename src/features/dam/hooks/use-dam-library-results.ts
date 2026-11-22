@@ -24,12 +24,16 @@ export function useDamLibraryResults(
     paginationMode,
   } = filtersState;
 
+  // Ancora o corte temporal na montagem: `Date.now()` no corpo do render geraria
+  // um ISO diferente a cada re-render e invalidaria a query sem mudanca de filtro.
+  const [anchorNow] = useState(() => Date.now());
+
   const filters = useMemo(() => {
     const opt = SORT_OPTIONS.find((s) => s.value === sort) ?? SORT_OPTIONS[1];
     const range = SIZE_RANGE_OPTIONS.find((o) => o.value === sizeRange);
     const updRange = UPDATED_RANGE_OPTIONS.find((o) => o.value === updatedRange);
     const updatedAfter = updRange?.hours
-      ? new Date(Date.now() - updRange.hours * 60 * 60 * 1000).toISOString()
+      ? new Date(anchorNow - updRange.hours * 60 * 60 * 1000).toISOString()
       : undefined;
 
     const minSize = customSize ? (customSize.minBytes ?? undefined) : range?.min;
@@ -65,6 +69,7 @@ export function useDamLibraryResults(
     sizeRange,
     updatedRange,
     customSize,
+    anchorNow,
   ]);
 
   const { assets, total, totalPages, isLoading, isFetching, restore } = useAssets(
