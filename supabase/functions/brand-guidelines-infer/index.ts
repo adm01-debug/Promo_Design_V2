@@ -7,6 +7,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.3";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
+import { AI_CHAT_COMPLETIONS_URL, AI_MODELS, aiHeaders, getAiApiKey } from "../_shared/ai.ts";
 
 const RequestSchema = z.object({
   client_id: z.string().uuid(),
@@ -156,9 +157,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = getAiApiKey();
     if (!apiKey) {
-      console.error(`[${requestId}] LOVABLE_API_KEY missing`);
+      console.error(`[${requestId}] OPENROUTER_API_KEY missing`);
       return jsonResponse({ error: "AI configuration missing", requestId }, 500, req);
     }
 
@@ -178,14 +179,11 @@ Deno.serve(async (req) => {
       ...imageUrls.slice(0, 8).map((url) => ({ type: "image_url", image_url: { url } })),
     ];
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: aiHeaders(apiKey),
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: AI_MODELS.vision,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
@@ -238,7 +236,7 @@ Deno.serve(async (req) => {
         organization_id: clientRow.organization_id,
         user_id: userId,
         feature: "brand-guidelines-infer",
-        model: "google/gemini-2.5-flash",
+        model: AI_MODELS.vision,
         cost_usd: 0,
       })
       .then(({ error: e }: { error: { message: string } | null }) => {
@@ -321,7 +319,7 @@ Deno.serve(async (req) => {
         client_id,
         user_id: userId,
         request_id: requestId,
-        model: "google/gemini-2.5-flash",
+        model: AI_MODELS.vision,
         inputs: {
           asset_urls_provided: (asset_urls ?? []).length,
           asset_urls_signed: imageUrls.length,
