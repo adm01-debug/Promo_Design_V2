@@ -242,6 +242,7 @@ export function SnapshotHistoryDialog() {
               onClick={() => query.refetch()}
               disabled={query.isFetching}
               title="Recarregar"
+              aria-label="Recarregar histórico de snapshots"
               className="h-8 w-8"
             >
               <RefreshCcw className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />

@@ -661,6 +661,7 @@ export default function BrandGuidelinesPage() {
                     className="col-span-1"
                     size="icon"
                     variant="ghost"
+                    aria-label={`Remover fonte ${f.name}`}
                     onClick={() => setFonts(fonts.filter((_, idx) => idx !== i))}
                   >
                     <Trash2 className="w-4 h-4" />

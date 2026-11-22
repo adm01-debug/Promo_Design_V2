@@ -200,6 +200,7 @@ export function DamLibraryHeader({
           variant="outline"
           size="icon"
           onClick={onOpenReset}
+          aria-label="Redefinir preferências da biblioteca"
           data-testid="dam-reset-preferences"
         >
           <RotateCcw className="w-4 h-4" />
