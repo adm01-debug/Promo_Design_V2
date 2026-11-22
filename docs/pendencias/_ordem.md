@@ -15,6 +15,13 @@ Prioridade por impacto no negocio e dependencia, validada no baseline 246e410c.
 - [DONO] Deletar edge function migrate-helper no Dashboard - responde HTTP 401 hoje.
 - [DONO] Secrets da edge `os-webhook-dispatcher`: `ERP_WEBHOOK_URL`, `ERP_WEBHOOK_SECRET`,
   `CRON_SECRET` + `app.net.functions_base` / `app.net.os_webhook_cron_secret` no database.
+- [DONO] Aplicar a migration `20261122150000_cron_retencao_dados.sql` (PR #102). Retencao de
+  dados nunca rodou em producao: `public.run_scheduled_cleanup_per_org()` existe desde
+  `20260712194748` (SECURITY DEFINER, `GRANT ... TO service_role`) mas **nenhuma** das 155
+  migrations fazia `cron.schedule` para ela, e a edge `cleanup-expired-data` nao tem chamador
+  (`rg "cleanup-expired-data" src` = 0). Efeito: `audit_log`, `notifications` e `status_audit`
+  crescem indefinidamente, sem aplicar as retencoes por organizacao (180/90/365 dias). Os 8 jobs
+  agendados hoje sao todos de monitoramento.
 
 ## Estado real (revalidado 2026-11-22 no head fa7e0f42)
 
