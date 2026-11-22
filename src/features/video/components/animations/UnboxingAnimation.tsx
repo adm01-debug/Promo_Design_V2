@@ -1,14 +1,12 @@
-import { useMemo } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 const UnboxingAnimation = ({ productImage }: { productImage: string }) => {
-  const bursts = useMemo(
-    () =>
-      Array.from({ length: 6 }, () => ({
-        x: (Math.random() - 0.5) * 120,
-        y: (Math.random() - 0.5) * 120,
-      })),
-    [],
+  const [bursts] = useState(() =>
+    Array.from({ length: 6 }, () => ({
+      x: (Math.random() - 0.5) * 120,
+      y: (Math.random() - 0.5) * 120,
+    })),
   );
 
   return (

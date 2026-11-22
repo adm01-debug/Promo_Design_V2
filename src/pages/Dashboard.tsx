@@ -58,12 +58,14 @@ const Dashboard = () => {
   const { invites, acceptInvite } = useOrganizationInvites(null);
   const { hasNoOrg: noOrg } = useOrganizations();
 
+  const userEmail = user?.email;
+
   const userInvites = useMemo(() => {
-    if (!user?.email) return [];
+    if (!userEmail) return [];
     return invites.filter(
-      (i) => i.email.toLowerCase() === user.email?.toLowerCase() && !i.accepted_at,
+      (i) => i.email.toLowerCase() === userEmail.toLowerCase() && !i.accepted_at,
     );
-  }, [invites, user?.email]);
+  }, [invites, userEmail]);
 
   const greeting = getGreeting();
   const firstName = getUserFirstName(user?.email ?? undefined);

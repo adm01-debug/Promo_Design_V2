@@ -1,15 +1,13 @@
-import { useMemo } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 const FloatingAnimation = ({ productImage }: { productImage: string }) => {
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, i) => ({
-        x: [Math.random() * 20 - 10, Math.random() * 20 - 10] as [number, number],
-        duration: 3 + Math.random() * 2,
-        delay: i * 0.3,
-      })),
-    [],
+  const [particles] = useState(() =>
+    Array.from({ length: 12 }, (_, i) => ({
+      x: [Math.random() * 20 - 10, Math.random() * 20 - 10] as [number, number],
+      duration: 3 + Math.random() * 2,
+      delay: i * 0.3,
+    })),
   );
 
   return (
