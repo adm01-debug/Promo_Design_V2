@@ -77,7 +77,7 @@ export function AddToCollectionDialog({ open, onOpenChange, asset }: Props) {
                       await refetch();
                       toast.success(`Adicionado a "${c.name}"`);
                     } catch {
-                      toast.error("Falha ao adicionar Ã  coleção");
+                      toast.error("Falha ao adicionar à coleção");
                     } finally {
                       setBusyId(null);
                     }
