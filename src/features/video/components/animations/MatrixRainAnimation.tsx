@@ -1,16 +1,14 @@
-import { useMemo } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 const MatrixRainAnimation = ({ productImage }: { productImage: string }) => {
   const cols = 10;
-  const columns = useMemo(
-    () =>
-      Array.from({ length: cols }, () => ({
-        duration: 3 + Math.random() * 3,
-        delay: Math.random() * 2,
-        digits: Array.from({ length: 5 }, () => (Math.random() > 0.5 ? "1" : "0")),
-      })),
-    [],
+  const [columns] = useState(() =>
+    Array.from({ length: cols }, () => ({
+      duration: 3 + Math.random() * 3,
+      delay: Math.random() * 2,
+      digits: Array.from({ length: 5 }, () => (Math.random() > 0.5 ? "1" : "0")),
+    })),
   );
 
   return (
