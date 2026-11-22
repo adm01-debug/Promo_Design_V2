@@ -144,11 +144,7 @@ function ColorList({
             const safeHex = valid ? c.hex : "#000000";
             const w = wcagBoth(safeHex);
             const variant =
-              w.vsWhite === "FAIL"
-                ? "destructive"
-                : w.vsWhite === "AAA"
-                  ? "default"
-                  : "secondary";
+              w.vsWhite === "FAIL" ? "destructive" : w.vsWhite === "AAA" ? "default" : "secondary";
             return (
               <div key={i} className="flex items-center gap-2">
                 <input
@@ -242,7 +238,6 @@ function ColorList({
     </TooltipProvider>
   );
 }
-
 
 export default function BrandGuidelinesPage() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -490,7 +485,6 @@ export default function BrandGuidelinesPage() {
       setIsExporting(false);
     }
   };
-
 
   if (!currentOrgId || !clientId) {
     return (
