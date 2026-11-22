@@ -250,13 +250,6 @@ const VideoNew = () => {
           <span className="text-[10px] font-mono text-muted-foreground uppercase px-2 py-0.5 rounded bg-surface-2 border border-border">
             {aspectRatio}
           </span>
-          <Button
-            size="sm"
-            className="text-xs gap-1.5 bg-gradient-primary text-primary-foreground"
-            disabled
-          >
-            <Play className="w-3.5 h-3.5" /> Gerar Vídeo
-          </Button>
         </div>
       </div>
 
