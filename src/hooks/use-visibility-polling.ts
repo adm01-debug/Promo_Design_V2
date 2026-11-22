@@ -81,7 +81,9 @@ export function useVisibilityPolling(
   const callbackRef = useRef(callback);
   const requestCountRef = useRef(0);
   const metricsLabel = label ?? `poll-${baseInterval}`;
-  callbackRef.current = callback;
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
   const MAX_INTERVAL = Math.max(baseInterval * 4, 60_000);
 

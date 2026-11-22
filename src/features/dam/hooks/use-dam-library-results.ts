@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAssets, type Asset } from "./use-assets";
 import { SORT_OPTIONS, SIZE_RANGE_OPTIONS, UPDATED_RANGE_OPTIONS } from "../lib/dam-constants";
 import type { DamFiltersState } from "./use-dam-filters";
@@ -79,23 +79,6 @@ export function useDamLibraryResults(
 
   const isPaginating = isFetching && !isLoading && loadedPage !== page;
 
-  const lastTotalsRef = useRef<{
-    total: number;
-    totalPages: number;
-    page: number;
-    pageSize: number;
-    displayedLen: number;
-  } | null>(null);
-  if (!isLoading) {
-    lastTotalsRef.current = {
-      total,
-      totalPages,
-      page,
-      pageSize,
-      displayedLen: assets.length,
-    };
-  }
-
   const [accumulated, setAccumulated] = useState<Asset[]>([]);
   useEffect(() => {
     if (paginationMode !== "loadmore") return;
@@ -124,7 +107,6 @@ export function useDamLibraryResults(
     restore,
     displayedAssets,
     hasMore,
-    stable: lastTotalsRef.current,
     filters,
     setAccumulated,
   };

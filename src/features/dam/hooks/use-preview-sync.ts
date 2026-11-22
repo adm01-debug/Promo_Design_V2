@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PREVIEW_QS_KEY, COMPARE_IDS_KEY } from "../pages/DamPreviewPage";
 
@@ -12,11 +12,13 @@ export function usePreviewSync(
 ) {
   const navigate = useNavigate();
   const didRestoreSessionRef = useRef(false);
+  const [didRestore, setDidRestore] = useState(false);
 
   // Restore session from sessionStorage on mount if URL is empty
   useEffect(() => {
     if (didRestoreSessionRef.current) return;
     didRestoreSessionRef.current = true;
+    setDidRestore(true);
     if (typeof window === "undefined") return;
     if (searchParams.toString() !== "") return;
 
@@ -57,5 +59,5 @@ export function usePreviewSync(
     }
   }, [compareSelectedIds]);
 
-  return { didRestore: didRestoreSessionRef.current };
+  return { didRestore };
 }
