@@ -104,24 +104,24 @@ Mapa de referência das features do app Promo Design — rota exata e arquivo pr
 
 ## 8. Video Studio
 
-| Funcionalidade      | Rota                | Arquivo principal                              | Status |
-| ------------------- | ------------------- | ---------------------------------------------- | ------ |
-| Novo vídeo (wizard) | `/video/new`        | `src/features/video/pages/VideoNew.tsx`        | ✅     |
-| Moodboard           | `/video/moodboard`  | `src/features/video/pages/VideoMoodboard.tsx`  | ✅     |
-| Photodump           | `/video/photodump`  | `src/features/video/pages/VideoPhotodump.tsx`  | ✅     |
-| Galeria             | `/video/gallery`    | `src/features/video/pages/VideoGallery.tsx`    | ✅     |
-| Cinema Mode (LUTs)  | `/video/cinema`     | `src/features/video/pages/VideoCinema.tsx`     | ✅     |
-| Character Studio    | `/video/characters` | `src/features/video/pages/CharacterStudio.tsx` | ✅     |
-| Histórico           | `/video/history`    | `src/features/video/pages/VideoHistory.tsx`    | ✅     |
-| Animações modulares | (pasta)             | `src/features/video/components/animations/`    | ✅     |
+| Funcionalidade       | Rota                 | Arquivo principal                               | Status | Observação                                                                          |
+| -------------------- | -------------------- | ----------------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| Novo vídeo (wizard)  | `/video/new`         | `src/features/video/pages/VideoNew.tsx`         | ✅     | —                                                                                   |
+| Moodboard            | `/video/moodboard`   | `src/features/video/pages/VideoMoodboard.tsx`   | ✅     | —                                                                                   |
+| Photodump            | `/video/photodump`   | `src/features/video/pages/VideoPhotodump.tsx`   | ✅     | —                                                                                   |
+| Inspiração / Galeria | `/video/inspiration` | `src/features/video/pages/VideoInspiration.tsx` | ✅     | `/video/gallery` é alias e redireciona para cá (`<Navigate replace>` em `App.tsx`). |
+| Cinema Mode (LUTs)   | `/video/cinema`      | `src/features/video/pages/VideoCinema.tsx`      | ✅     | —                                                                                   |
+| Character Studio     | `/video/characters`  | `src/features/video/pages/CharacterStudio.tsx`  | ✅     | —                                                                                   |
+| Histórico            | `/video/history`     | `src/features/video/pages/VideoHistory.tsx`     | ✅     | —                                                                                   |
+| Animações modulares  | (pasta)              | `src/features/video/components/animations/`     | ✅     | —                                                                                   |
 
 ## 9. Outros
 
-| Funcionalidade  | Rota         | Arquivo principal                                                                | Status |
-| --------------- | ------------ | -------------------------------------------------------------------------------- | ------ |
-| Templates       | `/templates` | `src/pages/Templates.tsx`                                                        | ✅     |
-| Editor genérico | `/editor`    | `src/features/mockup/pages/MockupEditor.tsx` (redireciona para `/mockup/editor`) | ✅     |
-| 404 animado     | `*`          | `src/pages/NotFound.tsx`                                                         | ✅     |
+| Funcionalidade  | Rota                | Arquivo principal                                                                | Status | Observação                                                                      |
+| --------------- | ------------------- | -------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------- |
+| Templates       | `/mockup/templates` | `src/features/mockup/pages/MockupTemplates.tsx`                                  | ✅     | `/templates` é alias e redireciona para cá (`<Navigate replace>` em `App.tsx`). |
+| Editor genérico | `/editor`           | `src/features/mockup/pages/MockupEditor.tsx` (redireciona para `/mockup/editor`) | ✅     | —                                                                               |
+| 404 animado     | `*`                 | `src/pages/NotFound.tsx`                                                         | ✅     | —                                                                               |
 
 ## 10. Backlog consolidado (rotas planejadas)
 
