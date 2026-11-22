@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
       .eq("id", job.id);
 
     let status: "done" | "failed" = "done";
-    let resultImageUrl: string | null = "/placeholder.svg";
+    let resultImageUrl: string | null = null;
     let errorMessage: string | null = null;
 
     const stylePrompt = customPromptMap[job.style] ?? STYLE_PROMPT[job.style] ?? "";

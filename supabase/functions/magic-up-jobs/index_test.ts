@@ -216,3 +216,18 @@ Deno.test("magic-up-jobs - sem provedor de IA falha em vez de fingir sucesso", a
     "o fallback que marcava jobs como done sem imagem não pode voltar",
   );
 });
+
+// Regressão: `done` sem imagem é falso sucesso. O valor inicial de
+// `resultImageUrl` já foi "/placeholder.svg", então qualquer caminho que
+// marcasse `done` sem passar por generateImage gravava um artefato inexistente.
+Deno.test("magic-up-jobs - job concluído só existe com imagem real", async () => {
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  assert(
+    src.includes("let resultImageUrl: string | null = null;"),
+    "resultImageUrl deve iniciar nulo, nunca com um placeholder",
+  );
+  assert(
+    !src.includes('"/placeholder.svg"'),
+    "o handler não pode gravar placeholder como resultado",
+  );
+});
