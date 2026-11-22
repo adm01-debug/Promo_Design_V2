@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -74,7 +74,7 @@ export function BrandGuidelinesInferDialog({
   });
 
   // Reset selection when a new proposal arrives — default: select all.
-  useMemo(() => {
+  useEffect(() => {
     if (!proposal) return;
     setSelection({
       primary_colors: proposal.primary_colors.map(() => true),
