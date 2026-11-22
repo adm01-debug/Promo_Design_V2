@@ -90,6 +90,7 @@ export function SlowQueriesPanel() {
             disabled={query.isFetching}
             className="h-7 w-7"
             title="Atualizar"
+            aria-label="Atualizar queries lentas"
           >
             <RefreshCcw className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />
           </Button>
@@ -138,6 +139,7 @@ export function SlowQueriesPanel() {
                       onClick={() => copy(q.query)}
                       className="h-6 w-6"
                       title="Copiar query"
+                      aria-label="Copiar query"
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
@@ -147,6 +149,8 @@ export function SlowQueriesPanel() {
                       onClick={() => setExpanded(isOpen ? null : i)}
                       className="h-6 w-6"
                       title={isOpen ? "Recolher" : "Expandir"}
+                      aria-label={isOpen ? "Recolher query" : "Expandir query"}
+                      aria-expanded={isOpen}
                     >
                       {isOpen ? (
                         <ChevronUp className="h-3 w-3" />

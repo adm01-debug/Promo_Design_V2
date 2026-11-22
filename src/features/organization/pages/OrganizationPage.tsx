@@ -346,6 +346,7 @@ const OrganizationPage = () => {
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             onClick={() => deleteInvite.mutate(inv.id)}
                             title="Cancelar convite"
+                            aria-label="Cancelar convite"
                           >
                             <XIcon className="h-3.5 w-3.5" />
                           </Button>

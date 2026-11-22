@@ -125,6 +125,7 @@ const CatalogProductGrid = ({
                 className="h-7 w-7"
                 onClick={() => onToggleActive(p)}
                 title={p.active ? "Desativar" : "Ativar"}
+                aria-label={`${p.active ? "Desativar" : "Ativar"} ${p.name}`}
               >
                 {p.active ? (
                   <ToggleRight className="w-4 h-4 text-primary" />

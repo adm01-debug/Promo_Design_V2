@@ -98,6 +98,7 @@ export function DbHealthPanel() {
           disabled={query.isFetching}
           className="h-7 w-7"
           title="Atualizar"
+          aria-label="Atualizar saúde do Postgres"
         >
           <RefreshCcw className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />
         </Button>

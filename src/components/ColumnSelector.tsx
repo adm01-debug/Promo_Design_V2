@@ -117,6 +117,8 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
                     ? "text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
+                aria-label={opt.label}
+                aria-pressed={value === opt.value}
                 onClick={() => {
                   onChange(opt.value);
                   try {

@@ -126,6 +126,7 @@ export function SloBaselinePanel() {
             disabled={query.isFetching}
             title="Atualizar"
             className="h-7 w-7"
+            aria-label="Atualizar linha de base do SLO"
           >
             <RefreshCcw className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />
           </Button>

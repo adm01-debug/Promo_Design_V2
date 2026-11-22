@@ -284,6 +284,7 @@ export function MaintenancePanel() {
           onClick={refetchAll}
           disabled={isFetchingAny}
           title="Atualizar tudo"
+          aria-label="Atualizar todos os painéis de manutenção"
         >
           <RefreshCcw className={`h-4 w-4 ${isFetchingAny ? "animate-spin" : ""}`} />
         </Button>

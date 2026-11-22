@@ -149,6 +149,7 @@ export function MaintenanceFailuresPanel() {
             onClick={exportCsv}
             disabled={!data || (data.failures?.length ?? 0) === 0}
             title="Exportar falhas em CSV"
+            aria-label="Exportar falhas em CSV"
             className="h-7 w-7"
           >
             <Download className="h-3.5 w-3.5" />
@@ -159,6 +160,7 @@ export function MaintenanceFailuresPanel() {
             onClick={() => query.refetch()}
             disabled={query.isFetching}
             title="Atualizar"
+            aria-label="Atualizar falhas de manutenção"
             className="h-7 w-7"
           >
             <RefreshCcw className={`h-3.5 w-3.5 ${query.isFetching ? "animate-spin" : ""}`} />
