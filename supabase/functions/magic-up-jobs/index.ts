@@ -2,7 +2,7 @@
 //
 // Ações:
 //   enqueue -> cria N jobs (via RPC SECURITY DEFINER) e processa cada um:
-//              gateway de imagem da Lovable quando LOVABLE_API_KEY existe;
+//              geração de imagem via OpenRouter quando OPENROUTER_API_KEY existe;
 //              senão fallback determinístico (placeholder) para nunca travar
 //              a fila em ambientes sem provedor.
 //   list    -> jobs da organização atual (RLS do usuário).
@@ -10,6 +10,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
+import { AI_CHAT_COMPLETIONS_URL, AI_MODELS, aiHeaders } from "../_shared/ai.ts";
 
 // Estilos padrão do sistema + slugs customizados da organização
 // (Feature 8 — presets gerenciáveis em magic_up_styles). Slug custom
@@ -78,7 +79,7 @@ const STYLE_PROMPT: Record<string, string> = {
 };
 
 /**
- * Gera a imagem no gateway da Lovable (gemini com modality image).
+ * Gera a imagem no OpenRouter (gemini com modality image).
  * Lança com a mensagem do erro quando o provedor não está disponível ou
  * rejeita — o chamador decide se vira 'failed' ou fallback.
  */
@@ -86,14 +87,11 @@ async function generateImage(apiKey: string, prompt: string): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 90_000);
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
+      headers: aiHeaders(apiKey),
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp",
+        model: AI_MODELS.image,
         messages: [{ role: "user", content: prompt }],
         modalities: ["image", "text"],
       }),
@@ -171,7 +169,7 @@ Deno.serve(async (req) => {
   }
 
   // action === "enqueue"
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  const apiKey = Deno.env.get("OPENROUTER_API_KEY");
   // Cliente admin para marcar processamento/resultado (RLS da tabela não dá UPDATE ao app).
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,

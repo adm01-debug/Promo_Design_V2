@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { AI_CHAT_COMPLETIONS_URL, AI_MODELS, aiHeaders, getAiApiKey } from "../_shared/ai.ts";
 
 const ALLOWED_ORIGINS = [
   "https://id-preview--5da5ba25-dbc3-474e-b521-f7c17b3151a4.lovable.app",
@@ -90,9 +91,9 @@ serve(async (req) => {
     }
 
     // ─── API Key check early ───────────────────────────────
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error(`[${requestId}] LOVABLE_API_KEY is missing`);
+    const aiApiKey = getAiApiKey();
+    if (!aiApiKey) {
+      console.error(`[${requestId}] OPENROUTER_API_KEY is missing`);
       return jsonResponse({ error: "Configuração do servidor incompleta", requestId }, 500, req);
     }
 
@@ -152,7 +153,7 @@ serve(async (req) => {
         _required_cost: 0,
       });
       if (hasQuota === false) {
-        console.warn(`[${requestId}] Quota exceeded for org \${orgId}`);
+        console.warn(`[${requestId}] Quota exceeded for org ${orgId}`);
         return jsonResponse(
           { error: "Quota de IA da organização atingida para este mês.", requestId },
           403,
@@ -162,7 +163,7 @@ serve(async (req) => {
     }
 
     // ─── Rate limit por usuário (protege contra abuso de custo AI) ──
-    const featureKey = `mockup-ai:\${body.action}`;
+    const featureKey = `mockup-ai:${body.action}`;
     const limitPerMin = body.action === "remove-bg" ? 10 : 30;
     const { data: rl } = await admin.rpc("check_and_consume_ai_rate_limit", {
       _user_id: userData.user.id,
@@ -170,7 +171,7 @@ serve(async (req) => {
       _limit_per_min: limitPerMin,
     });
     if (rl && (rl as { allowed?: boolean }).allowed === false) {
-      console.warn(`[${requestId}] Rate limit hit for user \${userData.user.id} on \${featureKey}`);
+      console.warn(`[${requestId}] Rate limit hit for user ${userData.user.id} on ${featureKey}`);
       return jsonResponse(
         {
           error: "Muitas requisições em pouco tempo. Aguarde alguns segundos e tente novamente.",
@@ -184,14 +185,11 @@ serve(async (req) => {
 
     // ─── Action: Remove Background ─────────────────────────
     if (body.action === "remove-bg") {
-      const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetchWithRetry(AI_CHAT_COMPLETIONS_URL, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer \${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: aiHeaders(aiApiKey),
         body: JSON.stringify({
-          model: "google/gemini-2.0-flash-exp",
+          model: AI_MODELS.image,
           messages: [
             {
               role: "user",
@@ -228,7 +226,7 @@ serve(async (req) => {
           return jsonResponse(
             {
               error:
-                "Créditos de IA esgotados. Adicione créditos em Configurações > Workspace > Uso.",
+                "Créditos de IA esgotados no provedor. Adicione créditos na conta do OpenRouter e tente novamente.",
               requestId,
             },
             402,
@@ -248,7 +246,7 @@ serve(async (req) => {
           organization_id: orgId,
           user_id: userData.user.id,
           feature_name: "mockup-ai:remove-bg",
-          model_name: "google/gemini-2.0-flash-exp",
+          model_name: AI_MODELS.image,
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
           cost_estimate: 0.01,
@@ -262,20 +260,17 @@ serve(async (req) => {
       }
 
       const executionTimeMs = Date.now() - startTimestamp;
-      console.log(`[${requestId}] remove-bg completed successfully in \${executionTimeMs}ms`);
+      console.log(`[${requestId}] remove-bg completed successfully in ${executionTimeMs}ms`);
       return jsonResponse({ imageBase64: resultImage, requestId, executionTimeMs }, 200, req);
     }
 
     // ─── Action: Suggest Placement ──────────────────────────
     if (body.action === "suggest-placement") {
-      const response = await fetchWithRetry("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetchWithRetry(AI_CHAT_COMPLETIONS_URL, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer \${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers: aiHeaders(aiApiKey),
         body: JSON.stringify({
-          model: "google/gemini-1.5-flash",
+          model: AI_MODELS.vision,
           messages: [
             {
               role: "system",
@@ -284,7 +279,7 @@ serve(async (req) => {
             },
             {
               role: "user",
-              content: `Product: \${body.productName || "Generic product"} | Template: \${body.templateId || "custom"} | Area: \${body.areaWidth || 15}x\${body.areaHeight || 15}cm`,
+              content: `Product: ${body.productName || "Generic product"} | Template: ${body.templateId || "custom"} | Area: ${body.areaWidth || 15}x${body.areaHeight || 15}cm`,
             },
           ],
           tools: [
@@ -344,7 +339,7 @@ serve(async (req) => {
           organization_id: orgId,
           user_id: userData.user.id,
           feature_name: "mockup-ai:suggest-placement",
-          model_name: "google/gemini-1.5-flash",
+          model_name: AI_MODELS.vision,
           tokens_in: usage.prompt_tokens || 0,
           tokens_out: usage.completion_tokens || 0,
           cost_estimate: 0.001,
@@ -359,7 +354,7 @@ serve(async (req) => {
       const suggestion = JSON.parse(toolCall.function.arguments);
       const executionTimeMs = Date.now() - startTimestamp;
       console.log(
-        `[${requestId}] suggest-placement completed successfully in \${executionTimeMs}ms`,
+        `[${requestId}] suggest-placement completed successfully in ${executionTimeMs}ms`,
       );
       return jsonResponse({ ...suggestion, requestId, executionTimeMs }, 200, req);
     }
