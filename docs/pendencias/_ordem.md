@@ -42,12 +42,23 @@ mentir sobre o estado real:
   em `net._http_response` (100% de sucesso), e o job de cron acumula 894 execucoes `succeeded`.
 - Migration `20261122150000_cron_retencao_dados.sql` (PR #102) **aplicada**. O job de retencao
   (`cron.job_run_details` jobid 13) roda com `succeeded` a cada minuto.
+- Magic Up **UI ligada ao backend real** (PRs #122 e #123). `MagicUpGenerate.tsx` tinha um
+  `handleGenerate` que era mock puro: `setTimeout(2000)` + `Math.random() < 0.05` + variacoes com
+  `imageUrl: "/placeholder.svg"`, sem nenhuma chamada ao backend, e gravava o mesmo placeholder em
+  `magicup_history`. O botao **Gerar** (principal) agora enfileira via `enqueueBatch` com o estilo
+  selecionado; o `MagicUpResultsGrid` renderiza `MagicUpJob` reais em vez de batches locais. No
+  backend, `resultImageUrl` passou de `"/placeholder.svg"` para `null`, tornando `done` sem imagem
+  impossivel por construcao. Verificado: `magicup_history` tem 10 registros reais e **0** com
+  placeholder em producao; edge `magic-up-jobs` deployada na `version=5`.
+- `migrate-push` **removida** (PR #124). Codigo morto, nunca deployada (404), copiava 19 tabelas com
+  `service_role` autenticando por header. Com a `migrate-helper`, fecha o par de endpoints de
+  exfiltracao.
 - RPCs de Magic Up **validadas em producao**: `enqueue_magic_up_jobs` cria 1 job por estilo
   (3 estilos = 3 jobs) e `cancel_magic_up_job` grava `cancelled` + `completed_at` sem afetar os
   irmaos do batch. Guards confirmados: `ERR_NO_STYLES`, `ERR_TOO_MANY_STYLES` (>8),
   `ERR_SHORT_PROMPT`, `ERR_NOT_MEMBER`, `ERR_JOB_NOT_FOUND`, `ERR_JOB_FINAL`.
 
-## Estado real (revalidado 2026-11-23 no head 97ab8b22)
+## Estado real (revalidado 2026-11-23 no head `94f2b329`)
 
 PND-01..08: DONE (verificados na fonte, docs fechados com evidencia).
 
@@ -66,6 +77,10 @@ PND-01..08: DONE (verificados na fonte, docs fechados com evidencia).
    palette, edge functions e migrations completos. 2 bugs corrigidos na consolidacao:
    `verify_jwt` das functions publicas e erro engolido (estado vazio mascarando falha) em 3 telas.
    **Runtime agora existe em producao** — o que falta e apenas a chave de IA.
+4. **Magic Up UI sem falso sucesso - DONE** (PRs #122, #123). Dois caminhos existiam na pagina de
+   geracao: o botao **Gerar lote** usava o pipeline real e o botao principal **Gerar** simulava
+   2 segundos e criava 4 miniaturas `/placeholder.svg`. O mock foi eliminado e o grid passou a
+   renderizar os jobs da fila com polling de 3s. Nenhum `handleGenerate` mockado resta em `src/`.
 
 ## Iteracao contabilizada
 
