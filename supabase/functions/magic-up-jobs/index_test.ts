@@ -196,3 +196,23 @@ Deno.test("magic-up-jobs - prompt trimmado ainda válido", () => {
     assert(result.data.prompt.length >= 5);
   }
 });
+
+// Regressão: sem OPENROUTER_API_KEY o handler precisa falhar, nunca enfileirar
+// e marcar os jobs como `done` com imagem placeholder. Esse fallback existia e
+// fazia a UI mostrar "Concluído" verde sem nenhuma arte gerada.
+Deno.test("magic-up-jobs - sem provedor de IA falha em vez de fingir sucesso", async () => {
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  assert(
+    src.includes("if (!apiKey) {") && src.includes('error: "Configuração do servidor incompleta"'),
+    "o handler deve retornar 500 quando o provedor de IA não está configurado",
+  );
+  // A guarda precisa vir antes do enfileiramento, senão sobram jobs `queued` órfãos.
+  assert(
+    src.indexOf("if (!apiKey) {") < src.indexOf('rpc("enqueue_magic_up_jobs"'),
+    "a checagem da chave deve preceder o enfileiramento",
+  );
+  assert(
+    !src.includes("fallback determinístico"),
+    "o fallback que marcava jobs como done sem imagem não pode voltar",
+  );
+});
