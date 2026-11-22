@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,6 +139,9 @@ const STATUS_META: Record<
 
 export function MaintenancePanel() {
   const qc = useQueryClient();
+  // Ancora o "agora" na montagem: `Date.now()` no render faria o alerta de
+  // staleness piscar a cada re-render mesmo com o snapshot inalterado.
+  const [nowMs] = useState(() => Date.now());
 
   const statsQuery = useQuery({
     queryKey: ["maintenance-stats"],
@@ -382,7 +386,7 @@ export function MaintenancePanel() {
             (m, r) => (r.captured_at > m ? r.captured_at : m),
             hist[0].captured_at,
           );
-          const ageMs = Date.now() - new Date(latest).getTime();
+          const ageMs = nowMs - new Date(latest).getTime();
           if (ageMs < 24 * 60 * 60 * 1000) return null;
           return (
             <Alert
