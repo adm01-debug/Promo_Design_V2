@@ -34,3 +34,9 @@ playwright-report
 .vercel
 
 deno.lock
+
+# Segredos locais — .env so com chaves VITE_* publicas; nunca .env.local/.env.*.local
+.env.local
+.env.*.local
+.env.production
+.env.development
