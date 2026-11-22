@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Wand2, Sparkles, Send, Loader2, AlertCircle, Layers } from "lucide-react";
@@ -6,17 +6,10 @@ import { Button } from "@/components/ui/button";
 import { SAMPLE_PROMPTS, PROMPT_CATEGORIES } from "@/features/magic-up";
 import { useProducts, useCategories, useProductVariants } from "@/features/mockup";
 import type { DbProduct } from "@/features/mockup";
-import {
-  useMagicUpHistory,
-  useMagicUpJobs,
-  useMagicUpStyles,
-  DEFAULT_STYLE_OPTIONS,
-} from "@/features/magic-up";
+import { useMagicUpJobs, useMagicUpStyles, DEFAULT_STYLE_OPTIONS } from "@/features/magic-up";
 import MagicUpLeftPanel from "@/features/magic-up/components/MagicUpLeftPanel";
 import MagicUpProductPickerModal from "@/features/magic-up/components/MagicUpProductPickerModal";
 import MagicUpResultsGrid from "@/features/magic-up/components/MagicUpResultsGrid";
-import { ErrorLogger } from "@/lib/error-logger";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function buildSmartPrompt(product: DbProduct, style: string, customText: string): string {
@@ -44,25 +37,13 @@ function buildSmartPrompt(product: DbProduct, style: string, customText: string)
 const MagicUpGenerate = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [lastError, setLastError] = useState<string | null>(null);
-  const [generationBatches, setGenerationBatches] = useState<
-    {
-      id: string;
-      prompt: string;
-      productName?: string;
-      variations: {
-        id: string;
-        imageUrl: string;
-        favorite: boolean;
-        selected: boolean;
-        style: string;
-      }[];
-      createdAt: string;
-    }[]
-  >([]);
-  const { addGeneration: saveToHistory } = useMagicUpHistory();
-  const { enqueueBatch } = useMagicUpJobs();
+  const {
+    enqueueBatch,
+    jobs,
+    isLoading: jobsLoading,
+    isError: jobsError,
+    error: jobsErrorObj,
+  } = useMagicUpJobs();
   const { styles: customStyles } = useMagicUpStyles();
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,7 +86,28 @@ const MagicUpGenerate = () => {
   }, [selectedProduct, selectedStyle]);
 
   const VARIATION_STYLES = ["premium", "lifestyle", "flatlay", "minimal"];
-  const VARIATION_LABELS = ["Premium", "Lifestyle", "Flat Lay", "Minimalista"];
+
+  const selectedStyleLabel = allStyles.find((s) => s.id === selectedStyle)?.label ?? selectedStyle;
+
+  // Geração individual: mesmo pipeline da fila (`enqueue`), com o estilo escolhido.
+  const handleGenerate = () => {
+    const finalPrompt = prompt.trim() || smartPrompt;
+    if (!finalPrompt) return;
+    enqueueBatch.mutate(
+      {
+        prompt: finalPrompt,
+        productName: selectedProduct?.name,
+        productSku: selectedProduct?.sku,
+        styles: [selectedStyle],
+      },
+      {
+        onSuccess: () =>
+          navigate("/magicup/jobs", {
+            state: { styleLabel: selectedStyleLabel, prompt: finalPrompt },
+          }),
+      },
+    );
+  };
 
   const handleGenerateBatch = () => {
     const finalPrompt = prompt.trim() || smartPrompt;
@@ -118,96 +120,6 @@ const MagicUpGenerate = () => {
         styles: VARIATION_STYLES,
       },
       { onSuccess: () => navigate("/magicup/jobs") },
-    );
-  };
-
-  const handleGenerate = async () => {
-    const finalPrompt = prompt.trim() || smartPrompt;
-    if (!finalPrompt) return;
-    setIsGenerating(true);
-    setLastError(null);
-    const requestId = crypto.randomUUID();
-
-    ErrorLogger.info("Starting image generation", {
-      prompt: finalPrompt,
-      requestId,
-      product: selectedProduct?.name,
-    });
-
-    try {
-      // Simulate API call for now (this is where the real fetch would be)
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // 5% chance of simulated error for testing logging
-          if (Math.random() < 0.05) {
-            reject(new Error("Simulated network timeout or quota exceeded"));
-          } else {
-            resolve(true);
-          }
-        }, 2000);
-      });
-
-      const batchId = Date.now().toString();
-      const variations = VARIATION_STYLES.map((style, i) => ({
-        id: `${batchId}-${i}`,
-        imageUrl: "/placeholder.svg",
-        favorite: false,
-        selected: i === 0,
-        style: VARIATION_LABELS[i],
-      }));
-
-      setGenerationBatches((prev) => [
-        {
-          id: batchId,
-          prompt: finalPrompt,
-          productName: selectedProduct?.name,
-          variations,
-          createdAt: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-
-      saveToHistory({
-        prompt: finalPrompt,
-        imageUrl: "/placeholder.svg",
-        productName: selectedProduct?.name,
-        productSku: selectedProduct?.sku,
-        style: allStyles.find((s) => s.id === selectedStyle)?.label ?? selectedStyle,
-      });
-
-      ErrorLogger.info("Generation successful", { batchId, requestId });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido ao gerar imagem";
-      setLastError(message);
-      ErrorLogger.error("Failed to generate image", error, { prompt: finalPrompt, requestId });
-      toast.error("Falha na geração: " + message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const toggleFavorite = (batchId: string, varId: string) => {
-    setGenerationBatches((prev) =>
-      prev.map((b) =>
-        b.id === batchId
-          ? {
-              ...b,
-              variations: b.variations.map((v) =>
-                v.id === varId ? { ...v, favorite: !v.favorite } : v,
-              ),
-            }
-          : b,
-      ),
-    );
-  };
-
-  const selectVariation = (batchId: string, varId: string) => {
-    setGenerationBatches((prev) =>
-      prev.map((b) =>
-        b.id === batchId
-          ? { ...b, variations: b.variations.map((v) => ({ ...v, selected: v.id === varId })) }
-          : b,
-      ),
     );
   };
 
@@ -257,11 +169,15 @@ const MagicUpGenerate = () => {
         />
 
         <div className="flex-1 flex flex-col">
-          {lastError && (
+          {jobsError && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Erro na Geração</AlertTitle>
-              <AlertDescription>{lastError}</AlertDescription>
+              <AlertTitle>Erro ao carregar a fila</AlertTitle>
+              <AlertDescription>
+                {jobsErrorObj instanceof Error
+                  ? jobsErrorObj.message
+                  : "Não foi possível consultar os jobs de geração."}
+              </AlertDescription>
             </Alert>
           )}
           {/* Prompt input */}
@@ -305,9 +221,9 @@ const MagicUpGenerate = () => {
                     size="sm"
                     className="h-7 text-xs gap-1.5 bg-gradient-primary text-primary-foreground"
                     onClick={handleGenerate}
-                    disabled={isGenerating || (!prompt.trim() && !smartPrompt)}
+                    disabled={enqueueBatch.isPending || (!prompt.trim() && !smartPrompt)}
                   >
-                    {isGenerating ? (
+                    {enqueueBatch.isPending ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
                       <Send className="w-3.5 h-3.5" />
@@ -409,11 +325,9 @@ const MagicUpGenerate = () => {
 
           <div className="flex-1 overflow-auto p-4">
             <MagicUpResultsGrid
-              generationBatches={generationBatches}
-              isGenerating={isGenerating}
+              jobs={jobs}
+              jobsLoading={jobsLoading}
               selectedProduct={selectedProduct}
-              onSelectVariation={selectVariation}
-              onToggleFavorite={toggleFavorite}
               onOpenProductPicker={() => setShowProductPicker(true)}
             />
           </div>
