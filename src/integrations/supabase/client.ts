@@ -9,7 +9,14 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // import { supabase } from "@/integrations/supabase/client";
 
 const isDev = import.meta.env.DEV;
-const FORCE_PROXY = import.meta.env.VITE_FORCE_PROXY === 'true' || import.meta.env.VITE_FORCE_PROXY === '1';
+// O proxy reescreve as chamadas de Edge Function para o caminho relativo
+// `/functions/v1/...`, que no host de produção cai no rewrite do SPA e devolve
+// `index.html` (HTTP 405) em vez de chegar ao Supabase. Só o dev server do Vite
+// tem esse proxy configurado (vite.config.ts), então o flag é preso a `isDev`:
+// nem um `.env` com VITE_FORCE_PROXY=true consegue quebrar o build de produção.
+const FORCE_PROXY =
+  isDev &&
+  (import.meta.env.VITE_FORCE_PROXY === 'true' || import.meta.env.VITE_FORCE_PROXY === '1');
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
