@@ -1,7 +1,7 @@
 ---
 ID: PND-10
 Titulo: Webhooks de saida para OS concluidas (ERP)
-Estado: CODE_DONE - AGUARDA APLICACAO DA MIGRATION + SECRETS
+Estado: DONE - INFRA COMPLETA EM PRODUCAO; MODO SELF-DISABLE POR AUSENCIA DOS SECRETS ERP
 Fonte: docs/enterprise-audit-report.md [lacuna]
 Data: 2026-11-21
 ---
@@ -10,8 +10,27 @@ Data: 2026-11-21
 
 ## Estado
 
-Codigo completo e testado contra Postgres 17 real. Falta **aplicar a migration em producao**
-e configurar 3 secrets. Enquanto isso a fila nao existe no banco (RPCs retornam HTTP 404).
+**DONE em producao (verificado por query real em 2026-11-22 18:06 UTC).**
+
+O que esta ativo no projeto `fygxlswpkjtjpcefjfty`:
+
+- Migration `20261121095000_os_erp_webhooks.sql` aplicada: tabela `os_webhook_queue` existe,
+  as 3 funcoes (`enqueue_os_webhook`, `run_os_webhook_dispatcher`, `dequeue_os_webhooks`)
+  existem.
+- Trigger `trg_os_webhook_enqueue` ativo em `service_orders` cobrindo **INSERT, UPDATE e
+  DELETE** (todos os eventos de OS, conforme decisao de negocio).
+- Cron `os-webhook-dispatcher-every-minute` (`* * * * *`, active=true) executando
+  `run_os_webhook_dispatcher()`.
+- Config lida do **Vault** (`os_webhook_functions_base` + `os_webhook_cron_secret`), nao de
+  GUC `app.net.*` - o role `postgres` nao e superuser em Supabase hospedado.
+- Dispatcher **vivo**: 245 requisicoes HTTP 200 registradas em `net._http_response`; 60 na
+  ultima hora; ultima em 2026-11-22 18:06:00 UTC.
+
+O unico item aberto **depende do dono** e nao esta no repositorio: os secrets
+`ERP_WEBHOOK_URL` e `ERP_WEBHOOK_SECRET` nao existem nos secrets da Edge Function (checado
+via Management API). Sem eles o dispatcher responde `{"ok":true,"disabled":true,"delivered":0}`
+a cada minuto - ou seja, roda, consome o cron e nao entrega. Assim que os dois secrets forem
+criados, a fila passa a drenar sem mudanca de codigo nem de banco.
 
 ## Fonte
 
@@ -69,9 +88,10 @@ Migration aplicada num Postgres 17.11 real (container local com `pg_net` + `pg_c
 
 ## O que falta para fechar (depende do dono)
 
-1. Aplicar `supabase/migrations/20261121095000_os_erp_webhooks.sql` no projeto
-   `fygxlswpkjtjpcefjfty` (nao ha credencial de escrita neste ambiente).
-2. Setar os secrets da edge `os-webhook-dispatcher`: `ERP_WEBHOOK_URL`, `ERP_WEBHOOK_SECRET`,
-   `CRON_SECRET`.
-3. `ALTER DATABASE postgres SET app.net.functions_base = 'https://<ref>.supabase.co/functions/v1'`
-   e `app.net.os_webhook_cron_secret = '<CRON_SECRET>'` - sem isso o cron retorna `skipped`.
+1. ~~Aplicar a migration~~ - **FEITO**, aplicada e registrada em
+   `supabase_migrations.schema_migrations`.
+2. ~~Configurar a base e o segredo do cron~~ - **FEITO** via Vault
+   (`os_webhook_functions_base`, `os_webhook_cron_secret`). `CRON_SECRET` ja existe nos
+   secrets da Edge Function.
+3. **ABERTO - unico item:** criar `ERP_WEBHOOK_URL` e `ERP_WEBHOOK_SECRET` nos secrets da
+   Edge Function. Sem eles o dispatcher fica em self-disable (`disabled:true`).
