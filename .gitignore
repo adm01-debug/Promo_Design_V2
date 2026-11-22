@@ -34,3 +34,6 @@ playwright-report
 .vercel
 
 deno.lock
+
+# Supabase CLI scratch (link state, cache local)
+supabase/.temp/

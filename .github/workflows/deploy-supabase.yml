@@ -1,0 +1,161 @@
+name: Deploy Supabase
+
+# Aplica migrations pendentes e faz deploy das Edge Functions no projeto de
+# producao. Fica separado do Quality Gate porque escreve em producao: roda
+# apenas em push para main (ou manualmente), nunca em PR.
+#
+# Pre-requisitos (secrets do repositorio):
+#   SUPABASE_ACCESS_TOKEN  - Personal Access Token do projeto fygxlswpkjtjpcefjfty
+#   SUPABASE_DB_PASSWORD   - senha do usuario postgres do projeto
+#
+# As migrations tem guard de contagem: se mais de MAX_PENDING estiverem
+# pendentes, o job aborta em vez de tentar aplicar em lote. Isso evita o cenario
+# em que o historico remoto esta vazio e o `db push` tentaria rodar as 156
+# migrations de uma vez contra uma base que ja existe.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+      - ".github/workflows/deploy-supabase.yml"
+  workflow_dispatch:
+    inputs:
+      apply_migrations:
+        description: "Aplicar migrations pendentes (respeita o guard)"
+        type: boolean
+        default: true
+      deploy_functions:
+        description: "Deployar Edge Functions"
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-supabase-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_PROJECT_REF: fygxlswpkjtjpcefjfty
+  MAX_PENDING_MIGRATIONS: "14"
+
+jobs:
+  guard:
+    name: Pre-flight
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Verificar secrets
+        id: check
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          DB_PASS: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          missing=""
+          [ -z "$TOKEN" ] && missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -z "$DB_PASS" ] && missing="$missing SUPABASE_DB_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::warning::Secrets ausentes:$missing. Gere o token em https://supabase.com/dashboard/account/tokens (conta dona do projeto) e adicione em Settings > Secrets and variables > Actions."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  functions:
+    name: Edge Functions
+    needs: guard
+    if: needs.guard.outputs.ready == 'true' && (github.event_name == 'push' || inputs.deploy_functions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          for dir in supabase/functions/*/; do
+            name=$(basename "$dir")
+            # _shared guarda imports compartilhados, nao e uma function.
+            [ "$name" = "_shared" ] && continue
+            # migrate-helper esta marcada para remocao (item 19 do
+            # prod-readiness); nao recebe versao nova.
+            [ "$name" = "migrate-helper" ] && continue
+            echo "::group::deploy $name"
+            supabase functions deploy "$name" --project-ref "$SUPABASE_PROJECT_REF"
+            echo "::endgroup::"
+          done
+
+      - name: Smoke das functions
+        run: |
+          set -uo pipefail
+          base="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1"
+          fail=0
+          # 400 = no ar rejeitando payload vazio; 404 = rota ausente.
+          for fn in mockup-approval brand-share magic-up-jobs os-webhook-dispatcher; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+              -H "Content-Type: application/json" -d "{}" "$base/$fn")
+            echo "$fn -> $code"
+            if [ "$code" = "404" ]; then
+              echo "::error::$fn continua em 404 apos o deploy"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  migrations:
+    name: Migrations
+    needs: guard
+    if: needs.guard.outputs.ready == 'true' && (github.event_name == 'push' || inputs.apply_migrations)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Listar migrations pendentes
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --dry-run --include-all 2>&1 | tee pending.txt
+          # Cada migration pendente aparece como "Would push migration <ts>_<name>".
+          # Se o comando nao produzir nenhuma linha reconhecivel o formato mudou:
+          # falhar em vez de assumir zero e pular a aplicacao em silencio.
+          count=$(grep -c "Would push migration" pending.txt || true)
+          count=${count:-0}
+          echo "pendentes=$count" >> "$GITHUB_ENV"
+          echo "### Migrations pendentes: $count" >> "$GITHUB_STEP_SUMMARY"
+          grep "Would push migration" pending.txt >> "$GITHUB_STEP_SUMMARY" || true
+          if ! grep -qE "Would push migration|No migrations|up to date|already" pending.txt; then
+            echo "::error::Saida do dry-run nao reconhecida. Verifique pending.txt no log."
+            exit 1
+          fi
+
+      - name: Guard de quantidade
+        run: |
+          if [ "${pendentes:-0}" -gt "$MAX_PENDING_MIGRATIONS" ]; then
+            echo "::error::$pendentes migrations pendentes (limite $MAX_PENDING_MIGRATIONS). Isso normalmente indica que o historico remoto de supabase_migrations.schema_migrations nao corresponde ao repositorio. Resolva manualmente: reconcilie o historico com 'supabase migration repair' antes de deixar o CI aplicar em lote."
+            exit 1
+          fi
+
+      - name: Aplicar migrations
+        if: env.pendentes != '0'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --include-all
