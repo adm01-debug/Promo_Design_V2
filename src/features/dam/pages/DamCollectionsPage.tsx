@@ -230,7 +230,7 @@ export default function DamCollectionsPage() {
                           variant="secondary"
                           size="icon"
                           className="absolute top-2 right-2 z-10 h-7 w-7 bg-background/80 shadow-sm"
-                          aria-label={`Adicionar ${a.name} Ã  coleção`}
+                          aria-label={`Adicionar ${a.name} à coleção`}
                           onClick={() => handleToggleAsset(a)}
                           disabled={addAsset.isPending || removeAsset.isPending}
                         >
