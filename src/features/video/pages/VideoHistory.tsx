@@ -16,12 +16,25 @@ import { useState } from "react";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useVideos } from "../hooks/use-videos";
 import { downloadUrl } from "@/lib/utils";
+import { resolveVideoUrl } from "../lib/video-url";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const VideoHistory = () => {
   const [search, setSearch] = useState("");
   const { videos, isLoading, deleteVideo } = useVideos({ search });
+
+  // videos.video_url pode ser um caminho no bucket privado: resolve sob demanda
+  // em vez de a cada render, porque a assinatura é uma chamada de rede.
+  const openVideo = async (videoUrl: string | null) => {
+    const url = await resolveVideoUrl(videoUrl);
+    if (url) window.open(url, "_blank");
+  };
+
+  const downloadVideo = async (videoUrl: string | null, filename: string) => {
+    const url = await resolveVideoUrl(videoUrl);
+    if (url) downloadUrl(url, filename);
+  };
 
   const stats = {
     total: videos.length,
@@ -162,7 +175,7 @@ const VideoHistory = () => {
                       variant="secondary"
                       size="sm"
                       className="h-8 text-xs gap-1"
-                      onClick={() => window.open(video.video_url, "_blank")}
+                      onClick={() => void openVideo(video.video_url)}
                     >
                       <Eye className="w-3 h-3" /> Ver
                     </Button>
@@ -170,7 +183,7 @@ const VideoHistory = () => {
                       variant="secondary"
                       size="sm"
                       className="h-8 text-xs gap-1"
-                      onClick={() => downloadUrl(video.video_url, `${video.name}.mp4`)}
+                      onClick={() => void downloadVideo(video.video_url, `${video.name}.mp4`)}
                     >
                       <Download className="w-3 h-3" /> Baixar
                     </Button>

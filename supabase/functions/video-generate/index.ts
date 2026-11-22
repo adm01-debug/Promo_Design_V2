@@ -1,17 +1,28 @@
-// video-generate — fila de geração de vídeos.
+// video-generate — fila de geração de vídeos (OpenRouter Video Generation API).
 //
 // Ações:
-//   enqueue  -> cria a linha em public.videos com status 'queued' (RLS do usuário)
-//   status   -> devolve o estado atual do job
+//   enqueue  -> cria a linha em public.videos ('queued') e submete o job ao provedor
+//   status   -> sincroniza o job com o provedor e devolve o estado atual
 //   cancel   -> cancela um job ainda não finalizado
 //
-// A chamada ao provedor de geração é isolada em `dispatchToProvider`. Enquanto
-// nenhum provedor estiver configurado (secret VIDEO_PROVIDER_API_KEY ausente),
-// o job é marcado como 'failed' com mensagem explícita — nunca fica preso em
-// 'generating', o que travaria o polling do cliente.
-import { createClient } from "npm:@supabase/supabase-js@2";
+// As regras puras (mapeamento de aspect ratio, status e corpo do request) vivem
+// em ./lib.ts e são testadas sem rede. O arquivo final é copiado para o bucket
+// privado `videos` porque as URLs pré-assinadas do provedor expiram em
+// `expires_at`; `video_url` guarda o CAMINHO no bucket e o front troca por uma
+// signed URL na hora de abrir/baixar (ver src/features/video/lib/video-url.ts).
+//
+// Sem OPENROUTER_API_KEY o job é marcado como 'failed' com mensagem explícita —
+// nunca fica preso em 'generating', o que travaria o polling do cliente.
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
+import { AI_MODELS, AI_VIDEO_JOBS_URL, aiHeaders, getAiApiKey } from "../_shared/ai.ts";
+import {
+  buildVideoRequest,
+  describeTerminalError,
+  mapProviderStatus,
+  videoStoragePath,
+} from "./lib.ts";
 
 const HttpUrl = z
   .string()
@@ -57,6 +68,20 @@ const BodySchema = z.discriminatedUnion("action", [
 
 type Json = Record<string, unknown>;
 
+const VIDEO_BUCKET = "videos";
+const SUBMIT_TIMEOUT_MS = 60_000;
+const DOWNLOAD_TIMEOUT_MS = 120_000;
+
+/** Subconjunto do VideoJobResponse do provedor que realmente usamos. */
+interface ProviderJob {
+  id: string;
+  status: string;
+  urls?: string[] | null;
+  unsigned_urls?: string[] | null;
+  expires_at?: number | null;
+  error?: string | null;
+}
+
 function json(req: Request, body: Json, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -64,19 +89,112 @@ function json(req: Request, body: Json, status = 200): Response {
   });
 }
 
+async function readProviderJob(res: Response): Promise<ProviderJob> {
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    const detail =
+      (payload && typeof payload === "object" && "error" in payload
+        ? JSON.stringify((payload as { error: unknown }).error)
+        : null) ?? `HTTP ${res.status}`;
+    throw new Error(`ERR_VIDEO_PROVIDER: ${detail}`);
+  }
+  const job = payload as ProviderJob | null;
+  if (!job?.id || !job.status) {
+    throw new Error("ERR_VIDEO_PROVIDER: resposta do provedor sem id/status.");
+  }
+  return job;
+}
+
 /**
- * Envia o job ao provedor externo. Retorna o id remoto quando aceito.
- * Lança quando não há provedor configurado, para que o chamador marque 'failed'.
+ * Submete o job ao provedor. Retorna o id remoto quando aceito.
+ * Lança quando não há provedor configurado ou o provedor recusa, para que o
+ * chamador marque 'failed' com a mensagem real.
  */
-async function dispatchToProvider(_prompt: string): Promise<{ provider: string; jobId: string }> {
-  const apiKey = Deno.env.get("VIDEO_PROVIDER_API_KEY");
+async function dispatchToProvider(input: {
+  prompt: string;
+  aspectRatio: "9:16" | "16:9" | "1:1" | "4:5";
+  duration: number;
+  startFrameUrl?: string | null;
+  endFrameUrl?: string | null;
+}): Promise<{ provider: string; jobId: string }> {
+  const apiKey = getAiApiKey();
   if (!apiKey) {
     throw new Error(
-      "ERR_VIDEO_PROVIDER: nenhum provedor de geração de vídeo configurado neste ambiente.",
+      "ERR_VIDEO_PROVIDER: nenhum provedor de geração de vídeo configurado (OPENROUTER_API_KEY ausente).",
     );
   }
-  // Ponto de extensão: chamada HTTP ao provedor real.
-  throw new Error("ERR_VIDEO_PROVIDER: provedor configurado mas ainda não implementado.");
+
+  const res = await fetch(AI_VIDEO_JOBS_URL, {
+    method: "POST",
+    headers: aiHeaders(apiKey),
+    body: JSON.stringify(
+      buildVideoRequest({
+        model: AI_MODELS.video,
+        prompt: input.prompt,
+        aspectRatio: input.aspectRatio,
+        duration: input.duration,
+        startFrameUrl: input.startFrameUrl,
+        endFrameUrl: input.endFrameUrl,
+      }),
+    ),
+    signal: AbortSignal.timeout(SUBMIT_TIMEOUT_MS),
+  });
+
+  const job = await readProviderJob(res);
+  return { provider: "openrouter", jobId: job.id };
+}
+
+async function fetchProviderJob(apiKey: string, jobId: string): Promise<ProviderJob> {
+  const res = await fetch(`${AI_VIDEO_JOBS_URL}/${encodeURIComponent(jobId)}`, {
+    method: "GET",
+    headers: aiHeaders(apiKey),
+    signal: AbortSignal.timeout(SUBMIT_TIMEOUT_MS),
+  });
+  return await readProviderJob(res);
+}
+
+/**
+ * Copia o MP4 final para o bucket privado. Devolve o caminho no bucket, ou null
+ * quando a cópia falha (o chamador cai para a URL temporária do provedor para
+ * não perder uma geração já paga).
+ */
+async function archiveVideo(
+  admin: SupabaseClient,
+  apiKey: string,
+  job: ProviderJob,
+  organizationId: string,
+  videoId: string,
+): Promise<string | null> {
+  const direct = job.urls?.[0];
+  const authenticated = job.unsigned_urls?.[0];
+  const source =
+    direct ?? (authenticated ? new URL(authenticated, AI_VIDEO_JOBS_URL).toString() : null);
+  if (!source) return null;
+
+  try {
+    const res = await fetch(source, {
+      // URLs pré-assinadas recusam o header; o endpoint /content exige.
+      headers: direct ? undefined : aiHeaders(apiKey),
+      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.error(`archive: download ${res.status} for job ${job.id}`);
+      return null;
+    }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const path = videoStoragePath(organizationId, videoId);
+    const { error } = await admin.storage
+      .from(VIDEO_BUCKET)
+      .upload(path, bytes, { contentType: "video/mp4", upsert: true });
+    if (error) {
+      console.error(`archive: upload failed for job ${job.id}:`, error.message);
+      return null;
+    }
+    return path;
+  } catch (err) {
+    console.error(`archive: failed for job ${job.id}:`, err);
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -114,14 +232,81 @@ Deno.serve(async (req) => {
   const body = parsed.data;
 
   if (body.action === "status") {
+    // Leitura escopada por RLS: garante que o job é do usuário antes de
+    // qualquer escrita com service role.
     const { data, error } = await supabase
       .from("videos")
-      .select("id,status,video_url,thumbnail_url,error_message,started_at,completed_at")
+      .select(
+        "id,organization_id,status,provider,provider_job_id,video_url,thumbnail_url,error_message,started_at,completed_at",
+      )
       .eq("id", body.videoId)
       .maybeSingle();
     if (error) return json(req, { error: error.message }, 400);
     if (!data) return json(req, { error: "Vídeo não encontrado." }, 404);
-    return json(req, { job: data });
+
+    const apiKey = getAiApiKey();
+    const canSync =
+      data.status === "generating" && !!data.provider_job_id && data.provider === "openrouter";
+
+    if (!canSync || !apiKey) {
+      return json(req, { job: data });
+    }
+
+    let remote: ProviderJob;
+    try {
+      remote = await fetchProviderJob(apiKey, String(data.provider_job_id));
+    } catch (err) {
+      // Falha transitória de rede: devolve o estado atual e deixa o cliente
+      // tentar de novo no próximo poll em vez de matar o job.
+      console.error(`status: provider poll failed for ${data.id}:`, err);
+      return json(req, { job: data, stale: true });
+    }
+
+    const nextStatus = mapProviderStatus(remote.status);
+    if (!nextStatus || nextStatus === "generating") {
+      return json(req, { job: data, stale: true });
+    }
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
+    );
+
+    const patch: Record<string, unknown> = { status: nextStatus };
+    if (nextStatus === "ready") {
+      const archived = await archiveVideo(
+        admin,
+        apiKey,
+        remote,
+        String(data.organization_id),
+        String(data.id),
+      );
+      const fallback = remote.urls?.[0] ?? null;
+      if (!archived && !fallback) {
+        patch.status = "failed";
+        patch.error_message =
+          "ERR_VIDEO_PROVIDER: o vídeo foi gerado mas nenhuma URL de download foi devolvida.";
+      } else {
+        // Sem a cópia durável, guarda a URL temporária para não perder a geração.
+        patch.video_url = archived ?? fallback;
+      }
+    } else if (nextStatus === "failed") {
+      patch.error_message = describeTerminalError(remote.status, remote.error ?? undefined);
+    }
+
+    const { data: updated, error: updateError } = await admin
+      .from("videos")
+      .update(patch)
+      .eq("id", data.id)
+      .select("id,status,video_url,thumbnail_url,error_message,started_at,completed_at")
+      .maybeSingle();
+
+    if (updateError) {
+      console.error(`status: update failed for ${data.id}:`, updateError.message);
+      return json(req, { job: data, stale: true });
+    }
+    return json(req, { job: updated ?? data });
   }
 
   if (body.action === "cancel") {
@@ -166,7 +351,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { provider, jobId } = await dispatchToProvider(body.prompt);
+    const { provider, jobId } = await dispatchToProvider({
+      prompt: body.prompt,
+      aspectRatio: body.aspectRatio,
+      duration: body.duration,
+      startFrameUrl: body.startFrameUrl ?? null,
+      endFrameUrl: body.endFrameUrl ?? null,
+    });
     await supabase
       .from("videos")
       .update({ status: "generating", provider, provider_job_id: jobId })

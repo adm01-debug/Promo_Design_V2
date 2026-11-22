@@ -100,14 +100,15 @@ export function useVideoGeneration() {
     queryKey: ["video-job", jobId],
     enabled: !!jobId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("videos")
-        .select("id,status,video_url,thumbnail_url,error_message,started_at,completed_at")
-        .eq("id", jobId!)
-        .maybeSingle();
-      if (error) throw error;
+      // Chama a edge em vez de ler a tabela: a action `status` sincroniza o job
+      // com o provedor externo e só então devolve o estado. Ler a tabela direto
+      // deixaria o job preso em "generating" para sempre.
+      const { data, error } = await supabase.functions.invoke<EdgeResponse>("video-generate", {
+        body: { action: "status", videoId: jobId },
+      });
+      if (error && !data?.job) throw new Error(error.message);
       setAttempt((a) => a + 1);
-      return (data as VideoJob | null) ?? null;
+      return (data?.job as VideoJob | null) ?? null;
     },
     refetchInterval: (query) => {
       const status = query.state.data?.status;
