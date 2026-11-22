@@ -8,9 +8,9 @@ Prioridade por impacto no negocio e dependencia, validada no baseline 246e410c.
   (PND-10) e as 6 do backlog (`approval_tokens`, `brand_guidelines_history`, `brand_share_tokens`,
   `dam_collections`, `magic_up_styles`, `magic_up_jobs`). Sem isso as 8 tabelas nao existem em producao
   (`PGRST205` verificado 2026-11-22) e as features novas respondem erro de tabela inexistente.
-- [DONO] Deploy das edges `mockup-approval`, `brand-share`, `magic-up-jobs` e `os-webhook-dispatcher`
-  (todas HTTP 404 hoje). O `verify_jwt = false` de `mockup-approval` e `brand-share` so passa a valer
-  depois do deploy.
+- [DONO] Deploy das edges `magic-up-jobs` e `os-webhook-dispatcher` (HTTP 404, verificadas em
+  2026-11-22). `mockup-approval` e `brand-share` **ja estao deployadas** — respondem HTTP 400 a um
+  POST `{}`, que e o validador de body rejeitando payload invalido, nao rota ausente.
 - [DONO] Rotacionar service_role + reset senha postgres (Dashboard fygxlswpkjtjpcefjfty) - item 19 prod-readiness.
 - [DONO] Deletar edge function migrate-helper no Dashboard - responde HTTP 401 hoje.
 - [DONO] Secrets da edge `os-webhook-dispatcher`: `ERP_WEBHOOK_URL`, `ERP_WEBHOOK_SECRET`,
