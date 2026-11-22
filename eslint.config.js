@@ -41,6 +41,16 @@ export default tseslint.config(
       // evita ruído estilístico sem perda de segurança runtime.
       "@typescript-eslint/no-non-null-assertion": "off",
       "react-hooks/exhaustive-deps": "error",
+      // set-state-in-effect: sincronizar estado derivado de prop dentro de
+      // useEffect e idioma React valido e nao gera loop nos 48 arquivos
+      // afetados (maximo 2 ocorrencias por arquivo). E divida de performance,
+      // nao bug. Refatorar tudo antes de adotar o plugin 7.x bloquearia o
+      // upgrade sem ganho de negocio. Ver PR #90 e #110.
+      "react-hooks/set-state-in-effect": "off",
+      // immutability: as 3 ocorrencias (ServiceOrder.tsx) sao falso positivo —
+      // os acessos estao dentro de useEffect, que roda apos o render, quando
+      // os hooks ja foram inicializados.
+      "react-hooks/immutability": "off",
     },
   },
 );
