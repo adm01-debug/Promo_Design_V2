@@ -89,6 +89,156 @@ function FontLivePreview({ name }: { name: string }) {
   );
 }
 
+function ColorList({
+  title,
+  list,
+  setList,
+  editable,
+}: {
+  title: string;
+  list: ColorEntry[];
+  setList: (l: ColorEntry[]) => void;
+  editable: boolean;
+}) {
+  const copyHex = (hex: string) => copyHexToClipboard(hex);
+  const updateHex = (i: number, raw: string) => {
+    const next = [...list];
+    next[i] = { ...list[i], hex: raw };
+    setList(next);
+  };
+  const commitHex = (i: number) => {
+    const current = list[i].hex;
+    const normalized = normalizeHex(current);
+    if (!isValidHex(normalized)) {
+      toast.error(`HEX inválido: ${current}`);
+      const next = [...list];
+      next[i] = { ...list[i], hex: "#000000" };
+      setList(next);
+      return;
+    }
+    if (normalized !== current) {
+      const next = [...list];
+      next[i] = { ...list[i], hex: normalized };
+      setList(next);
+    }
+  };
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">{title}</h3>
+          {editable && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setList([...list, { name: "", hex: "#000000" }])}
+              aria-label={`Adicionar cor em ${title}`}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+        <div className="space-y-2">
+          {list.map((c, i) => {
+            const valid = isValidHex(c.hex);
+            const safeHex = valid ? c.hex : "#000000";
+            const w = wcagBoth(safeHex);
+            const variant =
+              w.vsWhite === "FAIL" ? "destructive" : w.vsWhite === "AAA" ? "default" : "secondary";
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={safeHex}
+                  disabled={!editable}
+                  aria-label={`Selecionar cor ${c.name || c.hex.toUpperCase()}`}
+                  onChange={(e) => {
+                    const next = [...list];
+                    next[i] = { ...c, hex: e.target.value.toUpperCase() };
+                    setList(next);
+                  }}
+                  className="w-10 h-10 rounded border border-border cursor-pointer"
+                />
+                <Input
+                  value={c.name}
+                  disabled={!editable}
+                  aria-label={`Nome da cor ${i + 1} em ${title}`}
+                  placeholder="Nome (ex: Marca primária)"
+                  onChange={(e) => {
+                    const next = [...list];
+                    next[i] = { ...c, name: e.target.value };
+                    setList(next);
+                  }}
+                />
+                <Input
+                  value={c.hex}
+                  disabled={!editable}
+                  aria-invalid={!valid}
+                  aria-label={`HEX da cor ${c.name || `#${i + 1}`} em ${title}`}
+                  className={cn(
+                    "w-28 font-mono uppercase",
+                    !valid && "border-destructive focus-visible:ring-destructive",
+                  )}
+                  placeholder="#RRGGBB"
+                  maxLength={7}
+                  onChange={(e) => updateHex(i, e.target.value)}
+                  onBlur={() => commitHex(i)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      commitHex(i);
+                    }
+                  }}
+                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant={variant}
+                      className="font-mono text-[9px] px-1.5 py-0 cursor-help shrink-0"
+                    >
+                      {valid ? w.vsWhite : "—"}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {valid
+                      ? `Contraste vs branco ${w.ratioWhite.toFixed(2)}:1 · vs preto ${w.ratioBlack.toFixed(2)}:1`
+                      : "HEX inválido — corrija para ver o contraste"}
+                  </TooltipContent>
+                </Tooltip>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  type="button"
+                  onClick={() => copyHex(c.hex)}
+                  title={`Copiar ${c.hex.toUpperCase()}`}
+                  aria-label={`Copiar HEX ${c.hex.toUpperCase()}${c.name ? ` (${c.name})` : ""}`}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+                {editable && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    type="button"
+                    onClick={() => setList(list.filter((_, idx) => idx !== i))}
+                    aria-label={`Remover cor ${c.name || c.hex.toUpperCase()}`}
+                    title="Remover cor"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+          {list.length === 0 && (
+            <div className="text-xs text-muted-foreground">Nenhuma cor adicionada.</div>
+          )}
+        </div>
+      </Card>
+    </TooltipProvider>
+  );
+}
+
 export default function BrandGuidelinesPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const { currentOrgId, can } = useOrganizations();
@@ -336,154 +486,6 @@ export default function BrandGuidelinesPage() {
     }
   };
 
-  const ColorList = ({
-    title,
-    list,
-    setList,
-  }: {
-    title: string;
-    list: ColorEntry[];
-    setList: (l: ColorEntry[]) => void;
-  }) => {
-    const copyHex = (hex: string) => copyHexToClipboard(hex);
-    const updateHex = (i: number, raw: string) => {
-      const next = [...list];
-      next[i] = { ...list[i], hex: raw };
-      setList(next);
-    };
-    const commitHex = (i: number) => {
-      const current = list[i].hex;
-      const normalized = normalizeHex(current);
-      if (!isValidHex(normalized)) {
-        toast.error(`HEX inválido: ${current}`);
-        const next = [...list];
-        next[i] = { ...list[i], hex: "#000000" };
-        setList(next);
-        return;
-      }
-      if (normalized !== current) {
-        const next = [...list];
-        next[i] = { ...list[i], hex: normalized };
-        setList(next);
-      }
-    };
-    return (
-      <TooltipProvider delayDuration={150}>
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">{title}</h3>
-            {editable && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setList([...list, { name: "", hex: "#000000" }])}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-          <div className="space-y-2">
-            {list.map((c, i) => {
-              const valid = isValidHex(c.hex);
-              const safeHex = valid ? c.hex : "#000000";
-              const w = wcagBoth(safeHex);
-              const variant =
-                w.vsWhite === "FAIL"
-                  ? "destructive"
-                  : w.vsWhite === "AAA"
-                    ? "default"
-                    : "secondary";
-              return (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={safeHex}
-                    disabled={!editable}
-                    onChange={(e) => {
-                      const next = [...list];
-                      next[i] = { ...c, hex: e.target.value.toUpperCase() };
-                      setList(next);
-                    }}
-                    className="w-10 h-10 rounded border border-border cursor-pointer"
-                  />
-                  <Input
-                    value={c.name}
-                    disabled={!editable}
-                    placeholder="Nome (ex: Marca primária)"
-                    onChange={(e) => {
-                      const next = [...list];
-                      next[i] = { ...c, name: e.target.value };
-                      setList(next);
-                    }}
-                  />
-                  <Input
-                    value={c.hex}
-                    disabled={!editable}
-                    aria-invalid={!valid}
-                    className={cn(
-                      "w-28 font-mono uppercase",
-                      !valid && "border-destructive focus-visible:ring-destructive",
-                    )}
-                    placeholder="#RRGGBB"
-                    maxLength={7}
-                    onChange={(e) => updateHex(i, e.target.value)}
-                    onBlur={() => commitHex(i)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        commitHex(i);
-                      }
-                    }}
-                  />
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge
-                        variant={variant}
-                        className="font-mono text-[9px] px-1.5 py-0 cursor-help shrink-0"
-                      >
-                        {valid ? w.vsWhite : "—"}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {valid
-                        ? `Contraste vs branco ${w.ratioWhite.toFixed(2)}:1 · vs preto ${w.ratioBlack.toFixed(2)}:1`
-                        : "HEX inválido — corrija para ver o contraste"}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    type="button"
-                    onClick={() => copyHex(c.hex)}
-                    title={`Copiar ${c.hex.toUpperCase()}`}
-                    aria-label={`Copiar HEX ${c.hex.toUpperCase()}${c.name ? ` (${c.name})` : ""}`}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  {editable && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      type="button"
-                      onClick={() => setList(list.filter((_, idx) => idx !== i))}
-                      aria-label={`Remover cor ${c.name || c.hex.toUpperCase()}`}
-                      title="Remover cor"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              );
-            })}
-            {list.length === 0 && (
-              <div className="text-xs text-muted-foreground">Nenhuma cor adicionada.</div>
-            )}
-          </div>
-        </Card>
-      </TooltipProvider>
-    );
-  };
-
   if (!currentOrgId || !clientId) {
     return (
       <div className="p-6 text-sm text-muted-foreground">Cliente/organização não definido.</div>
@@ -603,8 +605,13 @@ export default function BrandGuidelinesPage() {
         )}
       </Card>
 
-      <ColorList title="Cores primárias" list={primary} setList={setPrimary} />
-      <ColorList title="Cores secundárias" list={secondary} setList={setSecondary} />
+      <ColorList title="Cores primárias" list={primary} setList={setPrimary} editable={editable} />
+      <ColorList
+        title="Cores secundárias"
+        list={secondary}
+        setList={setSecondary}
+        editable={editable}
+      />
 
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
