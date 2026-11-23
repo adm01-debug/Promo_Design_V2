@@ -7,3 +7,10 @@ verify_jwt = false
 
 [functions.brand-share]
 verify_jwt = false
+
+# Dispatcher chamado pelo cron (run_integration_dispatcher) via pg_net, que nao
+# manda JWT: a credencial e o header x-cron-secret validado dentro da funcao
+# contra CRON_SECRET. Sem esta entrada o gateway responde 401 antes do codigo
+# rodar e nenhum evento sai da integration_queue.
+[functions.integration-dispatcher]
+verify_jwt = false

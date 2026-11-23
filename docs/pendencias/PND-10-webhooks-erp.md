@@ -1,97 +1,235 @@
 ---
 ID: PND-10
-Titulo: Webhooks de saida para OS concluidas (ERP)
-Estado: DONE - INFRA COMPLETA EM PRODUCAO; MODO SELF-DISABLE POR AUSENCIA DOS SECRETS ERP
+Titulo: Webhooks de saida das OS para os tres sistemas internos (Champions, Fast Gravacoes, Supply)
+Estado: EM IMPLEMENTACAO - codigo e migrations prontos, PRs abertas aguardando o dono (DDL em producao)
 Fonte: docs/enterprise-audit-report.md [lacuna]
-Data: 2026-11-21
+Data: 2026-11-23
 ---
 
-# PND-10 - Webhooks de saida para OS concluidas (ERP)
+# PND-10 - Webhooks de saida das OS para os tres sistemas internos
 
-## Estado
+## Decisao de negocio (dona do processo)
 
-**DONE em producao (verificado por query real em 2026-11-22 18:06 UTC).**
+O webhook de OS **nao vai para um ERP unico**. Vai para tres sistemas proprios, com roteamento
+por natureza do evento:
 
-O que esta ativo no projeto `fygxlswpkjtjpcefjfty`:
+| Evento                              | Destino                  | Papel do destino                                  |
+| ----------------------------------- | ------------------------ | ------------------------------------------------- |
+| `design.created` / `design.updated` | **Promo_Champions_V2.1** | CRM dos vendedores - criacao de design para venda |
+| `os.closed` / `os.completed`        | **Fast_Gravacoes_V2**    | Personalizacao/fabricacao do produto              |
+| `os.closed` / `os.completed`        | **Promo_Supply_V2**      | Compras de material                               |
 
-- Migration `20261121095000_os_erp_webhooks.sql` aplicada: tabela `os_webhook_queue` existe,
-  as 3 funcoes (`enqueue_os_webhook`, `run_os_webhook_dispatcher`, `dequeue_os_webhooks`)
-  existem.
-- Trigger `trg_os_webhook_enqueue` ativo em `service_orders` cobrindo **INSERT, UPDATE e
-  DELETE** (todos os eventos de OS, conforme decisao de negocio).
-- Cron `os-webhook-dispatcher-every-minute` (`* * * * *`, active=true) executando
-  `run_os_webhook_dispatcher()`.
-- Config lida do **Vault** (`os_webhook_functions_base` + `os_webhook_cron_secret`), nao de
-  GUC `app.net.*` - o role `postgres` nao e superuser em Supabase hospedado.
-- Dispatcher **vivo**: 245 requisicoes HTTP 200 registradas em `net._http_response`; 60 na
-  ultima hora; ultima em 2026-11-22 18:06:00 UTC.
+## Estado atual
 
-O unico item aberto **depende do dono** e nao esta no repositorio: os secrets
-`ERP_WEBHOOK_URL` e `ERP_WEBHOOK_SECRET` nao existem nos secrets da Edge Function (checado
-via Management API). Sem eles o dispatcher responde `{"ok":true,"disabled":true,"delivered":0}`
-a cada minuto - ou seja, roda, consome o cron e nao entrega. Assim que os dois secrets forem
-criados, a fila passa a drenar sem mudanca de codigo nem de banco.
+### Fluxo legado (intocado)
+
+`os_webhook_queue` + `os-webhook-dispatcher` continuam como estavam: fila unica, HMAC, cron
+`os-webhook-dispatcher-every-minute`. Nenhuma regressao - o fluxo novo e paralelo e so entra em
+uso quando os secrets dos destinos existirem.
+
+### Fluxo multi-destino (novo)
+
+Migration `supabase/migrations/20261125120000_integration_multi_destino.sql`:
+
+- `integration_queue` - `entity`/`entity_id`/`event`/`destination`, UNIQUE nos quatro juntos
+  (idempotencia), status `pending | delivered | failed | dead | skipped`, RLS restrita a
+  `service_role`. `skipped` e estado proprio: lacuna de cadastro nao queima tentativa nem vira
+  dead-letter.
+- Normalizacao de tecnica: `integration_norm_technique()` (unaccent + lower), mapa
+  `integration_technique_map` e `integration_fg_technique()`. Os 6 vocabularios de producao
+  mapeiam para as tecnicas do Fast Gravacoes.
+- Triggers de enfileiramento:
+  - `tg_os_integration_enqueue()` - status `pronta` -> `os.closed`; `concluida` ->
+    `os.completed`; ambos para Fast Gravacoes **e** Supply.
+  - `tg_design_integration_enqueue()` - `mockup_drafts` INSERT -> `design.created`; UPDATE
+    relevante -> `design.updated`; so para Champions.
+- Fila: `dequeue_integration_events()` (`FOR UPDATE SKIP LOCKED`, backoff),
+  `mark_integration_delivered/skipped/failed` (dead apos 8 tentativas).
+- `integration_config()` le do Vault com fallback nas chaves `os_webhook_*` antigas.
+- `run_integration_dispatcher()` + cron `integration-dispatcher-every-minute`.
+
+Edge Function `supabase/functions/integration-dispatcher/` (Deno):
+
+- `adapters/fast_gravacoes.ts` - `POST /jobs` com `x-api-key`, envia `external_ref: entity_id`
+  como chave de idempotencia ponta a ponta.
+- `adapters/champions.ts` - envelope PromoGifts + `x-webhook-signature: sha256=<hex>`.
+- `adapters/supply.ts` - payload alinhado ao schema real de `solicitacoes` (sem `tipo` e sem
+  `vendedor`, que nao existem la); HTTP 422 -> `skipped`.
+- Destino sem env e pulado no loop (nao trava a fila dos outros).
+- 22 testes Deno (inclui os casos de gateway JWT).
+
+### Destinos
+
+- **Fast_Gravacoes_V2** - `erp-api` `POST /jobs`. Corrigido `technique_id` de `uuid` para
+  `text` (a coluna real e TEXT) e adicionado `external_ref` com indice unico parcial +
+  caminho 409/23505 idempotente.
+  - **Tecnica acentuada legada**: OS antigas foram gravadas com encoding quebrado
+    (CP1252 lido como UTF-8) e `Sublimacao` virou `Sublima<U+FFFD><U+FFFD>o`. Medido em
+    producao: `integration_fg_technique()` devolvia NULL, o adapter marca `skipped` e o job
+    **nunca** nascia no Fast Gravacoes. Correcao: `integration_norm_technique()` remove
+    `chr(65533)` e o mapa ganhou as chaves legadas (`sublimao`, `sublimao - caneca`, ...).
+    Verificado com a OS real: payload sai com `fg_technique_id = thermal-press`.
+- **Promo_Supply_V2** - edge nova `receive-os-sync`: HMAC SHA-256 hex sobre o corpo cru,
+  fail-closed 503 sem secret, `timingSafeEqual`, idempotencia por `external_ref` (sem
+  envenenar a chave em erro transitorio), `solicitacoes.external_ref` + indice unico parcial.
+  15 testes do mapeamento.
+- **Promo_Champions_V2.1** - tabela `designs_inbound` (RLS SELECT admin/manager/vendedor),
+  edge `receive-design-sync` (HMAC sobre o corpo cru, fail-closed 503 sem secret, dedupe por
+  `design_id:event`) e superficie de leitura em `/admin/design-inbound`: ultimos 100 designs
+  recebidos com thumbnail, produto/SKU/vendedor, badge do ultimo evento e atalho "Designs
+  Recebidos" no painel admin. Leitura via hook `useDesignsInbound` (camada de dados).
+
+### Gateway: `verify_jwt` (bloqueio real em producao)
+
+O gateway do Supabase valida o JWT **antes** de o codigo da function rodar. Function que nao
+esta declarada em `supabase/config.toml` e publicada com `verify_jwt = true`, e todo webhook
+(HMAC / `x-api-key`, sem `Authorization`) morre em
+`401 {"code":"UNAUTHORIZED_NO_AUTH_HEADER"}`, **sem log da function** - parece que ela nao
+existe. Probes reais (23/11): `os-webhook-dispatcher` sem declaracao -> 401; `mockup-approval`
+declarada -> 400 de payload (chegou ao codigo).
+
+| Function                                             | Fix                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `integration-dispatcher` (Design, chamada pelo cron) | `[functions.integration-dispatcher] verify_jwt = false` no `config.toml` (#136)                                                                                                                                                                                                   |
+| `receive-design-sync` (Champions)                    | `[functions.receive-design-sync] verify_jwt = false` no `config.toml` (#678)                                                                                                                                                                                                      |
+| `receive-os-sync` (Supply)                           | `[functions.receive-os-sync] verify_jwt = false` no `config.toml` (#345)                                                                                                                                                                                                          |
+| `erp-api` (Fast Gravacoes)                           | mantem `verify_jwt = true` (defesa em camada); o adapter manda **tambem** `Authorization: Bearer <anon key do FG>` (`FAST_GRAVACOES_ANON_KEY`) e a autorizacao real continua sendo `x-api-key`. 401 de gateway nesse destino vira `skipped` com motivo, em vez de retry infinito. |
+
+`run_integration_dispatcher()` chama a function com apenas `Content-Type` e `x-cron-secret`, sem
+`Authorization` - por isso a declaracao explicita e obrigatoria. Verificado em producao (23/11)
+que o dispatcher **legado** (`os-webhook-dispatcher`) ja e alcancavel: o cron
+`os-webhook-dispatcher-every-minute` recebe `200 {"ok":true,"disabled":true,"delivered":0}` a
+cada minuto (chega no handler, que se auto-desabilita sem `ERP_WEBHOOK_URL`). O bloqueio do
+gateway atinge so as functions publicadas a partir de um `config.toml` sem a entrada.
+
+### Configuracao do cron (Vault)
+
+`integration_config()` procura `integration_cron_secret` / `integration_functions_base` e cai
+para `os_webhook_cron_secret` / `os_webhook_functions_base`. **Os dois antigos ja existem no
+Vault do projeto** (criados em 22/11), entao o cron novo ja nasce configurado - nao precisa
+criar secret novo. Unico cuidado: o env `CRON_SECRET` da edge function precisa ter **o mesmo
+valor** de `os_webhook_cron_secret`, senao o dispatcher responde 401 no proprio handler.
+
+## PRs da integracao (regra 8: DDL em producao)
+
+| Repo                 | PR   | Conteudo                                                 | Estado           |
+| -------------------- | ---- | -------------------------------------------------------- | ---------------- |
+| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde |
+| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde |
+| Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
+| Promo_Supply_V2      | #345 | `receive-os-sync` com `verify_jwt = false`               | mergeada         |
+| Promo_Champions_V2.1 | #674 | `receive-design-sync`, `designs_inbound` e pagina admin  | mergeada         |
+| Promo_Champions_V2.1 | #678 | `receive-design-sync` com `verify_jwt = false`           | mergeada         |
+
+A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) foi corrigida no
+`main` pelo PR #677 (`fix: testes do dispatcher Win/Loss acompanham a assinatura HMAC`). Com o
+`main` mergeado na branch e a Fase 7 entregue, a #674 esta com CI verde.
+
+## O que falta (depende do dono)
+
+0. **Estado real em producao (23/11/2026)** - nada disso esta aplicado ainda:
+   - Promo Design: `integration_queue` nao existe (`42P01`); `schema_migrations` para em
+     `20261124170000` (a `20261125120000` nunca rodou); `integration-dispatcher` responde 404.
+   - Champions: `receive-design-sync` responde 404 (edge nunca deployada). `deploy.yml` so
+     dispara por `workflow_dispatch`/tag - merge **nao** deploya.
+   - Supply: `receive-os-sync` existe mas responde 401 do gateway (fix na #345).
+   - Fast Gravacoes: `webhook-handler`/`erp-api` respondem 401 do gateway (esperado).
+1. **Aplicar as migrations** nos bancos que faltam (`20261125120000` no Design,
+   `20261125150000` no Champions) e deployar as edges. #326 e #674 ja estao mergeadas.
+2. **Secrets** nas Edge Functions:
+   - Promo Design: `CHAMPIONS_WEBHOOK_URL` + `CHAMPIONS_WEBHOOK_SECRET`,
+     `FAST_GRAVACOES_API_URL` + `FAST_GRAVACOES_API_KEY`, `FAST_GRAVACOES_ANON_KEY` (anon key
+     do projeto do Fast Gravacoes - so passa o gateway; a autorizacao e o `x-api-key`),
+     `SUPPLY_WEBHOOK_URL` + `SUPPLY_WEBHOOK_SECRET`, `CRON_SECRET`.
+   - Promo Supply: `PROMO_DESIGN_WEBHOOK_SECRET`.
+   - Promo Champions: `DESIGN_SYNC_WEBHOOK_SECRET` (mesmo valor de
+     `CHAMPIONS_WEBHOOK_SECRET` do Promo Design).
+3. **Deploy** de `integration-dispatcher` (Promo Design), `receive-design-sync` (Champions) e
+   `receive-os-sync` (Supply). Champions aceita `workflow_dispatch` com `ref`; Supply aceita
+   `workflow_dispatch` com `functions=receive-os-sync`.
+4. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
+   nada pode ser aplicado nem validado nos bancos deles.
+5. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
+   fica `pronta`, e `os.completed` quando fica `concluida` - status que **nao existe** na
+   producao atual (`aberta -> aprovada -> em_producao -> pronta -> entregue`). Se a compra de
+   material tem de comecar na aprovacao e nao na producao, o gatilho do Supply muda de
+   `pronta` para `aprovada`.
+6. **Dados legados com encoding quebrado** em `service_orders.technique`: exatamente **4 OS**
+   (`OS-2026-00002`, `00005`, `00009`, `00013`), valor unico `Sublima<U+FFFD><U+FFFD>o`. Nenhuma
+   outra coluna nem tabela afetada (varrido `product_name`, `product_sku`, `client_*`,
+   `observations`). O mapa ja resolve na integracao - a correcao na origem e opcional **e exige
+   decisao**: o cadastro atual nao tem mais `Sublimacao` generico, so `Sublimacao - Caneca` e
+   `Sublimacao Textil`, e os 4 produtos sao diferentes (Squeeze 500ml, Caderno, **Caneca**, **Copo
+   Termico**). Como o mapa manda `sublimacao` generico para `thermal-press`, os dois ultimos
+   apontariam para prensa textil em vez de `sublimation-mug`.
+
+### Runbook do dia da liberacao (nesta ordem)
+
+```bash
+# 1. Promo Design: migration (cria fila, triggers, RPCs e o cron de 1 min)
+supabase db push --project-ref fygxlswpkjtjpcefjfty     # ou aplicar o .sql pela Management API
+
+# 2. Promo Design: deploy do dispatcher (le supabase/config.toml -> verify_jwt = false)
+supabase functions deploy integration-dispatcher --project-ref fygxlswpkjtjpcefjfty
+
+# 3. secrets do Promo Design (CRON_SECRET ja existe e casa com os_webhook_cron_secret do
+#    Vault - nao trocar; os destinos so ligam quando as env abaixo existirem)
+supabase secrets set --project-ref fygxlswpkjtjpcefjfty \
+  CHAMPIONS_WEBHOOK_URL=https://usyxfpqlsspldubptrdl.supabase.co/functions/v1/receive-design-sync \
+  CHAMPIONS_WEBHOOK_SECRET=... \
+  FAST_GRAVACOES_API_URL=https://uoujzvpecohinketylud.supabase.co/functions/v1/erp-api \
+  FAST_GRAVACOES_API_KEY=... FAST_GRAVACOES_ANON_KEY=<anon key do FG> \
+  SUPPLY_WEBHOOK_URL=https://lmypcdfsrgfftzhxawao.supabase.co/functions/v1/receive-os-sync \
+  SUPPLY_WEBHOOK_SECRET=...
+
+# 4. destinos: mesma credencial do outro lado + deploy da edge
+#    Champions: DESIGN_SYNC_WEBHOOK_SECRET = CHAMPIONS_WEBHOOK_SECRET
+#    Supply:    PROMO_DESIGN_WEBHOOK_SECRET = SUPPLY_WEBHOOK_SECRET
+
+# 5. prova real (espera 200 com o summary por destino)
+curl -s -X POST https://fygxlswpkjtjpcefjfty.supabase.co/functions/v1/integration-dispatcher \
+  -H "x-cron-secret: <valor de os_webhook_cron_secret>" \
+  -H "Content-Type: application/json" -d '{}'
+```
+
+## Evidencia coletada nesta sessao
+
+- Trigger e fila testados em transacao real com `ROLLBACK` no Postgres de producao do Promo
+  Design (3 rodadas, todas verdes) - nenhum dado gravado.
+- Migration **inteira** (`20261125120000`, 508 linhas) rodada em transacao com `ROLLBACK` contra
+  o schema de producao (HTTP 201, sem erro) - aplica limpa. Depois do rollback:
+  `to_regclass('public.integration_queue') = null`, 0 jobs de cron, 0 linha em
+  `schema_migrations`.
+- Estado real de producao (23/11): `integration_queue` inexistente (`42P01`),
+  `integration-dispatcher` 404, `receive-design-sync` (Champions) 404, `receive-os-sync`
+  (Supply) 401 do gateway.
+- Cron legado `os-webhook-dispatcher-every-minute` ativo e saudavel: `net._http_response`
+  mostra 200 `{"ok":true,"disabled":true,"delivered":0}` a cada minuto (self-disable sem
+  `ERP_WEBHOOK_URL`).
+- `deno test` do `integration-dispatcher`: 22/22. `deno test` do `receive-os-sync`: 15/15.
+- Fast Gravacoes: `deno check` OK, `deno test _shared/contracts.test.ts` 5/5,
+  `vitest src/test/erpApiContracts.test.ts` 58/58, `vitest src/test/webhookFuzz.test.ts`
+  107/107.
+- Promo Champions: `deno test` do `receive-design-sync` (mapeamento 12/12, contrato cruzado
+  3/3), `deno check` do handler limpo, `lint-input-validation.ts` sem drift (27/147).
+- Promo Champions (Fase 7): pagina e hook passam `tsc --noEmit`, `eslint --max-warnings 0`,
+  `prettier --check`, `typecheck:baseline` (0 erro novo) e `vite build`; `check-data-layer` sem
+  violacao nova.
+- Suite Deno do Supply: 166 passando; a unica falha (`_shared/xbz_pedido_map.test.ts:90`) e
+  pre-existente, provada com `git stash` no `main`.
+- **Trigger de design exercitado com dado sintetico** em transacao com `ROLLBACK`: insert gerou
+  `design.created` e um `update` de `name` gerou `design.updated`; um `update` so de
+  `editor_state` **nao** gerou evento (guarda de campo relevante funcionando). Payload completo,
+  com `owner_email` resolvido por `auth.users` (producao tinha `mockup_drafts` vazia).
+- **Contratos cruzados conferidos campo a campo**: alvos do mapa (16) todos existem em
+  `public.techniques` do Fast Gravacoes (sem risco de FK 23503 no `jobs`); as 5 tecnicas reais de
+  producao (Laser, Tampografia, Silk Screen, Sublimacao, Embossing) estao mapeadas; o adapter do
+  Champions entrega `seller_email`, `x-webhook-signature: sha256=<hex>` e `correlation_key =
+design_id:event`, exatamente o que `receive-design-sync` valida; o do Supply entrega
+  `solicitante_email`, HMAC e trata 422 (tenant nao resolvido) como `skipped`, que e o que
+  `receive-os-sync` devolve.
+- Corrupcao de encoding medida em producao: 4 de 20 OS, so na coluna `technique`.
 
 ## Fonte
 
 docs/enterprise-audit-report.md [lacuna]
-
-## Descricao
-
-Sincronizar OS com faturamento externo via webhook. Decisao de negocio do dono: **todos** os
-eventos de OS (criacao, edicao, mudanca de status, cancelamento, reabertura e exclusao).
-
-## O que existe no codigo
-
-- `supabase/migrations/20261121095000_os_erp_webhooks.sql`
-  - Tabela `os_webhook_queue` (RLS ligada, coalescing por `os_id` + `event`).
-  - `os_webhook_payload()`, `enqueue_os_webhook()`, trigger `trg_os_webhook_enqueue`.
-  - Mapeamento do trigger: INSERT -> `os.created`; status mudou -> `os.status_changed` (com
-    `previous_status`); `deleted_at` setado -> `os.deleted`; conteudo mudou -> `os.updated`;
-    DELETE fisico -> `os.deleted` com payload do OLD.
-  - `dequeue_os_webhooks()`, `mark_os_webhook_delivered()`, `mark_os_webhook_failed()`
-    (backoff exponencial em `next_attempt_at`) e `run_os_webhook_dispatcher()` + cron
-    `os-webhook-dispatcher-every-minute`.
-- `supabase/functions/os-webhook-dispatcher/` (Deno)
-  - Auth por Bearer `service_role` ou header `x-cron-secret`.
-  - HMAC-SHA256 no header `X-Webhook-Signature: sha256=...`.
-  - Self-disable se `ERP_WEBHOOK_URL`/`ERP_WEBHOOK_SECRET` ausentes (nao quebra, nao polui fila).
-  - Batch de 25, `POST_TIMEOUT_MS = 15_000`.
-
-## Bug P0 encontrado e corrigido nesta sessao (PR #76)
-
-O cron chamava `extensions.net.http_post(...)`. `CREATE EXTENSION pg_net WITH SCHEMA extensions`
-instala as funcoes no schema **`net`**, nao em `extensions.net`; o nome de tres partes e lido como
-`database.schema.function`. Resultado em producao: o cron `os-webhook-dispatcher-every-minute`
-rodaria a cada minuto e falharia com
-`ERROR: cross-database references are not implemented`, ou seja, a fila encheria para sempre
-sem nenhum erro visivel na aplicacao. Corrigido para `net.http_post(...)` com `body := '{}'::jsonb`
-(`body` e `jsonb` no pg_net).
-
-## Evidencia / Acao
-
-Migration aplicada num Postgres 17.11 real (container local com `pg_net` + `pg_cron`):
-
-- Schema criado com sucesso: 7 funcoes, 1 trigger, RLS ligada, 1 cron job.
-- Fila ponta a ponta - **11/11** cenarios: `os.created`; `os.updated` so na mudanca de conteudo;
-  `os.status_changed` com `previous_status` e status atual; update no-op nao enfileira;
-  soft delete -> `os.deleted`; coalescing por `(os_id, event)`; dequeue com `attempts` +
-  backoff; `SET ROLE anon` -> `permission denied for function dequeue_os_webhooks`;
-  `mark_delivered`; DELETE fisico enfileira `os.deleted` com `os_number` do OLD; reenqueue
-  preservando `attempts`.
-- Cron dispatcher - **4/4**: sem config -> `{"ok":true,"skipped":"cron not configured"}` (nao
-  quebra); com config -> `{"ok":true,"url":".../os-webhook-dispatcher","request_id":1}`;
-  1 request efetivamente registrada em `net.http_request_queue`; config resetada.
-- `deno test` do dispatcher: 7/7.
-- Confirmado em producao que a migration NAO esta aplicada: `POST /rest/v1/rpc/run_os_webhook_dispatcher`
-  e `/rest/v1/rpc/dequeue_os_webhooks` retornam `PGRST202` / HTTP 404.
-
-## O que falta para fechar (depende do dono)
-
-1. ~~Aplicar a migration~~ - **FEITO**, aplicada e registrada em
-   `supabase_migrations.schema_migrations`.
-2. ~~Configurar a base e o segredo do cron~~ - **FEITO** via Vault
-   (`os_webhook_functions_base`, `os_webhook_cron_secret`). `CRON_SECRET` ja existe nos
-   secrets da Edge Function.
-3. **ABERTO - unico item:** criar `ERP_WEBHOOK_URL` e `ERP_WEBHOOK_SECRET` nos secrets da
-   Edge Function. Sem eles o dispatcher fica em self-disable (`disabled:true`).
