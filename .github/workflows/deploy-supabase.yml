@@ -102,7 +102,7 @@ jobs:
           base="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1"
           fail=0
           # 400 = no ar rejeitando payload vazio; 404 = rota ausente.
-          for fn in mockup-approval brand-share magic-up-jobs os-webhook-dispatcher; do
+          for fn in mockup-approval brand-share magic-up-jobs os-webhook-dispatcher integration-dispatcher; do
             code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
               -H "Content-Type: application/json" -d "{}" "$base/$fn")
             echo "$fn -> $code"
