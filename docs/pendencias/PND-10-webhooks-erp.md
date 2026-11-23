@@ -89,9 +89,20 @@ declarada -> 400 de payload (chegou ao codigo).
 | `receive-os-sync` (Supply)                           | `[functions.receive-os-sync] verify_jwt = false` no `config.toml` (#345)                                                                                                                                                                                                          |
 | `erp-api` (Fast Gravacoes)                           | mantem `verify_jwt = true` (defesa em camada); o adapter manda **tambem** `Authorization: Bearer <anon key do FG>` (`FAST_GRAVACOES_ANON_KEY`) e a autorizacao real continua sendo `x-api-key`. 401 de gateway nesse destino vira `skipped` com motivo, em vez de retry infinito. |
 
-`run_integration_dispatcher()` chama a function com apenas `Content-Type` e `x-cron-secret`, e o
-cron legado `run_os_webhook_dispatcher()` faz o mesmo - por isso a declaracao explicita e
-obrigatoria nos dois casos.
+`run_integration_dispatcher()` chama a function com apenas `Content-Type` e `x-cron-secret`, sem
+`Authorization` - por isso a declaracao explicita e obrigatoria. Verificado em producao (23/11)
+que o dispatcher **legado** (`os-webhook-dispatcher`) ja e alcancavel: o cron
+`os-webhook-dispatcher-every-minute` recebe `200 {"ok":true,"disabled":true,"delivered":0}` a
+cada minuto (chega no handler, que se auto-desabilita sem `ERP_WEBHOOK_URL`). O bloqueio do
+gateway atinge so as functions publicadas a partir de um `config.toml` sem a entrada.
+
+### Configuracao do cron (Vault)
+
+`integration_config()` procura `integration_cron_secret` / `integration_functions_base` e cai
+para `os_webhook_cron_secret` / `os_webhook_functions_base`. **Os dois antigos ja existem no
+Vault do projeto** (criados em 22/11), entao o cron novo ja nasce configurado - nao precisa
+criar secret novo. Unico cuidado: o env `CRON_SECRET` da edge function precisa ter **o mesmo
+valor** de `os_webhook_cron_secret`, senao o dispatcher responde 401 no proprio handler.
 
 ## PRs da integracao (regra 8: DDL em producao)
 
@@ -144,6 +155,16 @@ A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) 
 
 - Trigger e fila testados em transacao real com `ROLLBACK` no Postgres de producao do Promo
   Design (3 rodadas, todas verdes) - nenhum dado gravado.
+- Migration **inteira** (`20261125120000`, 508 linhas) rodada em transacao com `ROLLBACK` contra
+  o schema de producao (HTTP 201, sem erro) - aplica limpa. Depois do rollback:
+  `to_regclass('public.integration_queue') = null`, 0 jobs de cron, 0 linha em
+  `schema_migrations`.
+- Estado real de producao (23/11): `integration_queue` inexistente (`42P01`),
+  `integration-dispatcher` 404, `receive-design-sync` (Champions) 404, `receive-os-sync`
+  (Supply) 401 do gateway.
+- Cron legado `os-webhook-dispatcher-every-minute` ativo e saudavel: `net._http_response`
+  mostra 200 `{"ok":true,"disabled":true,"delivered":0}` a cada minuto (self-disable sem
+  `ERP_WEBHOOK_URL`).
 - `deno test` do `integration-dispatcher`: 22/22. `deno test` do `receive-os-sync`: 15/15.
 - Fast Gravacoes: `deno check` OK, `deno test _shared/contracts.test.ts` 5/5,
   `vitest src/test/erpApiContracts.test.ts` 58/58, `vitest src/test/webhookFuzz.test.ts`
