@@ -87,11 +87,11 @@ function ctx(fetchImpl: typeof fetch, config = CONFIG): AdapterContext {
 // ── primitivas ──────────────────────────────────────────────────────────────
 
 Deno.test("signBody devolve 64 hex minusculos e e deterministico", async () => {
-  const a = await signBody("{\"a\":1}", "s");
-  const b = await signBody("{\"a\":1}", "s");
+  const a = await signBody('{"a":1}', "s");
+  const b = await signBody('{"a":1}', "s");
   assertEquals(/^[0-9a-f]{64}$/.test(a), true);
   assertEquals(a, b);
-  assertEquals(a === await signBody("{\"a\":1}", "outro"), false);
+  assertEquals(a === (await signBody('{"a":1}', "outro")), false);
 });
 
 Deno.test("toIsoDate extrai YYYY-MM-DD de timestamp ISO e ignora lixo", () => {
@@ -113,12 +113,9 @@ Deno.test("cleanText e positiveNumber normalizam entrada ausente", () => {
 });
 
 Deno.test("postJson nao lanca em erro de rede (status 0)", async () => {
-  const res = await postJson(
-    "https://x.example",
-    "{}",
-    {},
-    (async () => { throw new TypeError("fetch failed"); }) as unknown as typeof fetch,
-  );
+  const res = await postJson("https://x.example", "{}", {}, (async () => {
+    throw new TypeError("fetch failed");
+  }) as unknown as typeof fetch);
   assertEquals(res.ok, false);
   assertEquals(res.status, 0);
 });
@@ -189,23 +186,31 @@ Deno.test("Champions: envelope PromoGifts com HMAC hex e correlation_key", async
   assertEquals(/^[0-9a-f]{64}$/.test(hex), true);
   // A assinatura precisa bater com o corpo exato: e o que o destino valida.
   assertEquals(hex, await signBody(calls[0].body, "sekrit"));
-  assertEquals(calls[0].headers["x-correlation-key"], "33333333-3333-4333-8333-333333333333:design.created");
+  assertEquals(
+    calls[0].headers["x-correlation-key"],
+    "33333333-3333-4333-8333-333333333333:design.created",
+  );
 });
 
-Deno.test("Champions: design.created e design.updated do mesmo design nao colidem no dedupe", async () => {
-  const a = captureFetch(200);
-  await deliverToChampions(designEvent(), ctx(a.fetchImpl));
-  const b = captureFetch(200);
-  const updated = designEvent();
-  updated.event = "design.updated";
-  await deliverToChampions(updated, ctx(b.fetchImpl));
-  const kCreated = JSON.parse(a.calls[0].body).correlation_key;
-  const kUpdated = JSON.parse(b.calls[0].body).correlation_key;
-  assertEquals(kCreated === kUpdated, false);
-  // Mesmo design nos dois - o CRM precisa sobrescrever a mesma linha.
-  assertEquals(JSON.parse(a.calls[0].body).payload.design_id,
-    JSON.parse(b.calls[0].body).payload.design_id);
-});
+Deno.test(
+  "Champions: design.created e design.updated do mesmo design nao colidem no dedupe",
+  async () => {
+    const a = captureFetch(200);
+    await deliverToChampions(designEvent(), ctx(a.fetchImpl));
+    const b = captureFetch(200);
+    const updated = designEvent();
+    updated.event = "design.updated";
+    await deliverToChampions(updated, ctx(b.fetchImpl));
+    const kCreated = JSON.parse(a.calls[0].body).correlation_key;
+    const kUpdated = JSON.parse(b.calls[0].body).correlation_key;
+    assertEquals(kCreated === kUpdated, false);
+    // Mesmo design nos dois - o CRM precisa sobrescrever a mesma linha.
+    assertEquals(
+      JSON.parse(a.calls[0].body).payload.design_id,
+      JSON.parse(b.calls[0].body).payload.design_id,
+    );
+  },
+);
 
 Deno.test("Champions: design sem nome vira skipped", async () => {
   const ev = designEvent();
@@ -248,7 +253,8 @@ Deno.test("Supply: sem owner_email cai no client_email como solicitante", async 
 
 Deno.test("Supply: sem produto ou quantidade nao cria solicitacao", async () => {
   assertEquals(
-    (await deliverToSupply(osEvent({ product_name: null }), ctx(captureFetch(201).fetchImpl))).outcome,
+    (await deliverToSupply(osEvent({ product_name: null }), ctx(captureFetch(201).fetchImpl)))
+      .outcome,
     "skipped",
   );
   assertEquals(

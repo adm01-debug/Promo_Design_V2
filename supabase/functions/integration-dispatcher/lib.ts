@@ -11,13 +11,9 @@ export const POST_TIMEOUT_MS = 15_000;
 export async function signBody(body: string, secret: string): Promise<string> {
   const key = new TextEncoder().encode(secret);
   const data = new TextEncoder().encode(body);
-  const k = await crypto.subtle.importKey(
-    "raw",
-    key,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
+  const k = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, [
+    "sign",
+  ]);
   const sig = await crypto.subtle.sign("HMAC", k, data);
   const bytes = new Uint8Array(sig);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");

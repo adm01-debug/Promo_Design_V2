@@ -61,7 +61,9 @@ export async function deliverToFastGravacoes(
       cleanText(p.product_material) ? `Material ${cleanText(p.product_material)}` : null,
       cleanText(p.observations),
       `Promo Design ${ev.event}`,
-    ].filter(Boolean).join(" | "),
+    ]
+      .filter(Boolean)
+      .join(" | "),
   });
 
   const res = await postJson(
