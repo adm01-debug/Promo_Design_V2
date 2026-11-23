@@ -181,7 +181,7 @@ Deno.test("Champions: envelope PromoGifts com HMAC hex e correlation_key", async
   assertEquals(r.outcome, "delivered");
   const body = JSON.parse(calls[0].body);
   assertEquals(body.event, "design.created");
-  assertEquals(body.correlation_key, "33333333-3333-4333-8333-333333333333");
+  assertEquals(body.correlation_key, "33333333-3333-4333-8333-333333333333:design.created");
   assertEquals(body.payload.seller_email, "vendedor@promo.com");
   const sig = calls[0].headers["x-webhook-signature"];
   assertEquals(sig.startsWith("sha256="), true);
@@ -189,7 +189,22 @@ Deno.test("Champions: envelope PromoGifts com HMAC hex e correlation_key", async
   assertEquals(/^[0-9a-f]{64}$/.test(hex), true);
   // A assinatura precisa bater com o corpo exato: e o que o destino valida.
   assertEquals(hex, await signBody(calls[0].body, "sekrit"));
-  assertEquals(calls[0].headers["x-correlation-key"], "33333333-3333-4333-8333-333333333333");
+  assertEquals(calls[0].headers["x-correlation-key"], "33333333-3333-4333-8333-333333333333:design.created");
+});
+
+Deno.test("Champions: design.created e design.updated do mesmo design nao colidem no dedupe", async () => {
+  const a = captureFetch(200);
+  await deliverToChampions(designEvent(), ctx(a.fetchImpl));
+  const b = captureFetch(200);
+  const updated = designEvent();
+  updated.event = "design.updated";
+  await deliverToChampions(updated, ctx(b.fetchImpl));
+  const kCreated = JSON.parse(a.calls[0].body).correlation_key;
+  const kUpdated = JSON.parse(b.calls[0].body).correlation_key;
+  assertEquals(kCreated === kUpdated, false);
+  // Mesmo design nos dois - o CRM precisa sobrescrever a mesma linha.
+  assertEquals(JSON.parse(a.calls[0].body).payload.design_id,
+    JSON.parse(b.calls[0].body).payload.design_id);
 });
 
 Deno.test("Champions: design sem nome vira skipped", async () => {

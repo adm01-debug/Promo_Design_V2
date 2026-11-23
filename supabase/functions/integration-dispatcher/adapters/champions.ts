@@ -7,8 +7,9 @@
  * funcao receptora la possa reaproveitar o mesmo validador de assinatura e a
  * mesma tabela de dedupe (`webhook_inbound_dedupe`).
  *
- * `correlation_key` = id do design. Garante que reenvio do mesmo design e
- * deduplicado no destino, nao gerando dois cards no CRM.
+ * `correlation_key` = id do design + evento. Garante que reenvio do mesmo evento e
+ * deduplicado no destino, sem que o `design.updated` do mesmo design seja descartado como
+ * duplicata do `design.created` (a tabela de dedupe do CRM tem UNIQUE so em correlation_key).
  */
 import type { AdapterContext, AdapterResult, DesignPayload, QueuedEvent } from "../contracts.ts";
 import { cleanText, postJson, signBody } from "../lib.ts";
@@ -28,9 +29,11 @@ export async function deliverToChampions(
     return { outcome: "skipped", reason: "name ausente" };
   }
 
+  const correlationKey = `${designId}:${ev.event}`;
+
   const body = JSON.stringify({
     event: ev.event,
-    correlation_key: designId,
+    correlation_key: correlationKey,
     payload: {
       design_id: designId,
       name,
@@ -50,7 +53,7 @@ export async function deliverToChampions(
     {
       "x-webhook-signature": `sha256=${signature}`,
       "x-webhook-event": ev.event,
-      "x-correlation-key": designId,
+      "x-correlation-key": correlationKey,
     },
     ctx.fetchImpl,
   );
