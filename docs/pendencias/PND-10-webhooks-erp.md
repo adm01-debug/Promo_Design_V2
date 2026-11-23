@@ -67,22 +67,24 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
   fail-closed 503 sem secret, `timingSafeEqual`, idempotencia por `external_ref` (sem
   envenenar a chave em erro transitorio), `solicitacoes.external_ref` + indice unico parcial.
   15 testes do mapeamento.
-- **Promo_Champions_V2.1** - ainda **nao iniciado**: falta a tabela de design e a edge
-  receptora. O adapter do lado do Promo Design ja esta pronto e testado.
+- **Promo_Champions_V2.1** - tabela `designs_inbound` (RLS SELECT admin/manager/vendedor),
+  edge `receive-design-sync` (HMAC sobre o corpo cru, fail-closed 503 sem secret, dedupe por
+  `design_id:event`) e superficie de leitura em `/admin/design-inbound`: ultimos 100 designs
+  recebidos com thumbnail, produto/SKU/vendedor, badge do ultimo evento e atalho "Designs
+  Recebidos" no painel admin. Leitura via hook `useDesignsInbound` (camada de dados).
 
 ## PRs da integracao (regra 8: DDL em producao)
 
-| Repo                 | PR   | Conteudo                                                 | Estado                  |
-| -------------------- | ---- | -------------------------------------------------------- | ----------------------- |
-| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde        |
-| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde        |
-| Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada                |
-| Promo_Champions_V2.1 | #674 | `receive-design-sync`, mapeamento e migration            | aberta, 1 falha herdada |
+| Repo                 | PR   | Conteudo                                                 | Estado           |
+| -------------------- | ---- | -------------------------------------------------------- | ---------------- |
+| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde |
+| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde |
+| Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
+| Promo_Champions_V2.1 | #674 | `receive-design-sync`, `designs_inbound` e pagina admin  | aberta, CI verde |
 
-A unica falha vermelha da #674 e o job `Edge Functions Tests (deno)`, causado por 3 asserts
-do `winloss-webhook-dispatcher` (`X-Winloss-Signature = secret`, `pico in-flight esperado=100
-(sem throttling); obtido=66`). Os mesmos 3 asserts falham no `main` no commit `ff91ae9`
-(PR #650), provando que a falha e herdada e nao veio desta PR.
+A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) foi corrigida no
+`main` pelo PR #677 (`fix: testes do dispatcher Win/Loss acompanham a assinatura HMAC`). Com o
+`main` mergeado na branch e a Fase 7 entregue, a #674 esta com CI verde.
 
 ## O que falta (depende do dono)
 
@@ -98,8 +100,13 @@ do `winloss-webhook-dispatcher` (`X-Winloss-Signature = secret`, `pico in-flight
    Champions publica edge por tag `v*` ou `workflow_dispatch`.
 4. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
    nada pode ser aplicado nem validado nos bancos deles.
-5. **Fase 7 - consumo nos destinos**: endpoints/UI para ler `receive-os-sync` (Supply) e
-   `designs_inbound` (Champions).
+5. **Fase 7 - consumo nos destinos**: entregue nos tres.
+   - Champions: pagina `/admin/design-inbound` lendo `designs_inbound` via `useDesignsInbound`.
+   - Supply: o receptor ja grava em `solicitacoes` com titulo `Compra p/ OS <numero> - <produto>`,
+     `observacoes` com `Origem: Promo Design (OS <numero>)` e `prioridade = alta` - a tela de
+     solicitacoes existente ja mostra a linha, sem mudanca de UI.
+   - Fast Gravacoes: o job entra em `jobs` pelo `POST /jobs` e aparece no kanban/telas de jobs
+     ja existentes.
 
 ## Evidencia coletada nesta sessao
 
@@ -111,6 +118,9 @@ do `winloss-webhook-dispatcher` (`X-Winloss-Signature = secret`, `pico in-flight
   107/107.
 - Promo Champions: `deno test` do `receive-design-sync` (mapeamento 12/12, contrato cruzado
   3/3), `deno check` do handler limpo, `lint-input-validation.ts` sem drift (27/147).
+- Promo Champions (Fase 7): pagina e hook passam `tsc --noEmit`, `eslint --max-warnings 0`,
+  `prettier --check`, `typecheck:baseline` (0 erro novo) e `vite build`; `check-data-layer` sem
+  violacao nova.
 - Suite Deno do Supply: 166 passando; a unica falha (`_shared/xbz_pedido_map.test.ts:90`) e
   pre-existente, provada com `git stash` no `main`.
 
