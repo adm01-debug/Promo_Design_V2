@@ -29,14 +29,16 @@ dist-ssr
 test-results
 playwright-report
 
-# Vercel local output.vercel
-
+# Vercel local output
 .vercel
 
 deno.lock
 
-# Segredos locais — .env so com chaves VITE_* publicas; nunca .env.local/.env.*.local
+# Segredos locais - .env so com chaves VITE_* publicas; nunca .env.local/.env.*.local
 .env.local
 .env.*.local
 .env.production
 .env.development
+
+# Supabase CLI scratch (link state, cache local)
+supabase/.temp/
