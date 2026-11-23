@@ -170,6 +170,41 @@ Deno.test("FG: 409 (job ja existe) conta como entregue", async () => {
   assertEquals(r.outcome, "delivered");
 });
 
+Deno.test("FG: manda Authorization do gateway quando FAST_GRAVACOES_ANON_KEY existe", async () => {
+  const { calls, fetchImpl } = captureFetch(201);
+  const config = { ...CONFIG, anonKey: "anon-jwt" };
+  const r = await deliverToFastGravacoes(osEvent(), ctx(fetchImpl, config));
+  assertEquals(r.outcome, "delivered");
+  assertEquals(calls[0].headers["Authorization"], "Bearer anon-jwt");
+  // A credencial real continua sendo a x-api-key.
+  assertEquals(calls[0].headers["x-api-key"], "sekrit");
+});
+
+Deno.test("FG: sem anon key nao inventa Authorization (x-api-key sozinha)", async () => {
+  const { calls, fetchImpl } = captureFetch(201);
+  const r = await deliverToFastGravacoes(osEvent(), ctx(fetchImpl));
+  assertEquals(r.outcome, "delivered");
+  assertEquals(calls[0].headers["Authorization"], undefined);
+});
+
+Deno.test("FG: 401 do gateway vira skipped com a env que falta, nao retry", async () => {
+  const { fetchImpl } = captureFetch(
+    401,
+    '{"code":"UNAUTHORIZED_NO_AUTH_HEADER","message":"Missing authorization header"}',
+  );
+  const r = await deliverToFastGravacoes(osEvent(), ctx(fetchImpl));
+  assertEquals(r.outcome, "skipped");
+  assertEquals(r.status, 401);
+  assertEquals((r.reason ?? "").includes("FAST_GRAVACOES_ANON_KEY"), true);
+});
+
+Deno.test("FG: 401 do handler (x-api-key invalida) continua retry", async () => {
+  const { fetchImpl } = captureFetch(401, '{"error":"Unauthorized"}');
+  const r = await deliverToFastGravacoes(osEvent(), ctx(fetchImpl));
+  assertEquals(r.outcome, "retry");
+  assertEquals(r.status, 401);
+});
+
 // ── Champions ──────────────────────────────────────────────────────────────
 
 Deno.test("Champions: envelope PromoGifts com HMAC hex e correlation_key", async () => {

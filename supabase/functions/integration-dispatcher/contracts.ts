@@ -37,6 +37,14 @@ export interface AdapterContext {
 export interface DestinationConfig {
   url: string;
   secret: string;
+  /**
+   * JWT publico do projeto do destino (anon/publishable), so usado quando a
+   * function do outro lado e publicada com `verify_jwt = true` no gateway.
+   * O gateway do Supabase exige `Authorization: Bearer <jwt>` e responde
+   * `401 UNAUTHORIZED_NO_AUTH_HEADER` antes de qualquer codigo rodar — a
+   * credencial real do destino continua sendo `secret` (x-api-key/HMAC).
+   */
+  anonKey?: string;
 }
 
 /** Snapshot de OS que chega em `payload` para os eventos os.closed/os.completed. */

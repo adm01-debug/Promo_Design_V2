@@ -56,7 +56,7 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
 - `adapters/supply.ts` - payload alinhado ao schema real de `solicitacoes` (sem `tipo` e sem
   `vendedor`, que nao existem la); HTTP 422 -> `skipped`.
 - Destino sem env e pulado no loop (nao trava a fila dos outros).
-- 17 testes Deno.
+- 22 testes Deno (inclui os casos de gateway JWT).
 
 ### Destinos
 
@@ -73,6 +73,26 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
   recebidos com thumbnail, produto/SKU/vendedor, badge do ultimo evento e atalho "Designs
   Recebidos" no painel admin. Leitura via hook `useDesignsInbound` (camada de dados).
 
+### Gateway: `verify_jwt` (bloqueio real em producao)
+
+O gateway do Supabase valida o JWT **antes** de o codigo da function rodar. Function que nao
+esta declarada em `supabase/config.toml` e publicada com `verify_jwt = true`, e todo webhook
+(HMAC / `x-api-key`, sem `Authorization`) morre em
+`401 {"code":"UNAUTHORIZED_NO_AUTH_HEADER"}`, **sem log da function** - parece que ela nao
+existe. Probes reais (23/11): `os-webhook-dispatcher` sem declaracao -> 401; `mockup-approval`
+declarada -> 400 de payload (chegou ao codigo).
+
+| Function                                             | Fix                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `integration-dispatcher` (Design, chamada pelo cron) | `[functions.integration-dispatcher] verify_jwt = false` no `config.toml` (#136)                                                                                                                                                                                                   |
+| `receive-design-sync` (Champions)                    | `[functions.receive-design-sync] verify_jwt = false` no `config.toml` (#678)                                                                                                                                                                                                      |
+| `receive-os-sync` (Supply)                           | `[functions.receive-os-sync] verify_jwt = false` no `config.toml` (#345)                                                                                                                                                                                                          |
+| `erp-api` (Fast Gravacoes)                           | mantem `verify_jwt = true` (defesa em camada); o adapter manda **tambem** `Authorization: Bearer <anon key do FG>` (`FAST_GRAVACOES_ANON_KEY`) e a autorizacao real continua sendo `x-api-key`. 401 de gateway nesse destino vira `skipped` com motivo, em vez de retry infinito. |
+
+`run_integration_dispatcher()` chama a function com apenas `Content-Type` e `x-cron-secret`, e o
+cron legado `run_os_webhook_dispatcher()` faz o mesmo - por isso a declaracao explicita e
+obrigatoria nos dois casos.
+
 ## PRs da integracao (regra 8: DDL em producao)
 
 | Repo                 | PR   | Conteudo                                                 | Estado           |
@@ -80,7 +100,9 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
 | Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde |
 | Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde |
 | Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
-| Promo_Champions_V2.1 | #674 | `receive-design-sync`, `designs_inbound` e pagina admin  | aberta, CI verde |
+| Promo_Supply_V2      | #345 | `receive-os-sync` com `verify_jwt = false`               | aberta           |
+| Promo_Champions_V2.1 | #674 | `receive-design-sync`, `designs_inbound` e pagina admin  | mergeada         |
+| Promo_Champions_V2.1 | #678 | `receive-design-sync` com `verify_jwt = false`           | aberta           |
 
 A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) foi corrigida no
 `main` pelo PR #677 (`fix: testes do dispatcher Win/Loss acompanham a assinatura HMAC`). Com o
@@ -88,16 +110,26 @@ A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) 
 
 ## O que falta (depende do dono)
 
-1. **Aplicar as migrations** nos quatro bancos e mergear #136, #272, #326 e #674.
+0. **Estado real em producao (23/11/2026)** - nada disso esta aplicado ainda:
+   - Promo Design: `integration_queue` nao existe (`42P01`); `schema_migrations` para em
+     `20261124170000` (a `20261125120000` nunca rodou); `integration-dispatcher` responde 404.
+   - Champions: `receive-design-sync` responde 404 (edge nunca deployada). `deploy.yml` so
+     dispara por `workflow_dispatch`/tag - merge **nao** deploya.
+   - Supply: `receive-os-sync` existe mas responde 401 do gateway (fix na #345).
+   - Fast Gravacoes: `webhook-handler`/`erp-api` respondem 401 do gateway (esperado).
+1. **Aplicar as migrations** nos bancos que faltam (`20261125120000` no Design,
+   `20261125150000` no Champions) e deployar as edges. #326 e #674 ja estao mergeadas.
 2. **Secrets** nas Edge Functions:
    - Promo Design: `CHAMPIONS_WEBHOOK_URL` + `CHAMPIONS_WEBHOOK_SECRET`,
-     `FAST_GRAVACOES_API_URL` + `FAST_GRAVACOES_API_KEY`, `SUPPLY_WEBHOOK_URL` +
-     `SUPPLY_WEBHOOK_SECRET`, `CRON_SECRET`.
+     `FAST_GRAVACOES_API_URL` + `FAST_GRAVACOES_API_KEY`, `FAST_GRAVACOES_ANON_KEY` (anon key
+     do projeto do Fast Gravacoes - so passa o gateway; a autorizacao e o `x-api-key`),
+     `SUPPLY_WEBHOOK_URL` + `SUPPLY_WEBHOOK_SECRET`, `CRON_SECRET`.
    - Promo Supply: `PROMO_DESIGN_WEBHOOK_SECRET`.
    - Promo Champions: `DESIGN_SYNC_WEBHOOK_SECRET` (mesmo valor de
      `CHAMPIONS_WEBHOOK_SECRET` do Promo Design).
-3. **Deploy** de `integration-dispatcher` (Promo Design) e `receive-os-sync` (Supply). O
-   Champions publica edge por tag `v*` ou `workflow_dispatch`.
+3. **Deploy** de `integration-dispatcher` (Promo Design), `receive-design-sync` (Champions) e
+   `receive-os-sync` (Supply). Champions aceita `workflow_dispatch` com `ref`; Supply aceita
+   `workflow_dispatch` com `functions=receive-os-sync`.
 4. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
    nada pode ser aplicado nem validado nos bancos deles.
 5. **Fase 7 - consumo nos destinos**: entregue nos tres.
@@ -112,7 +144,7 @@ A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) 
 
 - Trigger e fila testados em transacao real com `ROLLBACK` no Postgres de producao do Promo
   Design (3 rodadas, todas verdes) - nenhum dado gravado.
-- `deno test` do `integration-dispatcher`: 18/18. `deno test` do `receive-os-sync`: 15/15.
+- `deno test` do `integration-dispatcher`: 22/22. `deno test` do `receive-os-sync`: 15/15.
 - Fast Gravacoes: `deno check` OK, `deno test _shared/contracts.test.ts` 5/5,
   `vitest src/test/erpApiContracts.test.ts` 58/58, `vitest src/test/webhookFuzz.test.ts`
   107/107.

@@ -19,7 +19,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCorsHeaders, corsPreflight } from "../_shared/cors.ts";
-import { DESTINATIONS, type Destination, type QueuedEvent } from "./contracts.ts";
+import {
+  DESTINATIONS,
+  type Destination,
+  type DestinationConfig,
+  type QueuedEvent,
+} from "./contracts.ts";
 import { deliverToChampions } from "./adapters/champions.ts";
 import { deliverToFastGravacoes } from "./adapters/fast_gravacoes.ts";
 import { deliverToSupply } from "./adapters/supply.ts";
@@ -27,7 +32,7 @@ import { deliverToSupply } from "./adapters/supply.ts";
 const BATCH_LIMIT = 25;
 
 /** Env por destino: URL e credencial. Vazio = destino desligado. */
-function destinationConfig(destination: Destination): { url: string; secret: string } {
+function destinationConfig(destination: Destination): DestinationConfig {
   switch (destination) {
     case "champions":
       return {
@@ -38,6 +43,11 @@ function destinationConfig(destination: Destination): { url: string; secret: str
       return {
         url: Deno.env.get("FAST_GRAVACOES_API_URL") ?? "",
         secret: Deno.env.get("FAST_GRAVACOES_API_KEY") ?? "",
+        // O `erp-api` do Fast Gravacoes e publicado com verify_jwt = true no
+        // config.toml de la: o gateway exige um JWT valido do projeto deles
+        // antes de rodar o handler (que entao aceita o x-api-key). Sem este
+        // JWT publico todo POST /jobs morre em 401 antes do codigo.
+        anonKey: Deno.env.get("FAST_GRAVACOES_ANON_KEY") ?? "",
       };
     case "supply":
       return {
