@@ -13,11 +13,11 @@ Data: 2026-11-23
 O webhook de OS **nao vai para um ERP unico**. Vai para tres sistemas proprios, com roteamento
 por natureza do evento:
 
-| Evento | Destino | Papel do destino |
-|---|---|---|
+| Evento                              | Destino                  | Papel do destino                                  |
+| ----------------------------------- | ------------------------ | ------------------------------------------------- |
 | `design.created` / `design.updated` | **Promo_Champions_V2.1** | CRM dos vendedores - criacao de design para venda |
-| `os.closed` / `os.completed` | **Fast_Gravacoes_V2** | Personalizacao/fabricacao do produto |
-| `os.closed` / `os.completed` | **Promo_Supply_V2** | Compras de material |
+| `os.closed` / `os.completed`        | **Fast_Gravacoes_V2**    | Personalizacao/fabricacao do produto              |
+| `os.closed` / `os.completed`        | **Promo_Supply_V2**      | Compras de material                               |
 
 ## Estado atual
 
@@ -72,11 +72,11 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
 
 ## PRs abertas (regra 8: DDL em producao, aguardando o dono)
 
-| Repo | PR | Conteudo |
-|---|---|---|
-| Promo_Design_V2 | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters |
-| Fast_Gravacoes_V2 | #272 | `technique_id` TEXT + `external_ref` + migration |
-| Promo_Supply_V2 | #326 | `receive-os-sync`, mapeamento e migration |
+| Repo              | PR   | Conteudo                                                 |
+| ----------------- | ---- | -------------------------------------------------------- |
+| Promo_Design_V2   | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters |
+| Fast_Gravacoes_V2 | #272 | `technique_id` TEXT + `external_ref` + migration         |
+| Promo_Supply_V2   | #326 | `receive-os-sync`, mapeamento e migration                |
 
 ## O que falta (depende do dono)
 
