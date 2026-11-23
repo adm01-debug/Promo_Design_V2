@@ -72,32 +72,45 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
 
 ## PRs abertas (regra 8: DDL em producao, aguardando o dono)
 
-| Repo              | PR   | Conteudo                                                 |
-| ----------------- | ---- | -------------------------------------------------------- |
-| Promo_Design_V2   | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters |
-| Fast_Gravacoes_V2 | #272 | `technique_id` TEXT + `external_ref` + migration         |
-| Promo_Supply_V2   | #326 | `receive-os-sync`, mapeamento e migration                |
+| Repo                 | PR   | Conteudo                                                 | CI                        |
+| -------------------- | ---- | -------------------------------------------------------- | ------------------------- |
+| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | verde                     |
+| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | verde                     |
+| Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | verde                     |
+| Promo_Champions_V2.1 | #674 | `receive-design-sync`, mapeamento e migration            | 1 falha herdada do `main` |
+
+A unica falha vermelha da #674 e o job `Edge Functions Tests (deno)`, causado por 3 asserts
+do `winloss-webhook-dispatcher` (`X-Winloss-Signature = secret`, `pico in-flight esperado=100
+(sem throttling); obtido=66`). Os mesmos 3 asserts falham no `main` no commit `ff91ae9`
+(PR #650), provando que a falha e herdada e nao veio desta PR.
 
 ## O que falta (depende do dono)
 
-1. **Aplicar as migrations** nos tres bancos e mergear #136, #272 e #326.
+1. **Aplicar as migrations** nos quatro bancos e mergear #136, #272, #326 e #674.
 2. **Secrets** nas Edge Functions:
    - Promo Design: `CHAMPIONS_WEBHOOK_URL` + `CHAMPIONS_WEBHOOK_SECRET`,
      `FAST_GRAVACOES_API_URL` + `FAST_GRAVACOES_API_KEY`, `SUPPLY_WEBHOOK_URL` +
      `SUPPLY_WEBHOOK_SECRET`, `CRON_SECRET`.
    - Promo Supply: `PROMO_DESIGN_WEBHOOK_SECRET`.
-3. **Deploy** de `integration-dispatcher` (Promo Design) e `receive-os-sync` (Supply).
-4. **Fase 6 - Champions**: receptor `receive-design-sync` + tabela de design.
-5. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
+   - Promo Champions: `DESIGN_SYNC_WEBHOOK_SECRET` (mesmo valor de
+     `CHAMPIONS_WEBHOOK_SECRET` do Promo Design).
+3. **Deploy** de `integration-dispatcher` (Promo Design) e `receive-os-sync` (Supply). O
+   Champions publica edge por tag `v*` ou `workflow_dispatch`.
+4. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
    nada pode ser aplicado nem validado nos bancos deles.
+5. **Fase 7 - consumo nos destinos**: endpoints/UI para ler `receive-os-sync` (Supply) e
+   `designs_inbound` (Champions).
 
 ## Evidencia coletada nesta sessao
 
 - Trigger e fila testados em transacao real com `ROLLBACK` no Postgres de producao do Promo
   Design (3 rodadas, todas verdes) - nenhum dado gravado.
-- `deno test` do `integration-dispatcher`: 17/17. `deno test` do `receive-os-sync`: 15/15.
+- `deno test` do `integration-dispatcher`: 18/18. `deno test` do `receive-os-sync`: 15/15.
 - Fast Gravacoes: `deno check` OK, `deno test _shared/contracts.test.ts` 5/5,
-  `vitest src/test/erpApiContracts.test.ts` 58/58.
+  `vitest src/test/erpApiContracts.test.ts` 58/58, `vitest src/test/webhookFuzz.test.ts`
+  107/107.
+- Promo Champions: `deno test` do `receive-design-sync` (mapeamento 12/12, contrato cruzado
+  3/3), `deno check` do handler limpo, `lint-input-validation.ts` sem drift (27/147).
 - Suite Deno do Supply: 166 passando; a unica falha (`_shared/xbz_pedido_map.test.ts:90`) e
   pre-existente, provada com `git stash` no `main`.
 
