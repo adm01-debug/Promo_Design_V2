@@ -75,8 +75,12 @@ LANGUAGE sql STABLE
 SET search_path = 'public, extensions'
 AS $$
   -- unaccent() nao e IMMUTABLE (depende do dicionario), por isso STABLE.
+  -- chr(65533) = U+FFFD: OS antigas foram gravadas com encoding quebrado
+  -- (CP1252 lido como UTF-8) e o acento virou caractere de substituicao -
+  -- 'Sublima<U+FFFD><U+FFFD>o'. Sem remove-lo a tecnica nunca casa com o mapa
+  -- e o job nao nasce no Fast Gravacoes.
   SELECT btrim(regexp_replace(
-    lower(extensions.unaccent(coalesce(_text, ''))),
+    lower(extensions.unaccent(replace(coalesce(_text, ''), chr(65533), ''))),
     '\s+', ' ', 'g'
   ));
 $$;
@@ -130,7 +134,14 @@ FROM (VALUES
   ('dtf uv',               'dtf-uv'),
   ('aplicacao dtf uv',     'dtf-uv-application'),
   ('corte',                'cut-media'),
-  ('corte midia',          'cut-media')
+  ('corte midia',          'cut-media'),
+  -- Apelidos das OS antigas gravadas com encoding quebrado: o acento virou
+  -- U+FFFD e sobra 'Sublimao'. integration_norm_technique() remove o U+FFFD,
+  -- entao estas chaves (ja sem acento) resolvem o dado legado.
+  ('sublimao',             'thermal-press'),
+  ('sublimao textil',      'thermal-press'),
+  ('sublimao - caneca',    'sublimation-mug'),
+  ('sublimao caneca',      'sublimation-mug')
 ) AS v(k, fg_technique_id)
 ON CONFLICT (promo_technique) DO NOTHING;
 

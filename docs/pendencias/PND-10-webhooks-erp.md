@@ -63,6 +63,12 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
 - **Fast_Gravacoes_V2** - `erp-api` `POST /jobs`. Corrigido `technique_id` de `uuid` para
   `text` (a coluna real e TEXT) e adicionado `external_ref` com indice unico parcial +
   caminho 409/23505 idempotente.
+  - **Tecnica acentuada legada**: OS antigas foram gravadas com encoding quebrado
+    (CP1252 lido como UTF-8) e `Sublimacao` virou `Sublima<U+FFFD><U+FFFD>o`. Medido em
+    producao: `integration_fg_technique()` devolvia NULL, o adapter marca `skipped` e o job
+    **nunca** nascia no Fast Gravacoes. Correcao: `integration_norm_technique()` remove
+    `chr(65533)` e o mapa ganhou as chaves legadas (`sublimao`, `sublimao - caneca`, ...).
+    Verificado com a OS real: payload sai com `fg_technique_id = thermal-press`.
 - **Promo_Supply_V2** - edge nova `receive-os-sync`: HMAC SHA-256 hex sobre o corpo cru,
   fail-closed 503 sem secret, `timingSafeEqual`, idempotencia por `external_ref` (sem
   envenenar a chave em erro transitorio), `solicitacoes.external_ref` + indice unico parcial.
@@ -111,9 +117,9 @@ valor** de `os_webhook_cron_secret`, senao o dispatcher responde 401 no proprio 
 | Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde |
 | Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde |
 | Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
-| Promo_Supply_V2      | #345 | `receive-os-sync` com `verify_jwt = false`               | aberta           |
+| Promo_Supply_V2      | #345 | `receive-os-sync` com `verify_jwt = false`               | mergeada         |
 | Promo_Champions_V2.1 | #674 | `receive-design-sync`, `designs_inbound` e pagina admin  | mergeada         |
-| Promo_Champions_V2.1 | #678 | `receive-design-sync` com `verify_jwt = false`           | aberta           |
+| Promo_Champions_V2.1 | #678 | `receive-design-sync` com `verify_jwt = false`           | mergeada         |
 
 A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) foi corrigida no
 `main` pelo PR #677 (`fix: testes do dispatcher Win/Loss acompanham a assinatura HMAC`). Com o
@@ -143,13 +149,43 @@ A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) 
    `workflow_dispatch` com `functions=receive-os-sync`.
 4. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
    nada pode ser aplicado nem validado nos bancos deles.
-5. **Fase 7 - consumo nos destinos**: entregue nos tres.
-   - Champions: pagina `/admin/design-inbound` lendo `designs_inbound` via `useDesignsInbound`.
-   - Supply: o receptor ja grava em `solicitacoes` com titulo `Compra p/ OS <numero> - <produto>`,
-     `observacoes` com `Origem: Promo Design (OS <numero>)` e `prioridade = alta` - a tela de
-     solicitacoes existente ja mostra a linha, sem mudanca de UI.
-   - Fast Gravacoes: o job entra em `jobs` pelo `POST /jobs` e aparece no kanban/telas de jobs
-     ja existentes.
+5. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
+   fica `pronta`, e `os.completed` quando fica `concluida` - status que **nao existe** na
+   producao atual (`aberta -> aprovada -> em_producao -> pronta -> entregue`). Se a compra de
+   material tem de comecar na aprovacao e nao na producao, o gatilho do Supply muda de
+   `pronta` para `aprovada`.
+6. **Dados legados com encoding quebrado** em `service_orders.technique` (4 linhas com
+   `U+FFFD` no lugar de `c`/`a` acentuados). O mapa ja resolve via chaves legadas; apagar o
+   caractere de substituicao na origem e limpeza opcional.
+
+### Runbook do dia da liberacao (nesta ordem)
+
+```bash
+# 1. Promo Design: migration (cria fila, triggers, RPCs e o cron de 1 min)
+supabase db push --project-ref fygxlswpkjtjpcefjfty     # ou aplicar o .sql pela Management API
+
+# 2. Promo Design: deploy do dispatcher (le supabase/config.toml -> verify_jwt = false)
+supabase functions deploy integration-dispatcher --project-ref fygxlswpkjtjpcefjfty
+
+# 3. secrets do Promo Design (CRON_SECRET ja existe e casa com os_webhook_cron_secret do
+#    Vault - nao trocar; os destinos so ligam quando as env abaixo existirem)
+supabase secrets set --project-ref fygxlswpkjtjpcefjfty \
+  CHAMPIONS_WEBHOOK_URL=https://usyxfpqlsspldubptrdl.supabase.co/functions/v1/receive-design-sync \
+  CHAMPIONS_WEBHOOK_SECRET=... \
+  FAST_GRAVACOES_API_URL=https://uoujzvpecohinketylud.supabase.co/functions/v1/erp-api \
+  FAST_GRAVACOES_API_KEY=... FAST_GRAVACOES_ANON_KEY=<anon key do FG> \
+  SUPPLY_WEBHOOK_URL=https://lmypcdfsrgfftzhxawao.supabase.co/functions/v1/receive-os-sync \
+  SUPPLY_WEBHOOK_SECRET=...
+
+# 4. destinos: mesma credencial do outro lado + deploy da edge
+#    Champions: DESIGN_SYNC_WEBHOOK_SECRET = CHAMPIONS_WEBHOOK_SECRET
+#    Supply:    PROMO_DESIGN_WEBHOOK_SECRET = SUPPLY_WEBHOOK_SECRET
+
+# 5. prova real (espera 200 com o summary por destino)
+curl -s -X POST https://fygxlswpkjtjpcefjfty.supabase.co/functions/v1/integration-dispatcher \
+  -H "x-cron-secret: <valor de os_webhook_cron_secret>" \
+  -H "Content-Type: application/json" -d '{}'
+```
 
 ## Evidencia coletada nesta sessao
 
