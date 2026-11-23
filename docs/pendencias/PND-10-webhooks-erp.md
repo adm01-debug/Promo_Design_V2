@@ -70,14 +70,14 @@ Edge Function `supabase/functions/integration-dispatcher/` (Deno):
 - **Promo_Champions_V2.1** - ainda **nao iniciado**: falta a tabela de design e a edge
   receptora. O adapter do lado do Promo Design ja esta pronto e testado.
 
-## PRs abertas (regra 8: DDL em producao, aguardando o dono)
+## PRs da integracao (regra 8: DDL em producao)
 
-| Repo                 | PR   | Conteudo                                                 | CI                        |
-| -------------------- | ---- | -------------------------------------------------------- | ------------------------- |
-| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | verde                     |
-| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | verde                     |
-| Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | verde                     |
-| Promo_Champions_V2.1 | #674 | `receive-design-sync`, mapeamento e migration            | 1 falha herdada do `main` |
+| Repo                 | PR   | Conteudo                                                 | Estado                  |
+| -------------------- | ---- | -------------------------------------------------------- | ----------------------- |
+| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde        |
+| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde        |
+| Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada                |
+| Promo_Champions_V2.1 | #674 | `receive-design-sync`, mapeamento e migration            | aberta, 1 falha herdada |
 
 A unica falha vermelha da #674 e o job `Edge Functions Tests (deno)`, causado por 3 asserts
 do `winloss-webhook-dispatcher` (`X-Winloss-Signature = secret`, `pico in-flight esperado=100
