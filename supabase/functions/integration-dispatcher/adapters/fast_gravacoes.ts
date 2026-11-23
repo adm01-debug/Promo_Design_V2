@@ -53,6 +53,9 @@ export async function deliverToFastGravacoes(
     technique_id: techniqueId,
     priority: "high",
     scheduled_date: toIsoDate(p.delivery_date),
+    // Chave de idempotencia: o erp-api devolve o job existente em vez de
+    // duplicar quando o Promo Design reenvia o mesmo evento.
+    external_ref: ev.entity_id,
     notes: [
       cleanText(p.product_sku) ? `SKU ${cleanText(p.product_sku)}` : null,
       cleanText(p.product_material) ? `Material ${cleanText(p.product_material)}` : null,

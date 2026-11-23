@@ -138,6 +138,8 @@ Deno.test("FG: POST /jobs com x-api-key e payload do ERPJobRequest", async () =>
   assertEquals(body.quantity, 10);
   assertEquals(body.scheduled_date, "2026-12-01");
   assertEquals(body.client, "ACME");
+  // Idempotencia: erp-api devolve o job existente quando a mesma OS reenvia.
+  assertEquals(body.external_ref, "11111111-1111-4111-8111-111111111111");
 });
 
 Deno.test("FG: tecnica sem mapeamento vira skipped, nao retry", async () => {
@@ -200,32 +202,55 @@ Deno.test("Champions: design sem nome vira skipped", async () => {
 
 // ── Supply ─────────────────────────────────────────────────────────────────
 
-Deno.test("Supply: mapeia para FAB_PERSONALIZADO e vendedor = owner_email", async () => {
+Deno.test("Supply: envia o que o receptor precisa para abrir a solicitacao", async () => {
   const { calls, fetchImpl } = captureFetch(201);
   const r = await deliverToSupply(osEvent(), ctx(fetchImpl));
   assertEquals(r.outcome, "delivered");
   const body = JSON.parse(calls[0].body);
-  assertEquals(body.payload.tipo, "FAB_PERSONALIZADO");
-  assertEquals(body.payload.vendedor, "vendedor@promo.com");
+  // `tipo` nao vai no payload: quem grava 'material' e o receptor, respeitando
+  // o CHECK do schema de compras.
+  assertEquals(body.payload.tipo, undefined);
+  assertEquals(body.payload.os_id, "11111111-1111-4111-8111-111111111111");
+  assertEquals(body.payload.produto, "Caneca");
   assertEquals(body.payload.quantidade, 10);
-  assertEquals(body.payload.item_number, "SKU-1");
+  assertEquals(body.payload.produto_sku, "SKU-1");
   assertEquals(body.correlation_key, "OS-2026-001");
   assertEquals(body.payload.source, "promo_design");
 });
 
-Deno.test("Supply: sem vendedor nem client_email vira skipped", async () => {
-  const { fetchImpl } = captureFetch(201);
-  const r = await deliverToSupply(
-    osEvent({ owner_email: null, client_email: null }),
-    ctx(fetchImpl),
-  );
-  assertEquals(r.outcome, "skipped");
-  assertEquals((r.reason ?? "").includes("vendedor"), true);
+Deno.test("Supply: manda o e-mail do dono para resolver tenant no destino", async () => {
+  const { calls, fetchImpl } = captureFetch(201);
+  await deliverToSupply(osEvent(), ctx(fetchImpl));
+  assertEquals(JSON.parse(calls[0].body).payload.solicitante_email, "vendedor@promo.com");
 });
 
-Deno.test("Supply: usa client_email como fallback de vendedor", async () => {
+Deno.test("Supply: sem owner_email cai no client_email como solicitante", async () => {
   const { calls, fetchImpl } = captureFetch(201);
   const r = await deliverToSupply(osEvent({ owner_email: null }), ctx(fetchImpl));
   assertEquals(r.outcome, "delivered");
-  assertEquals(JSON.parse(calls[0].body).payload.vendedor, "cliente@acme.com");
+  assertEquals(JSON.parse(calls[0].body).payload.solicitante_email, "cliente@acme.com");
+});
+
+Deno.test("Supply: sem produto ou quantidade nao cria solicitacao", async () => {
+  assertEquals(
+    (await deliverToSupply(osEvent({ product_name: null }), ctx(captureFetch(201).fetchImpl))).outcome,
+    "skipped",
+  );
+  assertEquals(
+    (await deliverToSupply(osEvent({ quantity: 0 }), ctx(captureFetch(201).fetchImpl))).outcome,
+    "skipped",
+  );
+});
+
+Deno.test("Supply: 422 vira skipped, nao retry (lacuna de cadastro)", async () => {
+  const { fetchImpl } = captureFetch(422, JSON.stringify({ error: "tenant_id nao resolvido" }));
+  const r = await deliverToSupply(osEvent(), ctx(fetchImpl));
+  assertEquals(r.outcome, "skipped");
+  assertEquals(r.status, 422);
+});
+
+Deno.test("Supply: 500 continua retry", async () => {
+  const { fetchImpl } = captureFetch(500, JSON.stringify({ error: "boom" }));
+  const r = await deliverToSupply(osEvent(), ctx(fetchImpl));
+  assertEquals(r.outcome, "retry");
 });
