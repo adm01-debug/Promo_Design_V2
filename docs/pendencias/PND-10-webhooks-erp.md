@@ -154,9 +154,14 @@ A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) 
    producao atual (`aberta -> aprovada -> em_producao -> pronta -> entregue`). Se a compra de
    material tem de comecar na aprovacao e nao na producao, o gatilho do Supply muda de
    `pronta` para `aprovada`.
-6. **Dados legados com encoding quebrado** em `service_orders.technique` (4 linhas com
-   `U+FFFD` no lugar de `c`/`a` acentuados). O mapa ja resolve via chaves legadas; apagar o
-   caractere de substituicao na origem e limpeza opcional.
+6. **Dados legados com encoding quebrado** em `service_orders.technique`: exatamente **4 OS**
+   (`OS-2026-00002`, `00005`, `00009`, `00013`), valor unico `Sublima<U+FFFD><U+FFFD>o`. Nenhuma
+   outra coluna nem tabela afetada (varrido `product_name`, `product_sku`, `client_*`,
+   `observations`). O mapa ja resolve na integracao - a correcao na origem e opcional **e exige
+   decisao**: o cadastro atual nao tem mais `Sublimacao` generico, so `Sublimacao - Caneca` e
+   `Sublimacao Textil`, e os 4 produtos sao diferentes (Squeeze 500ml, Caderno, **Caneca**, **Copo
+   Termico**). Como o mapa manda `sublimacao` generico para `thermal-press`, os dois ultimos
+   apontariam para prensa textil em vez de `sublimation-mug`.
 
 ### Runbook do dia da liberacao (nesta ordem)
 
@@ -212,6 +217,18 @@ curl -s -X POST https://fygxlswpkjtjpcefjfty.supabase.co/functions/v1/integratio
   violacao nova.
 - Suite Deno do Supply: 166 passando; a unica falha (`_shared/xbz_pedido_map.test.ts:90`) e
   pre-existente, provada com `git stash` no `main`.
+- **Trigger de design exercitado com dado sintetico** em transacao com `ROLLBACK`: insert gerou
+  `design.created` e um `update` de `name` gerou `design.updated`; um `update` so de
+  `editor_state` **nao** gerou evento (guarda de campo relevante funcionando). Payload completo,
+  com `owner_email` resolvido por `auth.users` (producao tinha `mockup_drafts` vazia).
+- **Contratos cruzados conferidos campo a campo**: alvos do mapa (16) todos existem em
+  `public.techniques` do Fast Gravacoes (sem risco de FK 23503 no `jobs`); as 5 tecnicas reais de
+  producao (Laser, Tampografia, Silk Screen, Sublimacao, Embossing) estao mapeadas; o adapter do
+  Champions entrega `seller_email`, `x-webhook-signature: sha256=<hex>` e `correlation_key =
+design_id:event`, exatamente o que `receive-design-sync` valida; o do Supply entrega
+  `solicitante_email`, HMAC e trata 422 (tenant nao resolvido) como `skipped`, que e o que
+  `receive-os-sync` devolve.
+- Corrupcao de encoding medida em producao: 4 de 20 OS, so na coluna `technique`.
 
 ## Fonte
 
