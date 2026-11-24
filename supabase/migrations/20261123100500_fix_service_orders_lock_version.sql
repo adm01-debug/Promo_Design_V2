@@ -1,0 +1,18 @@
+-- Fix: every UPDATE on service_orders failed with
+--   Concurrency conflict: current version is 1, but client provided 2
+--
+-- Two BEFORE UPDATE triggers wrote lock_version on the same row:
+--   increment_service_orders_lock_version   (20260513143104) -> NEW.lock_version = OLD.lock_version + 1
+--   tr_service_orders_optimistic_locking    (20260513180155) -> raise if NEW != OLD, then increment
+-- Triggers fire in name order, so the increment ran first, made NEW differ from OLD,
+-- and the validator below it always raised. The second migration introduced the
+-- validating trigger but only dropped and recreated its own, leaving the earlier
+-- unconditional increment in place.
+--
+-- handle_optimistic_locking does both jobs correctly: it rejects a stale version and
+-- then increments. It is the one the app expects -- use-service-orders.ts sends the
+-- row's current lock_version and relies on the trigger to bump it. Drop the redundant
+-- increment so edits (including status changes) work again.
+--
+-- assets only ever had the increment trigger and no validator, so it is unaffected.
+DROP TRIGGER IF EXISTS increment_service_orders_lock_version ON public.service_orders;
