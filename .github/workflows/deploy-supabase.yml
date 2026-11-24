@@ -60,8 +60,9 @@ jobs:
           [ -z "$TOKEN" ] && missing="$missing SUPABASE_ACCESS_TOKEN"
           [ -z "$DB_PASS" ] && missing="$missing SUPABASE_DB_PASSWORD"
           if [ -n "$missing" ]; then
-            echo "::warning::Secrets ausentes:$missing. Gere o token em https://supabase.com/dashboard/account/tokens (conta dona do projeto) e adicione em Settings > Secrets and variables > Actions."
+            echo "::error::Secrets ausentes:$missing. Sem eles os jobs de deploy sao pulados e o run passa verde sem aplicar nada. Gere o token em https://supabase.com/dashboard/account/tokens (conta dona do projeto) e adicione em Settings > Secrets and variables > Actions."
             echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 1
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
