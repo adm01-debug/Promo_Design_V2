@@ -114,8 +114,11 @@ valor** de `os_webhook_cron_secret`, senao o dispatcher responde 401 no proprio 
 
 | Repo                 | PR   | Conteudo                                                 | Estado           |
 | -------------------- | ---- | -------------------------------------------------------- | ---------------- |
-| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | aberta, CI verde |
-| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | aberta, CI verde |
+| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | mergeada |
+| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | mergeada |
+| Fast_Gravacoes_V2    | #277 | `erp_api_keys` recriada (tabela ausente em producao)      | aberta (regra 8) |
+| Promo_Champions_V2.1 | #686 | workflow que publica `DESIGN_SYNC_WEBHOOK_SECRET`        | aberta (regra 8) |
+| Promo_Supply_V2      | #352 | workflow que publica `PROMO_DESIGN_WEBHOOK_SECRET`       | aberta (regra 8) |
 | Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
 | Promo_Supply_V2      | #345 | `receive-os-sync` com `verify_jwt = false`               | mergeada         |
 | Promo_Champions_V2.1 | #674 | `receive-design-sync`, `designs_inbound` e pagina admin  | mergeada         |
@@ -125,43 +128,80 @@ A falha que a #674 herdou do `main` (3 asserts do `winloss-webhook-dispatcher`) 
 `main` pelo PR #677 (`fix: testes do dispatcher Win/Loss acompanham a assinatura HMAC`). Com o
 `main` mergeado na branch e a Fase 7 entregue, a #674 esta com CI verde.
 
-## O que falta (depende do dono)
+## Estado em producao (24/11/2026)
 
-0. **Estado real em producao (23/11/2026)** - nada disso esta aplicado ainda:
-   - Promo Design: `integration_queue` nao existe (`42P01`); `schema_migrations` para em
-     `20261124170000` (a `20261125120000` nunca rodou); `integration-dispatcher` responde 404.
-   - Champions: `receive-design-sync` responde 404 (edge nunca deployada). `deploy.yml` so
-     dispara por `workflow_dispatch`/tag - merge **nao** deploya.
-   - Supply: `receive-os-sync` existe mas responde 401 do gateway (fix na #345).
-   - Fast Gravacoes: `webhook-handler`/`erp-api` respondem 401 do gateway (esperado).
-1. **Aplicar as migrations** nos bancos que faltam (`20261125120000` no Design,
-   `20261125150000` no Champions) e deployar as edges. #326 e #674 ja estao mergeadas.
-2. **Secrets** nas Edge Functions:
-   - Promo Design: `CHAMPIONS_WEBHOOK_URL` + `CHAMPIONS_WEBHOOK_SECRET`,
-     `FAST_GRAVACOES_API_URL` + `FAST_GRAVACOES_API_KEY`, `FAST_GRAVACOES_ANON_KEY` (anon key
-     do projeto do Fast Gravacoes - so passa o gateway; a autorizacao e o `x-api-key`),
-     `SUPPLY_WEBHOOK_URL` + `SUPPLY_WEBHOOK_SECRET`, `CRON_SECRET`.
-   - Promo Supply: `PROMO_DESIGN_WEBHOOK_SECRET`.
-   - Promo Champions: `DESIGN_SYNC_WEBHOOK_SECRET` (mesmo valor de
-     `CHAMPIONS_WEBHOOK_SECRET` do Promo Design).
-3. **Deploy** de `integration-dispatcher` (Promo Design), `receive-design-sync` (Champions) e
-   `receive-os-sync` (Supply). Champions aceita `workflow_dispatch` com `ref`; Supply aceita
-   `workflow_dispatch` com `functions=receive-os-sync`.
-4. **Tokens da Management API** dos projetos Fast_Gravacoes, Champions e Supply - sem eles
-   nada pode ser aplicado nem validado nos bancos deles.
-5. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
-   fica `pronta`, e `os.completed` quando fica `concluida` - status que **nao existe** na
+Aplicado e verificado nos tres destinos. As duas unicas pontas soltas sao os segredos dos
+receptores Champions/Supply (item 1 de "O que falta").
+
+### Promo Design (`fygxlswpkjtjpcefjfty`) - completo
+
+- Migration `20261125120000` aplicada pela Management API (HTTP 201): `integration_queue`,
+  mapa de tecnicas (34 chaves), cron `integration-dispatcher-every-minute` e a linha em
+  `schema_migrations`. Conferencia: `{"cron":1,"mapa":34,"queue":1,"migration":1}`.
+- `integration-dispatcher` deployado (`verify_jwt = false`) e redeployado apos a rotacao dos
+  segredos, para o container nascer com os valores novos.
+- 7 secrets de integracao no projeto. `GET /secrets` da Management API devolve **apenas o
+  SHA-256** de cada valor, entao a conferencia e por hash: as tres URLs e a
+  `FAST_GRAVACOES_ANON_KEY` conferem com o valor esperado.
+- Cron drenando a fila: `cron.job_run_details` com runs `succeeded` a cada minuto e
+  `net._http_response` 200 com o summary por destino.
+- Smoke: `POST /functions/v1/integration-dispatcher` sem credencial -> 401.
+
+### Fast Gravacoes (`uoujzvpecohinketylud`) - completo e provado
+
+- #272 mergeada; o workflow `Deploy` (run `45292427329`, success) aplicou
+  `20261125130000_jobs_external_ref.sql` - coluna e indice unico parcial presentes
+  (`information_schema` 1 / `pg_indexes` 1).
+- `public.erp_api_keys` **nao existia em producao** (`42P01`) apesar de as migrations
+  `20260520`/`20260521`/`20260620` constarem aplicadas. Recriada com RLS e policy
+  `Managers can manage API keys`, mais a chave da integracao.
+- Prova com **as credenciais exatas do dispatcher** (anon key do projeto + `x-api-key` cujo
+  SHA-256 casa com o `key_hash` da tabela): `GET /erp-api/jobs` -> **200** com `external_ref`
+  no payload; chave errada -> **401**; corpo invalido -> **400** `Invalid job data`.
+
+### Promo Champions (`usyxfpqlsspldubptrdl`) - deployado, falta o segredo
+
+- Migration `20261125150000_designs_inbound.sql` aplicada (`apply-migration.yml`, run
+  `45289261208`, success); `deploy.yml` executado e `receive-design-sync` deixou de ser 404.
+- Hoje: `503 {"ok":false,"error":"secret_not_configured"}` - fail-closed correto enquanto
+  `DESIGN_SYNC_WEBHOOK_SECRET` nao existir no projeto.
+
+### Promo Supply (`lmypcdfsrgfftzhxawao`) - deployado, falta o segredo
+
+- Migration `20261125140000_integracao_promo_design.sql` aplicada (run `45289409407`) e
+  `receive-os-sync` deployado (run `45289415471`), ambos success.
+- Hoje: `503 {"error":"webhook not configured"}` - fail-closed correto enquanto
+  `PROMO_DESIGN_WEBHOOK_SECRET` nao existir no projeto.
+
+### OS antigas com encoding quebrado - corrigidas
+
+- As 4 OS com `Sublima<U+FFFD><U+FFFD>o` em `service_orders.technique` foram corrigidas:
+  `OS-2026-00002` e `00005` -> `Sublimacao`; `00009` (Caneca) e `00013` (Copo Termico) ->
+  `Sublimacao - Caneca`.
+- `integration_fg_technique()` passou a devolver `thermal-press` para as duas primeiras e
+  `sublimation-mug` para as duas ultimas. Varredura global: `os_corrompidas = 0` de 20.
+
+## O que falta
+
+1. **Dois PRs de regra 8 aguardando aprovacao** - cada um adiciona um workflow de dispatch
+   manual (inerte ate ser executado) que publica o segredo do receptor pela Management API,
+   lendo o valor do secret do repositorio:
+   - Promo_Champions_V2.1 **#686** -> `DESIGN_SYNC_WEBHOOK_SECRET`
+   - Promo_Supply_V2 **#352** -> `PROMO_DESIGN_WEBHOOK_SECRET`
+
+   Os dois secrets de repositorio ja estao cadastrados e conferidos por hash contra o valor que
+   o Promo Design usa (rotacionado nesta sessao). Depois do merge, disparar o workflow com
+   `confirmacao=APLICAR`; a prova e o receptor sair de `503` para `401 hmac_missing` (sem
+   assinatura) e `200` no corpo assinado.
+2. **Promo_Design_V2 #277** (regra 8, DDL) - migration idempotente que garante
+   `public.erp_api_keys` em ambiente novo. Producao ja tem a tabela; o PR evita repetir o
+   `42P01` em clone/preview branch.
+3. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
+   fica `pronta` e `os.completed` quando fica `concluida` - status que **nao existe** na
    producao atual (`aberta -> aprovada -> em_producao -> pronta -> entregue`). Se a compra de
-   material tem de comecar na aprovacao e nao na producao, o gatilho do Supply muda de
-   `pronta` para `aprovada`.
-6. **Dados legados com encoding quebrado** em `service_orders.technique`: exatamente **4 OS**
-   (`OS-2026-00002`, `00005`, `00009`, `00013`), valor unico `Sublima<U+FFFD><U+FFFD>o`. Nenhuma
-   outra coluna nem tabela afetada (varrido `product_name`, `product_sku`, `client_*`,
-   `observations`). O mapa ja resolve na integracao - a correcao na origem e opcional **e exige
-   decisao**: o cadastro atual nao tem mais `Sublimacao` generico, so `Sublimacao - Caneca` e
-   `Sublimacao Textil`, e os 4 produtos sao diferentes (Squeeze 500ml, Caderno, **Caneca**, **Copo
-   Termico**). Como o mapa manda `sublimacao` generico para `thermal-press`, os dois ultimos
-   apontariam para prensa textil em vez de `sublimation-mug`.
+   material tem de comecar na aprovacao, o gatilho muda de `pronta` para `aprovada`.
+4. **Debito de seguranca da #272**: `jobs.external_ref` e gravavel por operador pela RLS de
+   `jobs`. Endurecer exige trigger/RPC ou policy restrita a `service_role` - DDL, regra 8.
 
 ### Runbook do dia da liberacao (nesta ordem)
 
@@ -193,6 +233,12 @@ curl -s -X POST https://fygxlswpkjtjpcefjfty.supabase.co/functions/v1/integratio
 ```
 
 ## Evidencia coletada nesta sessao
+
+- Mergeadas e aplicadas em producao em 24/11: #136 (Design, main `85f990d2`) e #272 (Fast
+  Gravacoes, main `17a3af4`); a migration do Design entrou pela Management API e a do Fast
+  Gravacoes pelo workflow de deploy (run `45292427329`).
+- Rotacao dos segredos HMAC feita com conferencia por hash nos dois lados (o valor do secret
+  do repositorio e o do projeto batem), porque a Management API nao devolve o valor em claro.
 
 - Trigger e fila testados em transacao real com `ROLLBACK` no Postgres de producao do Promo
   Design (3 rodadas, todas verdes) - nenhum dado gravado.
