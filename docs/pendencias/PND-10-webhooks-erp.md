@@ -117,6 +117,8 @@ valor** de `os_webhook_cron_secret`, senao o dispatcher responde 401 no proprio 
 | Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | mergeada         |
 | Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | mergeada         |
 | Fast_Gravacoes_V2    | #277 | `erp_api_keys` recriada (tabela ausente em producao)     | aberta (regra 8) |
+| Promo_Design_V2      | #138 | mapa de tecnicas com os ids reais do destino             | mergeada         |
+| Fast_Gravacoes_V2    | #280 | `erp-api` responde 400 (nao 500) em dado invalido        | aberta (CI)      |
 | Promo_Champions_V2.1 | #686 | workflow que publica `DESIGN_SYNC_WEBHOOK_SECRET`        | aberta (regra 8) |
 | Promo_Supply_V2      | #352 | workflow que publica `PROMO_DESIGN_WEBHOOK_SECRET`       | aberta (regra 8) |
 | Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
@@ -136,8 +138,11 @@ receptores Champions/Supply (item 1 de "O que falta").
 ### Promo Design (`fygxlswpkjtjpcefjfty`) - completo
 
 - Migration `20261125120000` aplicada pela Management API (HTTP 201): `integration_queue`,
-  mapa de tecnicas (34 chaves), cron `integration-dispatcher-every-minute` e a linha em
-  `schema_migrations`. Conferencia: `{"cron":1,"mapa":34,"queue":1,"migration":1}`.
+  o mapa de tecnicas e o cron `integration-dispatcher-every-minute`.
+- Migration `20261125180000` aplicada pelo `Deploy Supabase` do merge da #138: o mapa apontava
+  para os slugs de uma migration antiga do destino (`laser-co2`, `thermal-press`), que **nao
+  existem** em `public.techniques` de producao do Fast Gravacoes. Resultado final: 27 chaves,
+  0 ids invalidos contra as 9 tecnicas do destino.
 - `integration-dispatcher` deployado (`verify_jwt = false`) e redeployado apos a rotacao dos
   segredos, para o container nascer com os valores novos.
 - 7 secrets de integracao no projeto. `GET /secrets` da Management API devolve **apenas o
@@ -158,6 +163,18 @@ receptores Champions/Supply (item 1 de "O que falta").
 - Prova com **as credenciais exatas do dispatcher** (anon key do projeto + `x-api-key` cujo
   SHA-256 casa com o `key_hash` da tabela): `GET /erp-api/jobs` -> **200** com `external_ref`
   no payload; chave errada -> **401**; corpo invalido -> **400** `Invalid job data`.
+- **Bug encontrado e corrigido em 24/11**: com `technique_id` inexistente o destino respondia
+  **500** (`jobs_technique_id_fkey`, erro 23503) e a fila retentava para sempre. Causa: os ids
+  do mapa eram os slugs de uma migration antiga do destino; a producao usa ids curtos
+  (`bordado`, `dtf`, `flexo`, `laser`, `serigrafia`, `sublimacao`, `tampografia`, `tamposec`,
+  `uv`, referenciados por 413 jobs e 10 maquinas). Mapa corrigido na #138; o 500 -> 400 na
+  #280 (aguardando CI). As 7 chaves sem equivalente no destino (`corte`, `corte midia`,
+  `decalque`, `decalque forno`, `embossing`, `hot stamp`, `hot stamping`) foram removidas do
+  mapa: o evento fica `skipped` com motivo em vez de queimar tentativas.
+- Prova ponta a ponta pela fila em 24/11: evento `os.created` -> `status=delivered`,
+  `attempts=1`, `net._http_response` 200 com `{"fast_gravacoes":{"delivered":1}}` e job criado
+  em `jobs` (`technique_id=sublimacao`, `status=queue`, `external_ref` da OS). O job de teste
+  (`E2E-86901`) foi removido depois.
 
 ### Promo Champions (`usyxfpqlsspldubptrdl`) - deployado, falta o segredo
 
@@ -178,8 +195,9 @@ receptores Champions/Supply (item 1 de "O que falta").
 - As 4 OS com `Sublima<U+FFFD><U+FFFD>o` em `service_orders.technique` foram corrigidas:
   `OS-2026-00002` e `00005` -> `Sublimacao`; `00009` (Caneca) e `00013` (Copo Termico) ->
   `Sublimacao - Caneca`.
-- `integration_fg_technique()` passou a devolver `thermal-press` para as duas primeiras e
-  `sublimation-mug` para as duas ultimas. Varredura global: `os_corrompidas = 0` de 20.
+- `integration_fg_technique()` devolve hoje `sublimacao` para `Sublimacao` e
+  `sublimacao` para `Sublimacao - Caneca` (o destino nao distingue caneca de copo termico:
+  tem uma unica tecnica `sublimacao`). Varredura global: `os_corrompidas = 0` de 20.
 
 ## O que falta
 
@@ -194,15 +212,24 @@ receptores Champions/Supply (item 1 de "O que falta").
    `confirmacao=APLICAR`; a prova e o receptor sair de `503` para `401 hmac_missing` (sem
    assinatura) e `200` no corpo assinado.
 
-2. **Promo_Design_V2 #277** (regra 8, DDL) - migration idempotente que garante
+2. **Fast_Gravacoes_V2 #280** (CI vermelha, nao e do PR) - `erp-api` passa a responder 400 em
+   dado invalido em vez de 500, o que corta o retry infinito. A CI falha em tres testes
+   herdados de data (`useSchedulingData.test.tsx`), que quebram entre 00:00 e 03:00 UTC porque
+   `vitest.config.ts` fixa `TZ=America/Sao_Paulo` e os fixtures usam `new Date().toISOString()`.
+   Reproduzido em codigo nao modificado; nao corrigido por ser debito do `main`.
+3. **Fast_Gravacoes_V2 #277** (regra 8, DDL) - migration idempotente que garante
    `public.erp_api_keys` em ambiente novo. Producao ja tem a tabela; o PR evita repetir o
    `42P01` em clone/preview branch.
-3. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
+4. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
    fica `pronta` e `os.completed` quando fica `concluida` - status que **nao existe** na
    producao atual (`aberta -> aprovada -> em_producao -> pronta -> entregue`). Se a compra de
    material tem de comecar na aprovacao, o gatilho muda de `pronta` para `aprovada`.
-4. **Debito de seguranca da #272**: `jobs.external_ref` e gravavel por operador pela RLS de
+5. **Debito de seguranca da #272**: `jobs.external_ref` e gravavel por operador pela RLS de
    `jobs`. Endurecer exige trigger/RPC ou policy restrita a `service_role` - DDL, regra 8.
+6. **Tecnicas sem par no Fast Gravacoes**: `corte`, `corte midia`, `decalque`, `decalque forno`,
+   `embossing`, `hot stamp`, `hot stamping` nao existem no destino (9 tecnicas). Hoje qualquer
+   OS com uma delas fica `skipped` com motivo. Para fluir, o Fast Gravacoes precisa cadastrar a
+   tecnica ou o negocio precisa definir o equivalente - decisao de negocio, nao de codigo.
 
 ### Runbook do dia da liberacao (nesta ordem)
 
@@ -268,13 +295,20 @@ curl -s -X POST https://fygxlswpkjtjpcefjfty.supabase.co/functions/v1/integratio
   `design.created` e um `update` de `name` gerou `design.updated`; um `update` so de
   `editor_state` **nao** gerou evento (guarda de campo relevante funcionando). Payload completo,
   com `owner_email` resolvido por `auth.users` (producao tinha `mockup_drafts` vazia).
-- **Contratos cruzados conferidos campo a campo**: alvos do mapa (16) todos existem em
-  `public.techniques` do Fast Gravacoes (sem risco de FK 23503 no `jobs`); as 5 tecnicas reais de
-  producao (Laser, Tampografia, Silk Screen, Sublimacao, Embossing) estao mapeadas; o adapter do
-  Champions entrega `seller_email`, `x-webhook-signature: sha256=<hex>` e `correlation_key =
+- **Contratos cruzados conferidos campo a campo**: o adapter do Champions entrega
+  `seller_email`, `x-webhook-signature: sha256=<hex>` e `correlation_key =
 design_id:event`, exatamente o que `receive-design-sync` valida; o do Supply entrega
   `solicitante_email`, HMAC e trata 422 (tenant nao resolvido) como `skipped`, que e o que
   `receive-os-sync` devolve.
+- **Correcao de uma conclusao errada registrada antes**: a conferencia do mapa de tecnicas
+  contra `public.techniques` do Fast Gravacoes foi refeita em 24/11 contra a producao real e
+  reprovou 34 de 34 chaves. A checagem anterior comparou o mapa com o **seed da migration**
+  do destino, nao com a tabela de producao - por isso passou indevidamente. O mapa foi
+  corrigido na #138 (27 chaves, 0 invalidas) e revalidado com insert em `jobs` pela propria
+  fila (HTTP 200, job criado).
+- Prova ponta a ponta em 24/11 pela fila real: `integration_queue` -> `delivered` em 1
+  tentativa, `net._http_response` `200 {"ok":true,"summary":{"fast_gravacoes":{"delivered":1}}}`,
+  `jobs.technique_id = sublimacao`, e nenhum evento preso em `retry` no destino.
 - Corrupcao de encoding medida em producao: 4 de 20 OS, so na coluna `technique`.
 
 ## Fonte
