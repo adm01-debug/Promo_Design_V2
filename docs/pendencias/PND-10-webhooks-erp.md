@@ -43,8 +43,8 @@ Migration `supabase/migrations/20261125120000_integration_multi_destino.sql`:
   mapeiam para as tecnicas do Fast Gravacoes.
 - Triggers de enfileiramento:
   - `tg_os_integration_enqueue()` - status `pronta` -> `os.closed`; `entregue` ->
-      `os.completed`; ambos **so** para Fast Gravacoes (migration
-      `20261124111500_integracao_os_so_fast_gravacoes.sql`).
+    `os.completed`; ambos **so** para Fast Gravacoes (migration
+    `20261124111500_integracao_os_so_fast_gravacoes.sql`).
   - `tg_design_integration_enqueue()` - `mockup_drafts` INSERT -> `design.created`; UPDATE
     relevante -> `design.updated`; so para Champions.
 - Fila: `dequeue_integration_events()` (`FOR UPDATE SKIP LOCKED`, backoff),
