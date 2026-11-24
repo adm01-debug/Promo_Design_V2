@@ -1,6 +1,6 @@
 ---
 ID: PND-10
-Titulo: Webhooks de saida das OS para os tres sistemas internos (Champions, Fast Gravacoes, Supply)
+Titulo: Webhooks de saida das OS para os sistemas internos (Champions e Fast Gravacoes)
 Estado: EM IMPLEMENTACAO - codigo e migrations prontos, PRs abertas aguardando o dono (DDL em producao)
 Fonte: docs/enterprise-audit-report.md [lacuna]
 Data: 2026-11-23
@@ -17,7 +17,10 @@ por natureza do evento:
 | ----------------------------------- | ------------------------ | ------------------------------------------------- |
 | `design.created` / `design.updated` | **Promo_Champions_V2.1** | CRM dos vendedores - criacao de design para venda |
 | `os.closed` / `os.completed`        | **Fast_Gravacoes_V2**    | Personalizacao/fabricacao do produto              |
-| `os.closed` / `os.completed`        | **Promo_Supply_V2**      | Compras de material                               |
+
+O **Promo_Supply_V2** nao recebe nada do Design: a compra nasce no Promo Champions, no momento
+em que o orcamento vira pedido. O Design entrega orcamento/mockup ao Champions (fase 1) e ordem
+de servico ao Fast Gravacoes (fase 2).
 
 ## Estado atual
 
@@ -39,8 +42,9 @@ Migration `supabase/migrations/20261125120000_integration_multi_destino.sql`:
   `integration_technique_map` e `integration_fg_technique()`. Os 6 vocabularios de producao
   mapeiam para as tecnicas do Fast Gravacoes.
 - Triggers de enfileiramento:
-  - `tg_os_integration_enqueue()` - status `pronta` -> `os.closed`; `concluida` ->
-    `os.completed`; ambos para Fast Gravacoes **e** Supply.
+  - `tg_os_integration_enqueue()` - status `pronta` -> `os.closed`; `entregue` ->
+    `os.completed`; ambos **so** para Fast Gravacoes (migration
+    `20261124111500_integracao_os_so_fast_gravacoes.sql`).
   - `tg_design_integration_enqueue()` - `mockup_drafts` INSERT -> `design.created`; UPDATE
     relevante -> `design.updated`; so para Champions.
 - Fila: `dequeue_integration_events()` (`FOR UPDATE SKIP LOCKED`, backoff),
@@ -220,16 +224,16 @@ receptores Champions/Supply (item 1 de "O que falta").
 3. **Fast_Gravacoes_V2 #277** (regra 8, DDL) - migration idempotente que garante
    `public.erp_api_keys` em ambiente novo. Producao ja tem a tabela; o PR evita repetir o
    `42P01` em clone/preview branch.
-4. **Ponto de disparo do Supply (decisao de negocio)**: a trigger manda `os.closed` quando a OS
-   fica `pronta` e `os.completed` quando fica `concluida` - status que **nao existe** na
-   producao atual (`aberta -> aprovada -> em_producao -> pronta -> entregue`). Se a compra de
-   material tem de comecar na aprovacao, o gatilho muda de `pronta` para `aprovada`.
+4. **Ponto de disparo do Supply (resolvido)**: o Supply deixou de ser destino do Design. A
+   trigger agora so enfileira para o Fast Gravacoes e usa `entregue` no lugar do inexistente
+   `concluida`. O disparo do Supply passa a ser responsabilidade do Promo Champions quando o
+   orcamento vira pedido.
 5. **Debito de seguranca da #272**: `jobs.external_ref` e gravavel por operador pela RLS de
    `jobs`. Endurecer exige trigger/RPC ou policy restrita a `service_role` - DDL, regra 8.
-6. **Tecnicas sem par no Fast Gravacoes**: `corte`, `corte midia`, `decalque`, `decalque forno`,
-   `embossing`, `hot stamp`, `hot stamping` nao existem no destino (9 tecnicas). Hoje qualquer
-   OS com uma delas fica `skipped` com motivo. Para fluir, o Fast Gravacoes precisa cadastrar a
-   tecnica ou o negocio precisa definir o equivalente - decisao de negocio, nao de codigo.
+6. **Tecnicas sem par no Fast Gravacoes (resolvido)**: `embossing`, `corte`, `decalque` e
+   `hot stamp` foram cadastradas em `public.techniques` do Fast Gravacoes
+   (`20261124111000_add_techniques_personalizacao.sql`) e mapeadas no Design
+   (`corte midia` -> `corte`, `decalque forno` -> `decalque`, `hot stamping` -> `hotstamp`).
 
 ### Runbook do dia da liberacao (nesta ordem)
 
