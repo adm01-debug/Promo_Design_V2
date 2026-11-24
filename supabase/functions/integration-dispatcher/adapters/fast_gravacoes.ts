@@ -6,12 +6,13 @@
  * Auth: header `x-api-key` validado contra `erp_api_keys.key_hash`.
  *
  * Duas armadilhas reais medidas no repo de destino:
- *  1. `ERPJobRequestSchema.technique_id` exige UUID, mas `techniques.id` e
- *     TEXT ("laser-co2"). O proprio erp-api rejeita qualquer job real com
- *     400 enquanto isso nao for corrigido la. Este adapter envia o TEXT
- *     correto (o que o schema deveria aceitar) e, se o destino responder 400
- *     por causa disso, o evento fica 'retry' com o motivo auditavel em vez de
- *     virar 'delivered' mentiroso.
+ *  1. `techniques.id` e TEXT e `jobs.technique_id` tem FK para ela: enviar um
+ *     id que nao existe em producao viola a FK (23503) e o erp-api devolvia
+ *     500, o que prendia o evento em retry para sempre. A producao do Fast
+ *     Gravacoes usa ids curtos (`laser`, `sublimacao`, `tampografia`...), nao
+ *     os slugs da migration antiga. O mapa `integration_technique_map` foi
+ *     corrigido para esses ids (migration 20261125180000) e o erp-api passou
+ *     a responder 400 em dado invalido (Fast_Gravacoes_V2#280).
  *  2. `quantity` exige numero positivo; OS sem quantidade nao vira job.
  *  3. O `erp-api` e publicado com `verify_jwt = true`: o gateway do projeto do
  *     Fast Gravacoes responde 401 `UNAUTHORIZED_NO_AUTH_HEADER` antes do
