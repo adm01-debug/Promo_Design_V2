@@ -114,9 +114,9 @@ valor** de `os_webhook_cron_secret`, senao o dispatcher responde 401 no proprio 
 
 | Repo                 | PR   | Conteudo                                                 | Estado           |
 | -------------------- | ---- | -------------------------------------------------------- | ---------------- |
-| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | mergeada |
-| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | mergeada |
-| Fast_Gravacoes_V2    | #277 | `erp_api_keys` recriada (tabela ausente em producao)      | aberta (regra 8) |
+| Promo_Design_V2      | #136 | fila multi-destino, triggers, dispatcher e os 3 adapters | mergeada         |
+| Fast_Gravacoes_V2    | #272 | `technique_id` TEXT + `external_ref` + migration         | mergeada         |
+| Fast_Gravacoes_V2    | #277 | `erp_api_keys` recriada (tabela ausente em producao)     | aberta (regra 8) |
 | Promo_Champions_V2.1 | #686 | workflow que publica `DESIGN_SYNC_WEBHOOK_SECRET`        | aberta (regra 8) |
 | Promo_Supply_V2      | #352 | workflow que publica `PROMO_DESIGN_WEBHOOK_SECRET`       | aberta (regra 8) |
 | Promo_Supply_V2      | #326 | `receive-os-sync`, mapeamento e migration                | mergeada         |
@@ -193,6 +193,7 @@ receptores Champions/Supply (item 1 de "O que falta").
    o Promo Design usa (rotacionado nesta sessao). Depois do merge, disparar o workflow com
    `confirmacao=APLICAR`; a prova e o receptor sair de `503` para `401 hmac_missing` (sem
    assinatura) e `200` no corpo assinado.
+
 2. **Promo_Design_V2 #277** (regra 8, DDL) - migration idempotente que garante
    `public.erp_api_keys` em ambiente novo. Producao ja tem a tabela; o PR evita repetir o
    `42P01` em clone/preview branch.
