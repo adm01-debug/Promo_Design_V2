@@ -28,11 +28,12 @@ Fonte: `docs/FEATURES.md` (checklist por modulo) cruzado com `src/App.tsx` (rota
 - `migrate-helper` e `migrate-push` sairam do repo (PRs #119 e #124) e da producao - sonda 2026-11-25: ambas HTTP 404 `NOT_FOUND`.
 - Producao 2026-11-25 (duas sondagens): 11/11 respondendo - 400 de validacao, 401 de protecao JWT ou 405 de metodo. `mockup-ai` responde 401 como as demais protegidas; o secret `OPENROUTER_API_KEY` continua ausente, portanto a geracao de arte nao foi verificada.
 
-### Tabelas publicas (25 na linha de base; 40 com RLS em 2026-11-23 + as 2 da fila de integracao em 25/11)
+### Tabelas publicas (44 relacoes em 2026-11-26 - 34 tabelas + `audit_log` e suas 9 particoes; 44 com RLS e 118 policies)
 
 - Tabelas criadas via `supabase/migrations`:
 - `ai_usage_log, assets, audit_alert_rules, audit_log, audit_log_default (particao), audit_saved_views, brand_guidelines, brand_guidelines_infer_history, catalog_products, client_contacts, client_design_patterns, clients, dam_saved_searches, magicup_history, maintenance_runs, mockup_drafts, notifications, organization_invites, organization_members, organizations, product_categories, service_orders, status_audit_log, table_size_snapshots, videos`
 - Depois da linha de base: `approval_tokens`, `brand_guidelines_history`, `brand_share_tokens`, `dam_collections`, `magic_up_jobs`, `magic_up_styles`, `os_webhook_queue`, `integration_queue`, `integration_technique_map` (as duas ultimas em 2026-11-25; ambas respondem `42501 permission denied` para anon, ou seja existem em producao).
+- Auditoria direta no banco (Management API, 2026-11-26): **168 migrations aplicadas e 168 arquivos no repo - drift zero**, 44/44 relacoes com RLS, 118 policies, 109 funcoes (94 SECURITY DEFINER, todas com `search_path` fixo), 55 triggers ativos, nenhuma view/materialized view, nenhuma constraint `NOT VALID`, nenhuma FK sem indice de apoio e nenhuma policy permissiva sem checagem de identidade. Os unicos defeitos encontrados foram corrigidos na migration `20261126183500_fix_ambiguidade_search_assets_e_hardening` (overload ambiguo de `search_assets_ranked`, que fazia a busca por relevancia do DAM falhar com `42725`, + 3 `search_path` e 6 indices de FK para `auth.users`).
 
 ### Workflows / infra
 
