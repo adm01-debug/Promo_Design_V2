@@ -93,7 +93,7 @@ jobs:
             # prod-readiness); nao recebe versao nova.
             [ "$name" = "migrate-helper" ] && continue
             echo "::group::deploy $name"
-            supabase functions deploy "$name" --project-ref "$SUPABASE_PROJECT_REF"
+            supabase functions deploy "$name" --project-ref "$SUPABASE_PROJECT_REF" --yes
             echo "::endgroup::"
           done
 
@@ -133,7 +133,7 @@ jobs:
         run: |
           set -euo pipefail
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
-          supabase db push --dry-run --include-all 2>&1 | tee pending.txt
+          supabase db push --dry-run --include-all --remote 2>&1 | tee pending.txt
           # Cada migration pendente aparece como "Would push migration <ts>_<name>".
           # Se o comando nao produzir nenhuma linha reconhecivel o formato mudou:
           # falhar em vez de assumir zero e pular a aplicacao em silencio.
@@ -159,4 +159,4 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-        run: supabase db push --include-all
+        run: supabase db push --include-all --remote
