@@ -14,6 +14,38 @@ export interface QueuedOsEvent {
 
 export const POST_TIMEOUT_MS = 15_000;
 
+/** Minimal shape read from os_webhook_queue to decide what to annotate. */
+export interface QueueRowForReason {
+  event_id: string;
+  last_error: string | null;
+}
+
+/**
+ * Why the ERP delivery is blocked when the endpoint is not configured. Returns
+ * null when both variables exist (the normal path). The message is written to
+ * last_error so the queue panel and the audit trail show the reason instead of
+ * a blank line next to attempts=0.
+ */
+export function blockedReason(url: string, secret: string): string | null {
+  const missing: string[] = [];
+  if (!url) missing.push("ERP_WEBHOOK_URL");
+  if (!secret) missing.push("ERP_WEBHOOK_SECRET");
+  if (missing.length === 0) return null;
+  return `Nao entregue ao ERP: ${missing.join(" e ")} nao configurado(s) na edge function os-webhook-dispatcher.`;
+}
+
+/**
+ * Pending events that never got an attempt and do not carry the current reason
+ * yet. Rows already annotated with the same message are skipped, so the
+ * minute-level cron does not rewrite them on every run.
+ */
+export function eventsNeedingBlockedReason<T extends QueueRowForReason>(
+  rows: readonly T[],
+  reason: string,
+): string[] {
+  return rows.filter((row) => row.last_error !== reason).map((row) => row.event_id);
+}
+
 /** Sign the exact request body so the ERP can verify authenticity. */
 export function signBody(body: string, secret: string): Promise<string> {
   const key = new TextEncoder().encode(secret);

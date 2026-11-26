@@ -1,7 +1,13 @@
 ﻿/** Unit tests for the os-webhook-dispatcher delivery + signature. */
 import { assertEquals, assertStrictEquals } from "https://deno.land/std@0.168.0/testing/asserts.ts";
 
-import { deliverEvent, signBody, type QueuedOsEvent } from "./lib.ts";
+import {
+  blockedReason,
+  deliverEvent,
+  eventsNeedingBlockedReason,
+  signBody,
+  type QueuedOsEvent,
+} from "./lib.ts";
 
 const EVENT: QueuedOsEvent = {
   event_id: "11111111-1111-4111-8111-111111111111",
@@ -87,4 +93,37 @@ Deno.test("deliverEvent rethrows on network failure (retryable)", async () => {
     threw = true;
   }
   assertEquals(threw, true);
+});
+
+Deno.test("blockedReason is null when both ERP settings exist", () => {
+  assertEquals(blockedReason("https://erp.example/hook", "sekrit"), null);
+});
+
+Deno.test("blockedReason names the single missing variable", () => {
+  const onlyUrl = blockedReason("", "sekrit") ?? "";
+  assertEquals(onlyUrl.includes("ERP_WEBHOOK_URL"), true);
+  assertEquals(onlyUrl.includes("ERP_WEBHOOK_SECRET"), false);
+
+  const onlySecret = blockedReason("https://erp.example/hook", "") ?? "";
+  assertEquals(onlySecret.includes("ERP_WEBHOOK_SECRET"), true);
+  assertEquals(onlySecret.includes("ERP_WEBHOOK_URL "), false);
+});
+
+Deno.test("blockedReason names both variables when nothing is configured", () => {
+  const reason = blockedReason("", "") ?? "";
+  assertEquals(reason.includes("ERP_WEBHOOK_URL e ERP_WEBHOOK_SECRET"), true);
+});
+
+Deno.test("eventsNeedingBlockedReason skips rows that already carry the reason", () => {
+  const reason = blockedReason("", "") ?? "";
+  const rows = [
+    { event_id: "a", last_error: null },
+    { event_id: "b", last_error: reason },
+    { event_id: "c", last_error: "outra mensagem" },
+  ];
+  assertEquals(eventsNeedingBlockedReason(rows, reason), ["a", "c"]);
+});
+
+Deno.test("eventsNeedingBlockedReason returns nothing when the queue is empty", () => {
+  assertEquals(eventsNeedingBlockedReason([], "qualquer"), []);
 });
