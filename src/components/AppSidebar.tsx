@@ -39,6 +39,7 @@ import {
   LayoutTemplate,
   GitCompareArrows,
   ListTodo,
+  Webhook,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import NotificationPanel from "./NotificationPanel";
@@ -395,6 +396,15 @@ const AppSidebar = ({ onCollapseChange }: { onCollapseChange?: (collapsed: boole
         >
           <Building2 className="w-5 h-5 shrink-0" aria-hidden="true" />
           {!collapsed && <span className="text-sm">Organização</span>}
+        </Link>
+
+        <Link
+          to="/integrations"
+          aria-label="Integrações"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Webhook className="w-5 h-5 shrink-0" aria-hidden="true" />
+          {!collapsed && <span className="text-sm">Integrações</span>}
         </Link>
 
         <Link
