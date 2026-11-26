@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { externalSupabase } from "@/lib/external-supabase";
+import type { ExternalVariantListing, Json } from "@/lib/external-supabase-types";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   DbProduct,
@@ -9,16 +10,23 @@ import type {
   DbProductVariant,
 } from "../lib/db-types";
 
-/** Colunas lidas de `product_variants` — a única tabela do catálogo externo liberada à chave anônima. */
+/** Colunas lidas de `product_variants` — a tabela com mais dados do catálogo externo. */
 const VARIANT_COLUMNS =
   "id,product_id,sku,name,color_name,color_hex,size_code,stock_quantity,images,selected_thumbnail";
+
+/** `attributes` é `jsonb` na origem: o formato só é conhecido em runtime. */
+function toAttributesJson(value: Json): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 /**
  * Converte as variações de um mesmo produto no formato `DbProduct` esperado pela UI.
  * Nome, SKU, cores, galeria e estoque são agregados das variações; os campos que só
  * existem na tabela `products` (bloqueada) ficam neutros em vez de derrubar a listagem.
  */
-function variantGroupToProduct(productId: string, group: Record<string, unknown>[]): DbProduct {
+function variantGroupToProduct(productId: string, group: ExternalVariantListing[]): DbProduct {
   const images: string[] = [];
   const colors: string[] = [];
   let stock = 0;
@@ -26,16 +34,15 @@ function variantGroupToProduct(productId: string, group: Record<string, unknown>
   let sku = "";
 
   for (const row of group) {
-    const thumb = row.selected_thumbnail as string | null;
-    const rowImages = Array.isArray(row.images) ? (row.images as string[]) : [];
-    for (const url of [thumb, ...rowImages]) {
+    const rowImages = row.images ?? [];
+    for (const url of [row.selected_thumbnail, ...rowImages]) {
       if (url && !images.includes(url)) images.push(url);
     }
-    const color = (row.color_name as string | null) || null;
+    const color = row.color_name || null;
     if (color && !colors.includes(color)) colors.push(color);
-    stock += (row.stock_quantity as number) || 0;
-    if (!name && typeof row.name === "string" && row.name) name = row.name;
-    if (!sku && typeof row.sku === "string" && row.sku) sku = row.sku;
+    stock += row.stock_quantity || 0;
+    if (!name && row.name) name = row.name;
+    if (!sku && row.sku) sku = row.sku;
   }
 
   const primary = images[0] || null;
@@ -75,10 +82,10 @@ function variantGroupToProduct(productId: string, group: Record<string, unknown>
 }
 
 /** Agrupa variações por produto preservando a ordem de primeiro aparecimento. */
-function variantRowsToProducts(rows: Record<string, unknown>[]): DbProduct[] {
-  const byProduct = new Map<string, Record<string, unknown>[]>();
+function variantRowsToProducts(rows: ExternalVariantListing[]): DbProduct[] {
+  const byProduct = new Map<string, ExternalVariantListing[]>();
   for (const row of rows) {
-    const productId = row.product_id as string;
+    const productId = row.product_id;
     if (!productId) continue;
     const group = byProduct.get(productId);
     if (group) group.push(row);
@@ -122,9 +129,7 @@ async function fetchExternalProducts(opts: {
       console.warn("[useProducts] Busca no catálogo externo falhou:", error.message);
       return null;
     }
-    const unique = Array.from(
-      new Set((hits as { product_id: string | null }[]).map((r) => r.product_id).filter(Boolean)),
-    ) as string[];
+    const unique = Array.from(new Set(hits.map((r) => r.product_id).filter(Boolean)));
     total = unique.length;
     ids = unique.slice(from, from + pageSize);
   } else {
@@ -143,7 +148,7 @@ async function fetchExternalProducts(opts: {
       console.warn("[useProducts] Catálogo externo indisponível:", error.message);
       return null;
     }
-    ids = (idRows as { id: string }[]).map((r) => r.id);
+    ids = idRows.map((r) => r.id);
     total = count || 0;
   }
 
@@ -159,7 +164,7 @@ async function fetchExternalProducts(opts: {
     return null;
   }
 
-  const products = variantRowsToProducts(variantRows as Record<string, unknown>[]);
+  const products = variantRowsToProducts(variantRows ?? []);
   // Preserva a ordem da página de IDs; produtos sem variação ativa ainda aparecem.
   const byId = new Map(products.map((p) => [p.id, p]));
   const ordered = ids.map((id) => byId.get(id)).filter((p): p is DbProduct => Boolean(p));
@@ -330,7 +335,7 @@ export function useProduct(productId: string | null) {
           .eq("product_id", productId)
           .eq("is_active", true);
         if (!error && data) {
-          const products = variantRowsToProducts(data as Record<string, unknown>[]);
+          const products = variantRowsToProducts(data);
           if (products.length > 0) return products[0];
         }
       } catch {
@@ -365,8 +370,8 @@ export function useProductImages(productId: string | null) {
           .eq("is_active", true);
         if (!error && data) {
           const urls = new Set<string>();
-          for (const row of data as { images?: string[] | null }[]) {
-            for (const url of row.images || []) if (url) urls.add(url);
+          for (const row of data) {
+            for (const url of row.images ?? []) if (url) urls.add(url);
           }
           return Array.from(urls).map(
             (url, i) =>
@@ -413,15 +418,20 @@ export function useProductVariants(productId: string | null) {
           .eq("product_id", productId)
           .eq("is_active", true);
         if (!error && data) {
-          return (data as Record<string, unknown>[]).map((row) => ({
-            ...(row as unknown as DbProductVariant),
+          return data.map((row): DbProductVariant => ({
+            id: row.id,
+            product_id: row.product_id,
+            sku: row.sku,
+            name: row.name,
+            attributes: toAttributesJson(row.attributes),
+            stock_quantity: row.stock_quantity,
+            color_name: row.color_name,
+            color_hex: row.color_hex,
             // `selected_thumbnail` é a foto curada da variação; usar como fallback
             // quando a variação não tem galeria própria.
-            selected_thumbnail:
-              (row.selected_thumbnail as string | null) ||
-              ((row.images as string[] | null) || [])[0] ||
-              null,
-          })) as DbProductVariant[];
+            selected_thumbnail: row.selected_thumbnail || (row.images ?? [])[0] || null,
+            is_active: row.is_active,
+          }));
         }
       } catch {
         // Fallback abaixo
@@ -440,13 +450,33 @@ export function usePrintAreaTechniques(productId: string | null) {
     queryFn: async () => {
       if (!productId) return [];
       try {
+        // `select("*")` devolve 401: a chave anônima não tem GRANT em todas as
+        // colunas desta tabela. A lista abaixo é exatamente o que a API libera.
         const { data, error } = await externalSupabase
           .from("print_area_techniques")
-          .select("*")
+          .select(
+            "id,product_id,tabela_preco_id,max_width,max_height,is_curved,shape,location_code,location_name,location_order,is_active",
+          )
           .eq("product_id", productId)
           .eq("is_active", true)
           .order("location_order");
-        if (!error && data) return data as DbPrintAreaTechnique[];
+        if (!error && data) {
+          return data.map((row): DbPrintAreaTechnique => ({
+            id: row.id,
+            product_id: row.product_id,
+            tabela_preco_id: row.tabela_preco_id,
+            max_width: row.max_width,
+            max_height: row.max_height,
+            is_curved: row.is_curved,
+            shape: row.shape,
+            location_code: row.location_code,
+            // 804 das linhas reais têm `location_name` nulo: cair no código da
+            // área evita "null" no título do mockup.
+            location_name: row.location_name ?? row.location_code,
+            location_order: row.location_order ?? 0,
+            is_active: row.is_active,
+          }));
+        }
       } catch {
         // Fallback abaixo
       }
@@ -471,7 +501,7 @@ export function useCategories() {
           .eq("is_active", true)
           .gt("products_count", 0)
           .order("name");
-        if (!error && data) return data as DbCategory[];
+        if (!error && data) return data;
       } catch {
         // Fallback abaixo
       }
