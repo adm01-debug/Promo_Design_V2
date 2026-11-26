@@ -14,7 +14,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Users, Plus, Search, Pencil, Trash2, Palette, FileDown, Loader2 } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Palette,
+  FileDown,
+  Loader2,
+  ContactRound,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +36,7 @@ import {
 } from "@/features/service-orders";
 import type { Tables } from "@/integrations/supabase/types";
 import PdfProgressOverlay, { type PdfProgress } from "@/components/PdfProgressOverlay";
+import ClientContactsDialog from "../components/ClientContactsDialog";
 
 type ServiceOrderRow = Tables<"service_orders">;
 
@@ -48,6 +59,7 @@ const ClientsPage = () => {
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [summaryProgress, setSummaryProgress] = useState<PdfProgress | null>(null);
   const [summaryTitle, setSummaryTitle] = useState<string>("");
+  const [contactsClient, setContactsClient] = useState<Client | null>(null);
 
   const handleGenerateSummary = async () => {
     if (!summaryClient) return;
@@ -241,6 +253,9 @@ const ClientsPage = () => {
                         <Palette className="h-3 w-3 mr-1" /> Brand
                       </Link>
                     </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setContactsClient(c)}>
+                      <ContactRound className="h-3 w-3 mr-1" /> Contatos
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -369,6 +384,13 @@ const ClientsPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ClientContactsDialog
+        client={contactsClient}
+        organizationId={currentOrgId}
+        canEdit={canEdit}
+        onOpenChange={(open) => !open && setContactsClient(null)}
+      />
 
       <PdfProgressOverlay
         open={!!summaryProgress}
