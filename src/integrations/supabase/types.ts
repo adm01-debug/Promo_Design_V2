@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -54,6 +54,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ai_usage_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_tokens: {
+        Row: {
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decision_note: string | null
+          expires_at: string
+          id: string
+          mockup_id: string
+          organization_id: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          expires_at: string
+          id?: string
+          mockup_id: string
+          organization_id?: string | null
+          status?: string
+          token: string
+        }
+        Update: {
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decision_note?: string | null
+          expires_at?: string
+          id?: string
+          mockup_id?: string
+          organization_id?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_tokens_mockup_id_fkey"
+            columns: ["mockup_id"]
+            isOneToOne: false
+            referencedRelation: "mockup_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_tokens_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -242,7 +299,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -256,7 +313,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -270,7 +327,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -287,7 +344,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -301,7 +358,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -315,7 +372,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -332,7 +389,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -346,7 +403,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -360,7 +417,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -377,7 +434,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -391,7 +448,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -405,7 +462,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -422,7 +479,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -436,7 +493,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -450,7 +507,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -467,7 +524,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -481,7 +538,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -495,7 +552,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -512,7 +569,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -526,7 +583,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -540,7 +597,187 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_log_y2026m11: {
+        Row: {
+          action: string
+          changed_fields: Json | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_log_y2026m12: {
+        Row: {
+          action: string
+          changed_fields: Json | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_log_y2027m01: {
+        Row: {
+          action: string
+          changed_fields: Json | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_log_y2027m02: {
+        Row: {
+          action: string
+          changed_fields: Json | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string | null
+          record_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -790,9 +1027,9 @@ export type Database = {
           brand_guideline_id: string
           created_at: string
           created_by: string | null
-          expires_at: string | null
+          expires_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           revoked_at: string | null
           token: string
         }
@@ -800,9 +1037,9 @@ export type Database = {
           brand_guideline_id: string
           created_at?: string
           created_by?: string | null
-          expires_at?: string | null
+          expires_at: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           revoked_at?: string | null
           token: string
         }
@@ -810,9 +1047,9 @@ export type Database = {
           brand_guideline_id?: string
           created_at?: string
           created_by?: string | null
-          expires_at?: string | null
+          expires_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           revoked_at?: string | null
           token?: string
         }
@@ -829,13 +1066,6 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "brand_share_tokens_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1166,6 +1396,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "dam_collections_cover_asset_id_fkey"
+            columns: ["cover_asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "dam_collections_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -1177,13 +1414,6 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "dam_collections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "dam_collections_cover_asset_id_fkey"
-            columns: ["cover_asset_id"]
-            isOneToOne: false
-            referencedRelation: "assets"
             referencedColumns: ["id"]
           },
         ]
@@ -1284,6 +1514,103 @@ export type Database = {
         }
         Relationships: []
       }
+      magic_up_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          product_name: string | null
+          product_sku: string | null
+          prompt: string
+          result_image_url: string | null
+          started_at: string | null
+          status: string
+          style: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt: string
+          result_image_url?: string | null
+          started_at?: string | null
+          status?: string
+          style?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          product_name?: string | null
+          product_sku?: string | null
+          prompt?: string
+          result_image_url?: string | null
+          started_at?: string | null
+          status?: string
+          style?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_up_jobs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magic_up_styles: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          name: string
+          organization_id: string
+          prompt: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          name: string
+          organization_id: string
+          prompt: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          prompt?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_up_styles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       magicup_history: {
         Row: {
           created_at: string
@@ -1327,110 +1654,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "magicup_history_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      magic_up_jobs: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          error_message: string | null
-          id: string
-          organization_id: string
-          product_name: string | null
-          product_sku: string | null
-          prompt: string
-          result_image_url: string | null
-          started_at: string | null
-          status: Database["public"]["Enums"]["magic_up_job_status"]
-          style: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          organization_id: string
-          product_name?: string | null
-          product_sku?: string | null
-          prompt: string
-          result_image_url?: string | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["magic_up_job_status"]
-          style?: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          organization_id?: string
-          product_name?: string | null
-          product_sku?: string | null
-          prompt?: string
-          result_image_url?: string | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["magic_up_job_status"]
-          style?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "magic_up_jobs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "magic_up_jobs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "auth.users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      magic_up_styles: {
-        Row: {
-          created_at: string
-          emoji: string
-          id: string
-          name: string
-          organization_id: string
-          prompt: string
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          emoji?: string
-          id?: string
-          name: string
-          organization_id: string
-          prompt: string
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          emoji?: string
-          id?: string
-          name?: string
-          organization_id?: string
-          prompt?: string
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "magic_up_styles_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1529,70 +1752,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "mockup_drafts_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      approval_tokens: {
-        Row: {
-          client_name: string | null
-          created_at: string
-          created_by: string | null
-          decision_note: string | null
-          decided_at: string | null
-          expires_at: string
-          id: string
-          mockup_id: string
-          organization_id: string | null
-          status: string
-          token: string
-        }
-        Insert: {
-          client_name?: string | null
-          created_at?: string
-          created_by?: string | null
-          decision_note?: string | null
-          decided_at?: string | null
-          expires_at: string
-          id?: string
-          mockup_id: string
-          organization_id?: string | null
-          status?: string
-          token: string
-        }
-        Update: {
-          client_name?: string | null
-          created_at?: string
-          created_by?: string | null
-          decision_note?: string | null
-          decided_at?: string | null
-          expires_at?: string
-          id?: string
-          mockup_id?: string
-          organization_id?: string | null
-          status?: string
-          token?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "approval_tokens_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "approval_tokens_mockup_id_fkey"
-            columns: ["mockup_id"]
-            isOneToOne: false
-            referencedRelation: "mockup_drafts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "approval_tokens_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -2155,6 +2314,30 @@ export type Database = {
     }
     Functions: {
       accept_organization_invite: { Args: { _token: string }; Returns: Json }
+      cancel_magic_up_job: {
+        Args: { _job_id: string; _user_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          product_name: string | null
+          product_sku: string | null
+          prompt: string
+          result_image_url: string | null
+          started_at: string | null
+          status: string
+          style: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "magic_up_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       capture_table_size_snapshot: { Args: never; Returns: Json }
       check_ai_quota: {
         Args: { _org_id: string; _required_cost?: number }
@@ -2176,6 +2359,13 @@ export type Database = {
       check_replication_slot_alerts: {
         Args: { _max_retained_bytes?: number }
         Returns: Json
+      }
+      check_rls_enabled: {
+        Args: never
+        Returns: {
+          rowsecurity: boolean
+          table_name: string
+        }[]
       }
       check_slo_regressions: {
         Args: {
@@ -2203,14 +2393,94 @@ export type Database = {
         Args: { _collection_id: string }
         Returns: number
       }
+      create_approval_token: {
+        Args: {
+          _client_name?: string
+          _created_by: string
+          _mockup_id: string
+          _organization_id: string
+          _valid_days?: number
+        }
+        Returns: string
+      }
       create_audit_log_partition: {
         Args: { _month_start: string }
         Returns: string
       }
+      create_brand_share_token: {
+        Args: {
+          _brand_guideline_id: string
+          _created_by: string
+          _organization_id: string
+          _valid_days?: number
+        }
+        Returns: string
+      }
       current_user_orgs: { Args: never; Returns: string[] }
+      decide_approval: {
+        Args: { _note?: string; _status: string; _token: string }
+        Returns: boolean
+      }
+      dequeue_integration_events: {
+        Args: { _destination: string; _limit?: number }
+        Returns: {
+          attempts: number
+          destination: string
+          entity: string
+          entity_id: string
+          event: string
+          event_id: string
+          payload: Json
+        }[]
+      }
+      dequeue_os_webhooks: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          event: string
+          event_id: string
+          os_id: string
+          payload: Json
+        }[]
+      }
       drop_old_audit_log_partitions: {
         Args: { _retention_months?: number }
         Returns: Json
+      }
+      enqueue_magic_up_jobs: {
+        Args: {
+          _organization_id: string
+          _product_name?: string
+          _product_sku?: string
+          _prompt: string
+          _styles?: string[]
+          _user_id: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          organization_id: string
+          product_name: string | null
+          product_sku: string | null
+          prompt: string
+          result_image_url: string | null
+          started_at: string | null
+          status: string
+          style: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "magic_up_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      enqueue_os_webhook: {
+        Args: { _event: string; _os_id: string; _payload: Json }
+        Returns: undefined
       }
       ensure_audit_log_partitions: {
         Args: { _months_ahead?: number }
@@ -2221,10 +2491,12 @@ export type Database = {
         Returns: Json
       }
       export_public_schema: { Args: never; Returns: Json }
+      get_approval_by_token: { Args: { _token: string }; Returns: Json }
       get_brand_recommendation_stats: {
         Args: { _client_id?: string; _days?: number; _org_id: string }
         Returns: Json
       }
+      get_brand_share_by_token: { Args: { _token: string }; Returns: Json }
       get_cache_hit_stats: { Args: never; Returns: Json }
       get_db_health: { Args: never; Returns: Json }
       get_endpoint_telemetry: {
@@ -2232,7 +2504,7 @@ export type Database = {
         Returns: Json
       }
       get_index_bloat_estimate: {
-        Args: { _limit?: number; _min_bytes?: number }
+        Args: { _limit: number; _min_bytes: number }
         Returns: {
           estimated_bloat_bytes: number
           estimated_bloat_pct: number
@@ -2289,13 +2561,45 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_role: {
+      has_role:
+        | {
+            Args: {
+              _org_id: string
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
+      integration_config: { Args: { _name: string }; Returns: string }
+      integration_design_payload: {
         Args: {
-          _org_id: string
-          _role: Database["public"]["Enums"]["app_role"]
+          _design_id: string
+          _name: string
+          _product_name: string
+          _product_sku: string
+          _thumbnail_url: string
+          _updated_at: string
           _user_id: string
         }
-        Returns: boolean
+        Returns: Json
+      }
+      integration_enqueue: {
+        Args: {
+          _destination: string
+          _entity: string
+          _entity_id: string
+          _event: string
+          _payload: Json
+        }
+        Returns: undefined
+      }
+      integration_fg_technique: { Args: { _text: string }; Returns: string }
+      integration_map_can_manage: { Args: never; Returns: boolean }
+      integration_norm_technique: { Args: { _text: string }; Returns: string }
+      integration_os_payload: {
+        Args: { _os: Database["public"]["Tables"]["service_orders"]["Row"] }
+        Returns: Json
       }
       is_any_org_admin: { Args: { _user_id: string }; Returns: boolean }
       is_member_of: {
@@ -2304,6 +2608,34 @@ export type Database = {
       }
       is_mfa_authenticated: { Args: never; Returns: boolean }
       kill_backend: { Args: { _mode?: string; _pid: number }; Returns: Json }
+      mark_integration_delivered: {
+        Args: { _event_id: string }
+        Returns: undefined
+      }
+      mark_integration_failed: {
+        Args: { _error: string; _event_id: string }
+        Returns: undefined
+      }
+      mark_integration_skipped: {
+        Args: { _event_id: string; _reason: string }
+        Returns: undefined
+      }
+      mark_os_webhook_delivered: {
+        Args: { _event_id: string }
+        Returns: undefined
+      }
+      mark_os_webhook_failed: {
+        Args: { _error: string; _event_id: string }
+        Returns: undefined
+      }
+      os_webhook_config: { Args: { _name: string }; Returns: string }
+      os_webhook_payload: {
+        Args: {
+          _os: Database["public"]["Tables"]["service_orders"]["Row"]
+          _prev_status: string
+        }
+        Returns: Json
+      }
       recompute_client_design_patterns: {
         Args: { p_client_id?: string; p_organization_id: string }
         Returns: {
@@ -2332,11 +2664,13 @@ export type Database = {
       }
       requeue_integration_event: { Args: { _event_id: string }; Returns: Json }
       requeue_os_webhook: { Args: { _event_id: string }; Returns: Json }
+      run_integration_dispatcher: { Args: never; Returns: Json }
       run_manual_analyze: { Args: { _table_name: string }; Returns: Json }
       run_manual_vacuum: {
         Args: { _mode?: string; _table_name: string }
         Returns: Json
       }
+      run_os_webhook_dispatcher: { Args: never; Returns: Json }
       run_scheduled_cleanup: { Args: never; Returns: Json }
       run_scheduled_cleanup_per_org: { Args: never; Returns: Json }
       run_scheduled_connection_saturation_check: { Args: never; Returns: Json }
@@ -2344,105 +2678,65 @@ export type Database = {
       run_scheduled_lock_check: { Args: never; Returns: Json }
       run_scheduled_replication_slot_check: { Args: never; Returns: Json }
       run_scheduled_slo_check: { Args: never; Returns: Json }
-      search_assets_ranked:
-        | {
-            Args: {
-              _asset_types?: Database["public"]["Enums"]["asset_type"][]
-              _client_id?: string
-              _include_archived?: boolean
-              _limit?: number
-              _offset?: number
-              _org_id: string
-              _query: string
-              _tags?: string[]
-              _tags_mode?: string
-            }
-            Returns: {
-              asset_type: Database["public"]["Enums"]["asset_type"]
-              client_id: string
-              created_at: string
-              created_by: string
-              description: string
-              dominant_colors: string[]
-              file_path: string
-              file_size: number
-              height: number
-              id: string
-              is_archived: boolean
-              metadata: Json
-              mime_type: string
-              name: string
-              ocr_match: boolean
-              ocr_status: string
-              ocr_text: string
-              organization_id: string
-              parent_asset_id: string
-              rank: number
-              tags: string[]
-              thumbnail_path: string
-              total_count: number
-              updated_at: string
-              version: number
-              width: number
-            }[]
-          }
-        | {
-            Args: {
-              _asset_types?: Database["public"]["Enums"]["asset_type"][]
-              _client_id?: string
-              _include_archived?: boolean
-              _limit?: number
-              _max_size?: number
-              _min_size?: number
-              _offset?: number
-              _org_id: string
-              _query: string
-              _tags?: string[]
-              _tags_mode?: string
-            }
-            Returns: {
-              asset_type: Database["public"]["Enums"]["asset_type"]
-              client_id: string
-              created_at: string
-              created_by: string
-              description: string
-              dominant_colors: string[]
-              file_path: string
-              file_size: number
-              height: number
-              id: string
-              is_archived: boolean
-              metadata: Json
-              mime_type: string
-              name: string
-              ocr_match: boolean
-              ocr_status: string
-              ocr_text: string
-              organization_id: string
-              parent_asset_id: string
-              rank: number
-              tags: string[]
-              thumbnail_path: string
-              total_count: number
-              updated_at: string
-              version: number
-              width: number
-            }[]
-          }
+      search_assets_ranked: {
+        Args: {
+          _asset_types?: Database["public"]["Enums"]["asset_type"][]
+          _client_id?: string
+          _include_archived?: boolean
+          _limit?: number
+          _max_size?: number
+          _min_size?: number
+          _offset?: number
+          _org_id: string
+          _query: string
+          _tags?: string[]
+          _tags_mode?: string
+        }
+        Returns: {
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          client_id: string
+          created_at: string
+          created_by: string
+          description: string
+          dominant_colors: string[]
+          file_path: string
+          file_size: number
+          height: number
+          id: string
+          is_archived: boolean
+          metadata: Json
+          mime_type: string
+          name: string
+          ocr_match: boolean
+          ocr_status: string
+          ocr_text: string
+          organization_id: string
+          parent_asset_id: string
+          rank: number
+          tags: string[]
+          thumbnail_path: string
+          total_count: number
+          updated_at: string
+          version: number
+          width: number
+        }[]
+      }
       terminate_backend: {
         Args: { _pid: number; _reason?: string }
         Returns: Json
+      }
+      user_belongs_to_org: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      webhook_retry_delay: {
+        Args: { _prior_attempts: number }
+        Returns: string
       }
     }
     Enums: {
       app_role: "owner" | "admin" | "designer" | "approver" | "viewer"
       asset_type: "logo" | "art" | "photo" | "mockup" | "document" | "other"
-      magic_up_job_status:
-        | "queued"
-        | "processing"
-        | "done"
-        | "failed"
-        | "cancelled"
       video_job_status:
         | "queued"
         | "generating"
@@ -2464,12 +2758,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2493,11 +2787,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2518,11 +2812,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2543,11 +2837,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2560,11 +2854,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

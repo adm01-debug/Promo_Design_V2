@@ -46,7 +46,8 @@ import {
 import type { Asset } from "../hooks/use-assets";
 import { AssetMetadataDiffDialog } from "./AssetMetadataDiffDialog";
 
-function shortId(id: string): string {
+function shortId(id: string | null): string {
+  if (!id) return "—";
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
 
@@ -111,7 +112,7 @@ export function AssetAuditTrail({ asset }: Props) {
 
   const userOptions = useMemo(() => {
     const set = new Set<string>();
-    for (const e of data ?? []) set.add(e.user_id);
+    for (const e of data ?? []) if (e.user_id) set.add(e.user_id);
     return Array.from(set);
   }, [data]);
 

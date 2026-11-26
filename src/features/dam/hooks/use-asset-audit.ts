@@ -19,7 +19,7 @@ export interface AssetAuditEntry {
   asset_id: string;
   version: number | null;
   action: "INSERT" | "UPDATE" | "DELETE";
-  user_id: string;
+  user_id: string | null;
   created_at: string;
   old_values: Record<string, unknown> | null;
   new_values: Record<string, unknown> | null;
