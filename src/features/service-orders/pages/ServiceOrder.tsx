@@ -46,6 +46,7 @@ import ServiceOrderTopBar from "@/features/service-orders/components/ServiceOrde
 import { AssetPicker, downloadAssetAsFile } from "@/features/dam";
 import type { Asset } from "@/features/dam";
 import AssetVersionUpdateBanner from "@/features/service-orders/components/AssetVersionUpdateBanner";
+import StatusHistoryPanel from "@/features/service-orders/components/StatusHistoryPanel";
 import { ErrorLogger } from "@/lib/error-logger";
 
 const ServiceOrder = () => {
@@ -788,6 +789,8 @@ const ServiceOrder = () => {
               onChange={(e) => update("observations", e.target.value)}
             />
           </section>
+
+          {editId && <StatusHistoryPanel serviceOrderId={editId} />}
 
           <div className="flex flex-col sm:flex-row gap-3 pb-10">
             <Button size="lg" className="flex-1 gap-2" onClick={handleSave} disabled={saved}>
