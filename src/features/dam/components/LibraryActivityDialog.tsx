@@ -23,7 +23,8 @@ interface Props {
   organizationId: string;
 }
 
-function shortId(id: string): string {
+function shortId(id: string | null): string {
+  if (!id) return "—";
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
 

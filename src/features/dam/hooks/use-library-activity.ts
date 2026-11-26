@@ -7,7 +7,7 @@ export interface LibraryActivityEntry {
   id: string;
   asset_id: string | null;
   action: LibraryActivityAction;
-  user_id: string;
+  user_id: string | null;
   created_at: string;
   asset_name: string | null;
   version: number | null;

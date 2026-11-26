@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import type { Json } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 export type AssetType = "logo" | "art" | "photo" | "mockup" | "document" | "other";
 
@@ -106,7 +106,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
       if (useRelevance) {
         const limit = hasPagination ? pageSize : 1000;
         const offset = hasPagination ? (page - 1) * pageSize : 0;
-        const rpcArgs: Record<string, unknown> = {
+        const rpcArgs: Database["public"]["Functions"]["search_assets_ranked"]["Args"] = {
           _org_id: organizationId!,
           _query: effectiveSearch,
           _tags_mode: filters.tagsMode ?? "all",
@@ -125,7 +125,7 @@ export function useAssets(organizationId: string | null, filters: AssetFilters =
         if (filters.tags && filters.tags.length > 0) rpcArgs._tags = filters.tags;
         if (typeof filters.minSize === "number") rpcArgs._min_size = filters.minSize;
         if (typeof filters.maxSize === "number") rpcArgs._max_size = filters.maxSize;
-        const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs as never);
+        const { data, error } = await supabase.rpc("search_assets_ranked", rpcArgs);
         if (error) throw error;
         const rows = (data ?? []) as unknown as (Asset & { total_count: number; rank: number })[];
         const filteredRows = filters.archivedOnly ? rows.filter((r) => r.is_archived) : rows;

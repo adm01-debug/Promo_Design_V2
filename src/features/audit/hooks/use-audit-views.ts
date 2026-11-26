@@ -1,5 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
+
+const savedViewFilters = (filters: Json): AuditSavedViewFilters =>
+  filters as unknown as AuditSavedViewFilters;
+
+const savedViewRow = (
+  row: Database["public"]["Tables"]["audit_saved_views"]["Row"],
+): AuditSavedView => ({
+  ...row,
+  filters: savedViewFilters(row.filters),
+});
 
 export interface AuditSavedViewFilters {
   from?: string;
@@ -33,12 +44,12 @@ export function useAuditSavedViews(organizationId: string | null) {
     enabled: !!organizationId,
     queryFn: async (): Promise<AuditSavedView[]> => {
       const { data, error } = await supabase
-        .from("audit_saved_views" as never)
+        .from("audit_saved_views")
         .select("*")
         .eq("organization_id", organizationId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as AuditSavedView[];
+      return (data ?? []).map(savedViewRow);
     },
   });
 }
@@ -55,17 +66,17 @@ export function useCreateAuditSavedView() {
       const userId = userRes.user?.id;
       if (!userId) throw new Error("Não autenticado");
       const { data, error } = await supabase
-        .from("audit_saved_views" as never)
+        .from("audit_saved_views")
         .insert({
           organization_id: input.organization_id,
           user_id: userId,
           name: input.name.trim(),
-          filters: input.filters,
-        } as never)
+          filters: input.filters as unknown as Json,
+        })
         .select("*")
         .single();
       if (error) throw error;
-      return data as unknown as AuditSavedView;
+      return savedViewRow(data);
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["audit-saved-views", vars.organization_id] });
@@ -77,10 +88,7 @@ export function useDeleteAuditSavedView() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("audit_saved_views" as never)
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("audit_saved_views").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -100,8 +108,11 @@ export function useUpdateAuditSavedView() {
       patch: Partial<Pick<AuditSavedView, "name" | "filters">>;
     }) => {
       const { error } = await supabase
-        .from("audit_saved_views" as never)
-        .update(patch as never)
+        .from("audit_saved_views")
+        .update({
+          name: patch.name,
+          filters: patch.filters as unknown as Json | undefined,
+        })
         .eq("id", id);
       if (error) throw error;
     },

@@ -125,10 +125,7 @@ export function useNotifications() {
 
   const markReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true } as never)
-        .eq("id", id);
+      const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: invalidate,
@@ -139,7 +136,7 @@ export function useNotifications() {
       if (!user) return;
       const { error } = await supabase
         .from("notifications")
-        .update({ read: true } as never)
+        .update({ read: true })
         .eq("user_id", user.id)
         .eq("read", false);
       if (error) throw error;
