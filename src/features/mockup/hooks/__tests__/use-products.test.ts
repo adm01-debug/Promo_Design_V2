@@ -3,7 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { createElement } from "react";
-import { useProducts } from "../use-products";
+import { useProducts, usePrintAreaTechniques } from "../use-products";
 
 /**
  * O catálogo externo (`doufsxqlfjyuvxuezpln`) bloqueia por coluna na tabela `products`:
@@ -40,6 +40,39 @@ const VARIANT_ROWS: Row[] = [
     stock_quantity: 7,
     images: ["https://cdn.example/c.jpg"],
     selected_thumbnail: null,
+  },
+];
+
+/**
+ * Linhas reais de `print_area_techniques`: 804 das linhas do catálogo têm
+ * `location_name`/`location_order` nulos, por isso a UI precisa de um fallback.
+ */
+const PRINT_AREA_ROWS: Row[] = [
+  {
+    id: "pa-1",
+    product_id: "p-1",
+    tabela_preco_id: "tp-1",
+    max_width: 8,
+    max_height: 14,
+    is_curved: false,
+    shape: "rectangle",
+    location_code: "LADO-A",
+    location_name: "Lado A",
+    location_order: 1,
+    is_active: true,
+  },
+  {
+    id: "pa-2",
+    product_id: "p-1",
+    tabela_preco_id: "tp-1",
+    max_width: 6,
+    max_height: 6,
+    is_curved: false,
+    shape: "circle",
+    location_code: "TAMPA",
+    location_name: null,
+    location_order: null,
+    is_active: true,
   },
 ];
 
@@ -95,6 +128,9 @@ vi.mock("@/lib/external-supabase", () => ({
         }
         if (table === "product_variants") {
           return makeChain(table, columns, VARIANT_ROWS, VARIANT_ROWS.length);
+        }
+        if (table === "print_area_techniques") {
+          return makeChain(table, columns, PRINT_AREA_ROWS, PRINT_AREA_ROWS.length);
         }
         return makeChain(table, columns, [], 0);
       },
@@ -161,5 +197,30 @@ describe("useProducts — catálogo externo com RLS por coluna", () => {
     const products = result.current.data?.products ?? [];
     expect(products).toHaveLength(1);
     expect(products[0].primary_image_url).toBeTruthy();
+  });
+});
+
+describe("usePrintAreaTechniques — colunas liberadas e campos nulos", () => {
+  it("não pede select('*'), que devolve 401 na chave anônima", async () => {
+    const { result } = renderHook(() => usePrintAreaTechniques("p-1"), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const calls = externalSelects.filter((s) => s.table === "print_area_techniques");
+    expect(calls).toHaveLength(1);
+    expect(calls[0].columns).not.toContain("*");
+    for (const column of calls[0].columns.split(",").map((c) => c.trim())) {
+      expect(column).not.toBe("");
+    }
+  });
+
+  it("cai no código da área quando location_name/location_order vêm nulos", async () => {
+    const { result } = renderHook(() => usePrintAreaTechniques("p-1"), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const rows = result.current.data ?? [];
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.location_name)).toEqual(["Lado A", "TAMPA"]);
+    expect(rows.map((r) => r.location_order)).toEqual([1, 0]);
+    expect(rows.map((r) => r.max_width)).toEqual([8, 6]);
   });
 });

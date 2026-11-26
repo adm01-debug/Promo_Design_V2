@@ -87,8 +87,10 @@ export interface DbPrintAreaTechnique {
   location_code: string; // "LADO-A", "LADO-B", "TAMPA", etc.
   location_name: string; // "Lado A", "Lado B", "Tampa"
   location_order: number;
-  gravacao_largura_max: number;
-  gravacao_altura_max: number;
+  // Preenchidos ao montar áreas locais (templates/manual); não existem na tabela
+  // externa `print_area_techniques` (select dessas colunas devolve HTTP 400).
+  gravacao_largura_max?: number;
+  gravacao_altura_max?: number;
   is_active: boolean;
 }
 
