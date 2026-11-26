@@ -9,8 +9,8 @@ import {
 } from "../use-os-webhook-queue";
 
 const state = vi.hoisted(() => ({
-  queue: { data: [] as unknown[], error: null as unknown },
-  orders: { data: [] as unknown[], error: null as unknown },
+  queue: { data: [] as unknown, error: null as unknown },
+  orders: { data: [] as unknown, error: null as unknown },
   tables: [] as string[],
 }));
 
@@ -46,7 +46,7 @@ const pendingRow = {
   next_attempt_at: "2026-11-23T23:31:47.000Z",
   last_error: null,
   delivered_at: null,
-};
+} as const;
 
 describe("useOsWebhookQueue", () => {
   beforeEach(() => {

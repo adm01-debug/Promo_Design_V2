@@ -30,7 +30,7 @@ export function useRequeueOsWebhook() {
       });
 
       if (error) throw error;
-      return data as RequeueOsWebhookResult;
+      return data as unknown as RequeueOsWebhookResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["os-webhook-queue"] });
