@@ -1,6 +1,24 @@
-import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Loader2, RefreshCw, Send } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  ListPlus,
+  Loader2,
+  RefreshCw,
+  Send,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,7 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useOrganizations } from "@/hooks/use-organization";
 import { IntegrationQueueTable } from "./IntegrationQueueTable";
+import { TechniqueMapFormDialog } from "./TechniqueMapFormDialog";
 import { TechniqueMapTable } from "./TechniqueMapTable";
 import {
   useIntegrationQueue,
@@ -19,10 +39,28 @@ import {
   type IntegrationStatus,
 } from "../hooks/use-integration-queue";
 import { useRequeueIntegrationEvent } from "../hooks/use-requeue-integration-event";
-import { useTechniqueMap } from "../hooks/use-technique-map";
+import {
+  useDeleteTechniqueMapEntry,
+  useSaveTechniqueMapEntry,
+  useTechniqueMap,
+  type TechniqueMapEntry,
+  type TechniqueMapInput,
+} from "../hooks/use-technique-map";
 
 type StatusFilter = IntegrationStatus | "all";
 type DestinationFilter = IntegrationDestination | "all";
+
+interface MapDialogState {
+  open: boolean;
+  originalTechnique: string | null;
+  values: TechniqueMapInput;
+}
+
+const CLOSED_MAP_DIALOG: MapDialogState = {
+  open: false,
+  originalTechnique: null,
+  values: { promoTechnique: "", fgTechniqueId: "" },
+};
 
 /**
  * Fila multi-destino: cada evento de OS ou design que precisa chegar em
@@ -33,6 +71,11 @@ type DestinationFilter = IntegrationDestination | "all";
 export function IntegrationQueueTab() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [destinationFilter, setDestinationFilter] = useState<DestinationFilter>("all");
+  const [mapDialog, setMapDialog] = useState<MapDialogState>(CLOSED_MAP_DIALOG);
+  const [entryToDelete, setEntryToDelete] = useState<TechniqueMapEntry | null>(null);
+
+  const { can } = useOrganizations();
+  const canManageMap = can(["owner", "admin"]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useIntegrationQueue({
     status: statusFilter,
@@ -40,11 +83,27 @@ export function IntegrationQueueTab() {
   });
   const requeue = useRequeueIntegrationEvent();
   const techniqueMap = useTechniqueMap();
+  const saveEntry = useSaveTechniqueMapEntry();
+  const deleteEntry = useDeleteTechniqueMapEntry();
 
+  const entries = useMemo(() => techniqueMap.data ?? [], [techniqueMap.data]);
   const events = data?.events ?? [];
   const stuck = data?.stuck ?? 0;
   const unmapped = data?.unmappedTechnique ?? 0;
   const skipped = data?.skipped ?? 0;
+
+  // Ids de tecnica ja usados no Fast Gravacoes: viram sugestao no formulario
+  // (id inventado faz a entrega falhar no destino).
+  const destinations = useMemo(
+    () => Array.from(new Set(entries.map((entry) => entry.fg_technique_id))).sort(),
+    [entries],
+  );
+
+  const busyTechnique = saveEntry.isPending
+    ? (saveEntry.variables?.originalTechnique ?? null)
+    : deleteEntry.isPending
+      ? (deleteEntry.variables ?? null)
+      : null;
 
   const summary = [
     { label: "Pendentes", value: data?.pending ?? 0, icon: Clock3 },
@@ -52,6 +111,43 @@ export function IntegrationQueueTab() {
     { label: "Entregues", value: data?.delivered ?? 0, icon: CheckCircle2 },
     { label: "Descartados ou com falha", value: data?.dropped ?? 0, icon: AlertTriangle },
   ];
+
+  function openNewMapDialog(technique = "") {
+    setMapDialog({
+      open: true,
+      originalTechnique: null,
+      values: { promoTechnique: technique, fgTechniqueId: "" },
+    });
+  }
+
+  function openEditMapDialog(entry: TechniqueMapEntry) {
+    setMapDialog({
+      open: true,
+      originalTechnique: entry.promo_technique,
+      values: {
+        promoTechnique: entry.promo_technique,
+        fgTechniqueId: entry.fg_technique_id,
+      },
+    });
+  }
+
+  function submitMapEntry(values: TechniqueMapInput) {
+    saveEntry.mutate(
+      { values, originalTechnique: mapDialog.originalTechnique },
+      {
+        onSuccess: () => {
+          setMapDialog(CLOSED_MAP_DIALOG);
+        },
+      },
+    );
+  }
+
+  function confirmDelete() {
+    if (!entryToDelete) return;
+    deleteEntry.mutate(entryToDelete.promo_technique, {
+      onSettled: () => setEntryToDelete(null),
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -77,7 +173,8 @@ export function IntegrationQueueTab() {
             {unmapped === 1
               ? "1 evento vai para o Fast Gravacoes com a tecnica da OS fora do mapa e nao gera job la."
               : `${unmapped} eventos vao para o Fast Gravacoes com a tecnica da OS fora do mapa e nao geram job la.`}{" "}
-            Ajuste o mapa de tecnicas em integration_technique_map e reprocese o evento.
+            Cadastre a tecnica no mapa abaixo (Mapear, na linha do evento) e clique em Reprocessar
+            para reenviar o evento com a tecnica nova.
           </AlertDescription>
         </Alert>
       )}
@@ -182,18 +279,29 @@ export function IntegrationQueueTab() {
               events={events}
               requeueingId={requeue.isPending ? (requeue.variables ?? null) : null}
               onRequeue={(eventId) => requeue.mutate(eventId)}
+              canManageMap={canManageMap}
+              onMapTechnique={(technique) => openNewMapDialog(technique)}
             />
           )}
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Mapeamento de tecnicas do Fast Gravacoes</CardTitle>
-          <CardDescription>
-            Tecnica escrita na ordem de servico e a tecnica correspondente no Fast Gravacoes. O que
-            nao estiver aqui nao gera job no Fast Gravacoes.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>Mapeamento de tecnicas do Fast Gravacoes</CardTitle>
+            <CardDescription>
+              Tecnica escrita na ordem de servico e a tecnica correspondente no Fast Gravacoes. O
+              que nao estiver aqui nao gera job no Fast Gravacoes, e quem mantem o mapa e owner ou
+              admin da organizacao.
+            </CardDescription>
+          </div>
+          {canManageMap && (
+            <Button type="button" size="sm" onClick={() => openNewMapDialog()}>
+              <ListPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Novo mapeamento
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {techniqueMap.isLoading ? (
@@ -213,10 +321,56 @@ export function IntegrationQueueTab() {
               </AlertDescription>
             </Alert>
           ) : (
-            <TechniqueMapTable entries={techniqueMap.data ?? []} />
+            <TechniqueMapTable
+              entries={entries}
+              canManage={canManageMap}
+              busyTechnique={busyTechnique}
+              onEdit={openEditMapDialog}
+              onDelete={(entry) => setEntryToDelete(entry)}
+            />
           )}
         </CardContent>
       </Card>
+
+      <TechniqueMapFormDialog
+        open={mapDialog.open}
+        onOpenChange={(open) => setMapDialog((current) => ({ ...current, open }))}
+        originalTechnique={mapDialog.originalTechnique}
+        initialValues={mapDialog.values}
+        destinations={destinations}
+        isSaving={saveEntry.isPending}
+        onSubmit={submitMapEntry}
+      />
+
+      <AlertDialog
+        open={entryToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setEntryToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir mapeamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              A tecnica "{entryToDelete?.promo_technique}" deixa de gerar job no Fast Gravacoes: as
+              OS com essa tecnica passam a ir sem a tecnica e aparecem como Tecnica nao mapeada na
+              fila.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteEntry.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteEntry.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                confirmDelete();
+              }}
+            >
+              Excluir mapeamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
