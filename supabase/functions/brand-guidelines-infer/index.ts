@@ -7,7 +7,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.3";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
-import { AI_CHAT_COMPLETIONS_URL, AI_MODELS, aiHeaders, getAiApiKey } from "../_shared/ai.ts";
+import {
+  AI_CHAT_COMPLETIONS_URL,
+  AI_MODELS,
+  AI_NOT_CONFIGURED_STATUS,
+  aiHeaders,
+  aiNotConfiguredPayload,
+  getAiApiKey,
+} from "../_shared/ai.ts";
 
 const RequestSchema = z.object({
   client_id: z.string().uuid(),
@@ -160,7 +167,7 @@ Deno.serve(async (req) => {
     const apiKey = getAiApiKey();
     if (!apiKey) {
       console.error(`[${requestId}] OPENROUTER_API_KEY missing`);
-      return jsonResponse({ error: "AI configuration missing", requestId }, 500, req);
+      return jsonResponse(aiNotConfiguredPayload({ requestId }), AI_NOT_CONFIGURED_STATUS, req);
     }
 
     const systemPrompt =

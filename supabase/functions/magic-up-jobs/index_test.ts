@@ -203,8 +203,10 @@ Deno.test("magic-up-jobs - prompt trimmado ainda válido", () => {
 Deno.test("magic-up-jobs - sem provedor de IA falha em vez de fingir sucesso", async () => {
   const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
   assert(
-    src.includes("if (!apiKey) {") && src.includes('error: "Configuração do servidor incompleta"'),
-    "o handler deve retornar 500 quando o provedor de IA não está configurado",
+    src.includes("if (!apiKey) {") &&
+      src.includes("aiNotConfiguredPayload()") &&
+      src.includes("AI_NOT_CONFIGURED_STATUS"),
+    "o handler deve responder 503 com code AI_NOT_CONFIGURED quando o provedor de IA não está configurado",
   );
   // A guarda precisa vir antes do enfileiramento, senão sobram jobs `queued` órfãos.
   assert(

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeErrorMessage } from "@/lib/functions-client";
 import { toast } from "sonner";
 import type { Asset } from "../hooks/use-assets";
 
@@ -45,7 +46,9 @@ export function useAssetOcr(asset: Asset | null, searchQuery?: string) {
         body: { assetId: asset.id, filePath: asset.file_path, mimeType: asset.mime_type ?? "" },
         headers: { "X-Request-Id": requestId },
       });
-      if (error) throw error;
+      if (error) {
+        throw new Error(await edgeErrorMessage(error, "Falha ao extrair texto desta imagem."));
+      }
       const result = data as {
         ok?: boolean;
         length?: number;

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeErrorMessage } from "@/lib/functions-client";
 import { clearWarpCache } from "@/features/mockup";
 import type { DbProduct, DbPrintAreaTechnique } from "@/features/mockup";
 import type { Placement, BlendMode } from "./use-mockup-editor-types";
@@ -91,7 +92,7 @@ export function useMockupAIActions(opts: UseMockupAIActionsOptions) {
         toast.success("Fundo removido com IA!");
       }
     } catch (e: unknown) {
-      toast.error("Erro ao remover fundo: " + (e instanceof Error ? e.message : "Tente novamente"));
+      toast.error(await edgeErrorMessage(e, "Erro ao remover fundo. Tente novamente."));
     } finally {
       setIsRemovingBg(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
@@ -148,9 +149,7 @@ export function useMockupAIActions(opts: UseMockupAIActionsOptions) {
 
       toast.info("Sugestão de IA recebida. Revise antes de aplicar.");
     } catch (e: unknown) {
-      toast.error(
-        "Erro na sugestão de IA: " + (e instanceof Error ? e.message : "Tente novamente"),
-      );
+      toast.error(await edgeErrorMessage(e, "Erro na sugestão de IA. Tente novamente."));
     } finally {
       setIsSuggestingPlacement(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;

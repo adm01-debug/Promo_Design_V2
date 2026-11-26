@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeErrorMessage } from "@/lib/functions-client";
 
 export type VideoJobStatus = "queued" | "generating" | "ready" | "failed" | "cancelled";
 
@@ -77,8 +78,10 @@ export function useVideoGeneration() {
       const { data, error } = await supabase.functions.invoke<EdgeResponse>("video-generate", {
         body: { action: "enqueue", ...input },
       });
-      // A edge function responde 503 com corpo útil quando não há provedor.
-      if (error && !data?.job) throw new Error(error.message);
+      // Sem provedor a edge responde 503 com o motivo no corpo: ele fica em
+      // `error.context`, então precisa ser lido (o supabase-js só expõe
+      // "non-2xx status code" em `error.message`).
+      if (error) throw new Error(await edgeErrorMessage(error, "Falha ao enfileirar o vídeo."));
       if (!data?.job) throw new Error(errorMessage(data ?? null, "Falha ao enfileirar o vídeo."));
       return data;
     },
@@ -106,7 +109,7 @@ export function useVideoGeneration() {
       const { data, error } = await supabase.functions.invoke<EdgeResponse>("video-generate", {
         body: { action: "status", videoId: jobId },
       });
-      if (error && !data?.job) throw new Error(error.message);
+      if (error) throw new Error(await edgeErrorMessage(error, "Falha ao consultar o vídeo."));
       setAttempt((a) => a + 1);
       return (data?.job as VideoJob | null) ?? null;
     },
@@ -123,7 +126,9 @@ export function useVideoGeneration() {
       const { data, error } = await supabase.functions.invoke<EdgeResponse>("video-generate", {
         body: { action: "cancel", videoId: id },
       });
-      if (error) throw new Error(errorMessage(data ?? null, error.message));
+      if (error) {
+        throw new Error(await edgeErrorMessage(error, "Falha ao cancelar a geração."));
+      }
       return data;
     },
     onSuccess: () => {

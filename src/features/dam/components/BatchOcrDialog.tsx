@@ -16,6 +16,7 @@ import { Loader2, ScanText, Check, X as XIcon, AlertCircle, MinusCircle } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { Asset } from "../hooks/use-assets";
 import { cn } from "@/lib/utils";
+import { edgeErrorMessage } from "@/lib/functions-client";
 
 interface BatchOcrDialogProps {
   open: boolean;
@@ -151,7 +152,9 @@ export function BatchOcrDialog({ open, onOpenChange, assets }: BatchOcrDialogPro
           },
         });
         const durationMs = Math.round(performance.now() - startedAt);
-        if (error) throw error;
+        if (error) {
+          throw new Error(await edgeErrorMessage(error, "Falha ao processar o OCR."));
+        }
         const result = data as {
           ok?: boolean;
           length?: number;

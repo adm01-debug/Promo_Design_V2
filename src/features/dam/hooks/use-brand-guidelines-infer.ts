@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeErrorMessage } from "@/lib/functions-client";
 import type { ColorEntry, FontEntry } from "@/features/dam/hooks/use-brand-guidelines";
 
 export interface InferredGuidelines {
@@ -74,7 +75,8 @@ export function useBrandGuidelinesInfer() {
         "brand-guidelines-infer",
         { body: input },
       );
-      if (error) throw error;
+      if (error)
+        throw new Error(await edgeErrorMessage(error, "Falha ao gerar a proposta com IA."));
       if (!data) throw new Error("Resposta vazia da IA");
       return data;
     },

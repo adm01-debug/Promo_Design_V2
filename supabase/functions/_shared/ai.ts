@@ -10,9 +10,48 @@ export const AI_CHAT_COMPLETIONS_URL = "https://openrouter.ai/api/v1/chat/comple
 /** Fila de geração de vídeo (assíncrona: POST cria o job, GET consulta). */
 export const AI_VIDEO_JOBS_URL = "https://openrouter.ai/api/v1/videos";
 
-/** Chave do provedor. Ausente => a function degrada conforme seu próprio fallback. */
+/**
+ * Chave do provedor. Ausente => a feature responde 503 com
+ * `aiNotConfiguredPayload()` em vez de seguir sem credencial.
+ */
 export function getAiApiKey(): string | undefined {
   return Deno.env.get("OPENROUTER_API_KEY");
+}
+
+/**
+ * Motivo padronizado de "sem chave do provedor". O app lê `code` para explicar a
+ * pendência em PT-BR: o supabase-js transforma qualquer non-2xx em
+ * FunctionsHttpError com a mensagem genérica "non-2xx status code", então sem
+ * código estável o usuário veria o sistema como quebrado.
+ */
+export const AI_NOT_CONFIGURED_CODE = "AI_NOT_CONFIGURED";
+
+export const AI_NOT_CONFIGURED_MESSAGE =
+  "A geração por IA ainda não está configurada neste ambiente. " +
+  "Peça ao administrador para cadastrar a chave do provedor de IA (OPENROUTER_API_KEY) e tente novamente.";
+
+/** 503: a rota existe, o serviço de IA é que está indisponível. */
+export const AI_NOT_CONFIGURED_STATUS = 503;
+
+/**
+ * Corpo padrão de "IA não configurada". Mantém `error` (clientes antigos leem a
+ * mensagem) e acrescenta `code` (clientes novos decidem sem parsear texto).
+ */
+export function aiNotConfiguredPayload(
+  extra: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return { error: AI_NOT_CONFIGURED_MESSAGE, code: AI_NOT_CONFIGURED_CODE, ...extra };
+}
+
+/**
+ * Erro tipado para o fluxo assíncrono de vídeo, onde o job já foi criado: ele
+ * precisa nascer `failed` com a mensagem acionável, nunca preso em `generating`.
+ */
+export class AiNotConfiguredError extends Error {
+  constructor() {
+    super(AI_NOT_CONFIGURED_MESSAGE);
+    this.name = AI_NOT_CONFIGURED_CODE;
+  }
 }
 
 export function aiHeaders(apiKey: string): Record<string, string> {

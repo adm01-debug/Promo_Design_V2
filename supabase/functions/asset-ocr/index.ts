@@ -1,7 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
-import { AI_CHAT_COMPLETIONS_URL, AI_MODELS, aiHeaders, getAiApiKey } from "../_shared/ai.ts";
+import {
+  AI_CHAT_COMPLETIONS_URL,
+  AI_MODELS,
+  AI_NOT_CONFIGURED_STATUS,
+  aiHeaders,
+  aiNotConfiguredPayload,
+  getAiApiKey,
+} from "../_shared/ai.ts";
 
 const ALLOWED_ORIGINS = [
   "https://id-preview--5da5ba25-dbc3-474e-b521-f7c17b3151a4.lovable.app",
@@ -98,7 +105,7 @@ serve(async (req) => {
     const aiApiKey = getAiApiKey();
     if (!aiApiKey) {
       console.error(`[${requestId}] OPENROUTER_API_KEY is missing`);
-      return jsonResponse({ error: "AI gateway não configurado", requestId }, 500, req);
+      return jsonResponse(aiNotConfiguredPayload({ requestId }), AI_NOT_CONFIGURED_STATUS, req);
     }
 
     // User-scoped client validates JWT and respects RLS

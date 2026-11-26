@@ -10,7 +10,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
-import { AI_CHAT_COMPLETIONS_URL, AI_MODELS, aiHeaders } from "../_shared/ai.ts";
+import {
+  AI_CHAT_COMPLETIONS_URL,
+  AI_MODELS,
+  AI_NOT_CONFIGURED_STATUS,
+  aiHeaders,
+  aiNotConfiguredPayload,
+  getAiApiKey,
+} from "../_shared/ai.ts";
 
 // Estilos padrão do sistema + slugs customizados da organização
 // (Feature 8 — presets gerenciáveis em magic_up_styles). Slug custom
@@ -172,9 +179,9 @@ Deno.serve(async (req) => {
   // Sem provedor configurado nenhum job tem como virar `done`: gerar imagem é
   // a razão de existir da fila. Falhar aqui evita o falso positivo de jobs
   // "Concluídos" com imagem placeholder, que o usuário vê como sucesso.
-  const apiKey = Deno.env.get("OPENROUTER_API_KEY");
+  const apiKey = getAiApiKey();
   if (!apiKey) {
-    return json(req, { error: "Configuração do servidor incompleta" }, 500);
+    return json(req, aiNotConfiguredPayload(), AI_NOT_CONFIGURED_STATUS);
   }
   // Cliente admin para marcar processamento/resultado (RLS da tabela não dá UPDATE ao app).
   const admin = createClient(
