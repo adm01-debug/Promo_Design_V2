@@ -210,10 +210,17 @@ Deno.serve(async (req) => {
   const results: Json[] = [];
   const createdRows = created as { id: string; style: string }[];
   for (const job of createdRows) {
-    await admin
+    // Claim condicionado a `queued`: se o usuario cancelou o job antes de a
+    // fila chegar nele, o cancelamento vence o worker (antes o update cego
+    // devolvia o job para `processing`).
+    const { data: claimed } = await admin
       .from("magic_up_jobs")
       .update({ status: "processing", started_at: new Date().toISOString() })
-      .eq("id", job.id);
+      .eq("id", job.id)
+      .eq("status", "queued")
+      .select("id")
+      .maybeSingle();
+    if (!claimed) continue;
 
     let status: "done" | "failed" = "done";
     let resultImageUrl: string | null = null;
@@ -227,7 +234,9 @@ Deno.serve(async (req) => {
       errorMessage = err instanceof Error ? err.message : "Falha desconhecida ao gerar imagem";
     }
 
-    await admin
+    // Só conclui se o job ainda estiver `processing`: a geracao leva ate 90s e
+    // um cancelamento nesse intervalo nao pode virar `done`/`failed`.
+    const { data: finalRow } = await admin
       .from("magic_up_jobs")
       .update({
         status,
@@ -235,13 +244,10 @@ Deno.serve(async (req) => {
         error_message: errorMessage,
         completed_at: new Date().toISOString(),
       })
-      .eq("id", job.id);
-
-    const { data: finalRow } = await admin
-      .from("magic_up_jobs")
-      .select("*")
       .eq("id", job.id)
-      .single();
+      .eq("status", "processing")
+      .select("*")
+      .maybeSingle();
     if (finalRow) results.push(finalRow);
   }
 

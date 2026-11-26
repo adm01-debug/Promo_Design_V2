@@ -231,3 +231,19 @@ Deno.test("magic-up-jobs - job concluído só existe com imagem real", async () 
     "o handler não pode gravar placeholder como resultado",
   );
 });
+
+// Regressao: o worker sobrescrevia o cancelamento do usuario. O update que
+// coloca o job em `processing` era cego e o que grava o resultado tambem, entao
+// cancelar durante a geracao (ate 90s) reaparecia como "Concluido" na tela.
+Deno.test("magic-up-jobs - cancelamento vence o worker", async () => {
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  const flat = src.replace(/\s+/g, " ");
+  assert(
+    flat.includes('.eq("id", job.id) .eq("status", "queued") .select("id")'),
+    "o claim do job deve exigir status queued, senao ressuscita job cancelado",
+  );
+  assert(
+    flat.includes('.eq("id", job.id) .eq("status", "processing") .select("*")'),
+    "a conclusao deve exigir status processing, senao sobrescreve cancelamento",
+  );
+});
