@@ -31,7 +31,7 @@ export function getFunctionsUrl(path: string = ""): string {
 /**
  * Faz uma requisição para uma Edge Function com suporte a proxy em dev.
  */
-type FunctionsHttpError = { status?: number; message: string; name?: string } | { message: string };
+type FunctionsHttpError = { status?: number; message: string; name?: string };
 
 export async function invokeFunction<T = unknown>(
   functionName: string,
@@ -66,7 +66,10 @@ export async function invokeFunction<T = unknown>(
 
     if (!response.ok) {
       const errorText = await response.text();
-      return { data: null, error: { status: response.status, message: errorText } };
+      return {
+        data: null,
+        error: { status: response.status, message: invokeErrorMessage(response.status, errorText) },
+      };
     }
 
     const data = (await response.json()) as T;
@@ -75,6 +78,47 @@ export async function invokeFunction<T = unknown>(
     const message = error instanceof Error ? error.message : String(error);
     return { data: null, error: { message } };
   }
+}
+
+/** Corpo de erro devolvido pelas Edge Functions: `{ error, code }`. */
+type EdgeErrorBody = { error?: unknown; code?: unknown };
+
+function asEdgeErrorBody(parsed: unknown): EdgeErrorBody | null {
+  return parsed && typeof parsed === "object" ? (parsed as EdgeErrorBody) : null;
+}
+
+/**
+ * Traduz a resposta non-2xx de `invokeFunction` em mensagem para o usuário.
+ *
+ * `invokeFunction` faz `fetch` direto, então o corpo do erro chegava cru em
+ * `error.message` — quem chamava (aprovação de mockup, compartilhamento do
+ * manual) mostrava JSON técnico ou HTML de gateway na tela do cliente.
+ */
+export function invokeErrorMessage(status: number, rawBody: string): string {
+  let body: EdgeErrorBody | null = null;
+  const text = (rawBody ?? "").trim();
+  if (text) {
+    try {
+      body = asEdgeErrorBody(JSON.parse(text));
+    } catch {
+      body = null;
+    }
+  }
+  if (body?.code === AI_NOT_CONFIGURED_CODE) return AI_NOT_CONFIGURED_MESSAGE;
+  if (typeof body?.error === "string" && body.error.trim()) return body.error;
+  if (status === 401 || status === 403) {
+    return "Sua sessão expirou ou você não tem permissão para esta ação. Entre novamente e tente de novo.";
+  }
+  if (status === 404) {
+    return "Esta ação não está disponível neste ambiente. Avise o administrador do sistema.";
+  }
+  if (status === 429) {
+    return "Muitas tentativas em pouco tempo. Aguarde alguns instantes e tente novamente.";
+  }
+  if (status >= 500) {
+    return "O servidor não conseguiu concluir a ação. Tente novamente em instantes; se continuar, avise o administrador.";
+  }
+  return "Não foi possível concluir a ação com os dados enviados. Revise as informações e tente novamente.";
 }
 
 /** Código devolvido pelas Edge Functions de IA quando falta a chave do provedor. */
@@ -102,13 +146,10 @@ type EdgeErrorLike = {
 export async function edgeErrorMessage(error: unknown, fallback: string): Promise<string> {
   if (!error) return fallback;
   const err = error as EdgeErrorLike;
-  let body: { error?: unknown; code?: unknown } | null = null;
+  let body: EdgeErrorBody | null = null;
   if (typeof err.context?.json === "function") {
     try {
-      const parsed: unknown = await err.context.json();
-      if (parsed && typeof parsed === "object") {
-        body = parsed as { error?: unknown; code?: unknown };
-      }
+      body = asEdgeErrorBody(await err.context.json());
     } catch {
       body = null;
     }
