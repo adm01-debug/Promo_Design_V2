@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeErrorMessage } from "@/lib/functions-client";
 import { useOrganizations } from "@/hooks/use-organization";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -46,7 +47,8 @@ export function useMagicUpJobs() {
         "magic-up-jobs",
         { body: { action: "list", organizationId: currentOrgId } },
       );
-      if (error) throw error;
+      if (error)
+        throw new Error(await edgeErrorMessage(error, "Falha ao carregar a fila de jobs."));
       return data?.jobs ?? [];
     },
   });
@@ -72,7 +74,7 @@ export function useMagicUpJobs() {
           },
         },
       );
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, "Falha ao enfileirar o lote."));
       return data?.jobs ?? [];
     },
     onSuccess: (created) => {
@@ -92,7 +94,7 @@ export function useMagicUpJobs() {
       const { data, error } = await supabase.functions.invoke("magic-up-jobs", {
         body: { action: "cancel", jobId },
       });
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, "Falha ao cancelar o job."));
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),

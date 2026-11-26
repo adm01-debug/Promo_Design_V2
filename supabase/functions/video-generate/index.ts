@@ -16,7 +16,15 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { corsPreflight, getCorsHeaders } from "../_shared/cors.ts";
-import { AI_MODELS, AI_VIDEO_JOBS_URL, aiHeaders, getAiApiKey } from "../_shared/ai.ts";
+import {
+  AI_MODELS,
+  AI_NOT_CONFIGURED_STATUS,
+  AI_VIDEO_JOBS_URL,
+  AiNotConfiguredError,
+  aiHeaders,
+  aiNotConfiguredPayload,
+  getAiApiKey,
+} from "../_shared/ai.ts";
 import {
   buildVideoRequest,
   describeTerminalError,
@@ -119,9 +127,7 @@ async function dispatchToProvider(input: {
 }): Promise<{ provider: string; jobId: string }> {
   const apiKey = getAiApiKey();
   if (!apiKey) {
-    throw new Error(
-      "ERR_VIDEO_PROVIDER: nenhum provedor de geração de vídeo configurado (OPENROUTER_API_KEY ausente).",
-    );
+    throw new AiNotConfiguredError();
   }
 
   const res = await fetch(AI_VIDEO_JOBS_URL, {
@@ -369,6 +375,13 @@ Deno.serve(async (req) => {
       .from("videos")
       .update({ status: "failed", error_message: message })
       .eq("id", created.id);
+    if (err instanceof AiNotConfiguredError) {
+      return json(
+        req,
+        aiNotConfiguredPayload({ job: { id: created.id, status: "failed" } }),
+        AI_NOT_CONFIGURED_STATUS,
+      );
+    }
     return json(req, { job: { id: created.id, status: "failed" }, error: message }, 503);
   }
 });

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { edgeErrorMessage } from "@/lib/functions-client";
 import type { Placement } from "./use-mockup-editor-state";
 import type { SurfaceType } from "@/features/mockup";
 
@@ -98,7 +99,7 @@ export function useMockupEditorAI(opts: UseMockupEditorAIOptions) {
       toast.info("Sugestão de IA recebida.");
     } catch (err) {
       console.error("AI Suggestion failed:", err);
-      toast.error("IA: Falha ao obter sugestão.");
+      toast.error(await edgeErrorMessage(err, "IA: falha ao obter sugestão. Tente novamente."));
     } finally {
       setIsSuggestingPlacement(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
@@ -143,7 +144,7 @@ export function useMockupEditorAI(opts: UseMockupEditorAIOptions) {
       toast.success("IA: Fundo removido!");
     } catch (err) {
       console.error("AI BG Removal failed:", err);
-      toast.error("IA: Falha ao remover fundo.");
+      toast.error(await edgeErrorMessage(err, "IA: falha ao remover fundo. Tente novamente."));
     } finally {
       setIsRemovingBg(false);
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
