@@ -23,6 +23,8 @@ export interface IntegrationQueueEvent {
   detail: string | null;
   /** Tecnica resolvida para o Fast Gravacoes; NULL = tecnica nao mapeada. */
   fg_technique_id: string | null;
+  /** Texto da tecnica como veio da OS; e o que precisa entrar no mapa. */
+  technique: string | null;
 }
 
 export interface IntegrationQueueFilters {
@@ -84,7 +86,7 @@ export function useIntegrationQueue(filters: IntegrationQueueFilters = {}) {
       let query = supabase
         .from("integration_queue")
         .select(
-          "event_id, entity, entity_id, event, destination, status, attempts, created_at, next_attempt_at, last_error, delivered_at, fg_technique_id:payload->>fg_technique_id",
+          "event_id, entity, entity_id, event, destination, status, attempts, created_at, next_attempt_at, last_error, delivered_at, fg_technique_id:payload->>fg_technique_id, technique:payload->>technique",
         )
         .order("created_at", { ascending: false })
         .limit(INTEGRATION_QUEUE_LIMIT);

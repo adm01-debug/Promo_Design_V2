@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Inbox, Loader2, RotateCcw, TriangleAlert } from "lucide-react";
+import { Inbox, ListPlus, Loader2, RotateCcw, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,12 +62,17 @@ interface IntegrationQueueTableProps {
   events: IntegrationQueueEvent[];
   requeueingId: string | null;
   onRequeue: (eventId: string) => void;
+  /** Owner/admin: mostra o atalho para cadastrar a tecnica que falta no mapa. */
+  canManageMap?: boolean;
+  onMapTechnique?: (technique: string) => void;
 }
 
 export function IntegrationQueueTable({
   events,
   requeueingId,
   onRequeue,
+  canManageMap = false,
+  onMapTechnique,
 }: IntegrationQueueTableProps) {
   if (events.length === 0) {
     return (
@@ -114,9 +119,27 @@ export function IntegrationQueueTable({
               <TableCell>
                 <span>{DESTINATION_LABEL[event.destination] ?? event.destination}</span>
                 {unmapped && (
-                  <Badge variant="outline" className="mt-1 block w-fit">
-                    Tecnica nao mapeada
-                  </Badge>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="w-fit">
+                      Tecnica nao mapeada
+                    </Badge>
+                    {event.technique && (
+                      <span className="text-xs text-muted-foreground">"{event.technique}"</span>
+                    )}
+                    {canManageMap && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs"
+                        onClick={() => onMapTechnique?.(event.technique ?? "")}
+                        aria-label={`Mapear a tecnica ${event.technique ?? "da OS"} no Fast Gravacoes`}
+                      >
+                        <ListPlus className="h-3 w-3" aria-hidden="true" />
+                        <span className="ml-1">Mapear</span>
+                      </Button>
+                    )}
+                  </div>
                 )}
               </TableCell>
               <TableCell>
