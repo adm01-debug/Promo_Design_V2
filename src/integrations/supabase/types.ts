@@ -1702,6 +1702,45 @@ export type Database = {
         }
         Relationships: []
       }
+      os_webhook_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          delivered_at: string | null
+          event: string
+          event_id: string
+          last_error: string | null
+          next_attempt_at: string
+          os_id: string
+          payload: Json
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          event: string
+          event_id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          os_id: string
+          payload?: Json
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          event?: string
+          event_id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          os_id?: string
+          payload?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           created_at: string
@@ -2228,6 +2267,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      requeue_os_webhook: { Args: { _event_id: string }; Returns: Json }
       run_manual_analyze: { Args: { _table_name: string }; Returns: Json }
       run_manual_vacuum: {
         Args: { _mode?: string; _table_name: string }

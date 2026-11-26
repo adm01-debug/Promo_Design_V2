@@ -63,6 +63,9 @@ const OrganizationPage = lazyWithRetry(
 );
 const ClientsPage = lazyWithRetry(() => import("./features/clients/pages/ClientsPage"));
 const AuditLogPage = lazyWithRetry(() => import("./features/audit/pages/AuditLogPage"));
+const IntegrationsPage = lazyWithRetry(
+  () => import("./features/integrations/pages/IntegrationsPage"),
+);
 const AuditEventDetailPage = lazyWithRetry(
   () => import("./features/audit/pages/AuditEventDetailPage"),
 );
@@ -244,6 +247,10 @@ const App = () => (
                         <Route
                           path="/dam/preview"
                           element={guard("DAM Preview", <DamPreviewPage />)}
+                        />
+                        <Route
+                          path="/integrations"
+                          element={guard("Integrações", <IntegrationsPage />)}
                         />
                         <Route path="/audit" element={guard("Auditoria", <AuditLogPage />)} />
                         <Route
