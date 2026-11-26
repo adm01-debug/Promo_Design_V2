@@ -1221,6 +1221,69 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          delivered_at: string | null
+          destination: string
+          entity: string
+          entity_id: string
+          event: string
+          event_id: string
+          last_error: string | null
+          next_attempt_at: string
+          payload: Json
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          destination: string
+          entity: string
+          entity_id: string
+          event: string
+          event_id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          destination?: string
+          entity?: string
+          entity_id?: string
+          event?: string
+          event_id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+        }
+        Relationships: []
+      }
+      integration_technique_map: {
+        Row: {
+          fg_technique_id: string
+          promo_technique: string
+          updated_at: string
+        }
+        Insert: {
+          fg_technique_id: string
+          promo_technique: string
+          updated_at?: string
+        }
+        Update: {
+          fg_technique_id?: string
+          promo_technique?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       magicup_history: {
         Row: {
           created_at: string
@@ -2267,6 +2330,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      requeue_integration_event: { Args: { _event_id: string }; Returns: Json }
       requeue_os_webhook: { Args: { _event_id: string }; Returns: Json }
       run_manual_analyze: { Args: { _table_name: string }; Returns: Json }
       run_manual_vacuum: {
