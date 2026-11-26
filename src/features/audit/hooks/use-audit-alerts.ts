@@ -1,5 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
+
+type AlertRuleRow = Database["public"]["Tables"]["audit_alert_rules"]["Row"];
+
+const alertRuleRow = (row: AlertRuleRow): AuditAlertRule => ({
+  ...row,
+  recipients_mode: row.recipients_mode as AuditAlertRule["recipients_mode"],
+  advanced_conditions: row.advanced_conditions as unknown as AuditAdvancedCondition[],
+});
 
 export type AuditAdvancedOp = "contains" | "equals" | "not_equals" | "starts_with" | "ends_with";
 
@@ -47,12 +56,12 @@ export function useAuditAlertRules(organizationId: string | null) {
     enabled: !!organizationId,
     queryFn: async (): Promise<AuditAlertRule[]> => {
       const { data, error } = await supabase
-        .from("audit_alert_rules" as never)
+        .from("audit_alert_rules")
         .select("*")
         .eq("organization_id", organizationId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as AuditAlertRule[];
+      return (data ?? []).map(alertRuleRow);
     },
   });
 }
@@ -79,12 +88,15 @@ export function useCreateAuditAlertRule() {
         advanced_conditions: input.advanced_conditions ?? [],
       };
       const { data, error } = await supabase
-        .from("audit_alert_rules" as never)
-        .insert(payload as never)
+        .from("audit_alert_rules")
+        .insert({
+          ...payload,
+          advanced_conditions: payload.advanced_conditions as unknown as Json,
+        })
         .select("*")
         .single();
       if (error) throw error;
-      return data as unknown as AuditAlertRule;
+      return alertRuleRow(data);
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["audit-alert-rules", vars.organization_id] });
@@ -97,8 +109,11 @@ export function useUpdateAuditAlertRule() {
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<AuditAlertRule> }) => {
       const { error } = await supabase
-        .from("audit_alert_rules" as never)
-        .update(patch as never)
+        .from("audit_alert_rules")
+        .update({
+          ...patch,
+          advanced_conditions: patch.advanced_conditions as unknown as Json | undefined,
+        })
         .eq("id", id);
       if (error) throw error;
     },
@@ -112,10 +127,7 @@ export function useDeleteAuditAlertRule() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("audit_alert_rules" as never)
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("audit_alert_rules").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

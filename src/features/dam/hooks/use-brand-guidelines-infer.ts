@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ColorEntry, FontEntry } from "@/features/dam/hooks/use-brand-guidelines";
+import type { Json } from "@/integrations/supabase/types";
 
 export interface InferredGuidelines {
   primary_colors: ColorEntry[];
@@ -122,7 +123,7 @@ export function useMarkInferHistoryApplied() {
         .update({
           applied: true,
           applied_at: new Date().toISOString(),
-          applied_selection: input.selection as never,
+          applied_selection: input.selection as unknown as Json,
         })
         .eq("id", input.history_id);
       if (error) throw error;
