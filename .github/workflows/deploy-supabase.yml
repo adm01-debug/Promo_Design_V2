@@ -127,6 +127,7 @@ jobs:
           version: latest
 
       - name: Listar migrations pendentes
+        id: pendentes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -141,14 +142,15 @@ jobs:
           # Se o comando nao produzir nenhuma saida reconhecivel o formato mudou:
           # falhar em vez de assumir zero e pular a aplicacao em silencio.
           if grep -q "Would push these migrations" pending.txt; then
-            count=$(grep -cE "^[[:space:]]+[0-9]{14}_" pending.txt || true)
+            count=$(grep -cE "^[[:space:]]*([^[:alnum:][:space:]]+[[:space:]]+)?[0-9]{14}_[A-Za-z0-9._-]+\.sql" pending.txt || true)
             count=${count:-0}
           else
             count=0
           fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "pendentes=$count" >> "$GITHUB_ENV"
           echo "### Migrations pendentes: $count" >> "$GITHUB_STEP_SUMMARY"
-          grep -E "^[[:space:]]+[0-9]{14}_" pending.txt >> "$GITHUB_STEP_SUMMARY" || true
+          grep -E "^[[:space:]]*([^[:alnum:][:space:]]+[[:space:]]+)?[0-9]{14}_[A-Za-z0-9._-]+\.sql" pending.txt >> "$GITHUB_STEP_SUMMARY" || true
           if [ "$count" -eq 0 ] && ! grep -qiE "No migrations|up to date|already|Would push migration|Finished supabase db push" pending.txt; then
             echo "::error::Saida do dry-run nao reconhecida. Verifique pending.txt no log."
             exit 1
@@ -162,7 +164,7 @@ jobs:
           fi
 
       - name: Aplicar migrations
-        if: env.pendentes != '0'
+        if: steps.pendentes.outputs.count != '0'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
