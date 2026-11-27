@@ -114,6 +114,13 @@ Deno.test("blockedReason names both variables when nothing is configured", () =>
   assertEquals(reason.includes("ERP_WEBHOOK_URL e ERP_WEBHOOK_SECRET"), true);
 });
 
+Deno.test("blockedReason tells the operator the event is retried once configured", () => {
+  const reason = blockedReason("", "sekrit") ?? "";
+  assertEquals(reason.includes("ERP_WEBHOOK_URL"), true);
+  assertEquals(reason.includes("fica na fila"), true);
+  assertEquals(reason.includes("automaticamente"), true);
+});
+
 Deno.test("eventsNeedingBlockedReason skips rows that already carry the reason", () => {
   const reason = blockedReason("", "") ?? "";
   const rows = [
