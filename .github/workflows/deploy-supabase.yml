@@ -134,15 +134,22 @@ jobs:
           set -euo pipefail
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db push --dry-run --include-all --remote 2>&1 | tee pending.txt
-          # Cada migration pendente aparece como "Would push migration <ts>_<name>".
-          # Se o comando nao produzir nenhuma linha reconhecivel o formato mudou:
+          # O CLI lista as pendentes sob o cabecalho "Would push these migrations:".
+          # Versoes novas do CLI nao repetem o prefixo "Would push migration" em
+          # cada linha e listam apenas o arquivo, sem o nome da migration, entao a
+          # contagem usa o cabecalho e as entradas "<ts>_" ate o fim do bloco.
+          # Se o comando nao produzir nenhuma saida reconhecivel o formato mudou:
           # falhar em vez de assumir zero e pular a aplicacao em silencio.
-          count=$(grep -c "Would push migration" pending.txt || true)
-          count=${count:-0}
+          if grep -q "Would push these migrations" pending.txt; then
+            count=$(grep -cE "^[[:space:]]+[0-9]{14}_" pending.txt || true)
+            count=${count:-0}
+          else
+            count=0
+          fi
           echo "pendentes=$count" >> "$GITHUB_ENV"
           echo "### Migrations pendentes: $count" >> "$GITHUB_STEP_SUMMARY"
-          grep "Would push migration" pending.txt >> "$GITHUB_STEP_SUMMARY" || true
-          if ! grep -qE "Would push migration|No migrations|up to date|already" pending.txt; then
+          grep -E "^[[:space:]]+[0-9]{14}_" pending.txt >> "$GITHUB_STEP_SUMMARY" || true
+          if [ "$count" -eq 0 ] && ! grep -qiE "No migrations|up to date|already|Would push migration|Finished supabase db push" pending.txt; then
             echo "::error::Saida do dry-run nao reconhecida. Verifique pending.txt no log."
             exit 1
           fi
