@@ -31,7 +31,11 @@ export function blockedReason(url: string, secret: string): string | null {
   if (!url) missing.push("ERP_WEBHOOK_URL");
   if (!secret) missing.push("ERP_WEBHOOK_SECRET");
   if (missing.length === 0) return null;
-  return `Nao entregue ao ERP: ${missing.join(" e ")} nao configurado(s) na edge function os-webhook-dispatcher.`;
+  return (
+    `Nao entregue ao ERP: ${missing.join(" e ")} ausente(s) na configuracao do ` +
+    `os-webhook-dispatcher. O evento fica na fila e e enviado automaticamente ` +
+    `assim que a credencial existir.`
+  );
 }
 
 /**
