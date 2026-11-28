@@ -28,6 +28,28 @@ Entretanto, o **linter Supabase reporta 34 findings `WARN`** (todos sobre `SECUR
 
 ---
 
+> **STATUS DE IMPLEMENTACAO (atualizado 2026-11-28).** Este documento foi escrito como diagnostico.
+> A maior parte ja foi corrigida em producao; os itens abaixo marcam o estado **verificado no banco
+> e nas functions deployadas**, para nao induzir outro agente a reabrir trabalho concluido.
+>
+> | Item                                               | Estado       | Evidencia                                                                                                                                                                            |
+> | -------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+> | 2.1 `SECURITY DEFINER` por `anon`                  | ✅ CORRIGIDO | PR #165 (`727c2c2d`): `has_role(uuid,text)` e `tg_integration_technique_map_normalize()` revogados de `anon`/`PUBLIC`; os 3 helpers de policy mantem `anon` (verificado em producao) |
+> | 2.2 32 funcoes expostas a `authenticated`          | ✅ ACEITO    | `authenticated` e o papel do app; todas checam membership/RLS no corpo. Registrado no ADR 0009                                                                                       |
+> | 2.3 `write_audit_log` x `audit_trigger_func`       | ✅ OK        | As duas tem papeis distintos e coexistem: `audit_trigger_func()` (trigger) e `write_audit_log()` (chamada explicita). Nenhuma duplicata orfa em `pg_proc`                            |
+> | 3.1 Heuristica de bloat imprecisa                  | ✅ CORRIGIDO | Extensao `pgstattuple` instalada e disponivel                                                                                                                                        |
+> | 3.2 Indice `notifications(event_type, created_at)` | ✅ CORRIGIDO | `idx_notifications_event_status_created` existe em producao                                                                                                                          |
+> | 3.3 Particionamento de `audit_log`                 | ✅ CORRIGIDO | `audit_log` e particionada (`relkind=p`), 10 particoes ate 2027-02 + cron diario `ensure_audit_log_partitions(3)` (dia 25)                                                           |
+> | 4.1 Rate limit nas functions de IA                 | ✅ CORRIGIDO | 5/5 cobertas: `mockup-ai`, `brand-guidelines-infer`, `magic-up-jobs`, `video-generate` (PR #167/#168), `asset-ocr`                                                                   |
+> | 4.2 Correlation-id nas edge functions              | ✅ CORRIGIDO | 5/5 functions de IA com `requestId` (PR #169 fecha as 2 que faltavam); dispatchers (cron, sem usuario) ficam de fora por desenho                                                     |
+> | 4.3 `admin-maintenance` vaza erro do Postgres      | ✅ CORRIGIDO | Ver [secao 4.3](#43-importante--admin-maintenance-retorna-erro-do-postgresql-bruto-ao-cliente): resposta generica, detalhe so no log                                                 |
+> | 5.1 Circuit breaker Bitrix24                       | ✅ CORRIGIDO | Implementado no bridge de integracao                                                                                                                                                 |
+> | 5.2 Webhook n8n sem HMAC                           | ✅ CORRIGIDO | `CHAMPIONS_WEBHOOK_SECRET` / `SUPPLY_WEBHOOK_SECRET` assinam o payload                                                                                                               |
+> | 5.3 Sem dead-letter queue                          | ✅ CORRIGIDO | `integration_queue` + `os_webhook_queue` com `attempts`/`last_error` e dispatcher com DLQ                                                                                            |
+> | 6.1 Casts `rpc as unknown as`                      | 🟡 ABERTO    | Cosmetico; sem impacto funcional                                                                                                                                                     |
+> | 6.2 `MaintenancePanel.tsx` > 550 linhas            | 🟡 ABERTO    | Manutenibilidade; sem impacto funcional                                                                                                                                              |
+> | P2 Ativar HIBP, CSP/HSTS, GIN trigram, Realtime    | ✅ CORRIGIDO | GIN trigram em `assets` (`idx_assets_name_trgm`, `idx_assets_ocr_text_trgm`); restante em config de Auth/headers                                                                     |
+
 ## 2. Segurança
 
 ### 2.1 🔴 CRÍTICO — 2 funções `SECURITY DEFINER` executáveis por `anon`
