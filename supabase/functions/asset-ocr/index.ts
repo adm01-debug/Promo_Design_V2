@@ -148,7 +148,11 @@ serve(async (req) => {
       _limit_per_min: 10,
     });
     if (rl && (rl as { allowed?: boolean }).allowed === false) {
-      return jsonResponse({ error: "Muitas requisições. Aguarde alguns segundos.", requestId }, 429, req);
+      return jsonResponse(
+        { error: "Muitas requisições. Aguarde alguns segundos.", requestId },
+        429,
+        req,
+      );
     }
 
     // Mark pending
