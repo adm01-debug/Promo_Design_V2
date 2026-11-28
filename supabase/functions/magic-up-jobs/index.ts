@@ -189,6 +189,16 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
   );
 
+  // Rate limit por usuário só no enqueue: é aqui que a imagem passa a ser gerada.
+  const { data: rl } = await admin.rpc("check_and_consume_ai_rate_limit", {
+    _user_id: userId,
+    _feature: "magic-up-jobs",
+    _limit_per_min: 5,
+  });
+  if (rl && (rl as { allowed?: boolean }).allowed === false) {
+    return json(req, { error: "Muitas requisições. Aguarde alguns segundos." }, 429);
+  }
+
   const { data: created, error: enqueueError } = await userClient.rpc("enqueue_magic_up_jobs", {
     _organization_id: body.organizationId,
     _user_id: userId,
