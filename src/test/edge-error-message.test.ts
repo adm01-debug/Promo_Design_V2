@@ -104,3 +104,40 @@ describe("invokeErrorMessage", () => {
     }
   });
 });
+describe("invokeFunction — Authorization", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("manda o access_token da sessao, nao o JSON cru do localStorage", async () => {
+    vi.stubEnv("DEV", false);
+    const session = JSON.stringify({
+      access_token: "jwt-do-usuario",
+      refresh_token: "r",
+      token_type: "bearer",
+    });
+    vi.stubGlobal("localStorage", { getItem: () => session });
+    vi.stubGlobal("window", { localStorage: { getItem: () => session } });
+    const fetchSpy = vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}"));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await invokeFunction("mockup-ai", { probe: 1 });
+
+    const init = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer jwt-do-usuario");
+  });
+
+  it("nao inventa Authorization quando a sessao esta corrompida", async () => {
+    vi.stubEnv("DEV", false);
+    vi.stubGlobal("window", { localStorage: { getItem: () => "{nao-e-json" } });
+    const fetchSpy = vi.fn(async (_url: string, _init?: RequestInit) => new Response("{}"));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await invokeFunction("mockup-ai", { probe: 1 });
+
+    const init = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+    expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
+  });
+});
