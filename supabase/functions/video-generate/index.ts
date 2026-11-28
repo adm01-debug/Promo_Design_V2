@@ -329,6 +329,16 @@ Deno.serve(async (req) => {
   }
 
   // action === "enqueue"
+  // Rate limit por usuário só na criação: /status e /cancel não consomem provedor.
+  const { data: rl } = await admin.rpc("check_and_consume_ai_rate_limit", {
+    _user_id: userId,
+    _feature: "video-generate",
+    _limit_per_min: 3,
+  });
+  if (rl && (rl as { allowed?: boolean }).allowed === false) {
+    return json(req, { error: "Muitas requisições. Aguarde alguns segundos." }, 429);
+  }
+
   const { data: created, error: insertError } = await supabase
     .from("videos")
     .insert({

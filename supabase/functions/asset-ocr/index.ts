@@ -141,6 +141,20 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: true }, 200, req);
     }
 
+    // Rate limit por usuário (feature: asset-ocr)
+    const { data: rl } = await adminClient.rpc("check_and_consume_ai_rate_limit", {
+      _user_id: userData.user.id,
+      _feature: "asset-ocr",
+      _limit_per_min: 10,
+    });
+    if (rl && (rl as { allowed?: boolean }).allowed === false) {
+      return jsonResponse(
+        { error: "Muitas requisições. Aguarde alguns segundos.", requestId },
+        429,
+        req,
+      );
+    }
+
     // Mark pending
     await adminClient.from("assets").update({ ocr_status: "pending" }).eq("id", assetId);
 
