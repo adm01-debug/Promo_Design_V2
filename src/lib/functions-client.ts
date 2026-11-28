@@ -28,6 +28,21 @@ export function getFunctionsUrl(path: string = ""): string {
   return `${SUPABASE_FUNCTIONS_BASE}${path.startsWith("/") ? path : "/" + path}`;
 }
 
+const AUTH_STORAGE_KEY = "sb-fygxlswpkjtjpcefjfty-auth-token";
+
+/** Extrai so o `access_token` da sessao persistida pelo supabase-js. */
+function readStoredAccessToken(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const raw = window.localStorage?.getItem(AUTH_STORAGE_KEY);
+  if (!raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw) as { access_token?: unknown };
+    return typeof parsed?.access_token === "string" ? parsed.access_token : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Faz uma requisição para uma Edge Function com suporte a proxy em dev.
  */
@@ -42,11 +57,12 @@ export async function invokeFunction<T = unknown>(
     const url = getFunctionsUrl(`/${functionName}`);
     const method = options?.method || "POST";
 
-    // Pega o token de autenticação do Supabase se disponível
+    // Pega o token de autenticacao do Supabase se disponivel. O localStorage guarda o
+    // JSON inteiro da sessao ({access_token, refresh_token, ...}), nao o JWT: mandar o
+    // JSON cru em Authorization fazia a Edge Function responder 401.
+    const storedToken = readStoredAccessToken();
     const authHeader =
-      options?.headers?.Authorization ||
-      (typeof window !== "undefined" &&
-        window.localStorage?.getItem("sb-fygxlswpkjtjpcefjfty-auth-token"));
+      options?.headers?.Authorization || (storedToken ? `Bearer ${storedToken}` : undefined);
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
