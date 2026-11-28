@@ -77,7 +77,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.4.0
 
       - name: Deploy Edge Functions
         env:
@@ -124,7 +124,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.4.0
 
       - name: Listar migrations pendentes
         id: pendentes
