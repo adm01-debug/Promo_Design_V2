@@ -246,6 +246,18 @@ Deno.serve(async (req) => {
     const stylePrompt = customPromptMap[job.style] ?? STYLE_PROMPT[job.style] ?? "";
     try {
       resultImageUrl = await generateImage(apiKey, `${body.prompt}\n\n${stylePrompt}`.trim());
+      // Consome o orcamento do rate limit so quando a imagem foi de fato gerada:
+      // a RPC check_and_consume_ai_rate_limit conta linhas desta tabela.
+      await admin.from("ai_usage_log").insert({
+        organization_id: body.organizationId,
+        user_id: userId,
+        feature_name: "magic-up-jobs",
+        model_name: AI_MODELS.image,
+        tokens_in: 0,
+        tokens_out: 0,
+        cost_estimate: 0.04,
+        metadata: { jobId: job.id, style: job.style },
+      });
     } catch (err) {
       status = "failed";
       errorMessage = err instanceof Error ? err.message : "Falha desconhecida ao gerar imagem";

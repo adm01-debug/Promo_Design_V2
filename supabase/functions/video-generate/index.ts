@@ -329,6 +329,13 @@ Deno.serve(async (req) => {
   }
 
   // action === "enqueue"
+  // Service role: o insert em `videos` e o registro de uso são escopados por RLS/organização.
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { persistSession: false } },
+  );
+
   // Rate limit por usuário só na criação: /status e /cancel não consomem provedor.
   const { data: rl } = await admin.rpc("check_and_consume_ai_rate_limit", {
     _user_id: userId,
@@ -373,6 +380,18 @@ Deno.serve(async (req) => {
       duration: body.duration,
       startFrameUrl: body.startFrameUrl ?? null,
       endFrameUrl: body.endFrameUrl ?? null,
+    });
+    // Consome o orcamento do rate limit assim que o provedor aceita o job
+    // (a RPC check_and_consume_ai_rate_limit conta linhas desta tabela).
+    await admin.from("ai_usage_log").insert({
+      organization_id: body.organizationId,
+      user_id: userId,
+      feature_name: "video-generate",
+      model_name: AI_MODELS.video,
+      tokens_in: 0,
+      tokens_out: 0,
+      cost_estimate: 0.5,
+      metadata: { videoId: created.id, providerJobId: jobId },
     });
     await supabase
       .from("videos")
