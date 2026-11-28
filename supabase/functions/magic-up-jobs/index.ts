@@ -125,6 +125,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflight(req);
   if (req.method !== "POST") return json(req, { error: "Method not allowed" }, 405);
 
+  // Correlation-id: o mesmo id aparece no log e na resposta 429/erro (BACKEND_AUDIT_REPORT 4.2).
+  const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  if (req.method !== "POST") return json(req, { error: "Method not allowed" }, 405);
+
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return json(req, { error: "Unauthorized" }, 401);
@@ -196,6 +200,7 @@ Deno.serve(async (req) => {
     _limit_per_min: 5,
   });
   if (rl && (rl as { allowed?: boolean }).allowed === false) {
+    return json(req, { error: "Muitas requisições. Aguarde alguns segundos.", requestId }, 429);
     return json(req, { error: "Muitas requisições. Aguarde alguns segundos." }, 429);
   }
 
@@ -260,6 +265,8 @@ Deno.serve(async (req) => {
       });
     } catch (err) {
       status = "failed";
+      errorMessage = err instanceof Error ? err.message : "Falha desconhecida ao gerar imagem";
+      console.error(`[${requestId}] magic-up job ${job.id} falhou: ${errorMessage}`);
       errorMessage = err instanceof Error ? err.message : "Falha desconhecida ao gerar imagem";
     }
 

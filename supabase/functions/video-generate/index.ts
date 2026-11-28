@@ -207,6 +207,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return corsPreflight(req);
   if (req.method !== "POST") return json(req, { error: "Method not allowed" }, 405);
 
+  // Correlation-id: o mesmo id aparece no log e na resposta 429 (BACKEND_AUDIT_REPORT 4.2).
+  const requestId = req.headers.get("X-Request-Id") || crypto.randomUUID();
+  if (req.method !== "POST") return json(req, { error: "Method not allowed" }, 405);
+
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return json(req, { error: "Unauthorized" }, 401);
@@ -264,6 +268,7 @@ Deno.serve(async (req) => {
     } catch (err) {
       // Falha transitória de rede: devolve o estado atual e deixa o cliente
       // tentar de novo no próximo poll em vez de matar o job.
+      console.error(`[${requestId}] status: provider poll failed for ${data.id}:`, err);
       console.error(`status: provider poll failed for ${data.id}:`, err);
       return json(req, { job: data, stale: true });
     }
@@ -309,6 +314,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (updateError) {
+      console.error(`[${requestId}] status: update failed for ${data.id}:`, updateError.message);
       console.error(`status: update failed for ${data.id}:`, updateError.message);
       return json(req, { job: data, stale: true });
     }
@@ -343,6 +349,7 @@ Deno.serve(async (req) => {
     _limit_per_min: 3,
   });
   if (rl && (rl as { allowed?: boolean }).allowed === false) {
+    return json(req, { error: "Muitas requisições. Aguarde alguns segundos.", requestId }, 429);
     return json(req, { error: "Muitas requisições. Aguarde alguns segundos." }, 429);
   }
 
